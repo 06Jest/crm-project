@@ -1,0 +1,15 @@
+CRM-FOLDER-STRUCTURE
+
+crm-project/
+├─ public/
+├─ src/
+│  ├─ components/      # Reusable UI components
+│  ├─ pages/           # Pages: Dashboard.tsx, Contacts.tsx
+│  ├─ services/        # Backend/API calls
+│  ├─ context/         # React Context (optional)
+│  ├─ hooks/           # Custom React hooks
+│  ├─ types/           # TypeScript types
+│  ├─ App.tsx
+│  └─ main.tsx
+├─ package.json
+└─ tsconfig.json
