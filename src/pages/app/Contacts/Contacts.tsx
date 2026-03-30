@@ -1,10 +1,10 @@
 import { useDispatch, useSelector } from "react-redux";
-import type { RootState } from "../../store/store";
-import { addContact, updateContact, deleteContact } from "../../store/contactsSlice"
+import type { RootState } from "../../../store/store";
+import { addContact, updateContact, deleteContact } from "../../../store/contactsSlice"
 
 import { useState } from "react";
 import { v4 as uuidv4 } from 'uuid';
-import type { Contact } from '../../types/contact';
+import type { Contact } from '../../../types/contact';
 
 import {
   Box,
