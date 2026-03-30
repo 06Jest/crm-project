@@ -8,7 +8,7 @@ type Props = {
   children: ReactNode;
 };
 
-function MainLayout({ children }: Props) {
+function AppLayout({ children }: Props) {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <Header />
@@ -20,4 +20,4 @@ function MainLayout({ children }: Props) {
     </Box>
   )
 };
-export default  MainLayout
+export default  AppLayout
