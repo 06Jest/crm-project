@@ -1,4 +1,7 @@
-import { getContacts, addContact, updateContact, deleteContact } from '../../services/contactService';
+import { useDispatch, useSelector } from "react-redux";
+import type { RootState } from "../../store/store";
+import { addContact, updateContact, deleteContact } from "../../store/contactsSlice"
+
 import { useState } from "react";
 import { v4 as uuidv4 } from 'uuid';
 import type { Contact } from '../../types/contact';
@@ -22,7 +25,8 @@ import {
 } from "@mui/material";
 
 export default function Contacts() {
-  const [contacts, setContacts] = useState<Contact[]>(getContacts())
+  const contacts = useSelector((state:RootState) => state.contacts)
+  const dispatch = useDispatch()
   const [open, setOpen] = useState(false)
   const [editingContact, setEditingContact] = useState<Contact | null>(null)
 
@@ -67,23 +71,25 @@ export default function Contacts() {
   }
   const handleSubmit = () => {
     if (editingContact) {
-      updateContact({
-        ...editingContact,
-        ...form
-      })
+      dispatch(
+        updateContact({
+          ...editingContact,
+          ...form
+        })
+      )
     } else {
+      dispatch(
         addContact({
           id: uuidv4(),
           ...form
         })
-      }
+      )
+    }
     
-      setContacts(getContacts())
       handleClose()
     }
     const handleDelete = (id: string) => {
-      deleteContact(id)
-      setContacts(getContacts())
+      dispatch(deleteContact(id))
     }
 
     return (
@@ -95,12 +101,16 @@ export default function Contacts() {
             Add Contact
         </Button>
 
-        <TableContainer component = {Paper} sx={{ mt: 2 }}>
+        <TableContainer component = {Paper} sx={{ mt: 2, maxWidth: 1200, margin: "0 auto" }}>
           <Table>
 
-            <TableHead>
-              <TableRow>
-                <TableCell>Name</TableCell>
+            <TableHead sx={{ justifyContent: "space-between" }}>
+              <TableRow sx={{
+                    "& .MuiTableCell-root": {
+                      textAlign: "center"
+                    }
+                  }}>
+                <TableCell >Name</TableCell>
                 <TableCell>Email</TableCell>
                 <TableCell>Phone</TableCell>
                 <TableCell>Status</TableCell>
@@ -109,7 +119,13 @@ export default function Contacts() {
             </TableHead>
             <TableBody>
               {contacts.map((contact) => (
-                <TableRow key ={contact.id}>
+                <TableRow key ={contact.id} 
+                  sx={{
+                    "& .MuiTableCell-root": {
+                      textAlign: "center"
+                    }
+                  }}
+                >
                   <TableCell>{contact.name}</TableCell>
                   <TableCell>{contact.email}</TableCell>
                   <TableCell>{contact.phone}</TableCell>
@@ -143,7 +159,7 @@ export default function Contacts() {
               flexDirection: "column",
               gap: 2,
               mt: 1,
-              width: 400,
+              width: 300,
             }}
             >
               <TextField
