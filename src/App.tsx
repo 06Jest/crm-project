@@ -1,8 +1,8 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import Dasboard from './pages/Dashboard';
+import Dashboard from './pages/Dashboard/Dashboard';
 import MainLayout from './layout/Mainlayout';
-import Contacts from './pages/Contacts';
-import Leads from './pages/Leads';
+import Contacts from './pages/Contacts/Contacts';
+import Leads from './pages/Leads/Leads';
 import Settings from './pages/Settings';
 
 
@@ -11,7 +11,7 @@ function App() {
     <BrowserRouter>
       <MainLayout>
         <Routes>
-          <Route path="/" element={<Dasboard />} />
+          <Route path="/" element={<Dashboard />} />
           <Route path="/contacts" element={<Contacts />} />
           <Route path="/leads" element={<Leads />} />
           <Route path="/settings" element={<Settings />} />
