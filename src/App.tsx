@@ -1,24 +1,24 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 
-// Layouts
+
 import PublicLayout from './layout/PublicLayout';
 import AuthLayout from './layout/AuthLayout';
 import AppLayout from './layout/AppLayout';
 
-// Route guard
+
 import ProtectedRoute from './components/ProtectedRoute';
 
-// Public pages
+
 import Landing from './pages/public/Landing/Landing';
 import Pricing from './pages/public/Pricing/Pricing';
 import About from './pages/public/About/About';
 
-// Auth pages
+
 import Login from './pages/auth/Login/Login';
 import Register from './pages/auth/Register/Register';
 import ForgotPassword from './pages/auth/ForgotPassword/ForgotPassword';
 
-// App pages (protected)
+
 import Dashboard from './pages/app/Dashboard/Dashboard';
 import Contacts from './pages/app/Contacts/Contacts';
 import ContactDetail from './pages/app/Contacts/ContactDetails';
