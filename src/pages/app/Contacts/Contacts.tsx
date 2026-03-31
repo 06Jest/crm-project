@@ -1,10 +1,15 @@
 import { useDispatch, useSelector } from "react-redux";
-import type { RootState } from "../../../store/store";
-import { addContact, updateContact, deleteContact } from "../../../store/contactsSlice"
+import type { AppDispatch, RootState } from "../../../store/store";
+import { 
+  addContact,
+  updateContact,
+  deleteContact,
+  fetchContacts
+} from "../../../store/contactsSlice"
 
-import { useState } from "react";
-import { v4 as uuidv4 } from 'uuid';
+import { useState, useEffect } from "react";
 import type { Contact } from '../../../types/contact';
+import { useNavigate } from "react-router-dom";
 
 import {
   Box,
@@ -14,6 +19,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  TableCell,
   Paper,
   Dialog,
   DialogTitle,
@@ -21,22 +27,33 @@ import {
   TextField,
   DialogActions,
   MenuItem,
-  TableCell
+  Alert,
+  CircularProgress,
+  Typography
 } from "@mui/material";
 
+
+type FormState = {
+  name: string;
+  email: string;
+  phone: string;
+  status: 'active' | 'Prospect' | 'Lead'; 
+};
+
+const emptyForm: FormState = {name: '', email: '', phone: '', status: 'active'};
+
 export default function Contacts() {
-  const contacts = useSelector((state:RootState) => state.contacts)
-  const dispatch = useDispatch()
+  const { items: contacts, loading, error} = useSelector((state:RootState) => state.contacts);
+  const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
+
   const [open, setOpen] = useState(false)
   const [editingContact, setEditingContact] = useState<Contact | null>(null)
+  const [form, setForm] = useState<FormState>(emptyForm);
 
-  const [form, setForm] = useState<{name: string; email: string; phone: string; status: "active" | "Prospect" | "Lead"}>({
-
-    name: "",
-    email: "",
-    phone: "",
-    status: "active"
-  })
+  useEffect(()=> {
+    dispatch(fetchContacts());
+  }, [dispatch]);
 
   const handleOpen = (contact?: Contact) => {
     if(contact) {
@@ -44,62 +61,69 @@ export default function Contacts() {
       setForm({
         name: contact.name,
         email: contact.email,
-        phone: contact.phone || "",
+        phone: contact.phone || '',
         status: contact.status
       })
     } else {
       setEditingContact(null)
-      setForm({
-        name: "",
-        email: "",
-        phone: "",
-        status: "active"
-      })
+      setForm(emptyForm);
     }
-
     setOpen(true)
   }
 
   const handleClose = () => {
     setOpen(false)
   }
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({
       ...form,
       [e.target.name]: e.target.value
     })
   }
+
   const handleSubmit = () => {
     if (editingContact) {
       dispatch(
         updateContact({
           ...editingContact,
           ...form
-        })
-      )
+        }))
     } else {
-      dispatch(
-        addContact({
-          id: uuidv4(),
-          ...form
-        })
-      )
+      dispatch(addContact(form));
     }
-    
-      handleClose()
-    }
-    const handleDelete = (id: string) => {
-      dispatch(deleteContact(id))
-    }
+    handleClose();
+  };
 
+  const handleDelete = (id: string) => {
+    dispatch(deleteContact(id))
+  }
+
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
     return (
       <Box>
-        <Button
-          variant="contained"
-          onClick={() => handleOpen()}
-          >
-            Add Contact
-        </Button>
+         {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+         )}
+         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+            <Typography variant="h5" fontWeight={700}>Contacts</Typography>
+            <Button
+            variant="contained"
+            onClick={() => handleOpen()}
+            >
+              Add Contact
+            </Button>
+         </Box>
+        
 
         <TableContainer component = {Paper} sx={{ mt: 2, maxWidth: 1200, margin: "0 auto" }}>
           <Table>
@@ -119,14 +143,17 @@ export default function Contacts() {
             </TableHead>
             <TableBody>
               {contacts.map((contact) => (
-                <TableRow key ={contact.id} 
+                <TableRow key ={contact.id} hover
                   sx={{
                     "& .MuiTableCell-root": {
                       textAlign: "center"
                     }
                   }}
                 >
-                  <TableCell>{contact.name}</TableCell>
+                  <TableCell
+                  sx={{ cursor: 'pointer', color: 'primary.main' }}
+                  onClick={() => navigate(`/app/contacts/${contact.id}`)}
+                  >{contact.name}</TableCell>
                   <TableCell>{contact.email}</TableCell>
                   <TableCell>{contact.phone}</TableCell>
                   <TableCell>{contact.status}</TableCell>
@@ -145,6 +172,13 @@ export default function Contacts() {
                   </TableCell>
                 </TableRow>
               ))}
+              {contacts.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={5} align="center" sx={{ py: 6, color: 'text.secondary' }}>
+                  No contacts yet. Add your first one!
+                </TableCell>
+              </TableRow>
+              )}
             </TableBody>
           </Table>
         </TableContainer>
@@ -206,6 +240,5 @@ export default function Contacts() {
             </DialogActions>
         </Dialog>
       </Box>
-
-    )
+    );
 }

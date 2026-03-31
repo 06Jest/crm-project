@@ -1,38 +1,54 @@
-import type { Contact } from "../types/contact"
+import { supabase } from "./supabase";
+import type { Contact } from '../types/contact'
 
-const CONTACTS_KEY = "crm_contacts"
+export const fetchContactsFromDB = async (): Promise<Contact[]> => {
+  const {data, error} = await supabase
+    .from('contacts')
+    .select('*')
+    .order('created_at', { ascending: false});
 
-export const getContacts = (): Contact[] => {
-  const data = localStorage.getItem(CONTACTS_KEY)
-  return data ? JSON.parse(data) : []
-}
+  if (error) throw new Error( error.message);
+  return data as Contact[];
+};
 
-export const saveContacts = (contacts: Contact[]) => {
-  localStorage.setItem(CONTACTS_KEY, JSON.stringify(contacts))
-}
+export const addContactToDB = async (
+  contact: Omit<Contact, 'id'>
+): Promise<Contact> => {
+  const { data, error } = await supabase
+    .from('contacts')
+    .insert([contact])
+    .select()
+    .single();
+  
+  if (error) throw new Error(error.message);
+  return data as Contact;
+};
 
-export const addContact = (contact: Contact) => {
-  const contacts = getContacts()
-  contacts.push(contact)
-  saveContacts(contacts)
-}
+export const updateContactInDB = async (
+  contact: Contact
+): Promise<Contact> => {
+  const { data, error } = await supabase
+    .from('contacts')
+    .update({
+      name: contact.name,
+      email: contact.email,
+      phone: contact.phone,
+      status: contact.status,
+    })
+    .eq('id', contact.id)
+    .select()
+    .single();
+  
+  if (error) throw new Error(error.message);
+  return data as Contact;
+};
 
-export const updateContact = (updatedContact: Contact) => {
-  const contacts = getContacts()
+export const deleteContactFromDB = async (id:string): Promise <string> => {
+  const { error } = await supabase
+    .from('contacts')
+    .delete()
+    .eq('id', id);
 
-  const updatedContacts = contacts.map((contact) =>
-    contact.id === updatedContact.id ? updatedContact : contact
-  )
-
-  saveContacts(updatedContacts)
-}
-
-export const deleteContact = (id: string) => {
-  const contacts = getContacts()
-
-  const filteredContacts = contacts.filter(
-    (contact) => contact.id !== id
-  )
-
-  saveContacts(filteredContacts)
-}
+  if (error) throw new Error(error.message);
+  return id;
+};
