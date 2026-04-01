@@ -16,8 +16,8 @@ import { useNavigate, useLocation } from "react-router-dom";
     <Box sx= {{ borderBottom: 1, borderColor: "divider"}}>
       <Tabs value={value} onChange={handleChange}>
         <Tab label="Dashboard" value="/"/>
-        <Tab label="Contacts" value="/contacts"/>
-        <Tab label="Leads" value="/leads"/>
+        <Tab label="Contacts" value="/app/contacts"/>
+        <Tab label="Leads" value="/app/leads"/>
       </Tabs>
     </Box>
   );

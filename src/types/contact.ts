@@ -3,5 +3,5 @@ export interface Contact {
   name: string;
   email: string;
   phone?: string;
-  status: "active" | "Prospect" | "Lead";
+  status: "Active" | "Prospect" | "Lead";
 }
