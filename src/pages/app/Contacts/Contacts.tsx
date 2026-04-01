@@ -37,10 +37,10 @@ type FormState = {
   name: string;
   email: string;
   phone: string;
-  status: 'active' | 'Prospect' | 'Lead'; 
+  status: 'Active' | 'Prospect' | 'Lead'; 
 };
 
-const emptyForm: FormState = {name: '', email: '', phone: '', status: 'active'};
+const emptyForm: FormState = {name: '', email: '', phone: '', status: 'Active'};
 
 export default function Contacts() {
   const { items: contacts, loading, error} = useSelector((state:RootState) => state.contacts);
@@ -134,7 +134,7 @@ export default function Contacts() {
                       textAlign: "center"
                     }
                   }}>
-                <TableCell >Name</TableCell>
+                <TableCell>Name</TableCell>
                 <TableCell>Email</TableCell>
                 <TableCell>Phone</TableCell>
                 <TableCell>Status</TableCell>
@@ -222,9 +222,9 @@ export default function Contacts() {
                 onChange={handleChange}
                 select
               >
-                <MenuItem value="active">active</MenuItem>
-                <MenuItem value="Prospect">prospect</MenuItem>
-                <MenuItem value="Lead">lead</MenuItem>
+                <MenuItem value="active">Active</MenuItem>
+                <MenuItem value="Prospect">Prospect</MenuItem>
+                <MenuItem value="Lead">Lead</MenuItem>
               </TextField>
             </DialogContent>
             <DialogActions>
