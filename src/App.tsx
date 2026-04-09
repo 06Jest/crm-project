@@ -50,7 +50,7 @@ function App() {
         </Route>
 
         
-        <Route element={<ProtectedRoute />}>
+        <Route>
           <Route element={<AppLayout />}>
             <Route path="/app/dashboard" element={<Dashboard />} />
             <Route path="/app/contacts" element={<Contacts />} />
