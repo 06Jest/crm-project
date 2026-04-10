@@ -1,6 +1,9 @@
 import { Tabs, Tab, Box} from "@mui/material";
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import DashboardIcon from '@mui/icons-material/Dashboard';
+import ContactsIcon from '@mui/icons-material/Contacts';
+import PersonIcon from '@mui/icons-material/Person';
 
  function Topbar() {
   const navigate = useNavigate();
@@ -13,11 +16,11 @@ import { useNavigate, useLocation } from "react-router-dom";
   };
 
   return (
-    <Box sx= {{ borderBottom: 1, borderColor: "divider"}}>
+    <Box sx= {{ borderBottom: 1, borderColor: "divider", display: 'flex', justifyContent: "center"}}>
       <Tabs value={value} onChange={handleChange}>
-        <Tab label="Dashboard" value="/"/>
-        <Tab label="Contacts" value="/app/contacts"/>
-        <Tab label="Leads" value="/app/leads"/>
+        <Tab title="Dashboard" label={<DashboardIcon />} value="/"/>
+        <Tab title="Contacts" label={<ContactsIcon />} value="/app/contacts"/>
+        <Tab title="Leadsn" label={<PersonIcon />} value="/app/leads"/>
       </Tabs>
     </Box>
   );

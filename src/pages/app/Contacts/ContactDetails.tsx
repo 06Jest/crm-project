@@ -134,7 +134,7 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
           />
         </Box>
         <Box sx={{ display: 'flex', gap: 1 }}>
-          {isEditing && (
+          {!isEditing && (
             <>
               <Button 
                 variant='outlined'
@@ -202,7 +202,6 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
           </Box>
         )}
 
-        {/* Contact details — edit mode */}
         {isEditing && (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <TextField
@@ -239,7 +238,6 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
               <MenuItem value="Lead">Lead</MenuItem>
             </TextField>
 
-            {/* Save / Cancel buttons */}
             <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
               <Button variant="contained" onClick={handleSave}>
                 Save changes
