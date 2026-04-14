@@ -15,7 +15,7 @@ export default function Footer() {
       }}
     >
       <Typography variant="body2" color="text.secondary">
-        © 2026 Mini CRM. All rights reserved.
+        © 2026 uniThread CRM. All rights reserved.
       </Typography>
     </Box>
   );

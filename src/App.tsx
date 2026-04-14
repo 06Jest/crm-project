@@ -6,8 +6,6 @@ import AuthLayout from './layout/AuthLayout';
 import AppLayout from './layout/AppLayout';
 
 
-import ProtectedRoute from './components/ProtectedRoute';
-
 
 import Landing from './pages/public/Landing/Landing';
 import Pricing from './pages/public/Pricing/Pricing';
@@ -29,6 +27,7 @@ import Customers from './pages/app/Customers/Customers';
 import Analytics from './pages/app/Analytics/Analytics';
 import Profile from './pages/app/Profile/Profile';
 import Settings from './pages/app/Settings/Settings';
+import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
   return (
@@ -50,7 +49,7 @@ function App() {
         </Route>
 
         
-        <Route>
+        <Route element={<ProtectedRoute/>}>
           <Route element={<AppLayout />}>
             <Route path="/app/dashboard" element={<Dashboard />} />
             <Route path="/app/contacts" element={<Contacts />} />

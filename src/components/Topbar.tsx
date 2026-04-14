@@ -18,7 +18,7 @@ import PersonIcon from '@mui/icons-material/Person';
   return (
     <Box sx= {{ borderBottom: 1, borderColor: "divider", display: 'flex', justifyContent: "center"}}>
       <Tabs value={value} onChange={handleChange}>
-        <Tab title="Dashboard" label={<DashboardIcon />} value="/"/>
+        <Tab title="Dashboard" label={<DashboardIcon />} value="/app/dashboard"/>
         <Tab title="Contacts" label={<ContactsIcon />} value="/app/contacts"/>
         <Tab title="Leadsn" label={<PersonIcon />} value="/app/leads"/>
       </Tabs>

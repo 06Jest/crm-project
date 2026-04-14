@@ -1,5 +1,7 @@
 import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "../../../store/store";
+import { useAuthContext } from '../../../hooks/useAuthContext'
+
 import { 
   addContact,
   updateContact,
@@ -46,7 +48,7 @@ export default function Contacts() {
   const { items: contacts, loading, error} = useSelector((state:RootState) => state.contacts);
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-
+  const { user } = useAuthContext();
   const [open, setOpen] = useState(false)
   const [editingContact, setEditingContact] = useState<Contact | null>(null)
   const [form, setForm] = useState<FormState>(emptyForm);
@@ -83,17 +85,16 @@ export default function Contacts() {
   }
 
   const handleSubmit = () => {
-    if (editingContact) {
-      dispatch(
-        updateContact({
-          ...editingContact,
-          ...form
-        }))
-    } else {
-      dispatch(addContact(form));
-    }
-    handleClose();
-  };
+  if (editingContact) {
+    dispatch(updateContact({ ...editingContact, ...form }));
+  } else {
+    dispatch(addContact({
+      ...form,
+      user_id: user?.id || '',
+    }));
+  }
+  handleClose();
+};
 
   const handleDelete = (id: string) => {
     dispatch(deleteContact(id))

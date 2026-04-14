@@ -6,6 +6,7 @@ import type { RootState } from './store/store';
 import App from './App';
 import { getTheme } from './theme';
 import { store } from './store/store' 
+import { AuthProvider } from './context/AuthContext';
 
 export  function ThemedApp() {
   const themeMode = useSelector(
@@ -20,10 +21,12 @@ export  function ThemedApp() {
   );
 }
 
-ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
+ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render( 
   <React.StrictMode>
-    <Provider store={store}>
-      <ThemedApp />
-    </Provider>
+    <AuthProvider>
+      <Provider store={store}>
+        <ThemedApp />
+      </Provider>
+    </AuthProvider>
   </React.StrictMode>
 );

@@ -6,6 +6,6 @@ export interface Lead {
   phone?: string;
   status: 'New' | 'Contacted' | 'Qualified' | 'Closed';
   notes?: string;
-  created_at: string;
-};
-
+  created_at?: string;
+  user_id?: string;
+}

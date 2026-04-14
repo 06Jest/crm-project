@@ -1,9 +1,17 @@
-import React from 'react'
+import { Box} from '@mui/material';
 
-const Landing = () => {
+
+import Hero from './Hero';
+import Features from './Features';
+import Manual from './Manual';
+
+
+export default function Landing() {
   return (
-    <div>Landing</div>
-  )
+      <Box>
+        <Hero />
+        <Features />
+        <Manual />
+      </Box>
+  );
 }
-
-export default Landing
