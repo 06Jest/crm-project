@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "../../../store/store";
+import { useAuthContext } from '../../../hooks/useAuthContext'
 
 
 import {
@@ -70,7 +71,7 @@ const emptyForm: FormState = {
 export default function Leads() {
   const {items: leads, loading, error } = useSelector((state: RootState) => state.leads);
   const dispatch = useDispatch<AppDispatch>();
-
+  const { user } = useAuthContext();
   const [open, setOpen] = useState(false);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
   const [form, setForm] = useState<FormState>(emptyForm);
@@ -103,14 +104,18 @@ export default function Leads() {
     setForm({...form, [e.target.name]: e.target.value});
   };
 
+  
   const handleSubmit = () => {
-    if (editingLead) {
-      dispatch(updateLead({...editingLead, ...form}));
-    } else {
-      dispatch(addLead(form));
-    }
-    handleClose();
-  };
+  if (editingLead) {
+    dispatch(updateLead({ ...editingLead, ...form }));
+  } else {
+    dispatch(addLead({
+      ...form,
+      user_id: user?.id || '',
+    }));
+  }
+  handleClose();
+};
 
   const handleDelete = (id: string) => {
     dispatch(deleteLead(id));

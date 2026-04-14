@@ -3,6 +3,7 @@ export interface Contact {
   name: string;
   email: string;
   phone?: string;
-  status: "Active" | "Prospect" | "Lead";
+  status: 'Active' | 'Prospect' | 'Lead';
   created_at?: string;
+  user_id?: string;
 }
