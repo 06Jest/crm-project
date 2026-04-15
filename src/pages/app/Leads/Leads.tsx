@@ -165,7 +165,7 @@ export default function Leads() {
         </Button>
       </Box>
       <DragDropContext onDragEnd={handleDragEnd}>
-        <Box sx={{display: 'flex', gap: 2, overflowX: 'auto', pb: 2 }}>
+        <Box sx={{display: 'flex', gap: 2, pb: 2, mx: 10 }}>
           {COLUMNS.map((column) =>(
             <Box
               key={column}
@@ -276,9 +276,10 @@ export default function Leads() {
         </Box>
       </DragDropContext>
       <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
-        <DialogTitle>{editingLead ? 'Edit lead' : 'Add lead'}</DialogTitle>
+        <DialogTitle >{editingLead ? 'Edit lead' : 'Add lead'}</DialogTitle>
         <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
           <TextField
+            sx={{ mt: 1 }}
             label="Title"
             name="title"
             value={form.title}
@@ -331,7 +332,7 @@ export default function Leads() {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose}>Cancel</Button>
-          <Button variant="contained" onClick={handleSubmit}>
+          <Button variant="contained" onClick={handleSubmit} disabled={ form.name || form.email ? false : true }>
             {editingLead ? 'Update' : 'Add'}
           </Button>
         </DialogActions>

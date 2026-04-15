@@ -16,11 +16,11 @@ import PersonIcon from '@mui/icons-material/Person';
   };
 
   return (
-    <Box sx= {{mt: 8, position: 'fixed', left: 0, right: 0, borderBottom: 1, borderColor: "divider", display: 'flex', justifyContent: "center"}}>
+    <Box sx= {{backgroundColor: 'rgba(255, 255, 255, 0.89)' , mt: 8, position: 'fixed', left: 0, right: 0, borderBottom: 1,zIndex: 2, borderColor: "divider", display: 'flex', justifyContent: "center"}}>
       <Tabs value={value} onChange={handleChange}>
         <Tab title="Dashboard" label={<DashboardIcon />} value="/app/dashboard"/>
         <Tab title="Contacts" label={<ContactsIcon />} value="/app/contacts"/>
-        <Tab title="Leadsn" label={<PersonIcon />} value="/app/leads"/>
+        <Tab title="Leads" label={<PersonIcon />} value="/app/leads"/>
       </Tabs>
     </Box>
   );
