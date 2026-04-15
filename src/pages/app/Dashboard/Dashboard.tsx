@@ -204,9 +204,10 @@ export default function Dashboard() {
       <Typography variant="h5" fontWeight={700} sx={{ mb: 3 }}>
         Dashboard
       </Typography>
-      <Grid container spacing={3} sx={{ mb: 4 }}>
+      <Grid container spacing={3} sx={{ mb: 4 , display: 'flex', justifyContent: 'center'}}>
         <Grid sx={{xs: 12, sm:6,  md:3 }}>
           <StatCard
+            
             title="Total contacts"
             value={totalContacts}
             icon={<PeopleIcon />}
@@ -244,7 +245,7 @@ export default function Dashboard() {
       </Grid>
 
 
-      <Grid container spacing={3} sx={{ mb: 4 }}>
+      <Grid container spacing={3} sx={{ mb: 4, display: 'flex', justifyContent: 'center'}}>
         <Grid sx={{xs: 12, md:7 }} >
           <Card
             elevation={0}
@@ -264,7 +265,7 @@ export default function Dashboard() {
           </Card>
         </Grid>
 
-        <Grid sx={{xs: 12, md:5 }} >
+        <Grid sx={{xs: 12, md:5 ,display: 'flex', justifyContent: 'center'}} >
           <Card
             elevation={0}
             sx={{ border: 1, borderColor: 'divider', borderRadius: 3, p: 1 }}
@@ -288,7 +289,7 @@ export default function Dashboard() {
 
       </Grid>
 
-      <Grid container spacing={3}>
+      <Grid container spacing={3} sx={{display: 'flex', justifyContent: 'center'}}>
         <Grid sx={{xs: 12, md:6 }} >
           <Card
             elevation={0}
