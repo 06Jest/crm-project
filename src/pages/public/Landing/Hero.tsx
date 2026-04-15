@@ -7,10 +7,11 @@ const Hero = () => {
   return (
     <Box
         sx={{
+          userSelect: 'none',
           background: (theme) =>
             theme.palette.mode === 'dark'
               ? 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)'
-              : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              : 'linear-gradient(135deg, #1e2366 0%, #7197ff 100%)',
           color: 'white',
           py: { xs: 10, md: 16 },
           px: 2,
@@ -39,9 +40,9 @@ const Hero = () => {
               mb: 3,
             }}
           >
-            The CRM that helps you{' '}
-            <Box component="span" sx={{ color: '#ffd700' }}>
-              close more deals
+            uni<Box component="span" sx={{ color: '#1a8dff' }}>Thread</Box> is a CRM that{' '}
+            <Box component="span" sx={{ color: '#1a8dff' }}>
+              connect with people
             </Box>
           </Typography>
 
@@ -57,8 +58,8 @@ const Hero = () => {
               lineHeight: 1.6,
             }}
           >
-            MiniCRM gives your team a simple, powerful way to manage
-            contacts, track leads, and grow your business — all in one place.
+            uniThread gives your team a simple, powerful way to manage
+            contacts, track leads, and grow your business all in one place.
           </Typography>
 
 

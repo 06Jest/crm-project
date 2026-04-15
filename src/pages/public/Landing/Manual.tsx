@@ -1,6 +1,5 @@
 
 import { Box, Container, Typography, } from '@mui/material';
-import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 
 const STEPS = [
   {
@@ -52,7 +51,6 @@ const Manual = () => {
             {STEPS.map((step, index) => (
               <Box key={step.number}>
                 <Box sx={{ textAlign: 'center', px: 2 }}>
-                  {/* Step number */}
                   <Typography
                     variant="h1"
                     fontWeight={900}
@@ -72,19 +70,6 @@ const Manual = () => {
                     {step.description}
                   </Typography>
 
-                  {/* Arrow between steps (not after last) */}
-                  {index < STEPS.length - 1 && (
-                    <Box
-                      sx={{
-                        display: { xs: 'none', md: 'block' },
-                        position: 'absolute',
-                        right: -20,
-                        top: '50%',
-                      }}
-                    >
-                      <ArrowForwardIcon color="disabled" />
-                    </Box>
-                  )}
                 </Box>
               </Box>
             ))}

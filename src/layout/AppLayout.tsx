@@ -11,7 +11,7 @@ import Footer from '../components/Footer';
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <Header />
       <Topbar />
-      <Box component= "main" sx={{p:3, flexGrow: 1}}>
+      <Box component= "main" sx={{mt: 12, p:3, flexGrow: 1}}>
         <Outlet/>
       </Box>
       <Footer/>

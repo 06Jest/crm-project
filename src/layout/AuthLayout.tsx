@@ -9,7 +9,7 @@ import Footer from '../components/Footer';
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <Header />
-      <Box component= "main" sx={{p:3,  display:'flex', justifyContent: 'center'}}>
+      <Box component= "main" sx={{mt: 8,p:3,  display:'flex', justifyContent: 'center'}}>
         <Outlet/>
       </Box>
       <Footer/>

@@ -49,7 +49,7 @@ const FEATURES = [
 
 const Features = () => {
   return (
-    <Box sx={{ py: { xs: 8, md: 12 }, bgcolor: 'background.default' }}>
+    <Box sx={{ userSelect: 'none', py: { xs: 8, md: 12 }, bgcolor: 'background.default' }}>
         <Container maxWidth="lg">
 
 
@@ -78,7 +78,7 @@ const Features = () => {
 
           <Grid container spacing={3}>
             {FEATURES.map((feature) => (
-              <Grid item xs={12} sm={6} md={4} key={feature.title}>
+              <Grid size={{xs: 12, sm: 6, md: 4}} key={feature.title}>
                 <Card
                   elevation={0}
                   sx={{
