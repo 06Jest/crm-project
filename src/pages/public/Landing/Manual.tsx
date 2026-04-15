@@ -48,7 +48,7 @@ const Manual = () => {
           </Box>
 
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' }, gap: 4, alignItems: 'center' }}>
-            {STEPS.map((step, index) => (
+            {STEPS.map((step) => (
               <Box key={step.number}>
                 <Box sx={{ textAlign: 'center', px: 2 }}>
                   <Typography
