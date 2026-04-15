@@ -184,7 +184,7 @@ export default function Contacts() {
           </Table>
         </TableContainer>
         <Dialog open={open} onClose={handleClose}>
-          <DialogTitle>
+          <DialogTitle sx={{fontWeight: 700}}>
             {editingContact ? "Edit Contact" : "Add Contact"}
           </DialogTitle>
 
@@ -194,7 +194,7 @@ export default function Contacts() {
               flexDirection: "column",
               gap: 2,
               mt: 1,
-              width: 300,
+              width: 600,
             }}
             >
               <TextField
@@ -234,6 +234,7 @@ export default function Contacts() {
               </Button>
               <Button 
                 variant="contained"
+                disabled={form.name && form.email || form.phone ? false : true }
                 onClick={handleSubmit}
                 >
                   {editingContact ? "Update" : "Add"}
