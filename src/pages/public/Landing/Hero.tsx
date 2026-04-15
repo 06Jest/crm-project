@@ -16,6 +16,7 @@ const Hero = () => {
           py: { xs: 10, md: 16 },
           px: 2,
           textAlign: 'center',
+          
         }}
       >
         <Container maxWidth="md">

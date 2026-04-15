@@ -1,6 +1,6 @@
 import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "../../../store/store";
-import { useAuthContext } from '../../../hooks/useAuthContext'
+import { useAuthContext } from '../../../hooks/useAuthContext';
 
 import { 
   addContact,
@@ -223,7 +223,7 @@ export default function Contacts() {
                 onChange={handleChange}
                 select
               >
-                <MenuItem value="active">Active</MenuItem>
+                <MenuItem value="Active">Active</MenuItem>
                 <MenuItem value="Prospect">Prospect</MenuItem>
                 <MenuItem value="Lead">Lead</MenuItem>
               </TextField>
