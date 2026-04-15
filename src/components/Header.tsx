@@ -36,12 +36,26 @@ export default function Header() {
   const displayName = user?.user_metadata?.name || user?.email || '';
   const avatarLetter = displayName[0]?.toUpperCase() || '?';
   return (
-    <AppBar position="static">
+    <AppBar position="fixed">
       <Toolbar sx={{ userSelect: 'none',display: "flex", justifyContent: "space-between"}}>
           <img  src={themeMode === 'light' ? lightLogo : darkLogo} alt="Company Logo" style={{ cursor: 'pointer', userSelect: 'none', width: 150 }}  onClick={
             user ? () => {navigate('/app/dashboard')} :  () => {navigate('/')} 
           }/>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          { !user && (
+            <>
+              <Button onClick={() => {navigate('/Register')}  
+              }  sx={{ fontWeight: 700}} variant="contained" color="primary">Sign Up</Button>
+              <Button onClick={() => {navigate('/Login')}  
+              }  sx={{ fontWeight: 700}} color="primary">Login</Button>
+              
+            </>
+          )}
+          
+          
+          <Button onClick={
+            user ? () => {navigate('/app/dashboard')} :  () => {navigate('/')} 
+          }  sx={{ fontWeight: 700}} color="primary">Home</Button>
           <IconButton
             onClick={()=> dispatch(toggleTheme())}
             title={themeMode === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
@@ -51,10 +65,7 @@ export default function Header() {
             ): (
               <DarkModeIcon />
             )}
-            </IconButton> 
-          <Button onClick={
-            user ? () => {navigate('/app/dashboard')} :  () => {navigate('/')} 
-          }  sx={{ fontWeight: 700}} color="primary">Home</Button>
+          </IconButton>
           { user && (
             <>
               <IconButton onClick={handleAvatarClick} sx={{  p: 0.5 }}>
