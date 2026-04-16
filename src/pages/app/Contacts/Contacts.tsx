@@ -196,38 +196,38 @@ export default function Contacts() {
           </Table>
         </TableContainer>
         <Dialog sx={{position: "absolute"}} open={openDelete} onClose={handleCloseDelete}>
-                <DialogTitle sx={{fontWeight: 700}}>
-                  CONFIRMATION
-                </DialogTitle>
+        <DialogTitle sx={{fontWeight: 700}}>
+          CONFIRMATION
+        </DialogTitle>
 
-                <DialogContent
-                  sx = {{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 2,
-                    mt: 1,
-                    width: 600,
-                  }}
-                  >
-                    Are you sure you want to delete this contact: <b>{selectedContact?.name}?</b>
-                  </DialogContent>
-                  <DialogActions>
-                    <Button onClick={handleCloseDelete}>
-                      Cancel
-                    </Button>
-                    <Button 
-                      variant="contained"
-                      color="error"
-                      onClick={() => {
-                        if (selectedContact) {
-                          handleDelete(selectedContact.id);
-                        }
-                        handleCloseDelete();
-                      }}
-                      >
-                        Yes
-                      </Button>
-                  </DialogActions>
+        <DialogContent
+          sx = {{
+            display: "flex",
+            flexDirection: "column",
+            gap: 2,
+            mt: 1,
+            width: 600,
+          }}
+          >
+            Are you sure you want to delete this contact: <b>{selectedContact?.name}?</b>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseDelete}>
+              Cancel
+            </Button>
+            <Button 
+              variant="contained"
+              color="error"
+              onClick={() => {
+                if (selectedContact) {
+                  handleDelete(selectedContact.id);
+                }
+                handleCloseDelete();
+              }}
+              >
+                Yes
+              </Button>
+          </DialogActions>
         </Dialog>
         <Dialog open={open} onClose={handleClose}>
           <DialogTitle sx={{fontWeight: 700}}>

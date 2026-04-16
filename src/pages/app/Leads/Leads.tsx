@@ -175,7 +175,7 @@ export default function Leads() {
         </Button>
       </Box>
       <DragDropContext onDragEnd={handleDragEnd}>
-        <Box sx={{display: 'flex', gap: 2, pb: 2, mx: 10 }}>
+        <Box sx={{display: 'flex', gap: 2, pb: 2, ml: '3vw', mr: '3vw', overflowY: 'auto' }}>
           {COLUMNS.map((column) =>(
             <Box
               key={column}
@@ -296,7 +296,7 @@ export default function Leads() {
             flexDirection: "column",
             gap: 2,
             mt: 1,
-            width: 600,
+            maxwidth: 600,
           }}
           >
             Are you sure you want to delete this lead: <b>{selectedLead?.name}?</b>

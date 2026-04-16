@@ -53,7 +53,6 @@ export default function Register() {
       password: form.password,
       options: {
         data: {
-
           name: form.name,
         },
       },
