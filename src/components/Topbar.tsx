@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import ContactsIcon from '@mui/icons-material/Contacts';
 import PersonIcon from '@mui/icons-material/Person';
+import HandshakeIcon from '@mui/icons-material/Handshake';
 
  function Topbar() {
   const navigate = useNavigate();
@@ -21,6 +22,7 @@ import PersonIcon from '@mui/icons-material/Person';
         <Tab title="Dashboard" label={<DashboardIcon />} value="/app/dashboard"/>
         <Tab title="Contacts" label={<ContactsIcon />} value="/app/contacts"/>
         <Tab title="Leads" label={<PersonIcon />} value="/app/leads"/>
+        <Tab title="Deals" label={<HandshakeIcon />} value="/app/deals"/>
       </Tabs>
     </Box>
   );
