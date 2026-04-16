@@ -10,7 +10,7 @@ personal project to test my skills while learning other stack as well.
 
 
 ## Live  Demo
-(https://unithreadcrms.netlify.app/)
+[(https://uni-thread.netlify.app/)](https://uni-thread.netlify.app/)
 
 ## Features
 - Contact management with full CRUD operations
