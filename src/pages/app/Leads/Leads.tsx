@@ -75,6 +75,8 @@ export default function Leads() {
   const [open, setOpen] = useState(false);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
   const [form, setForm] = useState<FormState>(emptyForm);
+  const [openDelete, setOpenDelete] = useState(false);
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
 
   useEffect(() => {
     dispatch(fetchLeads());
@@ -116,6 +118,14 @@ export default function Leads() {
   }
   handleClose();
 };
+
+  const handleOpenDelete = (lead: Lead) => {
+    setSelectedLead(lead); 
+    setOpenDelete(true);
+    };
+    const handleCloseDelete = () => {
+      setOpenDelete(false);
+    } 
 
   const handleDelete = (id: string) => {
     dispatch(deleteLead(id));
@@ -165,7 +175,7 @@ export default function Leads() {
         </Button>
       </Box>
       <DragDropContext onDragEnd={handleDragEnd}>
-        <Box sx={{display: 'flex', gap: 2, overflowX: 'auto', pb: 2 }}>
+        <Box sx={{display: 'flex', gap: 2, pb: 2, ml: '3vw', mr: '3vw', overflowY: 'auto' }}>
           {COLUMNS.map((column) =>(
             <Box
               key={column}
@@ -257,7 +267,7 @@ export default function Leads() {
                                 <IconButton
                                   size="small"
                                   color="error"
-                                  onClick={() => handleDelete(lead.id)}
+                                  onClick={() => handleOpenDelete(lead)}
                                 >
                                   <DeleteIcon fontSize="small" />
                                 </IconButton>
@@ -275,10 +285,45 @@ export default function Leads() {
           ))}
         </Box>
       </DragDropContext>
+      <Dialog sx={{position: "absolute"}} open={openDelete} onClose={handleCloseDelete}>
+        <DialogTitle sx={{fontWeight: 700}}>
+          CONFIRMATION
+        </DialogTitle>
+
+        <DialogContent
+          sx = {{
+            display: "flex",
+            flexDirection: "column",
+            gap: 2,
+            mt: 1,
+            maxwidth: 600,
+          }}
+          >
+            Are you sure you want to delete this lead: <b>{selectedLead?.name}?</b>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseDelete}>
+              Cancel
+            </Button>
+            <Button 
+              variant="contained"
+              color="error"
+              onClick={() => {
+                if (selectedLead) {
+                  handleDelete(selectedLead.id);
+                }
+                handleCloseDelete();
+              }}
+              >
+                Yes
+              </Button>
+          </DialogActions>
+        </Dialog>
       <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
-        <DialogTitle>{editingLead ? 'Edit lead' : 'Add lead'}</DialogTitle>
+        <DialogTitle >{editingLead ? 'Edit lead' : 'Add lead'}</DialogTitle>
         <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
           <TextField
+            sx={{ mt: 1 }}
             label="Title"
             name="title"
             value={form.title}
@@ -331,7 +376,7 @@ export default function Leads() {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose}>Cancel</Button>
-          <Button variant="contained" onClick={handleSubmit}>
+          <Button variant="contained" onClick={handleSubmit} disabled={ form.name || form.email ? false : true }>
             {editingLead ? 'Update' : 'Add'}
           </Button>
         </DialogActions>
