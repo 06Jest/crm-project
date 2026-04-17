@@ -2,6 +2,7 @@ import { configureStore } from "@reduxjs/toolkit"
 import contactsReducer from "./contactsSlice"
 import leadsReducer from "./leadsSlice"
 import uiReducer from './uiSlice'
+import activitiesReducer from './activitiesSlice';
 import dealsReducer from './dealsSlice';
 
 export const store = configureStore({
@@ -9,6 +10,7 @@ export const store = configureStore({
     contacts: contactsReducer,
     leads: leadsReducer,
     deals: dealsReducer,
+    activities: activitiesReducer,
     ui: uiReducer,
   },
 });

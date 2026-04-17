@@ -5,6 +5,7 @@ import DashboardIcon from '@mui/icons-material/Dashboard';
 import ContactsIcon from '@mui/icons-material/Contacts';
 import PersonIcon from '@mui/icons-material/Person';
 import HandshakeIcon from '@mui/icons-material/Handshake';
+import ViewTimelineIcon from '@mui/icons-material/ViewTimeline';
 
  function Topbar() {
   const navigate = useNavigate();
@@ -23,6 +24,7 @@ import HandshakeIcon from '@mui/icons-material/Handshake';
         <Tab title="Contacts" label={<ContactsIcon />} value="/app/contacts"/>
         <Tab title="Leads" label={<PersonIcon />} value="/app/leads"/>
         <Tab title="Deals" label={<HandshakeIcon />} value="/app/deals"/>
+        <Tab title="Activities" label={<ViewTimelineIcon />} value="/app/activities"/>
       </Tabs>
     </Box>
   );
