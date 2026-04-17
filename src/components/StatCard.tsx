@@ -20,19 +20,21 @@ export default function StatCard ({
     <Card
       elevation={0}
       sx={{
+        p: 3,
         border: 1,
         borderColor: 'divider',
         borderRadius: 3,
         height: '100%',
+        width: 238
       }}
     >
-      <CardContent>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <CardContent sx={{ p: 0 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
           <Box>
             <Typography variant="body2" color="text.secondary" gutterBottom>
               {title}
             </Typography>
-            <Typography variant="h3" fontWeight={800}>
+            <Typography sx={{ my: 2 }} variant="h3" fontWeight={800}>
               {value}
             </Typography>
             {subtitle && (
@@ -53,6 +55,7 @@ export default function StatCard ({
               justifyContent: 'center',
               color: 'white',
               flexShrink: 0,
+              ml:5
             }}
           >
             {icon}

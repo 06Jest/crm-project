@@ -207,7 +207,6 @@ export default function Dashboard() {
       <Grid container spacing={3} sx={{ mb: 4 , display: 'flex', justifyContent: 'center'}}>
         <Grid sx={{xs: 12, sm:6,  md:3 }}>
           <StatCard
-            
             title="Total contacts"
             value={totalContacts}
             icon={<PeopleIcon />}
@@ -246,10 +245,10 @@ export default function Dashboard() {
 
 
       <Grid container spacing={3} sx={{ mb: 4, display: 'flex', justifyContent: 'center'}}>
-        <Grid sx={{xs: 12, md:7 }} >
+        <Grid sx={{xs: 12, md:7, width: 500}} >
           <Card
             elevation={0}
-            sx={{ border: 1, borderColor: 'divider', borderRadius: 3, p: 1 }}
+            sx={{ border: 1, borderColor: 'divider', borderRadius: 3, p: 1, pb: 4 }}
           >
             <CardContent>
               <Typography variant="h6" fontWeight={700} gutterBottom>
@@ -268,7 +267,7 @@ export default function Dashboard() {
         <Grid sx={{xs: 12, md:5 ,display: 'flex', justifyContent: 'center'}} >
           <Card
             elevation={0}
-            sx={{ border: 1, borderColor: 'divider', borderRadius: 3, p: 1 }}
+            sx={{ border: 1, borderColor: 'divider', borderRadius: 3, p: 1, width: 500}}
           >
             <CardContent>
               <Typography variant="h6" fontWeight={700} gutterBottom>
@@ -293,7 +292,7 @@ export default function Dashboard() {
         <Grid sx={{xs: 12, md:6 }} >
           <Card
             elevation={0}
-            sx={{ border: 1, borderColor: 'divider', borderRadius: 3 }}
+            sx={{ border: 1, borderColor: 'divider', borderRadius: 3,  width: 500 }}
           >
             <CardContent>
               <Typography variant="h6" fontWeight={700} gutterBottom>
@@ -352,7 +351,7 @@ export default function Dashboard() {
         <Grid sx={{xs: 12, md:6 }} >
           <Card
             elevation={0}
-            sx={{ border: 1, borderColor: 'divider', borderRadius: 3 }}
+            sx={{ border: 1, borderColor: 'divider', borderRadius: 3, width: 500 }}
           >
             <CardContent>
               <Typography variant="h6" fontWeight={700} gutterBottom>

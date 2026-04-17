@@ -49,7 +49,9 @@ export default function Contacts() {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const { user } = useAuthContext();
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(false);
+  const [openDelete, setOpenDelete] = useState(false);
+  const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [editingContact, setEditingContact] = useState<Contact | null>(null)
   const [form, setForm] = useState<FormState>(emptyForm);
 
@@ -95,6 +97,14 @@ export default function Contacts() {
   }
   handleClose();
 };
+
+  const handleOpenDelete = (contact: Contact) => {
+  setSelectedContact(contact); 
+  setOpenDelete(true);
+  };
+  const handleCloseDelete = () => {
+    setOpenDelete(false);
+  } 
 
   const handleDelete = (id: string) => {
     dispatch(deleteContact(id))
@@ -166,13 +176,15 @@ export default function Contacts() {
                       </Button>
                       <Button
                         color="error"
-                        onClick={() => handleDelete(contact.id)} 
+                        onClick={()=> handleOpenDelete(contact)} 
                       >
                         Delete
                       </Button>
+                      
                   </TableCell>
                 </TableRow>
               ))}
+              
               {contacts.length === 0 && (
               <TableRow>
                 <TableCell colSpan={5} align="center" sx={{ py: 6, color: 'text.secondary' }}>
@@ -183,8 +195,42 @@ export default function Contacts() {
             </TableBody>
           </Table>
         </TableContainer>
+        <Dialog sx={{position: "absolute"}} open={openDelete} onClose={handleCloseDelete}>
+        <DialogTitle sx={{fontWeight: 700}}>
+          CONFIRMATION
+        </DialogTitle>
+
+        <DialogContent
+          sx = {{
+            display: "flex",
+            flexDirection: "column",
+            gap: 2,
+            mt: 1,
+            width: 600,
+          }}
+          >
+            Are you sure you want to delete this contact: <b>{selectedContact?.name}?</b>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseDelete}>
+              Cancel
+            </Button>
+            <Button 
+              variant="contained"
+              color="error"
+              onClick={() => {
+                if (selectedContact) {
+                  handleDelete(selectedContact.id);
+                }
+                handleCloseDelete();
+              }}
+              >
+                Yes
+              </Button>
+          </DialogActions>
+        </Dialog>
         <Dialog open={open} onClose={handleClose}>
-          <DialogTitle>
+          <DialogTitle sx={{fontWeight: 700}}>
             {editingContact ? "Edit Contact" : "Add Contact"}
           </DialogTitle>
 
@@ -194,7 +240,7 @@ export default function Contacts() {
               flexDirection: "column",
               gap: 2,
               mt: 1,
-              width: 300,
+              width: 600,
             }}
             >
               <TextField
@@ -234,6 +280,7 @@ export default function Contacts() {
               </Button>
               <Button 
                 variant="contained"
+                disabled={form.name && form.email || form.phone ? false : true }
                 onClick={handleSubmit}
                 >
                   {editingContact ? "Update" : "Add"}

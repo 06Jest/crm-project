@@ -4,6 +4,8 @@ import { useNavigate, useLocation } from "react-router-dom";
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import ContactsIcon from '@mui/icons-material/Contacts';
 import PersonIcon from '@mui/icons-material/Person';
+import HandshakeIcon from '@mui/icons-material/Handshake';
+import ViewTimelineIcon from '@mui/icons-material/ViewTimeline';
 
  function Topbar() {
   const navigate = useNavigate();
@@ -16,11 +18,13 @@ import PersonIcon from '@mui/icons-material/Person';
   };
 
   return (
-    <Box sx= {{mt: 8, position: 'fixed', left: 0, right: 0, borderBottom: 1, borderColor: "divider", display: 'flex', justifyContent: "center"}}>
+    <Box  sx= {{ mt: 8, position: 'fixed', left: 0, right: 0, borderBottom: 1,zIndex: 2, borderColor: "divider", display: 'flex', justifyContent: "center"}}>
       <Tabs value={value} onChange={handleChange}>
         <Tab title="Dashboard" label={<DashboardIcon />} value="/app/dashboard"/>
         <Tab title="Contacts" label={<ContactsIcon />} value="/app/contacts"/>
-        <Tab title="Leadsn" label={<PersonIcon />} value="/app/leads"/>
+        <Tab title="Leads" label={<PersonIcon />} value="/app/leads"/>
+        <Tab title="Deals" label={<HandshakeIcon />} value="/app/deals"/>
+        <Tab title="Activities" label={<ViewTimelineIcon />} value="/app/activities"/>
       </Tabs>
     </Box>
   );
