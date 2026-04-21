@@ -3,6 +3,7 @@ import contactsReducer from "./contactsSlice"
 import leadsReducer from "./leadsSlice"
 import uiReducer from './uiSlice'
 import activitiesReducer from './activitiesSlice';
+import customersReducer from './customersSlice';
 import dealsReducer from './dealsSlice';
 
 export const store = configureStore({
@@ -11,6 +12,7 @@ export const store = configureStore({
     leads: leadsReducer,
     deals: dealsReducer,
     activities: activitiesReducer,
+    customers: customersReducer,
     ui: uiReducer,
   },
 });
