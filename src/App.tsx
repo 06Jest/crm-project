@@ -24,6 +24,7 @@ import Leads from './pages/app/Leads/Leads';
 import Deals from './pages/app/Deals/Deals';
 import Activities from './pages/app/Activities/Activities';
 import Customers from './pages/app/Customers/Customers';
+import CustomerDetail from './pages/app/Customers/CustomerDetail';
 import Analytics from './pages/app/Analytics/Analytics';
 import Profile from './pages/app/Profile/Profile';
 import Settings from './pages/app/Settings/Settings';
@@ -58,6 +59,7 @@ function App() {
             <Route path="/app/deals" element={<Deals />} />
             <Route path="/app/activities" element={<Activities />} />
             <Route path="/app/customers" element={<Customers />} />
+            <Route path="/app/customers/:id" element={<CustomerDetail />} />
             <Route path="/app/analytics" element={<Analytics />} />
             <Route path="/app/profile" element={<Profile />} />
             <Route path="/app/settings" element={<Settings />} />

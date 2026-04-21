@@ -185,7 +185,6 @@ export default function Activities() {
     <Box>
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-      {/* ── Page header ──────────────────────────────── */}
       <Box sx={{
         display: 'flex',
         justifyContent: 'space-between',
@@ -206,7 +205,6 @@ export default function Activities() {
         </Button>
       </Box>
 
-      {/* ── Stats row ────────────────────────────────── */}
       <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
         {ACTIVITY_TYPES.map((type) => {
           const count = activities.filter((a) => a.type === type.value).length;
@@ -230,7 +228,6 @@ export default function Activities() {
         })}
       </Box>
 
-      {/* ── Filters ──────────────────────────────────── */}
       <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
         <FormControl size="small" sx={{ minWidth: 160 }}>
           <InputLabel>Filter by type</InputLabel>
@@ -279,7 +276,6 @@ export default function Activities() {
         )}
       </Box>
 
-      {/* ── Activity timeline ─────────────────────────── */}
       {filteredActivities.length === 0 ? (
         <Card elevation={0} sx={{ border: 1, borderColor: 'divider', borderRadius: 3 }}>
           <CardContent sx={{ textAlign: 'center', py: 6 }}>
@@ -309,7 +305,6 @@ export default function Activities() {
                   <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
                     <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
 
-                      {/* Complete checkbox */}
                       <Tooltip title={activity.completed
                         ? 'Mark as incomplete'
                         : 'Mark as complete'
@@ -320,8 +315,6 @@ export default function Activities() {
                           sx={{ p: 0, mt: 0.5 }}
                         />
                       </Tooltip>
-
-                      {/* Type icon */}
                       <Avatar
                         sx={{
                           bgcolor: typeConfig.color,
@@ -333,7 +326,6 @@ export default function Activities() {
                         {typeConfig.icon}
                       </Avatar>
 
-                      {/* Content */}
                       <Box sx={{ flex: 1, minWidth: 0 }}>
                         <Box sx={{
                           display: 'flex',
@@ -392,7 +384,6 @@ export default function Activities() {
                             </Box>
                           </Box>
 
-                          {/* Actions */}
                           <Box sx={{ display: 'flex', gap: 0.5, flexShrink: 0 }}>
                             <IconButton
                               size="small"
@@ -410,7 +401,6 @@ export default function Activities() {
                           </Box>
                         </Box>
 
-                        {/* Body / notes */}
                         {activity.body && (
                           <Typography
                             variant="body2"
@@ -421,7 +411,6 @@ export default function Activities() {
                           </Typography>
                         )}
 
-                        {/* Timestamps */}
                         <Box sx={{ display: 'flex', gap: 2, mt: 1 }}>
                           <Typography variant="caption" color="text.secondary">
                             Logged: {formatDate(activity.created_at)}
@@ -442,7 +431,6 @@ export default function Activities() {
         </List>
       )}
 
-      {/* ── Add / Edit dialog ─────────────────────────── */}
       <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
         <DialogTitle>
           {editingActivity ? 'Edit activity' : 'Log activity'}
@@ -497,7 +485,6 @@ export default function Activities() {
             <MenuItem value="inbound">Inbound (they initiated)</MenuItem>
           </TextField>
 
-          {/* Duration — only for calls */}
           {form.type === 'call' && (
             <TextField
               label="Duration (minutes)"

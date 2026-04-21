@@ -6,6 +6,7 @@ import ContactsIcon from '@mui/icons-material/Contacts';
 import PersonIcon from '@mui/icons-material/Person';
 import HandshakeIcon from '@mui/icons-material/Handshake';
 import ViewTimelineIcon from '@mui/icons-material/ViewTimeline';
+import FolderSharedIcon from '@mui/icons-material/FolderShared';
 
  function Topbar() {
   const navigate = useNavigate();
@@ -22,9 +23,10 @@ import ViewTimelineIcon from '@mui/icons-material/ViewTimeline';
       <Tabs value={value} onChange={handleChange}>
         <Tab title="Dashboard" label={<DashboardIcon />} value="/app/dashboard"/>
         <Tab title="Contacts" label={<ContactsIcon />} value="/app/contacts"/>
-        <Tab title="Leads" label={<PersonIcon />} value="/app/leads"/>
+        <Tab title="Leads" label={<FolderSharedIcon />} value="/app/leads"/>
         <Tab title="Deals" label={<HandshakeIcon />} value="/app/deals"/>
         <Tab title="Activities" label={<ViewTimelineIcon />} value="/app/activities"/>
+        <Tab title="Customers" label={<PersonIcon />} value="/app/customers"/>
       </Tabs>
     </Box>
   );

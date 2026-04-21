@@ -4,6 +4,8 @@ import { useDispatch, useSelector} from 'react-redux';
 import type { AppDispatch } from '../../../store/store';
 import { updateContact, deleteContact } from '../../../store/contactsSlice';
 import type { Contact } from '../../../types/contact';
+import 'leaflet/dist/leaflet.css';
+
 
 import {
   Box,
@@ -28,6 +30,9 @@ import EmailIcon from '@mui/icons-material/Email';
 import PhoneIcon from '@mui/icons-material/Phone';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import type { RootState } from '../../../store/store';
+import { fixLeafletIcons } from '../../../utils/fixLeafletIcons';
+
+fixLeafletIcons(); 
 
 const STATUS_COLORS: Record<string, 'success' | 'warning' | 'info'> = {
   Active: 'success',
