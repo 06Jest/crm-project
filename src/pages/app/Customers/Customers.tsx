@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
+import LeaderboardIcon from '@mui/icons-material/Leaderboard';
 import type { AppDispatch, RootState } from '../../../store/store';
 import {
   fetchCustomers,
@@ -161,13 +162,22 @@ export default function Customers() {
         <Typography variant="h5" fontWeight={700}>
           Customers
         </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => setOpen(true)}
-        >
-          Add customer
-        </Button>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Button
+            variant="outlined"
+            startIcon={<LeaderboardIcon />}
+            onClick={() => navigate('/app/customers/leaderboard')}
+          >
+            Leaderboard
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => setOpen(true)}
+          >
+            Add customer
+          </Button>
+        </Box>
       </Box>
 
       <TextField

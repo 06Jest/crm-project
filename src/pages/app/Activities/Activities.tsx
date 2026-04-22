@@ -233,6 +233,9 @@ export default function Activities() {
           <InputLabel>Filter by type</InputLabel>
           <Select
             value={filterType}
+             MenuProps={{
+              disableScrollLock: true,
+            }}
             onChange={(e) =>
               setFilterType(e.target.value as ActivityType | 'all')
             }
@@ -251,6 +254,9 @@ export default function Activities() {
           <InputLabel>Filter by contact</InputLabel>
           <Select
             value={filterContact}
+            MenuProps={{
+              disableScrollLock: true,
+            }}
             onChange={(e) => setFilterContact(e.target.value)}
             input={<OutlinedInput label="Filter by contact" />}
           >
