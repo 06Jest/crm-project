@@ -24,7 +24,6 @@ import LanguageIcon from '@mui/icons-material/Language';
 import EmailIcon from '@mui/icons-material/Email';
 import PhoneIcon from '@mui/icons-material/Phone';
 import BusinessIcon from '@mui/icons-material/Business';
-import type { Contact } from '../../../types/contact';
 
 const INDUSTRIES = [
   'Technology', 'Healthcare', 'Finance', 'Retail',
