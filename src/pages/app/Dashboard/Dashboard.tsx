@@ -87,7 +87,7 @@ export default function Dashboard() {
   useEffect(() => {
     if (contacts.length === 0) dispatch(fetchContacts());
     if (leads.length === 0) dispatch(fetchLeads());
-  }, [dispatch]);
+  }, [dispatch, contacts.length, leads.length]);
 
   const totalContacts= contacts.length;
   const totalLeads = leads.length;

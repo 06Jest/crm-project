@@ -2,15 +2,18 @@ import { AppBar, Toolbar, Button, Box, IconButton, Avatar, Menu, MenuItem,
   Divider, Typography } from "@mui/material";
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import LightModeIcon from '@mui/icons-material/LightMode';
+import ChatBubbleIcon from '@mui/icons-material/ChatBubble';
+import { Badge } from '@mui/material';
 import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '../store/store';
 import { toggleTheme } from '../store/uiSlice';
 import lightLogo from '../assets/crm_logo_transparent.png'
 import darkLogo from '../assets/LogoDarkMode.png'
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuthContext } from '../hooks/useAuthContext';
 import { supabase } from "../services/supabase";
 import { useNavigate } from 'react-router-dom';
+import { fetchUnreadCounts } from '../store/messagingSlice';
 
 export default function Header() {
   const dispatch = useDispatch<AppDispatch>();
@@ -33,6 +36,17 @@ export default function Header() {
     await supabase.auth.signOut();
     navigate('./login');
   };
+
+  const unreadCounts = useSelector(
+    (state: RootState) => state.messaging.unreadCounts
+  )
+  useEffect(() => {
+        if (user) {
+          dispatch(fetchUnreadCounts(user.id));
+        }
+      }, [dispatch, user]);
+
+  const totalUnread = Object.values(unreadCounts).reduce((a, b) => a + b, 0)
   const displayName = user?.user_metadata?.name || user?.email || '';
   const avatarLetter = displayName[0]?.toUpperCase() || '?';
   return (
@@ -51,8 +65,16 @@ export default function Header() {
               
             </>
           )}
-          
-          
+          { user && (
+          <IconButton  title="Chat with agents">
+              <Badge 
+                badgeContent={totalUnread}
+                color="error"
+                invisible={totalUnread === 0}>
+                <ChatBubbleIcon onClick={() => {navigate('/app/messaging')}}/>
+              </Badge>
+          </IconButton>
+          )}
           <Button onClick={
             user ? () => {navigate('/app/dashboard')} :  () => {navigate('/')} 
           }  sx={{ fontWeight: 700}} color="primary">Home</Button>
