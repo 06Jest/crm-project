@@ -14,5 +14,6 @@ export interface Activity {
   completed?: boolean;
   user_id?: string;
   created_at?: string;
+  logged_by: string;
 }
 

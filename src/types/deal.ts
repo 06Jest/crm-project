@@ -17,4 +17,5 @@ export interface Deal {
   won?: boolean;
   user_id?:string;
   created_at?: string;
+  owned_by: string;
 }
