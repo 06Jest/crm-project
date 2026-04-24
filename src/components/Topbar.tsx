@@ -19,8 +19,8 @@ import FolderSharedIcon from '@mui/icons-material/FolderShared';
   };
 
   return (
-    <Box  sx= {{ mt: 8, position: 'fixed', left: 0, right: 0, borderBottom: 1,zIndex: 2, borderColor: "divider", display: 'flex', justifyContent: "center"}}>
-      <Tabs value={value} onChange={handleChange}>
+    <Box  sx= {{ mt: 8, position: 'fixed', left: 0, right: 0, borderBottom: 1,zIndex: 2, borderColor: "divider", display: 'flex', justifyContent: "center"}} >
+      <Tabs value={value} onChange={handleChange} >
         <Tab title="Dashboard" label={<DashboardIcon />} value="/app/dashboard"/>
         <Tab title="Contacts" label={<ContactsIcon />} value="/app/contacts"/>
         <Tab title="Leads" label={<FolderSharedIcon />} value="/app/leads"/>
@@ -31,5 +31,4 @@ import FolderSharedIcon from '@mui/icons-material/FolderShared';
     </Box>
   );
 };
-
 export default Topbar;

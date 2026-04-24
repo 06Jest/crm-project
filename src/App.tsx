@@ -28,6 +28,7 @@ import CustomerLeaderboard from './pages/app/Customers/CustomerLeaderboard';
 import CustomerDetail from './pages/app/Customers/CustomerDetail';
 import Analytics from './pages/app/Analytics/Analytics';
 import Profile from './pages/app/Profile/Profile';
+import Messaging from './pages/app/Messaging/Messaging';
 import Settings from './pages/app/Settings/Settings';
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -35,8 +36,6 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-
-        
         <Route element={<PublicLayout />}>
           <Route path="/" element={<Landing />} />
           <Route path="/pricing" element={<Pricing />} />
@@ -64,6 +63,7 @@ function App() {
             <Route path="/app/customers/:id" element={<CustomerDetail />} />
             <Route path="/app/analytics" element={<Analytics />} />
             <Route path="/app/profile" element={<Profile />} />
+            <Route path="/app/messaging" element={<Messaging />} />
             <Route path="/app/settings" element={<Settings />} />
           </Route>
         </Route>

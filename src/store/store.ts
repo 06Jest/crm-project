@@ -4,6 +4,7 @@ import leadsReducer from "./leadsSlice"
 import uiReducer from './uiSlice'
 import activitiesReducer from './activitiesSlice';
 import customersReducer from './customersSlice';
+import messagingReducer from './messagingSlice';
 import dealsReducer from './dealsSlice';
 
 export const store = configureStore({
@@ -13,6 +14,7 @@ export const store = configureStore({
     deals: dealsReducer,
     activities: activitiesReducer,
     customers: customersReducer,
+    messaging: messagingReducer,
     ui: uiReducer,
   },
 });

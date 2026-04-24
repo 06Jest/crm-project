@@ -108,7 +108,7 @@ const formatCurrency = (value: number): string =>
         if (customers.length === 0) dispatch(fetchCustomers());
         if (deals.length === 0) dispatch(fetchDeals());
         if (activities.length === 0) dispatch(fetchActivities()); 
-      }, [dispatch]);
+      }, [dispatch, customers.length, deals.length, activities.length]);
 
       const cutoffDate = useMemo(() => {
         if (timePeriod === 'all') return null;
