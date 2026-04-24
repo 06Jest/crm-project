@@ -26,7 +26,7 @@ import Activities from './pages/app/Activities/Activities';
 import Customers from './pages/app/Customers/Customers';
 import CustomerLeaderboard from './pages/app/Customers/CustomerLeaderboard';
 import CustomerDetail from './pages/app/Customers/CustomerDetail';
-import Analytics from './pages/app/Analytics/Analytics';
+import Reports from './pages/app/Reports/Reports';
 import Profile from './pages/app/Profile/Profile';
 import Messaging from './pages/app/Messaging/Messaging';
 import Settings from './pages/app/Settings/Settings';
@@ -61,7 +61,7 @@ function App() {
             <Route path="/app/customers" element={<Customers />} />
             <Route path="/app/customers/leaderboard" element={<CustomerLeaderboard />} />
             <Route path="/app/customers/:id" element={<CustomerDetail />} />
-            <Route path="/app/analytics" element={<Analytics />} />
+            <Route path="/app/reports" element={<Reports />} />
             <Route path="/app/profile" element={<Profile />} />
             <Route path="/app/messaging" element={<Messaging />} />
             <Route path="/app/settings" element={<Settings />} />

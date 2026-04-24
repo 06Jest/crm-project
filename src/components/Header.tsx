@@ -118,6 +118,12 @@ export default function Header() {
                 <MenuItem onClick={() => {
                   handleMenuClose();
                   navigate('/app/profile')} }>Profile</MenuItem>
+                  <MenuItem onClick={() => {
+                  handleMenuClose();
+                  navigate('/app/reports');
+                }}>
+                  Reports & Analytics
+                </MenuItem>
                 <MenuItem onClick={() => {
                   handleMenuClose();
                   navigate('/app/settings');

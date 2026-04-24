@@ -8,4 +8,5 @@ export interface Lead {
   notes?: string;
   created_at?: string;
   user_id?: string;
+  assigned_to: string;
 }

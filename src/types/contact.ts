@@ -6,4 +6,5 @@ export interface Contact {
   status: 'Active' | 'Prospect' | 'Lead';
   created_at?: string;
   user_id?: string;
+  assigned_to: string;
 }
