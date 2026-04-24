@@ -57,7 +57,7 @@ export const fetchConversation = createAsyncThunk(
 export const sendMessage = createAsyncThunk(
   'messaging/sendMessage',
   async (
-    message:Omit<Message, 'id' | 'created_at' | 'is_read' | 'sender' | 'receiver'>, 
+    message: Omit<Message, 'id' | 'created_at' | 'is_read' | 'sender' | 'receiver'>, 
     { rejectWithValue }
   ) => {
     try {
