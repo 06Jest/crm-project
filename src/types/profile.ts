@@ -6,6 +6,7 @@ export interface Profile {
   org_id?: string;
   is_active: boolean;
   avatar_url?: string;
-  created_at?: string; 
+  created_at?: string;
+  employee_id: string;
 }
 
