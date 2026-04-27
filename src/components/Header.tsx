@@ -13,7 +13,9 @@ import { useState, useEffect } from "react";
 import { useAuthContext } from '../hooks/useAuthContext';
 import { supabase } from "../services/supabase";
 import { useNavigate } from 'react-router-dom';
+import type { Profile } from '../types/profile'
 import { fetchUnreadCounts } from '../store/messagingSlice';
+import { fetchMyProfileFromDB } from "../services/profileService";
 
 export default function Header() {
   const dispatch = useDispatch<AppDispatch>();
@@ -37,18 +39,25 @@ export default function Header() {
     navigate('./login');
   };
 
+  const [profile, setProfile] = useState<Profile | null>(null);
+
   const unreadCounts = useSelector(
     (state: RootState) => state.messaging.unreadCounts
   )
   useEffect(() => {
         if (user) {
           dispatch(fetchUnreadCounts(user.id));
+          fetchMyProfileFromDB(user.id)
+          .then((p) => {
+          setProfile(p);
+          })
         }
       }, [dispatch, user]);
 
   const totalUnread = Object.values(unreadCounts).reduce((a, b) => a + b, 0)
   const displayName = user?.user_metadata?.name || user?.email || '';
   const avatarLetter = displayName[0]?.toUpperCase() || '?';
+  const avatarSrc =  profile?.avatar_url || undefined;
   return (
     <AppBar position="fixed">
       <Toolbar sx={{ userSelect: 'none',display: "flex", justifyContent: "space-between"}}>
@@ -90,9 +99,11 @@ export default function Header() {
           </IconButton>
           { user && (
             <>
-              <IconButton onClick={handleAvatarClick} sx={{  p: 0.5 }}>
+              <IconButton
+                onClick={handleAvatarClick} sx={{  p: 0.5 }}>
                 <Avatar
-                  src={user.user_metadata.avatar_url}
+                  src={avatarSrc}
+                  
                   alt={displayName}
                   sx={{ width:32, height: 32 }}
                   >
@@ -100,6 +111,7 @@ export default function Header() {
                 </Avatar>
               </IconButton>
               <Menu
+                disableScrollLock
                 anchorEl={anchorEl}
                 open={menuOpen}
                 onClose={handleMenuClose}

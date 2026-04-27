@@ -20,7 +20,6 @@ import {
   Chip, IconButton, Avatar, List, ListItem,
   Checkbox, Tooltip, Select, FormControl,
   InputLabel, OutlinedInput,
-  duration,
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -82,9 +81,6 @@ const emptyForm: FormState = {
 export default function Activities() {
   const { items: activities, loading, error} = useSelector(
     (state: RootState) => state.activities
-  );
-  const { items: contacts } = useSelector(
-    (state: RootState) => state.contacts
   );
 
   const dispatch = useDispatch<AppDispatch>();
@@ -157,7 +153,7 @@ export default function Activities() {
     if (editingActivity) {
       dispatch(updateActivity({ ...editingActivity, ...activityData}));
     } else {
-      dispatch(addActivity(activityData));
+      dispatch(addActivity(activityData as Activity));
     }
     handleClose();
   };
