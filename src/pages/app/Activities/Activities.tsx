@@ -9,6 +9,9 @@ import {
   toggleActivityComplete,
 } from '../../../store/activitiesSlice';
 
+import { useAI } from '../../../hooks/useAI';
+import { aiApi } from '../../../services/backendApi';
+
 import { fetchContacts } from "../../../store/contactsSlice";
 import type { Activity, ActivityType } from "../../../types/activity";
 import { useAuthContext } from "../../../hooks/useAuthContext";
@@ -29,6 +32,7 @@ import EventIcon from '@mui/icons-material/Event';
 import NoteIcon from '@mui/icons-material/Note';
 import SmsIcon from '@mui/icons-material/Sms';
 import AddIcon from '@mui/icons-material/Add';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 
 const ACTIVITY_TYPES: {
   value: ActivityType;
@@ -92,11 +96,41 @@ export default function Activities() {
   const [filterType, setFilterType] = useState<ActivityType | 'all'> ('all');
   const [filterContact, setFilterContact] = useState<string>('all');
 
+   const {
+    result: aiDraft,
+    loading: aiLoading,
+    error: aiError,
+    generate: generateDraft,
+    clear: clearDraft,
+  } = useAI(aiApi.composeMessage);
+
+  const handleGenerateDraft = () => {
+    if (!form.contact_name || !form.subject) return;
+    generateDraft({
+      type: form.type === 'email' || form.type === 'sms' ? form.type : 'email',
+      contactName: form.contact_name,
+      subject: form.subject,
+      tone: 'followup',
+    });
+  };
 
   useEffect(() => {
     dispatch(fetchActivities());
     dispatch(fetchContacts());
   }, [dispatch]);
+
+   useEffect(() => {
+    if (!aiDraft) return;
+
+    const timer = window.setTimeout(() => {
+      setForm((prev) => ({ ...prev, body: aiDraft }));
+      clearDraft();
+    }, 0);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [aiDraft, clearDraft]);
 
   const filteredActivities = activities.filter((a) => {
     const matchesType = filterType === 'all' || a.type === filterType;
@@ -168,6 +202,10 @@ export default function Activities() {
       completed: !activity.completed,
     }));
   };
+
+ 
+
+ 
 
   if (loading) {
     return (
@@ -456,7 +494,32 @@ export default function Activities() {
               </MenuItem>
             ))}
           </TextField>
-
+          {(form.type === 'email' || form.type === 'sms') &&
+            form.contact_name &&
+            form.subject && (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  startIcon={
+                    aiLoading
+                      ? <CircularProgress size={14} />
+                      : <AutoAwesomeIcon />
+                  }
+                  onClick={handleGenerateDraft}
+                  disabled={aiLoading}
+                  sx={{ borderColor: 'secondary.main', color: 'secondary.main' }}
+                >
+                  {aiLoading ? 'Writing draft...' : '✨ AI draft'}
+                </Button>
+                {aiError && (
+                  <Typography variant="caption" color="error">{aiError}</Typography>
+                )}
+                <Typography variant="caption" color="text.secondary">
+                  Fill in contact + subject first
+                </Typography>
+              </Box>
+          )}
           <TextField
             label="Subject"
             name="subject"

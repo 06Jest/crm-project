@@ -1,9 +1,12 @@
-import { useState} from 'react'
+import { useState, useCallback} from 'react'
 import { useParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector} from 'react-redux';
 import type { AppDispatch } from '../../../store/store';
 import { updateContact, deleteContact } from '../../../store/contactsSlice';
 import type { Contact } from '../../../types/contact';
+import { useAI } from '../../../hooks/useAI';
+import AIInsightCard from '../../../components/AIInsightCard';
+import { aiApi } from '../../../services/backendApi';
 import 'leaflet/dist/leaflet.css';
 
 
@@ -39,6 +42,7 @@ const STATUS_COLORS: Record<string, 'success' | 'warning' | 'info'> = {
   Prospect: 'warning',
   Lead: 'info'
 };
+const now = Date.now();
 
 export default function ContactDetail() {
 
@@ -49,11 +53,57 @@ const dispatch = useDispatch<AppDispatch>();
 const contact = useSelector((state: RootState) => 
   state.contacts.items.find((c) => c.id === id) 
 );
+const activities = useSelector((s: RootState) => s.activities.items)
 
 const [isEditing, setIsEditing] = useState(false);
 const [form, setForm] = useState<Partial<Contact>>({});
 const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 const [successMessage, setSuccessMessage] = useState('');
+
+const {
+  result: aiInsight,
+  loading: aiLoading,
+  error: aiError,
+  generate: generateInsight,
+  clear: clearInsight,
+} = useAI(aiApi.getContactIntel);
+
+const contactActivities = activities.filter(
+  a => a.contact_name === contact?.name
+);
+
+const daysSinceLastContact = (() => {
+  if (contactActivities.length === 0) return 999;
+
+  const latest = [...contactActivities].sort(
+    (a, b) =>
+      new Date(b.created_at || '').getTime() -
+      new Date(a.created_at || '').getTime()
+  )[0];
+
+  return Math.floor(
+    (now - new Date(latest.created_at || '').getTime()) / 86400000
+  );
+})();
+
+const activityTypes = contactActivities.reduce(
+  (acc: Record<string, number>, a) => {
+    acc[a.type] = (acc[a.type] || 0 ) + 1;
+    return acc;
+  },
+  {}
+);
+
+const handleGenerateInsight = useCallback(() => {
+  generateInsight({
+    contactName: contact?.name,
+    contactStatus: contact?.status,
+    daysSinceLastContact,
+    totalActivities: contactActivities.length,
+    activityTypes,
+    linkedDeals: 0,
+  });
+}, [contact, daysSinceLastContact, contactActivities, activityTypes, generateInsight])
 
 if (!contact) {
   return (
@@ -253,6 +303,20 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
             </Box>
           </Box>
         )}
+    </Paper>
+    <Paper elevation={1} sx={{ p: 3, borderRadius: 3, mb: 3 }}>
+      <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>
+        AI Insight
+      </Typography>
+      <AIInsightCard
+        title="Contact Intelligence"
+        result={aiInsight}
+        loading={aiLoading}
+        error={aiError}
+        onGenerate={handleGenerateInsight}
+        onClear={clearInsight}
+        buttonLabel="✨ Analyze this contact"
+      />
     </Paper>
     <Dialog
       open={deleteDialogOpen}

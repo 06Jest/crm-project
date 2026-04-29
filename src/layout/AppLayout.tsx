@@ -3,6 +3,7 @@ import { Box } from '@mui/material';
 import Header from '../components/Header';
 import Topbar from '../components/Topbar';
 import Footer from '../components/Footer';
+import FloatingAIChat from '../components/FloatingAIChat';
 
 
 
@@ -15,6 +16,7 @@ import Footer from '../components/Footer';
         <Outlet/>
       </Box>
       <Footer/>
+      <FloatingAIChat />
     </Box>
   );
 };
