@@ -7,6 +7,10 @@ import { fetchLeads } from '../../../store/leadsSlice';
 import { fetchDeals } from '../../../store/dealsSlice';
 import { fetchActivities } from '../../../store/activitiesSlice';
 import { fetchCustomers } from '../../../store/customersSlice';
+import { useAI } from '../../../hooks/useAI';
+import AIInsightCard from '../../../components/AIInsightCard';
+import { aiApi } from '../../../services/backendApi';
+import { useCallback } from 'react';
 
 import {
   Box, Typography, Grid, Card, CardContent,
@@ -33,6 +37,10 @@ import { Bar, Line, Doughnut } from 'react-chartjs-2';
 import type { TooltipItem } from 'chart.js';
 import { formatCurrency } from '../../../utils/dateFilters';
 import { CHART_COLORS, CHART_COLORS_ALPHA } from '../../../utils/chartColors';
+
+
+
+
 
 const ACTIVITY_ICONS: Record<string, React.ReactNode> = {
   call: <PhoneIcon fontSize='small'/>,
@@ -75,6 +83,7 @@ function StatCard({
       onClick={onClick}
     >
       <CardContent>
+        
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <Box>
             <Typography variant="body2" color="text.secondary" gutterBottom>
@@ -308,6 +317,31 @@ export default  function Dashboard() {
     },
   };
 
+  const { 
+  result: aiSummary,
+  loading: aiLoading,
+  error: aiError,
+  generate: generateSummary,
+  clear: clearSummary
+} = useAI(aiApi.getDashboardSummary);
+
+const handleGenerateSummary = useCallback(() => {
+  generateSummary({
+    totalContacts: contacts.length,
+    totalLeads: leads.length,
+    totalDeals: deals.length,
+    wonRevenue: totalRevenue,
+    recentActivities: activities.filter(a => {
+      const d = new Date(a.created_at || '');
+      const week = new Date();
+      week.setDate(week.getDate() - 7);
+      return d >= week;
+    }).length,
+    coldContacts: coldContacts.length,
+    topCustomer: customers[0]?.name,
+  });
+}, [contacts, leads, deals, totalRevenue, activities, coldContacts, customers, generateSummary]);
+
   if (isLoading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}>
@@ -324,7 +358,17 @@ export default  function Dashboard() {
         Dashboard
       </Typography>
 
-
+      <Box sx={{ mb: 3 }}>
+          <AIInsightCard
+            title="Daily CRM Summary"
+            result={aiSummary}
+            loading={aiLoading}
+            error={aiError}
+            onGenerate={handleGenerateSummary}
+            onClear={clearSummary}
+            buttonLabel="✨ Generate AI summary"
+          />
+      </Box>
       <Grid container spacing={2} sx={{ mb: 4 }}>
         <Grid sx={{xs: 6, sm: 4, md:3}}>
           <StatCard

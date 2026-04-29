@@ -30,6 +30,11 @@ import {
   Divider,
   LinearProgress,
 } from '@mui/material';
+
+import { useAI } from '../../../hooks/useAI';
+import { aiApi } from '../../../services/backendApi';
+
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
@@ -86,6 +91,151 @@ const emptyForm: FormState = {
   notes: '',
   close_date: '',
 };
+
+function DealCardWithAI({
+  deal,
+  onEdit,
+  onDelete,
+  onMarkWon,
+  onMarkLost
+}: {
+  deal: Deal;
+  onEdit: (d: Deal) => void;
+  onDelete: (d: Deal) => void;
+  onMarkWon: (d: Deal) => void;
+  onMarkLost: (d: Deal) => void;
+}) {
+  const [showPrediction, setShowPrediction] = useState(false);
+  const { result, loading, error, generate} = useAI(aiApi.getDealPrediction);
+
+  const handlePredict = () => {
+    setShowPrediction(true);
+    generate({
+      dealTitle: deal.title,
+      dealValue: deal.value,
+      dealStage: deal.stage,
+      daysOpen: deal.created_at
+        ? Math.floor(
+            (Date.now() - new Date(deal.created_at).getTime()) /
+            (1000 * 60 * 60 * 24)
+          )
+        : 0,
+      activityCount : 0,
+      contactName: deal.contact_name,
+    });
+  };
+
+  const isOpen = deal.stage !== 'Closed Won' && deal.stage !== 'Closed Lost';
+
+  return (
+    <Card
+      elevation={0}
+      sx={{
+        border: 1, borderColor: 'divider', borderRadius: 2,
+        transition: 'box-shadow 0.2s',
+        '&:hover': { boxShadow: 3 },
+      }}
+    >
+      <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
+        <Typography variant="body2" fontWeight={700} gutterBottom>
+          {deal.title}
+        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
+          <AttachMoneyIcon sx={{ fontSize: 14, color: 'success.main' }} />
+          <Typography variant="body2" color="success.main" fontWeight={600}>
+            {formatCurrency(deal.value)}
+          </Typography>
+        </Box>
+        {deal.contact_name && (
+          <Typography variant="caption" color="text.secondary" display="block">
+            👤 {deal.contact_name}
+          </Typography>
+        )}
+        {deal.close_date && (
+          <Typography variant="caption" color="text.secondary" display="block">
+            📅 {new Date(deal.close_date).toLocaleDateString()}
+          </Typography>
+        )}
+
+        {/* AI prediction section */}
+        {showPrediction && (
+          <Box sx={{ mt: 1 }}>
+            {loading && (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                <CircularProgress size={12} color="secondary" />
+                <Typography variant="caption" color="text.secondary">
+                  Predicting...
+                </Typography>
+              </Box>
+            )}
+            {result && !loading && (
+              <Typography
+                variant="caption"
+                color="secondary.main"
+                display="block"
+                sx={{ mt: 0.5, lineHeight: 1.5 }}
+              >
+                <AutoAwesomeIcon sx={{ fontSize: 11, mr: 0.25 }} />
+                {result}
+              </Typography>
+            )}
+            {error && !loading && (
+              <Typography variant="caption" color="error.main">
+                {error}
+              </Typography>
+            )}
+          </Box>
+        )}
+
+        <Divider sx={{ my: 1 }} />
+
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          {isOpen && (
+            <Box sx={{ display: 'flex', gap: 0.5 }}>
+              <Button
+                size="small" color="success" variant="outlined"
+                sx={{ fontSize: 10, py: 0.25, minWidth: 'auto', px: 1 }}
+                onClick={() => onMarkWon(deal)}
+              >
+                Won
+              </Button>
+              <Button
+                size="small" color="error" variant="outlined"
+                sx={{ fontSize: 10, py: 0.25, minWidth: 'auto', px: 1 }}
+                onClick={() => onMarkLost(deal)}
+              >
+                Lost
+              </Button>
+              {/* AI predict button */}
+              {!showPrediction && (
+                <Button
+                  size="small"
+                  sx={{ fontSize: 10, py: 0.25, minWidth: 'auto', px: 0.75, color: 'secondary.main' }}
+                  onClick={handlePredict}
+                  startIcon={<AutoAwesomeIcon sx={{ fontSize: 10 }} />}
+                >
+                  Predict
+                </Button>
+              )}
+            </Box>
+          )}
+          {deal.stage === 'Closed Won' && (
+            <EmojiEventsIcon sx={{ color: '#ffd700', fontSize: 18 }} />
+          )}
+          {(deal.stage === 'Closed Lost' || !isOpen) && <Box sx={{ flex: 1 }} />}
+          <Box>
+            <IconButton size="small" onClick={() => onEdit(deal)}>
+              <EditIcon fontSize="small" />
+            </IconButton>
+            <IconButton size="small" color="error" onClick={() => onDelete(deal)}>
+              <DeleteIcon fontSize="small" />
+            </IconButton>
+          </Box>
+        </Box>
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function Deals() {
   const { items: deals, loading, error } = useSelector(
@@ -151,6 +301,7 @@ export default function Deals() {
       notes: form.notes,
       close_date: form.close_date || undefined,
       user_id: user?.id || '',
+      owned_by: user?.id || '',
     };
 
     if (editingDeal) {
@@ -336,94 +487,14 @@ export default function Deals() {
                 )}
 
                 {stageDeals.map((deal) => (
-                  <Card
+                  <DealCardWithAI
                     key={deal.id}
-                    elevation={0}
-                    sx={{
-                      border: 1,
-                      borderColor: 'divider',
-                      borderRadius: 2,
-                      transition: 'box-shadow 0.2s',
-                      '&:hover': { boxShadow: 3 },
-                    }}
-                  >
-                    <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
-
-                      <Typography variant="body2" fontWeight={700} gutterBottom>
-                        {deal.title}
-                      </Typography>
-
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
-                        <AttachMoneyIcon
-                          sx={{ fontSize: 14, color: 'success.main' }}
-                        />
-                        <Typography variant="body2" color="success.main" fontWeight={600}>
-                          {formatCurrency(deal.value)}
-                        </Typography>
-                      </Box>
-
-                      {deal.contact_name && (
-                        <Typography variant="caption" color="text.secondary" display="block">
-                          👤 {deal.contact_name}
-                        </Typography>
-                      )}
-
-                      {deal.close_date && (
-                        <Typography variant="caption" color="text.secondary" display="block">
-                          📅 {new Date(deal.close_date).toLocaleDateString()}
-                        </Typography>
-                      )}
-
-                      <Divider sx={{ my: 1 }} />
-
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-
-                        {stage !== 'Closed Won' && stage !== 'Closed Lost' && (
-                          <Box sx={{ display: 'flex', gap: 0.5 }}>
-                            <Button
-                              size="small"
-                              color="success"
-                              variant="outlined"
-                              sx={{ fontSize: 10, py: 0.25, minWidth: 'auto', px: 1 }}
-                              onClick={() => handleMarkWon(deal)}
-                            >
-                              Won
-                            </Button>
-                            <Button
-                              size="small"
-                              color="error"
-                              variant="outlined"
-                              sx={{ fontSize: 10, py: 0.25, minWidth: 'auto', px: 1 }}
-                              onClick={() => handleMarkLost(deal)}
-                            >
-                              Lost
-                            </Button>
-                          </Box>
-                        )}
-
-                        {stage === 'Closed Won' && (
-                          <EmojiEventsIcon sx={{ color: '#ffd700', fontSize: 18 }} />
-                        )}
-
-                        {stage === 'Closed Lost' && (
-                          <Box sx={{ flex: 1 }} />
-                        )}
-
-                        <Box>
-                          <IconButton size="small" onClick={() => handleOpen(deal)}>
-                            <EditIcon fontSize="small" />
-                          </IconButton>
-                          <IconButton
-                            size="small"
-                            color="error"
-                            onClick={() => handleDeleteClick(deal)}
-                          >
-                            <DeleteIcon fontSize="small" />
-                          </IconButton>
-                        </Box>
-                      </Box>
-                    </CardContent>
-                  </Card>
+                    deal={deal}
+                    onEdit={handleOpen}
+                    onDelete={handleDeleteClick}
+                    onMarkWon={handleMarkWon}
+                    onMarkLost={handleMarkLost}
+                  />
                 ))}
               </Box>
             </Box>
