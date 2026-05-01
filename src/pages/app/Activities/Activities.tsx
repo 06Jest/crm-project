@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "../../../store/store";
+import { emailApi, smsApi } from '../../../services/backendApi';
 import {
   fetchActivities,
   addActivity,
@@ -95,6 +96,9 @@ export default function Activities() {
   const[form, setForm] = useState<FormState>(emptyForm);
   const [filterType, setFilterType] = useState<ActivityType | 'all'> ('all');
   const [filterContact, setFilterContact] = useState<string>('all');
+  const contacts = useSelector((s: RootState) => s.contacts.items);
+  const [sending, setSending] = useState(false);
+  const [sendResult, setSendResult] = useState('');
 
    const {
     result: aiDraft,
@@ -203,7 +207,7 @@ export default function Activities() {
     }));
   };
 
- 
+  
 
  
 
@@ -582,6 +586,96 @@ export default function Activities() {
             rows={4}
             placeholder="What was discussed? Any action items?"
           />
+          {(form.type === 'email' || form.type === 'sms') &&
+            form.contact_name &&
+            form.body && (
+            <Box
+              sx={{
+                p: 1.5,
+                bgcolor: 'action.hover',
+                borderRadius: 2,
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                gap: 1,
+                flexWrap: 'wrap',
+              }}
+            >
+              <Box>
+                <Typography variant="body2" fontWeight={600}>
+                  Also send this {form.type}?
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {form.type === 'email'
+                    ? 'Sends a real email via SMTP to the contact'
+                    : 'Logs a simulated SMS — no real message sent'
+                  }
+                </Typography>
+              </Box>
+              <Button
+                size="small"
+                variant="outlined"
+                disabled={sending}
+                onClick={async () => {
+                  setSending(true);
+                  setSendResult('');
+                  try {
+                    const contact = contacts.find(
+                      c => c.name === form.contact_name
+                    );
+
+                    if (form.type === 'email') {
+                      if (!contact?.email) {
+                        setSendResult('No email on file for this contact');
+                        setSending(false);
+                        return;
+                      }
+                      await emailApi.send({
+                        to: contact.email,
+                        subject: form.subject,
+                        body: form.body,
+                        isHtml: false,
+                      });
+                      setSendResult('✅ Email sent successfully!');
+                    } else {
+                      // Simulated SMS — logs to sms_logs table
+                      if (!contact?.phone) {
+                        setSendResult('No phone number on file for this contact');
+                        setSending(false);
+                        return;
+                      }
+                      const result = await smsApi.send({
+                        to: contact.phone,
+                        body: form.body,
+                        contactName: form.contact_name,
+                      });
+                      setSendResult(`✅ SMS logged (simulated) — SID: ${result.sid.slice(0, 16)}...`);
+                    }
+                  } catch (err: unknown) {
+                    const message = err instanceof Error ? err.message : String(err);
+                    setSendResult(`❌ ${message}`);
+                  } finally {
+                    setSending(false);
+                  }
+                }}
+              >
+                {sending
+                  ? <CircularProgress size={14} color="inherit" />
+                  : `Send ${form.type}`
+                }
+              </Button>
+            </Box>
+          )}
+
+          {sendResult && (
+            <Typography
+              variant="caption"
+              color={sendResult.startsWith('✅') ? 'success.main' : 'error.main'}
+              sx={{ display: 'block' }}
+            >
+              {sendResult}
+            </Typography>
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose}>Cancel</Button>

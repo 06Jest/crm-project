@@ -50,13 +50,61 @@ export const aiApi = {
 };
 
 export const emailApi = {
-  send: (data: { to: string; subject: string; body: string; isHtml?: boolean }) => 
-    apiCall<void> ('/api/email/send', 'POST', data),
+  send: (data: {
+    to: string;
+    subject: string; 
+    body: string; 
+    isHtml?: boolean 
+  }) => apiCall<void> ('/api/email/send', 'POST', data),
+
+  sendInvite: (data: {
+    to: string;
+    agentName: string;
+    employeeId: string;
+    tempPassword: string;
+    adminName: string;
+    orgName: string;
+  }) => apiCall<void>('/api//email/invite', 'POST', data),
+
+  sendWeeklySummary: (data: {
+    to: string;
+    recipientName: string;
+    stats: {
+      newContacts: number;
+      newLeads: number;
+      dealsWon: number;
+      revenue: number;
+      activitiesLogged: number;
+    };
+  }) => apiCall<void>('/api/email/Weekly-summary', 'POST', data),
+
+  verify: () => 
+    apiCall<{ message: string }>('/api/email/verify', 'GET'),
 };
 
 export const smsApi = {
-  send: (data: { to: string; body: string }) =>
-    apiCall<void>('/api/sms/send', 'POST', data),
+  send: (data: { 
+    to: string; 
+    body: string 
+    contactName?: string;
+  }) =>
+    apiCall<{
+      sid: string;
+      status: string;
+      simulated: true;
+    }>('/api/sms/send', 'POST', data),
+  
+  getStatus: (sid: string) =>
+    apiCall<{
+      status: string;
+      simulated: true
+    }>(`/api/sms/status/${sid}`,'GET'),
+
+  getHistory: (contactName: string) =>
+    apiCall<string[]>(
+      `/api/sms/history/${encodeURIComponent(contactName)}`,
+      'GET'
+    ),
 };
 
 export const stripeApi = {
