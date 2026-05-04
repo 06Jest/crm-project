@@ -35,7 +35,7 @@ import SmsIcon from '@mui/icons-material/Sms';
 import AddIcon from '@mui/icons-material/Add';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 
-const ACTIVITY_TYPES: {
+const ACTIVITY_TYPES: { 
   value: ActivityType;
   label: string;
   color: string;

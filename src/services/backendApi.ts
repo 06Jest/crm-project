@@ -79,7 +79,7 @@ export const emailApi = {
   }) => apiCall<void>('/api/email/Weekly-summary', 'POST', data),
 
   verify: () => 
-    apiCall<{ message: string }>('/api/email/verify', 'GET'),
+    apiCall<{ message: string }>('/api/email/verify', 'POST'),
 };
 
 export const smsApi = {
@@ -109,6 +109,18 @@ export const smsApi = {
 
 export const stripeApi = {
   getPlans: () => apiCall<[]>('/api/stripe/plans', 'GET'),
+
+  getSubscription: () => 
+    apiCall<{
+      plan: string;
+      status: string;
+      current_period_end?: string;
+      cancel_at_period_end?: boolean;
+    }>('api/stripe/subscription', 'GET'),
+
   createCheckout: (priceId: string) =>
     apiCall<{ url: string }>('/api/stripe/checkout', 'POST', { priceId }),
+
+  createPortal: () =>
+    apiCall<{ url: string }>('/api/stripe/portal', 'POST'),
 };

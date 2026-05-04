@@ -67,8 +67,6 @@ export default function Header() {
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           { !user && (
             <>
-              <Button onClick={() => {navigate('/Register')}  
-              }  sx={{ fontWeight: 700}} variant="contained" color="primary">Sign Up</Button>
               <Button onClick={() => {navigate('/Login')}  
               }  sx={{ fontWeight: 700}} color="primary">Login</Button>
               
