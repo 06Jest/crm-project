@@ -65,7 +65,6 @@ export default function Register() {
       return;
     }
 
-
     setSuccess(true);
   };
 

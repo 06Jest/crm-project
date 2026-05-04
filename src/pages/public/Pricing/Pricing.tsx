@@ -4,6 +4,9 @@ import {
   AccordionSummary, AccordionDetails,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { stripeApi } from '../../../services/backendApi';
+import { CircularProgress } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -76,7 +79,32 @@ const FAQS = [
 
 export default function Pricing() {
   const navigate = useNavigate();
-
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [checkoutError, setCheckoutError] = useState('');
+  type Plan = {
+        id: string;
+        priceId: string;
+      };
+  const handleStartTrial = async () => {
+    setCheckoutLoading(true);
+    setCheckoutError('');
+    try {
+      
+      const plans: Plan[] = await stripeApi.getPlans();
+      
+      const proPlan = plans.find((p) => p.id === 'pro');
+      if (!proPlan?.priceId) {
+        navigate('/register');
+        return;
+      }
+      const { url } = await stripeApi.createCheckout(proPlan.priceId);
+      window.location.href = url;
+    } catch {
+      navigate('/register');
+    } finally {
+      setCheckoutLoading(false);
+    }
+  }
   return (
     <Box>
 
@@ -256,12 +284,21 @@ export default function Pricing() {
                     variant="contained"
                     fullWidth
                     size="large"
-                    endIcon={<ArrowForwardIcon />}
-                    onClick={() => navigate('/register')}
-                    sx={{ mb: 3 }}
+                    endIcon={checkoutLoading ? undefined : <ArrowForwardIcon />}
+                    onClick={handleStartTrial}
+                    disabled={checkoutLoading}
                   >
-                    Start 14-day free trial
+                    {checkoutLoading
+                      ? <CircularProgress size={20} color="inherit" />
+                      : 'Start 14-day free trial'
+                    }
                   </Button>
+
+                  {checkoutError && (
+                    <Typography variant="caption" color="error" sx={{ mt: 1, display: 'block' }}>
+                      {checkoutError}
+                    </Typography>
+                  )}
 
                   <Divider sx={{ mb: 2 }} />
 

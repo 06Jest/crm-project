@@ -1,8 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '../../../store/store';
 import { toggleTheme, setTheme } from '../../../store/uiSlice';
 import { useAuthContext } from '../../../hooks/useAuthContext';
+import { stripeApi } from '../../../services/backendApi';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import { useNavigate } from 'react-router-dom';
+import { LinearProgress } from '@mui/material';
+import { CircularProgress } from '@mui/material';
 import {
   loadSettings,
   saveSettings,
@@ -27,9 +32,17 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 const APP_VERSION = '1.0.0';
 const BUILD_DATE = 'April 2026';
 
+interface Subscription {
+  plan: string;
+  status: string;
+  current_period_end?: string;
+  cancel_at_period_end?: boolean;
+}
+
 export default function Settings() {
   const dispatch = useDispatch<AppDispatch>();
   const { user } = useAuthContext();
+  const navigate = useNavigate();
   const themeMode = useSelector((state: RootState) => state.ui.themeMode);
 
   const [notifications, setNotifications] = useState<NotificationSettings>(loadSettings);
@@ -37,7 +50,9 @@ export default function Settings() {
   const [orgName, setOrgName] = useState('');
   const  [orgNameSaved, setOrgNameSaved] = useState(false);
   const [orgNameError, setOrgNameError] = useState('');
-
+  const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [subLoading, setSubLoading] = useState(true);
+  const [portalLoading, setPortalLoading] = useState(false);
 
   const [success, setSuccess] = useState('');
 
@@ -73,6 +88,25 @@ export default function Settings() {
       setOrgNameError('Failed to save. Please try again.');
     }
   };
+  useEffect(() => {
+    stripeApi.getSubscription()
+      .then(setSubscription)
+      .catch(() => setSubscription({ plan: 'free', status: 'active' }))
+      .finally(() => setSubLoading(false)); 
+  }, []);
+
+  const handleManageBilling = async () => {
+    setPortalLoading(true);
+    try{
+      const { url } = await stripeApi.createPortal();
+      window.open(url, '_blank');
+    } catch {
+      alert('Failed to open billing portal. Please try again.')
+    } finally {
+      setPortalLoading(false)
+    }
+  }
+  
    return (
     <Box sx={{ maxWidth: 720, mx: 'auto' }}>
       <Typography variant="h5" fontWeight={700} sx={{ mb: 3 }}>
@@ -85,9 +119,7 @@ export default function Settings() {
         </Alert>
       )}
 
-      {/* ══════════════════════════════════════════════
-          SECTION 1 — APPEARANCE
-      ══════════════════════════════════════════════ */}
+
       <Paper elevation={1} sx={{ borderRadius: 3, mb: 3, overflow: 'hidden' }}>
         <Box sx={{ p: 2.5, borderBottom: 1, borderColor: 'divider', display: 'flex', alignItems: 'center', gap: 1.5 }}>
           {themeMode === 'dark' ? <DarkModeIcon color="action" /> : <LightModeIcon color="action" />}
@@ -100,7 +132,7 @@ export default function Settings() {
         </Box>
 
         <List disablePadding>
-          {/* Dark mode toggle */}
+
           <ListItem sx={{ py: 2, px: 2.5 }}>
             <ListItemText
               primary="Dark mode"
@@ -120,7 +152,6 @@ export default function Settings() {
 
           <Divider />
 
-          {/* Theme quick select */}
           <ListItem sx={{ py: 2, px: 2.5 }}>
             <ListItemText
               primary="Quick select"
@@ -150,9 +181,7 @@ export default function Settings() {
         </List>
       </Paper>
 
-      {/* ══════════════════════════════════════════════
-          SECTION 2 — NOTIFICATIONS
-      ══════════════════════════════════════════════ */}
+
       <Paper elevation={1} sx={{ borderRadius: 3, mb: 3, overflow: 'hidden' }}>
         <Box sx={{ p: 2.5, borderBottom: 1, borderColor: 'divider', display: 'flex', alignItems: 'center', gap: 1.5 }}>
           <NotificationsIcon color="action" />
@@ -164,7 +193,6 @@ export default function Settings() {
           </Box>
         </Box>
 
-        {/* Email notifications */}
         <Box sx={{ px: 2.5, pt: 2, pb: 1 }}>
           <Typography variant="overline" color="text.secondary" fontWeight={700} letterSpacing={1}>
             Email notifications
@@ -215,7 +243,7 @@ export default function Settings() {
 
         <Divider />
 
-        {/* In-app notifications */}
+
         <Box sx={{ px: 2.5, pt: 2, pb: 1 }}>
           <Typography variant="overline" color="text.secondary" fontWeight={700} letterSpacing={1}>
             In-app notifications
@@ -262,9 +290,7 @@ export default function Settings() {
         </Box>
       </Paper>
 
-      {/* ══════════════════════════════════════════════
-          SECTION 3 — ORGANIZATION
-      ══════════════════════════════════════════════ */}
+
       <Paper elevation={1} sx={{ borderRadius: 3, mb: 3, overflow: 'hidden' }}>
         <Box sx={{ p: 2.5, borderBottom: 1, borderColor: 'divider', display: 'flex', alignItems: 'center', gap: 1.5 }}>
           <BusinessIcon color="action" />
@@ -307,19 +333,81 @@ export default function Settings() {
 
         <Divider />
 
-        <Box sx={{ p: 2.5 }}>
-          <Typography variant="body2" color="text.secondary">
-            <strong>Plan:</strong> Free tier
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-            <strong>Billing:</strong> Stripe integration coming in Milestone 3
-          </Typography>
-        </Box>
+          <Box sx={{ p: 2.5 }}>
+            <Typography variant="body2" fontWeight={600} sx={{ mb: 1.5 }}>
+              Current plan
+            </Typography>
+
+            {subLoading ? (
+              <LinearProgress sx={{ borderRadius: 2 }} />
+            ) : (
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
+                <Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                    <Chip
+                      label={subscription?.plan === 'pro' ? 'Pro' : 'Free'}
+                      color={subscription?.plan === 'pro' ? 'primary' : 'default'}
+                      size="small"
+                      sx={{ fontWeight: 700 }}
+                    />
+                    {subscription?.status === 'trialing' && (
+                      <Chip label="Trial" color="warning" size="small" />
+                    )}
+                    {subscription?.status === 'past_due' && (
+                      <Chip label="Payment due" color="error" size="small" />
+                    )}
+                    {subscription?.cancel_at_period_end && (
+                      <Chip label="Cancels soon" color="warning" size="small" variant="outlined" />
+                    )}
+                  </Box>
+
+                  {subscription?.current_period_end && (
+                    <Typography variant="caption" color="text.secondary">
+                      {subscription.cancel_at_period_end ? 'Access until' : 'Renews'}{' '}
+                      {new Date(subscription.current_period_end).toLocaleDateString('en-US', {
+                        month: 'long', day: 'numeric', year: 'numeric',
+                      })}
+                    </Typography>
+                  )}
+
+                  {subscription?.plan === 'free' && (
+                    <Typography variant="caption" color="text.secondary">
+                      Upgrade to Pro for unlimited access and AI features
+                    </Typography>
+                  )}
+                </Box>
+
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  {subscription?.plan === 'free' && (
+                    <Button
+                      variant="contained"
+                      size="small"
+                      onClick={() => navigate('/pricing')}
+                    >
+                      Upgrade to Pro
+                    </Button>
+                  )}
+                  {subscription?.plan === 'pro' && (
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      endIcon={portalLoading
+                        ? <CircularProgress size={12} />
+                        : <OpenInNewIcon fontSize="small" />
+                      }
+                      onClick={handleManageBilling}
+                      disabled={portalLoading}
+                    >
+                      Manage billing
+                    </Button>
+                  )}
+                </Box>
+              </Box>
+            )}
+          </Box>
       </Paper>
 
-      {/* ══════════════════════════════════════════════
-          SECTION 4 — USER MANAGEMENT PLACEHOLDER
-      ══════════════════════════════════════════════ */}
+
       <Paper elevation={1} sx={{ borderRadius: 3, mb: 3, overflow: 'hidden' }}>
         <Box sx={{ p: 2.5, borderBottom: 1, borderColor: 'divider', display: 'flex', alignItems: 'center', gap: 1.5 }}>
           <GroupIcon color="action" />
@@ -359,14 +447,12 @@ export default function Settings() {
         </Box>
       </Paper>
 
-      {/* ══════════════════════════════════════════════
-          SECTION 5 — ABOUT
-      ══════════════════════════════════════════════ */}
+
       <Paper elevation={1} sx={{ borderRadius: 3, mb: 3, overflow: 'hidden' }}>
         <Box sx={{ p: 2.5, borderBottom: 1, borderColor: 'divider', display: 'flex', alignItems: 'center', gap: 1.5 }}>
           <InfoIcon color="action" />
           <Box>
-            <Typography variant="h6" fontWeight={700}>About MiniCRM</Typography>
+            <Typography variant="h6" fontWeight={700}>About uniThread</Typography>
             <Typography variant="body2" color="text.secondary">
               App info and tech stack
             </Typography>
@@ -442,9 +528,7 @@ export default function Settings() {
         </Box>
       </Paper>
 
-      {/* ══════════════════════════════════════════════
-          SECTION 6 — DANGER ZONE
-      ══════════════════════════════════════════════ */}
+
       <Paper
         elevation={1}
         sx={{
@@ -483,9 +567,7 @@ export default function Settings() {
               color="error"
               size="small"
               onClick={() => {
-                // For now just show an alert
-                // In Milestone 4 this will open a confirmation dialog
-                // and handle the actual deletion
+
                 alert(
                   'Account deletion will be available in a future update. ' +
                   'Please contact support to delete your account.'
