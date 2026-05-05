@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useRole } from '../../../hooks/useRole';
 import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '../../../store/store';
 import { toggleTheme, setTheme } from '../../../store/uiSlice';
@@ -14,12 +15,29 @@ import {
   type NotificationSettings,
 } from '../../../utils/settingsStorage';
 import { updateProfileInDB } from '../../../services/profileService';
+import {
+  fetchAgentsFromDB,
+  createAgentViaBackend,
+  toggleAgentStatusInDB,
+  updateAgentInDB,
+  sendPasswordResetForAgent,
+} from '../../../services/agentsService';
+import {
+  generateEmployeeId,
+  isEmployeeIdTaken,
+  formatEmployeeId,
+} from '../../../utils/generateEmployeeId';
+import type { Profile } from '../../../types/profile';
 
 import {
   Box, Typography, Paper, Switch, 
   Divider, Button, TextField, Alert, Chip,
   List, ListItem, ListItemText, ListItemSecondaryAction, Grid,
+  Dialog, DialogTitle, DialogContent, DialogActions,
+  Table, TableBody, TableCell, TableContainer,
+  TableHead, TableRow, Tooltip, IconButton, Avatar
 } from '@mui/material';
+
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import LightModeIcon from '@mui/icons-material/LightMode';
 import NotificationsIcon from '@mui/icons-material/Notifications';
@@ -28,6 +46,11 @@ import InfoIcon from '@mui/icons-material/Info';
 import GroupIcon from '@mui/icons-material/Group';
 import WarningIcon from '@mui/icons-material/Warning';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import AddIcon from '@mui/icons-material/Add';
+import EditIcon from '@mui/icons-material/Edit';
+import LockResetIcon from '@mui/icons-material/LockReset';
+import PersonOffIcon from '@mui/icons-material/PersonOff';
+import PersonIcon from '@mui/icons-material/Person';
 
 const APP_VERSION = '1.0.0';
 const BUILD_DATE = 'April 2026';
@@ -53,6 +76,22 @@ export default function Settings() {
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [subLoading, setSubLoading] = useState(true);
   const [portalLoading, setPortalLoading] = useState(false);
+  const [agents, setAgents] = useState<Profile[]>([]);
+  const [agentsLoading, setAgentsLoading] = useState(false);
+  const { profile: adminProfile, isAdmin } = useRole();
+  const [createOpen, setCreateOpen] = useState(false);
+  const [createForm, setCreateForm] = useState({
+    name: '',
+    email: '',
+    employeeId: '',
+    tempPassword: '',
+  });
+  const [createLoading, setCreateLoading] = useState(false);
+  const [createError, setCreateError] = useState('');
+  const [editOpen, setEditOpen] = useState(false);
+  const [editAgent, setEditAgent] = useState<Profile | null>(null);
+  const [editForm, setEditForm] = useState({ name: '', employeeId: '' });
+  const [editLoading, setEditLoading] = useState(false);
 
   const [success, setSuccess] = useState('');
 
@@ -106,6 +145,158 @@ export default function Settings() {
       setPortalLoading(false)
     }
   }
+
+  const loadAgents = useCallback(async () => {
+    if (!adminProfile?.org_id) return;
+    setAgentsLoading(true);
+    try {
+      const data = await fetchAgentsFromDB(adminProfile.org_id);
+      setAgents(data);
+    } catch (err) {
+      if (err instanceof Error) {
+        console.error('Failed to load agents:', err.message);
+      } else {
+        console.error('Failed to load agents:', err);
+      }
+    } finally {
+      setAgentsLoading(false);
+    }
+  }, [adminProfile?.org_id]);
+
+  useEffect(() => {
+    if (isAdmin) loadAgents();
+  }, [isAdmin, loadAgents]);
+
+  const handleOpenCreate = () => {
+    const existingIds = agents.map(a => a.employee_id || '');
+    const nextId = generateEmployeeId(existingIds);
+    setCreateForm({
+      name: '',
+      email: '',
+      employeeId: nextId,
+      tempPassword: '',
+    });
+    setCreateError('');
+    setCreateOpen(true);
+  };
+
+  const handleCreateAgent = async () => {
+    if (!adminProfile?.org_id) return;
+    setCreateError('');
+
+    // Validate
+    if (!createForm.name.trim()) {
+      setCreateError('Name is required');
+      return;
+    }
+    if (!createForm.email.trim()) {
+      setCreateError('Email is required');
+      return;
+    }
+    if (!createForm.employeeId.trim()) {
+      setCreateError('Employee ID is required');
+      return;
+    }
+    if (!createForm.tempPassword || createForm.tempPassword.length < 6) {
+      setCreateError('Password must be at least 6 characters');
+      return;
+    }
+
+    // Check Employee ID uniqueness
+    const existingIds = agents.map(a => a.employee_id || '');
+    if (isEmployeeIdTaken(createForm.employeeId, existingIds)) {
+      setCreateError(`Employee ID ${createForm.employeeId} is already in use`);
+      return;
+    }
+
+    setCreateLoading(true);
+    try {
+      const newAgent = await createAgentViaBackend({
+        name: createForm.name.trim(),
+        email: createForm.email.trim(),
+        employeeId: formatEmployeeId(createForm.employeeId),
+        tempPassword: createForm.tempPassword,
+        orgId: adminProfile.org_id,
+        orgName: adminProfile.org_name || 'MiniCRM',
+        adminName: adminProfile.name,
+      });
+
+      setAgents(prev => [newAgent, ...prev]);
+      setCreateOpen(false);
+      showSuccess(`Agent ${createForm.name} created! Invite sent to ${createForm.email}`);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      setCreateError(message);
+    } finally {
+      setCreateLoading(false);
+    }
+  };
+
+  const handleToggleStatus = async (agent: Profile) => {
+    try {
+      await toggleAgentStatusInDB(agent.id, !agent.is_active);
+      setAgents(prev =>
+        prev.map(a =>
+          a.id === agent.id ? { ...a, is_active: !a.is_active } : a
+        )
+      );
+      showSuccess(
+        `${agent.name} has been ${agent.is_active ? 'deactivated' : 'reactivated'}`
+      );
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      setCreateError(message);
+    }
+  };
+
+  const handleOpenEdit = (agent: Profile) => {
+  setEditAgent(agent);
+  setEditForm({ name: agent.name, employeeId: agent.employee_id || '' });
+  setEditOpen(true);
+};
+
+// Save agent edits
+const handleSaveEdit = async () => {
+  if (!editAgent) return;
+  setEditLoading(true);
+  try {
+    // Check Employee ID uniqueness if changed
+    if (editForm.employeeId !== editAgent.employee_id) {
+      const existingIds = agents
+        .filter(a => a.id !== editAgent.id)
+        .map(a => a.employee_id || '');
+      if (isEmployeeIdTaken(editForm.employeeId, existingIds)) {
+        setCreateError(`Employee ID ${editForm.employeeId} is already in use`);
+        setEditLoading(false);
+        return;
+      }
+    }
+
+    const updated = await updateAgentInDB(editAgent.id, {
+        name: editForm.name.trim(),
+        employee_id: formatEmployeeId(editForm.employeeId),
+      });
+      setAgents(prev => prev.map(a => a.id === updated.id ? updated : a));
+      setEditOpen(false);
+      showSuccess('Agent updated successfully');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      setCreateError(message);
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+// Send password reset
+  const handlePasswordReset = async (agent: Profile) => {
+    try {
+      await sendPasswordResetForAgent(agent.email);
+      showSuccess(`Password reset email sent to ${agent.email}`);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      setCreateError(message);
+    }
+  };
   
    return (
     <Box sx={{ maxWidth: 720, mx: 'auto' }}>
@@ -409,43 +600,283 @@ export default function Settings() {
 
 
       <Paper elevation={1} sx={{ borderRadius: 3, mb: 3, overflow: 'hidden' }}>
-        <Box sx={{ p: 2.5, borderBottom: 1, borderColor: 'divider', display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          <GroupIcon color="action" />
-          <Box>
-            <Typography variant="h6" fontWeight={700}>Users & Agents</Typography>
-            <Typography variant="body2" color="text.secondary">
-              Manage your team members and their access
-            </Typography>
+        <Box sx={{
+          p: 2.5,
+          borderBottom: 1,
+          borderColor: 'divider',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <GroupIcon color="action" />
+            <Box>
+              <Typography variant="h6" fontWeight={700}>Users & Agents</Typography>
+              <Typography variant="body2" color="text.secondary">
+                {agents.length} agent{agents.length !== 1 ? 's' : ''} in your organization
+              </Typography>
+            </Box>
           </Box>
+          <Button
+            variant="contained"
+            size="small"
+            startIcon={<AddIcon />}
+            onClick={handleOpenCreate}
+          >
+            Add agent
+          </Button>
         </Box>
 
-        <Box sx={{ p: 3, textAlign: 'center' }}>
-          <GroupIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 1.5 }} />
-          <Typography variant="h6" fontWeight={600} gutterBottom>
-            Coming in Milestone 4
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2, maxWidth: 420, mx: 'auto' }}>
-            User management lets you create agent accounts,
-            assign Employee IDs, manage roles, and invite
-            your team via email. This full feature set is
-            part of the organization architecture update.
-          </Typography>
-          <Grid container spacing={1} justifyContent="center" sx={{ maxWidth: 480, mx: 'auto' }}>
-            {[
-              'Create agent accounts',
-              'Assign Employee IDs',
-              'Invite via email',
-              'Manage roles',
-              'Deactivate users',
-              'Reset passwords',
-            ].map((feature) => (
-              <Grid key={feature}>
-                <Chip label={feature} size="small" variant="outlined" />
-              </Grid>
-            ))}
-          </Grid>
-        </Box>
+        {agentsLoading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+            <CircularProgress size={28} />
+          </Box>
+        ) : agents.length === 0 ? (
+          <Box sx={{ p: 4, textAlign: 'center' }}>
+            <PersonIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 1.5 }} />
+            <Typography variant="h6" fontWeight={600} gutterBottom>
+              No agents yet
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              Add your first agent to get started.
+              They'll receive an email with their Employee ID and login credentials.
+            </Typography>
+            <Button
+              variant="outlined"
+              startIcon={<AddIcon />}
+              onClick={handleOpenCreate}
+            >
+              Add first agent
+            </Button>
+          </Box>
+        ) : (
+          <TableContainer>
+            <Table size="small">
+              <TableHead>
+                <TableRow sx={{ bgcolor: 'background.default' }}>
+                  <TableCell sx={{ fontWeight: 700 }}>Agent</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Employee ID</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Email</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }} align="right">Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {agents.map((agent) => (
+                  <TableRow key={agent.id} hover>
+                    <TableCell>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                        <Avatar
+                          src={agent.avatar_url || undefined}
+                          sx={{ width: 32, height: 32, bgcolor: 'primary.main', fontSize: 14 }}
+                        >
+                          {agent.name[0]?.toUpperCase()}
+                        </Avatar>
+                        <Typography variant="body2" fontWeight={600}>
+                          {agent.name}
+                        </Typography>
+                      </Box>
+                    </TableCell>
+
+
+                    <TableCell>
+                      <Chip
+                        label={agent.employee_id || '—'}
+                        size="small"
+                        variant="outlined"
+                        sx={{ fontFamily: 'monospace', fontSize: 12 }}
+                      />
+                    </TableCell>
+
+                    <TableCell>
+                      <Typography variant="body2" color="text.secondary">
+                        {agent.email}
+                      </Typography>
+                    </TableCell>
+
+                    <TableCell>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Switch
+                          size="small"
+                          checked={agent.is_active}
+                          onChange={() => handleToggleStatus(agent)}
+                          color="success"
+                        />
+                        <Chip
+                          label={agent.is_active ? 'Active' : 'Inactive'}
+                          size="small"
+                          color={agent.is_active ? 'success' : 'default'}
+                        />
+                      </Box>
+                    </TableCell>
+
+                    <TableCell align="right">
+                      <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5 }}>
+                        <Tooltip title="Edit name or Employee ID">
+                          <IconButton
+                            size="small"
+                            onClick={() => handleOpenEdit(agent)}
+                          >
+                            <EditIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Send password reset email">
+                          <IconButton
+                            size="small"
+                            onClick={() => handlePasswordReset(agent)}
+                          >
+                            <LockResetIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title={agent.is_active ? 'Deactivate' : 'Reactivate'}>
+                          <IconButton
+                            size="small"
+                            color={agent.is_active ? 'error' : 'success'}
+                            onClick={() => handleToggleStatus(agent)}
+                          >
+                            {agent.is_active
+                              ? <PersonOffIcon fontSize="small" />
+                              : <PersonIcon fontSize="small" />
+                            }
+                          </IconButton>
+                        </Tooltip>
+                      </Box>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
       </Paper>
+
+      <Dialog
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          <Typography variant="h6" fontWeight={700}>Add new agent</Typography>
+          <Typography variant="body2" color="text.secondary">
+            An invite email will be sent with their login credentials.
+          </Typography>
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, pt: 1 }}>
+            {createError && (
+              <Alert severity="error">{createError}</Alert>
+            )}
+            <TextField
+              label="Full name"
+              value={createForm.name}
+              onChange={(e) =>
+                setCreateForm({ ...createForm, name: e.target.value })
+              }
+              fullWidth
+              autoFocus
+              required
+            />
+            <TextField
+              label="Work email"
+              type="email"
+              value={createForm.email}
+              onChange={(e) =>
+                setCreateForm({ ...createForm, email: e.target.value })
+              }
+              fullWidth
+              required
+              helperText="Agent will use this email internally — they log in with Employee ID"
+            />
+            <TextField
+              label="Employee ID"
+              value={createForm.employeeId}
+              onChange={(e) =>
+                setCreateForm({
+                  ...createForm,
+                  employeeId: e.target.value.toUpperCase(),
+                })
+              }
+              fullWidth
+              required
+              helperText="Auto-generated. You can override to any format e.g. SALES-001"
+              inputProps={{ style: { fontFamily: 'monospace', fontWeight: 600 } }}
+            />
+            <TextField
+              label="Temporary password"
+              type="password"
+              value={createForm.tempPassword}
+              onChange={(e) =>
+                setCreateForm({ ...createForm, tempPassword: e.target.value })
+              }
+              fullWidth
+              required
+              helperText="Agent will use this to log in for the first time"
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ p: 2.5, pt: 1 }}>
+          <Button onClick={() => setCreateOpen(false)}>Cancel</Button>
+          <Button
+            variant="contained"
+            onClick={handleCreateAgent}
+            disabled={createLoading}
+          >
+            {createLoading
+              ? <CircularProgress size={20} color="inherit" />
+              : 'Create agent + send invite'
+            }
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>Edit agent</DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, pt: 1 }}>
+            <TextField
+              label="Full name"
+              value={editForm.name}
+              onChange={(e) =>
+                setEditForm({ ...editForm, name: e.target.value })
+              }
+              fullWidth
+              autoFocus
+            />
+            <TextField
+              label="Employee ID"
+              value={editForm.employeeId}
+              onChange={(e) =>
+                setEditForm({
+                  ...editForm,
+                  employeeId: e.target.value.toUpperCase(),
+                })
+              }
+              fullWidth
+              helperText="Changing this will affect how the agent logs in"
+              inputProps={{ style: { fontFamily: 'monospace', fontWeight: 600 } }}
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ p: 2.5, pt: 1 }}>
+          <Button onClick={() => setEditOpen(false)}>Cancel</Button>
+          <Button
+            variant="contained"
+            onClick={handleSaveEdit}
+            disabled={editLoading}
+          >
+            {editLoading
+              ? <CircularProgress size={20} color="inherit" />
+              : 'Save changes'
+            }
+          </Button>
+        </DialogActions>
+      </Dialog>
 
 
       <Paper elevation={1} sx={{ borderRadius: 3, mb: 3, overflow: 'hidden' }}>
