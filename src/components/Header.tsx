@@ -1,7 +1,8 @@
-import { AppBar, Toolbar, Button, Box, IconButton, Avatar, Menu, MenuItem,
+import { AppBar, Toolbar, Button, Box, IconButton, Avatar, Menu, Chip, MenuItem,
   Divider, Typography } from "@mui/material";
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import LightModeIcon from '@mui/icons-material/LightMode';
+import BadgeIcon from '@mui/icons-material/Badge';
 import ChatBubbleIcon from '@mui/icons-material/ChatBubble';
 import { Badge } from '@mui/material';
 import { useDispatch, useSelector } from 'react-redux';
@@ -16,6 +17,8 @@ import { useNavigate } from 'react-router-dom';
 import type { Profile } from '../types/profile'
 import { fetchUnreadCounts } from '../store/messagingSlice';
 import { fetchMyProfileFromDB } from "../services/profileService";
+import { useRole } from '../hooks/useRole';
+
 
 export default function Header() {
   const dispatch = useDispatch<AppDispatch>();
@@ -24,6 +27,7 @@ export default function Header() {
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const menuOpen = Boolean(anchorEl);
+  
 
   const handleAvatarClick = (e:React.MouseEvent<HTMLElement>) => {
     setAnchorEl(e.currentTarget);
@@ -40,6 +44,7 @@ export default function Header() {
   };
 
   const [profile, setProfile] = useState<Profile | null>(null);
+  
 
   const unreadCounts = useSelector(
     (state: RootState) => state.messaging.unreadCounts
@@ -53,11 +58,12 @@ export default function Header() {
           })
         }
       }, [dispatch, user]);
-
+    
   const totalUnread = Object.values(unreadCounts).reduce((a, b) => a + b, 0)
   const displayName = user?.user_metadata?.name || user?.email || '';
   const avatarLetter = displayName[0]?.toUpperCase() || '?';
   const avatarSrc =  profile?.avatar_url || undefined;
+  const { isAdmin, isSuperAdmin, employeeId } = useRole();
   return (
     <AppBar position="fixed">
       <Toolbar sx={{ userSelect: 'none',display: "flex", justifyContent: "space-between"}}>
@@ -95,6 +101,15 @@ export default function Header() {
               <DarkModeIcon />
             )}
           </IconButton>
+          {employeeId && (
+            <Chip
+              label={employeeId}
+              size="small"
+              icon={<BadgeIcon />}
+              variant="outlined"
+              sx={{ fontSize: 11 }}
+            />
+          )}
           { user && (
             <>
               <IconButton
@@ -125,24 +140,25 @@ export default function Header() {
                   </Typography>
                 </Box>
                 <Divider />
-                <MenuItem onClick={() => {
-                  handleMenuClose();
-                  navigate('/app/profile')} }>Profile</MenuItem>
-                  <MenuItem onClick={() => {
-                  handleMenuClose();
-                  navigate('/app/reports');
-                }}>
-                  Reports & Analytics
-                </MenuItem>
-                <MenuItem onClick={() => {
-                  handleMenuClose();
-                  navigate('/app/settings');
-                  }}>Settings</MenuItem>
-                <Divider />
-                <MenuItem onClick={handleLogout}
-                  sx={{ color: 'error.main' }}>
-                  Log out
-                </MenuItem>
+                {isAdmin && (
+                  <MenuItem onClick={() => { handleMenuClose(); navigate('/app/reports'); }}>
+                    Reports & Analytics
+                  </MenuItem>
+                  )}
+                  {isSuperAdmin && (
+                    <MenuItem onClick={() => { handleMenuClose(); navigate('/app/analytics'); }}>
+                      App Analytics
+                    </MenuItem>
+                  )}
+                  {isAdmin && (
+                    <MenuItem onClick={() => { handleMenuClose(); navigate('/app/settings'); }}>
+                      Settings
+                    </MenuItem>
+                  )}
+                  <MenuItem onClick={handleLogout}
+                    sx={{ color: 'error.main' }}>
+                    Log out
+                  </MenuItem>
               </Menu>
             </>
           )}
