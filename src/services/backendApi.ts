@@ -124,3 +124,41 @@ export const stripeApi = {
   createPortal: () =>
     apiCall<{ url: string }>('/api/stripe/portal', 'POST'),
 };
+
+export const analyticsApi = {
+
+  getAll: () =>
+    apiCall<{
+      overview: {
+        pageViews: number;
+        activeUsers: number;
+        sessions: number;
+        avgSessionDuration: number;
+      };
+      activeUsers: { today: number; week: number; month: number };
+      topPages: Array<{ path: string; views: number; users: number }>;
+      devices: Record<string, number>;
+      dailyViews: Array<{ date: string; views: number }>;
+      featureAdoption: Record<string, number>;
+      systemStats: Record<string, number>;
+      subscriptionStats: {
+        totalUsers: number;
+        proUsers: number;
+        freeUsers: number;
+        conversionRate: number;
+      };
+      mock?: boolean;
+    }>('/api/analytics', 'GET'),
+
+
+  getSystemStats: () =>
+    apiCall<{
+      systemStats: Record<string, number>;
+      subscriptionStats: {
+        totalUsers: number;
+        proUsers: number;
+        freeUsers: number;
+        conversionRate: number;
+      };
+    }>('/api/analytics/system', 'GET'),
+};
