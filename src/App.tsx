@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate} from 'react-router-dom';
 
 
 import PublicLayout from './layout/PublicLayout';
@@ -30,9 +30,11 @@ import Reports from './pages/app/Reports/Reports';
 import Profile from './pages/app/Profile/Profile';
 import Messaging from './pages/app/Messaging/Messaging';
 import Settings from './pages/app/Settings/Settings';
+import Analytics from './pages/app/Analytics/Analytics';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
+
   return (
     <BrowserRouter>
       <Routes>
@@ -65,6 +67,7 @@ function App() {
             <Route path="/app/profile" element={<Profile />} />
             <Route path="/app/messaging" element={<Messaging />} />
             <Route path="/app/settings" element={<Settings />} />
+            <Route path="/app/analytics" element={<Analytics />} />
           </Route>
         </Route>
 
