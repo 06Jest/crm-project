@@ -2,184 +2,300 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../../../services/supabase';
 import {
-  Box,
-  Button,
-  TextField,
-  Typography,
-  Divider,
-  Alert,
-  CircularProgress,
+  Box, Button, TextField, Typography, Alert,
+  Paper, CircularProgress, Tabs, Tab, Divider,
 } from '@mui/material';
-// import GoogleIcon from '@mui/icons-material/Google';
-// import FacebookIcon from '@mui/icons-material/Facebook';
+import EmailIcon from '@mui/icons-material/Email';
+import BadgeIcon from '@mui/icons-material/Badge';
+
+type LoginMode = 0 | 1;
 
 export default function Login() {
   const navigate = useNavigate();
-
-  const [form, setForm] = useState({ email: '', password: '' });
+  const [mode, setMode] = useState<LoginMode>(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-    setError('');
+
+  const [adminForm, setAdminForm] = useState({
+    email: '',
+    password: '',
+  });
+
+  const [agentForm, setAgentForm] = useState({
+    employeeId: '',
+    password: '',
+  });
+
+  const parseErrorMessage = (error: unknown, fallback: string): string => {
+    if (error instanceof Error) return error.message;
+    if (typeof error === 'string') return error;
+    if (
+      typeof error === 'object' &&
+      error !== null &&
+      'message' in error &&
+      typeof (error as Record<string, unknown>).message === 'string'
+    ) {
+      return (error as Record<string, unknown>).message as string;
+    }
+    return fallback;
   };
 
 
-  const handleEmailLogin = async () => {
-
-    if (!form.email || !form.password) {
-      setError('Please enter your email and password');
-      return;
-    }
-
+  const handleAdminLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
     setLoading(true);
-    setError('');
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email: form.email,
-      password: form.password,
-    });
+    try {
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: adminForm.email,
+        password: adminForm.password,
+      });
 
-    setLoading(false);
-
-    if (error) {
-      setError(error.message);
-      return;
+      if (signInError) throw signInError;
+      navigate('/app/dashboard');
+    } catch (err: unknown) {
+      setError(parseErrorMessage(err, 'Login failed. Check your email and password.'));
+    } finally {
+      setLoading(false);
     }
-
-    navigate('/app/dashboard');
   };
 
 
-  // const handleGoogleLogin = async () => {
-  //   await supabase.auth.signInWithOAuth({
-  //     provider: 'google',
-  //     options: {
-  //       redirectTo: `${window.location.origin}/app/dashboard`,
-  //     },
-  //   });
+  const handleAgentLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
 
-  // };
+    try {
+      const employeeIdClean = agentForm.employeeId.trim().toUpperCase();
+
+    
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('email, is_active, role')
+        .eq('employee_id', employeeIdClean)
+        .single();
+
+      if (profileError || !profile) {
+        throw new Error('Employee ID not found. Check your ID and try again.');
+      }
+
+      if (!profile.is_active) {
+        throw new Error('Your account has been deactivated. Contact your admin.');
+      }
+
+      if (profile.role !== 'agent') {
+        throw new Error('This login is for agents only. Use the Admin tab.');
+      }
 
 
-  // const handleFacebookLogin = async () => {
-  //   await supabase.auth.signInWithOAuth({
-  //     provider: 'facebook',
-  //     options: {
-  //       redirectTo: `${window.location.origin}/app/dashboard`,
-  //     },
-  //   });
-  // };
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: profile.email,
+        password: agentForm.password,
+      });
 
+      if (signInError) {
+        throw new Error('Incorrect password. Please try again.');
+      }
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') handleEmailLogin();
+      navigate('/app/dashboard');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      setError(message || 'Login failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <Box sx={{ width: 500,  display: 'flex', flexDirection: 'column', gap: 2 }}>
-      <Typography variant="h5" fontWeight={700}>
-        Welcome back
-      </Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-        Log in to your account
-      </Typography>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        p: 2,
+        bgcolor: 'background.default',
+      }}
+    >
+      <Paper
+        elevation={0}
+        sx={{
+          p: 4,
+          width: '100%',
+          maxWidth: 420,
+          border: 1,
+          borderColor: 'divider',
+          borderRadius: 3,
+        }}
+      >
 
-
-      {error && (
-        <Alert severity="error" onClose={() => setError('')}>
-          {error}
-        </Alert>
-      )}
-
-
-      <TextField
-        label="Email"
-        name="email"
-        type="email"
-        value={form.email}
-        onChange={handleChange}
-        onKeyDown={handleKeyDown}
-        fullWidth
-        autoComplete="email"
-      />
-
-
-      <TextField
-        label="Password"
-        name="password"
-        type="password"
-        value={form.password}
-        onChange={handleChange}
-        onKeyDown={handleKeyDown}
-        fullWidth
-        autoComplete="current-password"
-      />
-
-
-      <Box sx={{ textAlign: 'right', mt: -1 }}>
+        <Typography variant="h5" fontWeight={700} textAlign="center" gutterBottom>
+          Sign in to MiniCRM
+        </Typography>
         <Typography
-          component={Link}
-          to="/forgot-password"
           variant="body2"
-          color="primary"
-          sx={{ textDecoration: 'none' }}
+          color="text.secondary"
+          textAlign="center"
+          sx={{ mb: 3 }}
         >
-          Forgot password?
+          Choose your login type below
         </Typography>
-      </Box>
 
 
-      <Button
-        variant="contained"
-        fullWidth
-        size="large"
-        onClick={handleEmailLogin}
-        disabled={loading}
-      >
-        {loading ? <CircularProgress size={24} color="inherit" /> : 'Log in'}
-      </Button>
+        <Tabs
+          value={mode}
+          onChange={(_, v) => { setMode(v); setError(''); }}
+          variant="fullWidth"
+          sx={{ mb: 3, borderBottom: 1, borderColor: 'divider' }}
+        >
+          <Tab
+            icon={<EmailIcon fontSize="small" />}
+            iconPosition="start"
+            label="Admin"
+            sx={{ fontSize: 13 }}
+          />
+          <Tab
+            icon={<BadgeIcon fontSize="small" />}
+            iconPosition="start"
+            label="Agent"
+            sx={{ fontSize: 13 }}
+          />
+        </Tabs>
 
-      <Divider>or</Divider>
-
-
-      {/* <Button
-        variant="outlined"
-        fullWidth
-        size="large"
-        startIcon={<GoogleIcon />}
-        onClick={handleGoogleLogin}
-      >
-        Continue with Google
-      </Button>
-
-
-      <Button
-        variant="outlined"
-        fullWidth
-        size="large"
-        startIcon={<FacebookIcon />}
-        onClick={handleFacebookLogin}
-      >
-        Continue with Facebook
-      </Button> */}
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
 
 
-      <Box sx={{ textAlign: 'center', mt: 1 }}>
-        <Typography variant="body2" color="text.secondary">
-          Don't have an account?{' '}
-          <Typography
-            component={Link}
-            to="/register"
-            variant="body2"
-            color="primary"
-            sx={{ textDecoration: 'none', fontWeight: 600 }}
-          >
-            Sign up free
+        {mode === 0 && (
+          <Box component="form" onSubmit={handleAdminLogin}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <TextField
+                label="Email address"
+                type="email"
+                value={adminForm.email}
+                onChange={(e) =>
+                  setAdminForm({ ...adminForm, email: e.target.value })
+                }
+                required
+                fullWidth
+                autoFocus
+                autoComplete="email"
+              />
+              <TextField
+                label="Password"
+                type="password"
+                value={adminForm.password}
+                onChange={(e) =>
+                  setAdminForm({ ...adminForm, password: e.target.value })
+                }
+                required
+                fullWidth
+                autoComplete="current-password"
+              />
+              <Button
+                type="submit"
+                variant="contained"
+                fullWidth
+                size="large"
+                disabled={loading}
+              >
+                {loading
+                  ? <CircularProgress size={22} color="inherit" />
+                  : 'Sign in as Admin'
+                }
+              </Button>
+            </Box>
+          </Box>
+        )}
+
+
+        {mode === 1 && (
+          <Box component="form" onSubmit={handleAgentLogin}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <TextField
+                label="Employee ID"
+                value={agentForm.employeeId}
+                onChange={(e) =>
+                  setAgentForm({ ...agentForm, employeeId: e.target.value })
+                }
+                required
+                fullWidth
+                autoFocus
+                placeholder="e.g. EMP-2026-0001"
+                helperText="Your Employee ID was provided by your admin"
+                inputProps={{ style: { textTransform: 'uppercase' } }}
+              />
+              <TextField
+                label="Password"
+                type="password"
+                value={agentForm.password}
+                onChange={(e) =>
+                  setAgentForm({ ...agentForm, password: e.target.value })
+                }
+                required
+                fullWidth
+                autoComplete="current-password"
+              />
+              <Button
+                type="submit"
+                variant="contained"
+                fullWidth
+                size="large"
+                disabled={loading}
+              >
+                {loading
+                  ? <CircularProgress size={22} color="inherit" />
+                  : 'Sign in as Agent'
+                }
+              </Button>
+            </Box>
+
+            <Box
+              sx={{
+                mt: 2,
+                p: 1.5,
+                bgcolor: 'action.hover',
+                borderRadius: 2,
+              }}
+            >
+              <Typography variant="caption" color="text.secondary">
+                💡 Your Employee ID looks like <strong>EMP-2026-0001</strong>.
+                Contact your admin if you don't have it.
+              </Typography>
+            </Box>
+          </Box>
+        )}
+
+        <Divider sx={{ my: 2 }} />
+
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: 1,
+          }}
+        >
+          <Typography variant="body2" color="text.secondary">
+            No account?{' '}
+            <Link to="/register" style={{ color: 'inherit', fontWeight: 600 }}>
+              Create organization
+            </Link>
           </Typography>
-        </Typography>
-      </Box>
+          <Link
+            to="/forgot-password"
+            style={{ fontSize: 14, color: 'inherit' }}
+          >
+            Forgot password?
+          </Link>
+        </Box>
+      </Paper>
     </Box>
   );
 }

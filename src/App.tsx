@@ -6,7 +6,7 @@ import AuthLayout from './layout/AuthLayout';
 import AppLayout from './layout/AppLayout';
 
 
-
+import RoleGuard from './components/RoleGuard';
 import Landing from './pages/public/Landing/Landing';
 import Pricing from './pages/public/Pricing/Pricing';
 import About from './pages/public/About/About';
@@ -70,7 +70,40 @@ function App() {
             <Route path="/app/analytics" element={<Analytics />} />
           </Route>
         </Route>
+        <Route
+          path="/app/reports"
+          element={
+            <RoleGuard requiredRole="admin">
+              <Reports />
+            </RoleGuard>
+          }
+        />
+        <Route
+          path="/app/reports"
+          element={
+            <RoleGuard requiredRole="admin">
+              <Reports />
+            </RoleGuard>
+          }
+        />
+        <Route
+          path="/app/settings"
+          element={
+            <RoleGuard requiredRole="admin">
+              <Settings />
+            </RoleGuard>
+          }
+        />
 
+        // Super admin only (App Analytics):
+        <Route
+          path="/app/analytics"
+          element={
+            <RoleGuard requiredRole="super_admin">
+              <Analytics />
+            </RoleGuard>
+          }
+        />
         
         <Route path="*" element={<Navigate to="/" replace />} />
 
