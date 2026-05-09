@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '../../../store/store';
+import AgentBadge from '../../../components/AgentBadge';
 import {
   fetchDeals,
   addDeal,
@@ -81,6 +82,7 @@ type FormState = {
   contact_name: string;
   notes: string;
   close_date: string;
+  owned_by: string;
 };
 
 const emptyForm: FormState = {
@@ -90,6 +92,7 @@ const emptyForm: FormState = {
   contact_name: '',
   notes: '',
   close_date: '',
+  owned_by: '',
 };
 
 function DealCardWithAI({
@@ -157,7 +160,7 @@ function DealCardWithAI({
           </Typography>
         )}
 
-        {/* AI prediction section */}
+
         {showPrediction && (
           <Box sx={{ mt: 1 }}>
             {loading && (
@@ -206,7 +209,7 @@ function DealCardWithAI({
               >
                 Lost
               </Button>
-              {/* AI predict button */}
+
               {!showPrediction && (
                 <Button
                   size="small"
@@ -278,6 +281,7 @@ export default function Deals() {
         contact_name: deal.contact_name || '',
         notes: deal.notes || '',
         close_date: deal.close_date || '',
+        owned_by: deal.owned_by || '',
       });
     } else {
       setEditingDeal(null);
@@ -302,6 +306,7 @@ export default function Deals() {
       close_date: form.close_date || undefined,
       user_id: user?.id || '',
       owned_by: user?.id || '',
+      won : false,
     };
 
     if (editingDeal) {
@@ -460,8 +465,18 @@ export default function Deals() {
                   size="small"
                   sx={{ bgcolor: STAGE_CHIP_COLOR, color: 'white' }}
                 />
+                
               </Box>
-
+              {stageDeals.map((deal) => (
+                deal.owned_by && (
+                  <AgentBadge
+                    agentName={deal.owned_by}
+                    employeeId={deal.user_id}
+                    size="small"
+                    label="Owned by"
+                  />
+                )
+                ))}
               <Box
                 sx={{
                   minHeight: 300,
@@ -566,6 +581,14 @@ export default function Deals() {
             onChange={handleChange}
             fullWidth
             InputLabelProps={{ shrink: true }}
+          />
+          <TextField
+            label="Owned by"
+            name="owned_by"
+            value={form.owned_by}
+            onChange={handleChange}
+            fullWidth
+            placeholder="Who is this deal with?"
           />
           <TextField
             label="Notes"

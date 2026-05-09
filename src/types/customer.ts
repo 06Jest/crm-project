@@ -13,8 +13,9 @@ export interface Customer {
   latitude?: number;
   longitude?: number;
   notes?: string;
-  status: CustomerStatus;
+  status: string;
   user_id?: string;
+  org_id?: string;          
+  account_manager?: string;  
   created_at?: string;
 }
-

@@ -1,39 +1,34 @@
-import { supabase } from "./supabase";
+import { supabase } from './supabase';
+import { getInsertMeta } from '../utils/getOrgId';
 import type { Activity } from '../types/activity';
 
 export const fetchActivitiesFromDB = async (): Promise<Activity[]> => {
   const { data, error } = await supabase
     .from('activities')
     .select('*')
-    .order('created_at', { ascending: false});
+    .order('created_at', { ascending: false });
 
   if (error) throw new Error(error.message);
   return data as Activity[];
-}
-
-export const fetchActivitiesByContactFromDB = async (
-  contactId: string
-): Promise<Activity[]> => {
-  const { data, error } = await supabase 
-    .from('activities')
-    .select('*')
-    .eq('contact_id', contactId)
-    .order('created_at', {ascending: false});
-
-  if (error) throw new Error(error.message);
-  return data as Activity[];
-}
+};
 
 export const addActivityToDB = async (
   activity: Omit<Activity, 'id' | 'created_at'>
 ): Promise<Activity> => {
+  const { userId, orgId } = await getInsertMeta();
+
   const { data, error } = await supabase
     .from('activities')
-    .insert([activity])
+    .insert([{
+      ...activity,
+      user_id: userId,
+      org_id: orgId,
+      logged_by: userId,
+    }])
     .select()
     .single();
 
-  if(error) throw new Error(error.message);
+  if (error) throw new Error(error.message);
   return data as Activity;
 };
 
@@ -49,25 +44,18 @@ export const updateActivityInDB = async (
       contact_name: activity.contact_name,
       direction: activity.direction,
       duration: activity.duration,
-      scheduled_at: activity.scheduled_at,
       completed: activity.completed,
     })
-    .eq('iq', activity.id)
+    .eq('id', activity.id)
     .select()
     .single();
 
-  if (error) throw new Error (error.message);
+  if (error) throw new Error(error.message);
   return data as Activity;
 };
 
-
-export const deleteActivityFromDB = async (id: string):
-Promise<string> => {
-  const { error } = await supabase
-    .from('activities')
-    .delete()
-    .eq('id', id);
-  
+export const deleteActivityFromDB = async (id: string): Promise<string> => {
+  const { error } = await supabase.from('activities').delete().eq('id', id);
   if (error) throw new Error(error.message);
   return id;
 };

@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate} from 'react-router-dom';
 
 
+
 import PublicLayout from './layout/PublicLayout';
 import AuthLayout from './layout/AuthLayout';
 import AppLayout from './layout/AppLayout';
@@ -32,6 +33,7 @@ import Messaging from './pages/app/Messaging/Messaging';
 import Settings from './pages/app/Settings/Settings';
 import Analytics from './pages/app/Analytics/Analytics';
 import ProtectedRoute from './components/ProtectedRoute';
+import ResetPassword from './pages/auth/ForgotPassword/ResetPassword';
 
 function App() {
 
@@ -49,6 +51,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
         </Route>
 
         

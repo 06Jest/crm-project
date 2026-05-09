@@ -2,11 +2,11 @@ export interface Lead {
   id: string;
   title: string;
   name: string;
-  email?: string;
-  phone?: string;
-  status: 'New' | 'Contacted' | 'Qualified' | 'Closed';
+  status: string;
   notes?: string;
-  created_at?: string;
   user_id?: string;
-  assigned_to: string;
+  org_id?: string;          
+  assigned_to?: string;     
+  converted_by?: string;    
+  created_at?: string;
 }

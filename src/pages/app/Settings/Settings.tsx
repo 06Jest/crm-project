@@ -197,8 +197,8 @@ export default function Settings() {
       setCreateError('Employee ID is required');
       return;
     }
-    if (!createForm.tempPassword || createForm.tempPassword.length < 6) {
-      setCreateError('Password must be at least 6 characters');
+    if (!createForm.tempPassword || createForm.tempPassword.length < 12) {
+      setCreateError('Password must be at least 12 characters');
       return;
     }
 

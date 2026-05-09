@@ -12,10 +12,12 @@ export interface Deal {
   stage: DealStage;
   contact_id?: string;
   contact_name?: string;
-  notes?: string;
   close_date?: string;
-  won?: boolean;
-  user_id?:string;
+  notes?: string;
+  user_id?: string;
+  org_id?: string;          
+  owned_by?: string;        
+  closed_by?: string;       
   created_at?: string;
-  owned_by: string;
+  won: boolean;
 }

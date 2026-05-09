@@ -25,68 +25,70 @@ export default function Register() {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
+  e.preventDefault();
+  setError('');
 
-    // Validate
-    if (!form.orgName.trim()) {
-      setError('Organization name is required');
-      return;
-    }
-    if (!form.name.trim()) {
-      setError('Your name is required');
-      return;
-    }
-    if (form.password.length < 6) {
-      setError('Password must be at least 6 characters');
-      return;
-    }
-    if (form.password !== form.confirmPassword) {
-      setError('Passwords do not match');
-      return;
-    }
+  if (!form.orgName.trim()) {
+    setError('Organization name is required');
+    return;
+  }
+  if (!form.name.trim()) {
+    setError('Your name is required');
+    return;
+  }
+  if (form.password.length < 6) {
+    setError('Password must be at least 6 characters');
+    return;
+  }
+  if (form.password !== form.confirmPassword) {
+    setError('Passwords do not match');
+    return;
+  }
 
-    setLoading(true);
+  setLoading(true);
 
-    try {
+  try {
+    // Generate org_id BEFORE creating the user
+    const orgId = crypto.randomUUID();
 
-      const { data, error: signUpError } = await supabase.auth.signUp({
-        email: form.email,
-        password: form.password,
-        options: {
-          data: {
-            name: form.name,
-            role: 'admin',
-            org_name: form.orgName,
-          },
+    // Step 1 — Create Supabase Auth user
+    // Store org_id in metadata so it's always in the session
+    const { data, error: signUpError } = await supabase.auth.signUp({
+      email: form.email,
+      password: form.password,
+      options: {
+        data: {
+          name: form.name.trim(),
+          role: 'admin',
+          org_id: orgId,          
+          org_name: form.orgName.trim(),
         },
-      });
+      },
+    });
 
-      if (signUpError) throw signUpError;
+    if (signUpError) throw signUpError;
+    if (!data.user) throw new Error('User creation failed');
 
-      if (data.user) {
 
-        const orgId = crypto.randomUUID();
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .update({
+        name: form.name.trim(),
+        role: 'admin',
+        org_id: orgId,
+        org_name: form.orgName.trim(),
+      })
+      .eq('id', data.user.id);
 
-        await supabase
-          .from('profiles')
-          .update({
-            name: form.name,
-            role: 'admin',
-            org_id: orgId,
-            org_name: form.orgName,
-          })
-          .eq('id', data.user.id);
-      }
+    if (profileError) throw profileError;
 
-      navigate('/app/dashboard');
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Registration failed. Please try again.';
-      setError(errorMessage);
-    } finally {
-      setLoading(false);
-    }
-  };
+    navigate('/app/dashboard');
+  } catch (err: any) {
+    setError(err.message || 'Registration failed. Please try again.');
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <Box
@@ -171,7 +173,7 @@ export default function Register() {
               onChange={handleChange}
               required
               fullWidth
-              helperText="Minimum 6 characters"
+              helperText="Password must be at least 12 characters that include uppercase letter, number, and symbol"
             />
             <TextField
               label="Confirm password"

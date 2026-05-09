@@ -152,11 +152,12 @@ const formatTime = (dateStr: string): string => {
           {otherProfiles.length === 0 && (
             <Box sx={{ p: 3, textAlign: 'center' }}>
               <PersonIcon sx={{ fontSize: 40, color: 'text.disabled', mb: 1 }} />
-              <Typography variant="body2" color="text.secondary">
-                No other agents yet.
+              <Typography variant="body2" color="text.secondary" fontWeight={600}>
+                No other agents yet
               </Typography>
               <Typography variant="caption" color="text.secondary">
-                Agents appear here once they register.
+                Ask your admin to invite team members.
+                They will appear here once they join your organization.
               </Typography>
             </Box>
           )}
