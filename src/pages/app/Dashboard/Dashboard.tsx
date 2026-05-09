@@ -370,7 +370,7 @@ const handleGenerateSummary = useCallback(() => {
           />
       </Box>
       <Grid container spacing={2} sx={{ mb: 4 }}>
-        <Grid sx={{xs: 6, sm: 4, md:3}}>
+        <Grid size={{xs: 6, sm: 4, md:3}}>
           <StatCard
             title="Total contacts"
             value={contacts.length}
@@ -380,7 +380,7 @@ const handleGenerateSummary = useCallback(() => {
             onClick={() => navigate('/app/contacts')}
           />
         </Grid>
-        <Grid sx={{xs: 6, sm: 4, md:3}}>
+        <Grid size={{xs: 6, sm: 4, md:3}}>
           <StatCard
             title="Total leads"
             value={leads.length}
@@ -390,7 +390,7 @@ const handleGenerateSummary = useCallback(() => {
             onClick={() => navigate('/app/leads')}
           />
         </Grid>
-        <Grid sx={{xs: 6, sm: 4, md:3}}>
+        <Grid size={{xs: 6, sm: 4, md:3}}>
           <StatCard
             title="Active leads"
             value={activeLeads}
@@ -400,7 +400,7 @@ const handleGenerateSummary = useCallback(() => {
             onClick={() => navigate('/app/leads')}
           />
         </Grid>
-        <Grid sx={{xs: 6, sm: 4, md:3}}>
+        <Grid size={{xs: 6, sm: 4, md:3}}>
           <StatCard
             title="Leads closed"
             value={closedLeads}
@@ -409,7 +409,7 @@ const handleGenerateSummary = useCallback(() => {
             subtitle="Successfully closed"
           />
         </Grid>
-        <Grid sx={{xs: 6, sm: 4, md:3}}>
+        <Grid size={{xs: 6, sm: 4, md:3}}>
           <StatCard
             title="Total Revenue"
             value={formatCurrency(totalRevenue)}
@@ -419,7 +419,7 @@ const handleGenerateSummary = useCallback(() => {
             onClick={() => navigate('/app/deals')}
           />
         </Grid>
-        <Grid sx={{xs: 6, sm: 4, md:3}}>
+        <Grid size={{xs: 6, sm: 4, md:3}}>
           <StatCard
             title="Won this month"
             value={formatCurrency(wonThisMonth)}
@@ -429,7 +429,7 @@ const handleGenerateSummary = useCallback(() => {
             onClick={() => navigate('/app/deals')}
           />
         </Grid>
-        <Grid sx={{xs: 6, sm: 4, md:3}}>
+        <Grid size={{xs: 6, sm: 4, md:3}}>
           <StatCard
             title="Customers"
             value={customers.length}
@@ -438,7 +438,7 @@ const handleGenerateSummary = useCallback(() => {
             onClick={() => navigate('/app/customers')}
           />
         </Grid>
-        <Grid sx={{xs: 6, sm: 4, md:3}}>
+        <Grid size={{xs: 6, sm: 4, md:3}}>
           <StatCard
             title="Unread messages"
             value={totalUnread}
@@ -453,7 +453,7 @@ const handleGenerateSummary = useCallback(() => {
 
       <Grid container spacing={3} sx={{ mb: 4 }}>
 
-        <Grid sx={{xs: 12, md: 4}}>
+        <Grid size={{xs: 12, md: 4}}>
           <Card elevation={0} sx={{ border: 1, borderColor: 'divider', borderRadius: 3, p: 1 }}>
             <CardContent>
               <Typography variant="h6" fontWeight={700} gutterBottom>
@@ -482,7 +482,7 @@ const handleGenerateSummary = useCallback(() => {
         </Grid>
 
         {/* Revenue by month line chart */}
-        <Grid sx={{xs: 12, md: 4}}>
+        <Grid size={{xs: 12, md: 4}}>
           <Card elevation={0} sx={{ border: 1, borderColor: 'divider', borderRadius: 3, p: 1 }}>
             <CardContent>
               <Typography variant="h6" fontWeight={700} gutterBottom>
@@ -521,7 +521,7 @@ const handleGenerateSummary = useCallback(() => {
         </Grid>
 
         {/* Activities by type doughnut */}
-        <Grid sx={{xs: 12, md: 3}}>
+        <Grid size={{xs: 12, md: 3}}>
           <Card elevation={0} sx={{ border: 1, borderColor: 'divider', borderRadius: 3, p: 1 }}>
             <CardContent>
               <Typography variant="h6" fontWeight={700} gutterBottom>
@@ -558,7 +558,7 @@ const handleGenerateSummary = useCallback(() => {
       <Grid container spacing={3} sx={{ mb: 4 }}>
 
         {/* Recent activities feed */}
-        <Grid sx={{xs: 12, md: 7}}>
+        <Grid size={{xs: 12, md: 7}}>
           <Card elevation={0} sx={{ border: 1, borderColor: 'divider', borderRadius: 3 }}>
             <CardContent>
               <SectionTitle
@@ -623,7 +623,7 @@ const handleGenerateSummary = useCallback(() => {
           </Card>
         </Grid>
 
-        <Grid sx={{xs: 12, md: 5}}>
+        <Grid size={{xs: 12, md: 5}}>
           <Card elevation={0} sx={{ border: 1, borderColor: 'divider', borderRadius: 3 }}>
             <CardContent>
               <SectionTitle
@@ -694,7 +694,7 @@ const handleGenerateSummary = useCallback(() => {
       <Grid container spacing={3}>
 
         {/* Deals closing this week */}
-        <Grid sx={{xs: 12, md: 6}}>
+        <Grid size={{xs: 12, md: 6}}>
           <Card elevation={0} sx={{ border: 1, borderColor: 'divider', borderRadius: 3 }}>
             <CardContent>
               <SectionTitle
@@ -747,7 +747,7 @@ const handleGenerateSummary = useCallback(() => {
         </Grid>
 
         {/* Recent contacts */}
-        <Grid sx={{xs: 12, md: 6}}>
+        <Grid size={{xs: 12, md: 6}}>
           <Card elevation={0} sx={{ border: 1, borderColor: 'divider', borderRadius: 3 }}>
             <CardContent>
               <SectionTitle
