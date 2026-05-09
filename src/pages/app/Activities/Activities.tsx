@@ -16,6 +16,7 @@ import { aiApi } from '../../../services/backendApi';
 import { fetchContacts } from "../../../store/contactsSlice";
 import type { Activity, ActivityType } from "../../../types/activity";
 import { useAuthContext } from "../../../hooks/useAuthContext";
+import AgentBadge from '../../../components/AgentBadge';
 
 import {
   Box, Typography, Button, Card, CardContent,
@@ -183,7 +184,7 @@ export default function Activities() {
       duration: form.duration  ? parseInt(form.duration) : undefined,
       scheduled_at: form.scheduled_at
         ? new Date(form.scheduled_at).toISOString()
-        : undefined,
+        : '',
         completed: false,
         user_id: user?.id || '',
     };
@@ -379,6 +380,13 @@ export default function Activities() {
                           gap: 1,
                         }}>
                           <Box>
+                            {activity.logged_by && (
+                              <AgentBadge
+                                agentName={activity.logged_by}
+                                employeeId={activity.logged_by}
+                                size="small"
+                              />
+                            )}
                             <Typography
                               variant="body1"
                               fontWeight={600}

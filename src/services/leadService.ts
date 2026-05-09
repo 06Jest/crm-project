@@ -1,12 +1,13 @@
-import { supabase } from "./supabase";
+import { supabase } from './supabase';
+import { getInsertMeta } from '../utils/getOrgId';
 import type { Lead } from '../types/lead';
 
 export const fetchLeadsFromDB = async (): Promise<Lead[]> => {
-  const { data, error} = await supabase
+  const { data, error } = await supabase
     .from('leads')
     .select('*')
-    .order('created_at', {ascending: false});
-  
+    .order('created_at', { ascending: false });
+
   if (error) throw new Error(error.message);
   return data as Lead[];
 };
@@ -14,26 +15,32 @@ export const fetchLeadsFromDB = async (): Promise<Lead[]> => {
 export const addLeadToDB = async (
   lead: Omit<Lead, 'id' | 'created_at'>
 ): Promise<Lead> => {
+  const { userId, orgId } = await getInsertMeta();
+
   const { data, error } = await supabase
     .from('leads')
-    .insert([lead])
+    .insert([{
+      ...lead,
+      user_id: userId,
+      org_id: orgId,
+      assigned_to: lead.assigned_to || userId,
+    }])
     .select()
     .single();
 
-  if(error) throw new Error(error.message);
+  if (error) throw new Error(error.message);
   return data as Lead;
 };
 
 export const updateLeadInDB = async (lead: Lead): Promise<Lead> => {
-  const { data, error} = await supabase
+  const { data, error } = await supabase
     .from('leads')
     .update({
       title: lead.title,
       name: lead.name,
-      email: lead.email,
-      phone: lead.phone,
       status: lead.status,
-      notes: lead.notes
+      notes: lead.notes,
+      assigned_to: lead.assigned_to,
     })
     .eq('id', lead.id)
     .select()
@@ -41,16 +48,10 @@ export const updateLeadInDB = async (lead: Lead): Promise<Lead> => {
 
   if (error) throw new Error(error.message);
   return data as Lead;
-}
+};
 
 export const deleteLeadFromDB = async (id: string): Promise<string> => {
-  const { error } = await supabase
-    .from('leads')
-    .delete()
-    .eq('id', id)
-  
+  const { error } = await supabase.from('leads').delete().eq('id', id);
   if (error) throw new Error(error.message);
   return id;
 };
-
-

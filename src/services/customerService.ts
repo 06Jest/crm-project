@@ -1,5 +1,6 @@
 import { supabase } from "./supabase";
 import type { Customer } from '../types/customer';
+import { getInsertMeta } from '../utils/getOrgId';
 
 export const fetchCustomersFromDB = async (): Promise<Customer[]> => {
   const { data, error } = await supabase
@@ -14,9 +15,16 @@ export const fetchCustomersFromDB = async (): Promise<Customer[]> => {
 export const addCustomerToDB = async (
   customer: Omit<Customer, 'id' | 'created_at'>
 ): Promise<Customer> => {
+  const { userId, orgId } = await getInsertMeta();
+
   const { data, error } = await supabase
     .from('customers')
-    .insert([customer])
+    .insert([{
+      ...customer,
+      user_id: userId,
+      org_id: orgId,
+      account_manager: customer.account_manager || userId,
+    }])
     .select()
     .single();
 
@@ -71,7 +79,7 @@ export const geocodeAddress = async (
       `https://nominatim.openstreetmap.org/search?q=${encoded}&format=json&limit=1`,
       {
         headers: {
-          'User-Agent': 'uniThread/1.0 (uni.mailer1@gmail.com)',
+          'User-Agent': 'uniThread/1.0 (uni.mailer1111@gmail.com)',
         },
       }
     );

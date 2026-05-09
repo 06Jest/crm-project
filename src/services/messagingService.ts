@@ -3,14 +3,32 @@ import type { Message } from '../types/message';
 import type { Profile } from '../types/profile';
 
 export const fetchProfilesFromDB = async (): Promise<Profile[]> => {
+
+  const { data: { user } } = await supabase.auth.getUser();
+  const orgId = user?.user_metadata?.org_id;
+
+  if (!orgId) {
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user?.id || '')
+      .eq('is_active', true);
+
+    if (error) throw new Error(error.message);
+    return (data || []) as Profile[];
+  }
+
+
   const { data, error } = await supabase
     .from('profiles')
     .select('*')
+    .eq('org_id', orgId)
     .eq('is_active', true)
     .order('name');
-  
+
   if (error) throw new Error(error.message);
-  return data as Profile[];
+  return (data || []) as Profile[];
 };
 
 export const fetchConversationFromDB = async (
@@ -32,10 +50,18 @@ export const fetchConversationFromDB = async (
 
 export const sendMessageToDB = async (
   message: Omit<Message, 'id' | 'created_at' | 'is_read' | 'sender' | 'receiver'>
-): Promise <Message> => {
+): Promise<Message> => {
+
+  const { data: { user } } = await supabase.auth.getUser();
+  const orgId = user?.user_metadata?.org_id || null;
+
   const { data, error } = await supabase
     .from('messages')
-    .insert([{ ...message, is_read: false}])
+    .insert([{
+      ...message,
+      is_read: false,
+      org_id: orgId, 
+    }])
     .select()
     .single();
 
@@ -77,15 +103,14 @@ export const markMessagesReadInDB = async (
   return counts;
  };
 
- export const subscribeToMessages = (
+export const subscribeToMessages = (
   currentUserId: string,
   onNewMessage: (message: Message) => void
- ) => {
-  const channel = supabase 
+) => {
+  const channel = supabase
     .channel(`messages_${currentUserId}`)
     .on(
       'postgres_changes',
-
       {
         event: 'INSERT',
         schema: 'public',
@@ -101,4 +126,4 @@ export const markMessagesReadInDB = async (
   return () => {
     supabase.removeChannel(channel);
   };
- };
+};

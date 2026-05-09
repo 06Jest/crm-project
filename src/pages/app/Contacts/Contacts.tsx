@@ -1,6 +1,7 @@
 import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "../../../store/store";
 import { useAuthContext } from '../../../hooks/useAuthContext';
+import { getInsertMeta } from '../../../utils/getOrgId';
 
 import { 
   addContact,
@@ -54,10 +55,20 @@ export default function Contacts() {
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [editingContact, setEditingContact] = useState<Contact | null>(null)
   const [form, setForm] = useState<FormState>(emptyForm);
+  const [displayName, setDisplayName] = useState<string>('');
 
   useEffect(()=> {
     dispatch(fetchContacts());
   }, [dispatch]);
+  
+  useEffect(() => {
+    const fetchName = async () => {
+      const { userName } = await getInsertMeta();
+      setDisplayName(userName);
+    };
+
+    fetchName();
+  }, []);
 
   const handleOpen = (contact?: Contact) => {
     if(contact) {
@@ -66,7 +77,7 @@ export default function Contacts() {
         name: contact.name,
         email: contact.email,
         phone: contact.phone || '',
-        status: contact.status
+        status: contact.status,
       })
     } else {
       setEditingContact(null)
@@ -111,6 +122,7 @@ export default function Contacts() {
   }
 
 
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}>
@@ -149,6 +161,7 @@ export default function Contacts() {
                 <TableCell>Email</TableCell>
                 <TableCell>Phone</TableCell>
                 <TableCell>Status</TableCell>
+                <TableCell>Assigned to</TableCell>
                 <TableCell>Actions</TableCell>
               </TableRow>
             </TableHead>
@@ -168,6 +181,9 @@ export default function Contacts() {
                   <TableCell>{contact.email}</TableCell>
                   <TableCell>{contact.phone}</TableCell>
                   <TableCell>{contact.status}</TableCell>
+                  <TableCell sx={{textAlign: "center"}}>
+                    {displayName}
+                  </TableCell>
                   <TableCell>
                     <Button
                       onClick={() => handleOpen(contact)}

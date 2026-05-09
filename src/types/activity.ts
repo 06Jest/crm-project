@@ -2,18 +2,19 @@ export type ActivityType = 'call' | 'email' | 'meeting' | 'note' |  'sms' ;
 export type ActivityDirection = 'inbound' | 'outbound';
 
 export interface Activity {
-  id:string;
+  id: string;
   type: ActivityType;
   subject: string;
   body?: string;
-  contact_id?: string;
   contact_name?: string;
+  contact_id?: string;
   direction?: ActivityDirection;
   duration?: number;
-  scheduled_at?: string;
-  completed?: boolean;
+  completed: boolean;
   user_id?: string;
+  org_id?: string;          
+  logged_by?: string;       
   created_at?: string;
-  logged_by: string;
+  scheduled_at: string;
 }
 

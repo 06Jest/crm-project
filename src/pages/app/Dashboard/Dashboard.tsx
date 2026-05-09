@@ -435,7 +435,6 @@ const handleGenerateSummary = useCallback(() => {
             value={customers.length}
             icon={<BusinessIcon />}
             color={CHART_COLORS.amber}
-            subtitle="Companies"
             onClick={() => navigate('/app/customers')}
           />
         </Grid>
