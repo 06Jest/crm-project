@@ -240,6 +240,14 @@ export default function Customers() {
                         <Typography variant="body1" fontWeight={700} lineHeight={1.2}>
                           {customer.name}
                         </Typography>
+                        <Button
+                          size="small"
+                          variant="text"
+                          onClick={() => navigate(`/app/company/${customer.id}`)}
+                          startIcon={<BusinessIcon />}
+                        >
+                          Company profile
+                        </Button>
                         {customer.industry && (
                           <Typography variant="caption" color="text.secondary">
                             {customer.industry}

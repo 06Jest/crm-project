@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '../../../store/store';
+import MentionInput from '../../../components/MentionInput';
+import MessageContent from '../../../components/MessageContent';
+import type { MentionItem } from '../../../types/message';
 import {
   fetchProfiles,
   fetchConversation,
@@ -14,11 +17,10 @@ import { subscribeToMessages } from '../../../services/messagingService';
 import { useAuthContext } from '../../../hooks/useAuthContext';
 
 import {
-  Box, Typography, TextField, Button, Avatar,
+  Box, Typography, TextField,  Avatar,
   List, ListItem, ListItemAvatar, ListItemText,
-  Paper, Chip, CircularProgress, Badge, Divider,
+  Paper, Chip, CircularProgress, Badge, Divider, MenuItem
 } from '@mui/material';
-import SendIcon from '@mui/icons-material/Send';
 import PersonIcon from '@mui/icons-material/Person';
 
 const formatTime = (dateStr: string): string => {
@@ -52,7 +54,6 @@ const formatTime = (dateStr: string): string => {
       loading,
     } = useSelector((state: RootState) => state.messaging);
 
-    const [messageText, setMessageText] = useState('');
     const [selectedContact, setSelectedContact] = useState<string>('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -91,29 +92,23 @@ const formatTime = (dateStr: string): string => {
       }));
     };
 
-    const handleSend = () => {
-      if (!messageText.trim() || !activeConversationId || !user) return;
+    const handleSend = (content: string, mentions: MentionItem[]) => {
+      if (!content.trim() || !activeConversationId || !user) return;
 
       dispatch(sendMessage({
         sender_id: user.id,
         receiver_id: activeConversationId,
-        content: messageText.trim(),
+        content: content.trim(),
+        mentions,
         contact_id: selectedContact || undefined,
         contact_name: selectedContact
-          ? contacts.find((c) => c.id === selectedContact)?.name
+          ? contacts.find(c => c.id === selectedContact)?.name
           : undefined,
       }));
 
-      setMessageText('');
       setSelectedContact('');
     };
 
-    const handleKeyDown = (e: React.KeyboardEvent) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        handleSend();
-      }
-    };
 
 
     const contacts = useSelector((state: RootState) => state.contacts.items);
@@ -338,6 +333,7 @@ const formatTime = (dateStr: string): string => {
                             display: 'flex',
                             alignSelf: isMe ? 'flex-end' : 'flex-start',
                           }}
+                          
                         />
                       )}
 
@@ -352,9 +348,11 @@ const formatTime = (dateStr: string): string => {
                           py: 1,
                         }}
                       >
-                        <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>
-                          {msg.content}
-                        </Typography>
+                        <MessageContent
+                          content={msg.content}
+                          mentions={msg.mentions}
+                          isMyMessage={isMe}
+                        />
                       </Box>
 
                       <Typography
@@ -379,7 +377,8 @@ const formatTime = (dateStr: string): string => {
 
             <Divider />
 
-            <Box sx={{ p: 2 }}>
+            <Box sx={{ p: 1.5, bgcolor: 'background.paper', flexShrink: 0 }}>
+              {/* Optional contact link */}
               {contacts.length > 0 && (
                 <Box sx={{ mb: 1 }}>
                   <TextField
@@ -391,36 +390,24 @@ const formatTime = (dateStr: string): string => {
                     sx={{ minWidth: 220 }}
                     SelectProps={{ native: false }}
                   >
-                    <option value="">No contact linked</option>
+                    <MenuItem value="">No contact linked</MenuItem>
                     {contacts.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
+                      <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>
                     ))}
                   </TextField>
                 </Box>
               )}
 
               <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-end' }}>
-                <TextField
-                  fullWidth
-                  multiline
-                  maxRows={4}
-                  placeholder={`Message ${activeProfile?.name}...`}
-                  value={messageText}
-                  onChange={(e) => setMessageText(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  size="small"
-                  helperText="Press Enter to send, Shift+Enter for new line"
-                />
-                <Button
-                  variant="contained"
-                  onClick={handleSend}
-                  disabled={!messageText.trim()}
-                  sx={{ minWidth: 'auto', px: 2, py: 1.5 }}
-                >
-                  <SendIcon fontSize="small" />
-                </Button>
+                <Box sx={{ flex: 1 }}>
+                  <MentionInput
+                    onSend={handleSend}
+                    disabled={false}
+                    recipientName={activeProfile?.name}
+                  />
+                </Box>
+                {/* Send button is now inside MentionInput's onSend callback
+                    but you can keep an external button too: */}
               </Box>
             </Box>
           </>

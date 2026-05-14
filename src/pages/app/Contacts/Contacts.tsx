@@ -56,6 +56,7 @@ export default function Contacts() {
   const [editingContact, setEditingContact] = useState<Contact | null>(null)
   const [form, setForm] = useState<FormState>(emptyForm);
   const [displayName, setDisplayName] = useState<string>('');
+  const customers = useSelector((s: RootState) => s.customers.items);
 
   useEffect(()=> {
     dispatch(fetchContacts());
@@ -265,7 +266,18 @@ export default function Contacts() {
                 value={form.name}
                 onChange={handleChange}
               />
-
+              <TextField
+                select
+                label="Company (optional)"
+                value={form.company_id || ''}
+                onChange={(e) => setForm({ ...form, company_id: e.target.value || null })}
+                fullWidth
+              >
+                <MenuItem value="">No company linked</MenuItem>
+                {customers.map(c => (
+                  <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>
+                ))}
+              </TextField>
               <TextField
                 label="Email"
                 name="email"
