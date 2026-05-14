@@ -8,6 +8,7 @@ import PersonIcon from "@mui/icons-material/Person";
 import HandshakeIcon from "@mui/icons-material/Handshake";
 import ViewTimelineIcon from "@mui/icons-material/ViewTimeline";
 import FolderSharedIcon from "@mui/icons-material/FolderShared";
+import ChatBubbleIcon from '@mui/icons-material/ChatBubble';
 
 function Topbar() {
   const navigate = useNavigate();
@@ -25,6 +26,7 @@ function Topbar() {
     { label: "Deals", value: "/app/deals", icon: <HandshakeIcon /> },
     { label: "Activities", value: "/app/activities", icon: <ViewTimelineIcon /> },
     { label: "Customers", value: "/app/customers", icon: <PersonIcon /> },
+    { label: "Messages", value: "/app/messaging", icon: <ChatBubbleIcon /> },
 
     ...(isAdmin
       ? [{ label: "Reports", value: "/app/reports", icon: <DashboardIcon /> }]

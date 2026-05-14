@@ -132,6 +132,14 @@ export default function CustomerDetail() {
               <Typography variant="h4" fontWeight={700}>
                 {customer.name}
               </Typography>
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<BusinessIcon />}
+                onClick={() => navigate(`/app/company/${customer.id}`)}
+              >
+                Company profile
+              </Button>
               <Chip
                 label={customer.status}
                 color={

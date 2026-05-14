@@ -34,6 +34,7 @@ import Settings from './pages/app/Settings/Settings';
 import Analytics from './pages/app/Analytics/Analytics';
 import ProtectedRoute from './components/ProtectedRoute';
 import ResetPassword from './pages/auth/ForgotPassword/ResetPassword';
+import CompanyProfile from './pages/app/Company/CompanyProfile';
 
 function App() {
 
@@ -68,6 +69,7 @@ function App() {
             <Route path="/app/customers/:id" element={<CustomerDetail />} />
             <Route path="/app/reports" element={<Reports />} />
             <Route path="/app/profile" element={<Profile />} />
+            <Route path="/app/company/:id" element={<CompanyProfile />} />
             <Route path="/app/messaging" element={<Messaging />} />
             <Route path="/app/settings" element={<Settings />} />
             <Route path="/app/analytics" element={<Analytics />} />

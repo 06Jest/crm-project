@@ -39,8 +39,7 @@ export const fetchConversationFromDB = async (
     .from('messages')
     .select('*')
     .or(
-      `and(sender_id.eq.${currentUserId}, receiver_id.eq.${otherUserId}),` +
-      `and(sender_id.eq.${otherUserId}, receiver_id.eq.${currentUserId})`
+      `and(sender_id.eq.${currentUserId},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${currentUserId})`
     )
     .order('created_at', { ascending: true });
   
@@ -51,7 +50,6 @@ export const fetchConversationFromDB = async (
 export const sendMessageToDB = async (
   message: Omit<Message, 'id' | 'created_at' | 'is_read' | 'sender' | 'receiver'>
 ): Promise<Message> => {
-
   const { data: { user } } = await supabase.auth.getUser();
   const orgId = user?.user_metadata?.org_id || null;
 
@@ -60,7 +58,8 @@ export const sendMessageToDB = async (
     .insert([{
       ...message,
       is_read: false,
-      org_id: orgId, 
+      org_id: orgId,
+      mentions: message.mentions || [],
     }])
     .select()
     .single();
