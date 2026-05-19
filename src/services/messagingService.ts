@@ -31,42 +31,87 @@ export const fetchProfilesFromDB = async (): Promise<Profile[]> => {
   return (data || []) as Profile[];
 };
 
+
 export const fetchConversationFromDB = async (
   currentUserId: string,
-  otherUserId:string
+  otherUserId: string
 ): Promise<Message[]> => {
   const { data, error } = await supabase
     .from('messages')
     .select('*')
     .or(
-      `and(sender_id.eq.${currentUserId},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${currentUserId})`
+      `and(sender_id.eq.${currentUserId},receiver_id.eq.${otherUserId}),` +
+      `and(sender_id.eq.${otherUserId},receiver_id.eq.${currentUserId})`
     )
     .order('created_at', { ascending: true });
-  
+
   if (error) throw new Error(error.message);
   return data as Message[];
-}
+};
+
+// export const fetchConversationFromDB = async (
+//   currentUserId: string,
+//   otherUserId:string
+// ): Promise<Message[]> => {
+//   const { data, error } = await supabase
+//     .from('messages')
+//     .select('*')
+//     .or(
+//       `and(sender_id.eq.${currentUserId},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${currentUserId})`
+//     )
+//     .order('created_at', { ascending: true });
+  
+//   if (error) throw new Error(error.message);
+//   return data as Message[];
+// }
 
 export const sendMessageToDB = async (
   message: Omit<Message, 'id' | 'created_at' | 'is_read' | 'sender' | 'receiver'>
 ): Promise<Message> => {
+  // ── Always get org_id from session ──────────────────────────
+  // This prevents RLS failures and ensures data isolation
   const { data: { user } } = await supabase.auth.getUser();
   const orgId = user?.user_metadata?.org_id || null;
 
+  // ── Insert with org_id guaranteed ──────────────────────────
   const { data, error } = await supabase
     .from('messages')
     .insert([{
       ...message,
       is_read: false,
-      org_id: orgId,
-      mentions: message.mentions || [],
+      org_id: orgId,  // ← ALWAYS set from session, never trust frontend
     }])
     .select()
     .single();
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    console.error('Failed to send message:', error);
+    throw new Error(error.message);
+  }
+
   return data as Message;
 };
+
+// export const sendMessageToDB = async (
+//   message: Omit<Message, 'id' | 'created_at' | 'is_read' | 'sender' | 'receiver'>
+// ): Promise<Message> => {
+//   const { data: { user } } = await supabase.auth.getUser();
+//   const orgId = user?.user_metadata?.org_id || null;
+
+//   const { data, error } = await supabase
+//     .from('messages')
+//     .insert([{
+//       ...message,
+//       is_read: false,
+//       org_id: orgId,
+//       mentions: message.mentions || [],
+//     }])
+//     .select()
+//     .single();
+
+//   if (error) throw new Error(error.message);
+//   return data as Message;
+// };
 
 
 export const markMessagesReadInDB = async (
@@ -125,4 +170,13 @@ export const subscribeToMessages = (
   return () => {
     supabase.removeChannel(channel);
   };
+};
+
+export const formatTime = (isoString: string): string => {
+  const date = new Date(isoString);
+  return date.toLocaleTimeString('en-PH', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  });
 };

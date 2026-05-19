@@ -7,19 +7,21 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import CheckIcon from '@mui/icons-material/Check';
 import { useInView } from '../../../hooks/useInView';
 import AnimatedNumber from '../../../components/AnimatedNumber';
+import type { RootState } from '../../../store/store';
+import {  useSelector } from 'react-redux';
+import LandingBackground from '../../../assets/landing-background.jpg';
 
-// ── Typography sx presets ─────────────────────────────────
 const displayFont = { fontFamily: '"Playfair Display", Georgia, serif' };
 const bodyFont = { fontFamily: '"Outfit", system-ui, sans-serif' };
 
-// ── Gold accent ───────────────────────────────────────────
-const GOLD = '#F5C842';
-const BLUE = '#3B82F6';
-const DARK = '#0B0F1A';
-const CARD_BG = 'rgba(255,255,255,0.04)';
-const BORDER = 'rgba(255,255,255,0.08)';
 
-// ── Fade-up animation helper ──────────────────────────────
+const GOLD = '#e7b41a';
+const BLUE = '#3B82F6';
+const DARK = '#3f3f3fee';
+const CARD_BG = 'rgba(255,255,255,0.04)';
+
+
+
 const fadeUp = (inView: boolean, delay = 0): object => ({
   opacity: inView ? 1 : 0,
   transform: inView ? 'translateY(0)' : 'translateY(40px)',
@@ -27,7 +29,7 @@ const fadeUp = (inView: boolean, delay = 0): object => ({
                transform 0.75s cubic-bezier(0.22,1,0.36,1) ${delay}s`,
 });
 
-// ── Reveal wrapper ────────────────────────────────────────
+
 function Reveal({
   children, delay = 0, sx = {},
 }: {
@@ -102,17 +104,19 @@ const STATS = [
   { to: 100, suffix: '%', label: 'Free to start' },
 ];
 
-// ══════════════════════════════════════════════════════════
 export default function Landing() {
   const navigate = useNavigate();
   const { ref: heroRef, inView: heroInView } = useInView();
+  const themeMode = useSelector((state: RootState) => state.ui.themeMode);
+  const BORDER = themeMode === 'light' ? 'rgba(197, 197, 197, 0.47)' : 'rgba(170, 170, 170, 0.19)';
+  const COLOR = themeMode === 'light' ? 'black' : 'white';
+  const BACKGROUND = themeMode === 'light' ? 'rgba(177, 177, 177, 0.82)' : 'rgba(63, 63, 63, 0.78)';
+  const SUBTEXTCOLOR = themeMode === 'light' ? 'rgba(87, 87, 87, 0.92)' : 'rgba(190, 190, 190, 0.9)';
+
 
   return (
-    <Box sx={{ bgcolor: DARK, color: 'white', overflow: 'hidden', ...bodyFont }}>
+    <Box sx={{ bgcolor: {themeMode}, color: {COLOR}, overflow: 'hidden', ...bodyFont }}>
 
-      {/* ══════════════════════════════════════════════
-          HERO — fixed background photo
-      ══════════════════════════════════════════════ */}
       <Box
         sx={{
           position: 'relative',
@@ -123,14 +127,13 @@ export default function Landing() {
           // Fixed office/sales background from Unsplash
           backgroundImage: [
             'linear-gradient(to bottom, rgba(11,15,26,0.75) 0%, rgba(11,15,26,0.65) 60%, rgba(11,15,26,1) 100%)',
-            'url(https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1920&q=80)',
+            `url(${LandingBackground})`,
           ].join(', '),
           backgroundSize: 'cover',
           backgroundPosition: 'center 30%',
           backgroundAttachment: 'fixed',
         }}
       >
-        {/* Subtle grain texture overlay */}
         <Box
           sx={{
             position: 'absolute',
@@ -153,7 +156,6 @@ export default function Landing() {
               </Typography>
             </Box>
 
-            {/* Headline */}
             <Typography
               component="h1"
               sx={{
@@ -161,6 +163,7 @@ export default function Landing() {
                 fontSize: { xs: '2.6rem', sm: '3.8rem', md: '5.2rem' },
                 fontWeight: 900,
                 lineHeight: 1.02,
+                color: 'white',
                 mb: 3,
                 ...fadeUp(heroInView, 0.08),
               }}
@@ -180,7 +183,6 @@ export default function Landing() {
               </Box>
             </Typography>
 
-            {/* Subtext */}
             <Typography
               sx={{
                 ...bodyFont,
@@ -249,7 +251,6 @@ export default function Landing() {
               </Button>
             </Box>
 
-            {/* Micro trust lines */}
             <Box sx={{ display: 'flex', gap: 3, mt: 4, flexWrap: 'wrap', ...fadeUp(heroInView, 0.32) }}>
               {['No credit card required', 'Free tier forever', 'Up in minutes'].map(t => (
                 <Box key={t} sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
@@ -263,14 +264,11 @@ export default function Landing() {
           </Box>
         </Container>
 
-        {/* Bottom fade into next section */}
-        <Box sx={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 120, background: `linear-gradient(to top, ${DARK}, transparent)` }} />
-      </Box>
+        <Box sx={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 120,   background: `linear-gradient(to top, ${DARK}, transparent)` }} />
+        </Box>
 
-      {/* ══════════════════════════════════════════════
-          STATS BAR
-      ══════════════════════════════════════════════ */}
-      <Box sx={{ borderTop: `1px solid ${BORDER}`, borderBottom: `1px solid ${BORDER}`, py: 6 }}>
+
+      <Box sx={{ border: `1px solid ${BORDER}`, py: 6, bgcolor: {BACKGROUND} }}>
         <Container maxWidth="lg">
           <Grid container spacing={2}>
             {STATS.map((s, i) => (
@@ -289,9 +287,9 @@ export default function Landing() {
                     >
                       <AnimatedNumber to={s.to} suffix={s.suffix} />
                     </Typography>
-                    <Typography sx={{ ...bodyFont, fontSize: 12, color: 'rgba(255,255,255,0.4)', fontWeight: 500, letterSpacing: 1.5, textTransform: 'uppercase' }}>
+                    <Typography sx={{ ...bodyFont, fontSize: 12, color: {COLOR}, fontWeight: 500, letterSpacing: 1.5, textTransform: 'uppercase', mt: 2  }}>
                       {s.label}
-                    </Typography>
+                    </Typography> 
                   </Box>
                 </Reveal>
               </Grid>
@@ -300,11 +298,23 @@ export default function Landing() {
         </Container>
       </Box>
 
-      {/* ══════════════════════════════════════════════
-          FEATURES — numbered editorial list
-      ══════════════════════════════════════════════ */}
-      <Box sx={{ py: { xs: 12, md: 20 } }}>
-        <Container maxWidth="lg">
+
+      <Box sx={{ 
+        py: { xs: 12, md: 20 },
+        position: 'relative',
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+
+          backgroundImage: [
+            'linear-gradient(to bottom, rgba(11,15,26,0.75) 0%, rgba(11,15,26,0.65) 60%, rgba(11,15,26,1) 100%)',
+            'url(https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1920&q=80)',
+          ].join(', '),
+          backgroundSize: 'cover',
+          backgroundPosition: 'center 30%',
+          backgroundAttachment: 'fixed',
+         }}>
+        <Container >
           <Reveal>
             <Box sx={{ mb: { xs: 8, md: 14 } }}>
               <Typography
@@ -327,7 +337,8 @@ export default function Landing() {
                   fontSize: { xs: '2rem', md: '3.2rem' },
                   fontWeight: 800,
                   lineHeight: 1.1,
-                  maxWidth: 560,
+                  maxWidth: 800,
+                  color: 'white'
                 }}
               >
                 Everything a sales team
@@ -337,8 +348,7 @@ export default function Landing() {
             </Box>
           </Reveal>
 
-          {/* Feature rows — alternating layout */}
-          <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', maxWidth: 'md', justifySelf: 'center' }}>
             {FEATURES.map((f, i) => (
               <Reveal key={f.num} delay={i * 0.06}>
                 <Box
@@ -356,7 +366,6 @@ export default function Landing() {
                     '&:last-child': { borderBottom: 'none' },
                   }}
                 >
-                  {/* Number */}
                   <Typography
                     className="feat-num"
                     sx={{
@@ -374,8 +383,7 @@ export default function Landing() {
                     {f.num}
                   </Typography>
 
-                  {/* Content */}
-                  <Box sx={{ flex: 1 }}>
+                  <Box sx={{ flex: 1, textAlign: 'center', maxWidth: 'lg' }}>
                     <Typography
                       sx={{
                         ...displayFont,
@@ -383,6 +391,7 @@ export default function Landing() {
                         fontWeight: 700,
                         mb: 1,
                         lineHeight: 1.3,
+                        color: 'white'
                       }}
                     >
                       {f.title}
@@ -390,10 +399,10 @@ export default function Landing() {
                     <Typography
                       sx={{
                         ...bodyFont,
-                        color: 'rgba(255,255,255,0.5)',
+                        color: 'rgba(167, 167, 167, 0.5)',
                         fontSize: { xs: '0.9rem', md: '1rem' },
                         lineHeight: 1.7,
-                        maxWidth: 580,
+                        maxWidth: 'lg',
                         fontWeight: 300,
                       }}
                     >
@@ -407,24 +416,9 @@ export default function Landing() {
         </Container>
       </Box>
 
-      {/* ══════════════════════════════════════════════
-          HOW IT WORKS — dark card section with
-          a second fixed background image
-      ══════════════════════════════════════════════ */}
-      <Box
-        sx={{
-          position: 'relative',
-          py: { xs: 14, md: 24 },
-          backgroundImage: [
-            'linear-gradient(to bottom, rgba(11,15,26,0.96) 0%, rgba(11,15,26,0.90) 50%, rgba(11,15,26,0.96) 100%)',
-            'url(https://images.unsplash.com/photo-1600880292203-757bb62b4baf?auto=format&fit=crop&w=1920&q=80)',
-          ].join(', '),
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundAttachment: 'fixed',
-        }}
+      <Box sx={{ my: 20 }}
       >
-        <Container maxWidth="lg">
+        <Container maxWidth="lg" sx={{ color: {COLOR}}} >
           <Reveal>
             <Box sx={{ textAlign: 'center', mb: { xs: 8, md: 14 } }}>
               <Typography
@@ -465,7 +459,7 @@ export default function Landing() {
                       border: `1px solid ${BORDER}`,
                       bgcolor: CARD_BG,
                       backdropFilter: 'blur(12px)',
-                      height: '100%',
+                      minHeight: 300,
                       position: 'relative',
                       overflow: 'hidden',
                       transition: 'all 0.3s ease',
@@ -474,7 +468,7 @@ export default function Landing() {
                         transform: 'translateY(-4px)',
                         boxShadow: `0 24px 48px rgba(0,0,0,0.3)`,
                       },
-                      // Decorative corner number
+                      
                       '&::before': {
                         content: `"${s.n}"`,
                         position: 'absolute',
@@ -483,7 +477,7 @@ export default function Landing() {
                         fontSize: 120,
                         fontFamily: '"Playfair Display", serif',
                         fontWeight: 900,
-                        color: 'rgba(255,255,255,0.025)',
+                        color: `${SUBTEXTCOLOR}`,
                         lineHeight: 1,
                         pointerEvents: 'none',
                       },
@@ -508,7 +502,7 @@ export default function Landing() {
                     <Typography sx={{ ...displayFont, fontSize: '1.25rem', fontWeight: 700, mb: 1.5, lineHeight: 1.3 }}>
                       {s.title}
                     </Typography>
-                    <Typography sx={{ ...bodyFont, color: 'rgba(255,255,255,0.5)', lineHeight: 1.75, fontWeight: 300 }}>
+                    <Typography sx={{ ...bodyFont, color: `${SUBTEXTCOLOR}`, lineHeight: 1.75, fontWeight: 300 }}>
                       {s.desc}
                     </Typography>
                   </Box>
@@ -519,15 +513,22 @@ export default function Landing() {
         </Container>
       </Box>
 
-      {/* ══════════════════════════════════════════════
-          ROLE BREAKDOWN
-      ══════════════════════════════════════════════ */}
-      <Box sx={{ py: { xs: 12, md: 20 }, borderTop: `1px solid ${BORDER}` }}>
+      <Box sx={{ 
+        mt: 20,
+          position: 'relative',
+          py: { xs: 14, md: 24 },
+          backgroundImage: [
+            'linear-gradient(to bottom, rgba(11,15,26,0.96) 0%, rgba(11,15,26,0.90) 50%, rgba(11,15,26,0.96) 100%)',
+            'url(https://images.unsplash.com/photo-1600880292203-757bb62b4baf?auto=format&fit=crop&w=1920&q=80)',
+          ].join(', '),
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundAttachment: 'fixed',
+       }}>
         <Container maxWidth="lg">
-          <Grid container spacing={8} alignItems="center">
+          <Grid container spacing={8} justifyContent={'space-between'} alignItems="center">
 
-            {/* Left — text */}
-            <Grid size={{xs: 12, md: 5}} >
+            <Grid size={{xs: 12, md: 5 }} >
               <Reveal>
                 <Typography
                   sx={{
@@ -550,6 +551,7 @@ export default function Landing() {
                     fontWeight: 800,
                     lineHeight: 1.1,
                     mb: 3,
+                    color: 'white'
                   }}
                 >
                   Three roles.
@@ -586,8 +588,8 @@ export default function Landing() {
               </Reveal>
             </Grid>
 
-            {/* Right — role cards */}
-            <Grid size={{xs: 12, md: 4}} >
+
+            <Grid size={{xs: 12, md: 6}} >
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                 {[
                   {
@@ -619,8 +621,9 @@ export default function Landing() {
                         alignItems: 'center',
                         gap: 3,
                         p: 3,
+                        color: 'white',
                         borderRadius: 2.5,
-                        border: `1px solid ${BORDER}`,
+                        border: `1px solid rgba(170, 170, 170, 0.19)`,
                         bgcolor: CARD_BG,
                         transition: 'all 0.3s ease',
                         '&:hover': {
@@ -629,7 +632,6 @@ export default function Landing() {
                         },
                       }}
                     >
-                      {/* Color dot */}
                       <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: r.color, flexShrink: 0, boxShadow: `0 0 12px ${r.color}88` }} />
                       <Box sx={{ flex: 1 }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 0.5 }}>
@@ -663,23 +665,7 @@ export default function Landing() {
         </Container>
       </Box>
 
-      {/* ══════════════════════════════════════════════
-          FINAL CTA — third fixed bg image, gold CTA
-      ══════════════════════════════════════════════ */}
-      <Box
-        sx={{
-          position: 'relative',
-          py: { xs: 16, md: 28 },
-          textAlign: 'center',
-          backgroundImage: [
-            'linear-gradient(to bottom, rgba(11,15,26,1) 0%, rgba(11,15,26,0.82) 30%, rgba(11,15,26,0.82) 70%, rgba(11,15,26,1) 100%)',
-            'url(https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=1920&q=80)',
-          ].join(', '),
-          backgroundSize: 'cover',
-          backgroundPosition: 'center 40%',
-          backgroundAttachment: 'fixed',
-        }}
-      >
+      <Box sx={{ my: 20, textAlign: 'center'}}>
         <Container maxWidth="md">
           <Reveal>
             <Typography
@@ -721,7 +707,7 @@ export default function Landing() {
             <Typography
               sx={{
                 ...bodyFont,
-                color: 'rgba(255,255,255,0.5)',
+                color: `${SUBTEXTCOLOR}`,
                 fontSize: '1.1rem',
                 maxWidth: 420,
                 mx: 'auto',
@@ -771,7 +757,7 @@ export default function Landing() {
                   px: 4,
                   py: 2,
                   borderRadius: 2,
-                  color: 'rgba(255,255,255,0.5)',
+                  color: `${SUBTEXTCOLOR}`,
                   transition: 'all 0.25s ease',
                   '&:hover': {
                     color: 'white',
