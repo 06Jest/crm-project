@@ -54,6 +54,7 @@ export const fetchConversation = createAsyncThunk(
   }
 );
 
+
 export const sendMessage = createAsyncThunk(
   'messaging/sendMessage',
   async (
@@ -61,13 +62,27 @@ export const sendMessage = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      return await sendMessageToDB(message);
-    } catch (err: unknown) {
-      if (err instanceof Error) return rejectWithValue(err.message);
-      return rejectWithValue('Something went wrong');
+      const result = await sendMessageToDB(message);
+      return result;
+    } catch (err) {
+      return rejectWithValue((err as Error).message);
     }
   }
 );
+// export const sendMessage = createAsyncThunk(
+//   'messaging/sendMessage',
+//   async (
+//     message: Omit<Message, 'id' | 'created_at' | 'is_read' | 'sender' | 'receiver'>,
+//     { rejectWithValue }
+//   ) => {
+//     try {
+//       return await sendMessageToDB(message);
+//     } catch (err: unknown) {
+//       if (err instanceof Error) return rejectWithValue(err.message);
+//       return rejectWithValue('Something went wrong');
+//     }
+//   }
+// );
 
 export const markMessagesRead = createAsyncThunk(
   'messaging/markRead',

@@ -3,7 +3,10 @@ import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '../../../store/store';
 import MentionInput from '../../../components/MentionInput';
 import MessageContent from '../../../components/MessageContent';
+import type { Contact } from '../../../types/contact';
+import type { Message } from '../../../types//message';;
 import type { MentionItem } from '../../../types/message';
+import { supabase } from '../../../services/supabase';
 import {
   fetchProfiles,
   fetchConversation,
@@ -46,6 +49,9 @@ const formatTime = (dateStr: string): string => {
     const dispatch = useDispatch<AppDispatch>();
     const { user } = useAuthContext();
 
+    const [messageText, setMessageText] = useState('');
+    const [selectedContact, setSelectedContact] = useState<Contact["id"]>('');
+
     const {
       profiles,
       conversations,
@@ -54,7 +60,75 @@ const formatTime = (dateStr: string): string => {
       loading,
     } = useSelector((state: RootState) => state.messaging);
 
-    const [selectedContact, setSelectedContact] = useState<string>('');
+
+    const handleSend = async () => {
+  if (!messageText.trim()) return;
+  if (!user) return;
+  if (!activeProfile) return;
+
+  try {
+    // Get org_id from session
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+    const orgId = authUser?.user_metadata?.org_id;
+
+    // Extract mentions from message content (if using @ mentions)
+    // This is a simple example — enhance based on your mention system
+    const mentionRegex = /@(\w+)/g;
+    const mentionMatches = messageText.matchAll(mentionRegex);
+    const mentionedUsers = Array.from(mentionMatches).map(match => {
+      const userName = match[1];
+      return profiles.find(p => p.name.toLowerCase() === userName.toLowerCase())?.id;
+    }).filter(Boolean);
+
+    const newMessage: Omit<Message, 'id' | 'created_at' | 'is_read' | 'sender' | 'receiver'> = {
+      sender_id: user.id,
+      receiver_id: activeProfile.id,
+      org_id: orgId || '',
+      content: messageText,
+      contact_id: selectedContact,
+      contact_name: contacts.find(c => c.id === selectedContact)?.name ,
+      mentions: mentionedUsers as string[],
+    };
+
+    dispatch(sendMessage(newMessage));
+    setMessageText('');
+    setSelectedContact('');
+  } catch (err) {
+    console.error('Failed to send message:', err);
+  }
+};
+  //   const handleSend = async () => {
+  //   if (!messageText.trim()) return;
+    
+  //   // ✅ contacts is NOW defined — no error!
+  //   const contactId = selectedContact || undefined;
+    
+  //   if (!user) return;
+  //   if (!activeProfile) return;
+
+  //   try {
+  //     // Always attach org_id from session (Step 3 below)
+  //     const { data: { user: authUser } } = await supabase.auth.getUser();
+  //     const orgId = authUser?.user_metadata?.org_id;
+
+  //     const newMessage = {
+  //       sender_id: user.id,
+  //       receiver_id: activeProfile.id,
+  //       content: messageText,
+  //       contact_id: contactId || undefined,
+  //       contact_name: contacts.find(c => c.id === contactId)?.name || undefined,
+  //       org_id: orgId,  // ← Always include org_id
+  //       mentions: [], // Initialize mentions array
+  //     };
+
+  //     dispatch(sendMessage(newMessage));
+  //     setMessageText('');
+  //     setSelectedContact('');
+  //   } catch (err) {
+  //     console.error('Failed to send message:', err);
+  //   }
+  // };
+
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -92,22 +166,22 @@ const formatTime = (dateStr: string): string => {
       }));
     };
 
-    const handleSend = (content: string, mentions: MentionItem[]) => {
-      if (!content.trim() || !activeConversationId || !user) return;
+    // const handleSend = (content: string, mentions: MentionItem[]) => {
+    //   if (!content.trim() || !activeConversationId || !user) return;
 
-      dispatch(sendMessage({
-        sender_id: user.id,
-        receiver_id: activeConversationId,
-        content: content.trim(),
-        mentions,
-        contact_id: selectedContact || undefined,
-        contact_name: selectedContact
-          ? contacts.find(c => c.id === selectedContact)?.name
-          : undefined,
-      }));
+    //   dispatch(sendMessage({
+    //     sender_id: user.id,
+    //     receiver_id: activeConversationId,
+    //     content: content.trim(),
+    //     mentions,
+    //     contact_id: selectedContact || undefined,
+    //     contact_name: selectedContact
+    //       ? contacts.find(c => c.id === selectedContact)?.name
+    //       : undefined,
+    //   }));
 
-      setSelectedContact('');
-    };
+    //   setSelectedContact('');
+    // };
 
 
 
