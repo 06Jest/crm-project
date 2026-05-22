@@ -6,9 +6,13 @@ import {
   Alert, Paper, CircularProgress, Divider,
 } from '@mui/material';
 import BusinessIcon from '@mui/icons-material/Business';
+import {  useSelector } from 'react-redux';
+import type { RootState } from '../../../store/store';
+
 
 export default function Register() {
   const navigate = useNavigate();
+  const themeMode = useSelector((state: RootState) => state.ui.themeMode);
 
   const [form, setForm] = useState({
     orgName: '',
@@ -17,6 +21,24 @@ export default function Register() {
     password: '',
     confirmPassword: '',
   });
+
+  const formatName = (text: string) => {
+    let value = text
+      .replace(/[^a-zA-Z\s.]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase()
+      .replace(/\b\w/g, (char) => char.toUpperCase());
+
+    value = value.replace(/\bJr\b/g, 'Jr.');
+    value = value.replace(/\bSr\b/g, 'Sr.');
+    value = value.replace(/\b(I|Ii|Iii|Iv|V|Vi|Vii|Viii|Ix|X)\b/g,
+      (m) => m.toUpperCase()
+    );
+
+    return value;
+  };
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -36,8 +58,8 @@ export default function Register() {
     setError('Your name is required');
     return;
   }
-  if (form.password.length < 6) {
-    setError('Password must be at least 6 characters');
+  if (form.password.length < 12) {
+    setError('Password must be at least 12 characters that include uppercase letter, number, and symbol');
     return;
   }
   if (form.password !== form.confirmPassword) {
@@ -58,7 +80,7 @@ export default function Register() {
       password: form.password,
       options: {
         data: {
-          name: form.name.trim(),
+          name: formatName(form.name.trim()),
           role: 'admin',
           org_id: orgId,          
           org_name: form.orgName.trim(),
@@ -83,22 +105,27 @@ export default function Register() {
     if (profileError) throw profileError;
 
     navigate('/app/dashboard');
-  } catch (err: any) {
-    setError(err.message || 'Registration failed. Please try again.');
-  } finally {
-    setLoading(false);
-  }
-};
+  } catch (err) {
+    if (err instanceof Error) {
+    setError(err.message);
+    } else {
+      setError('Registration failed. Please try again.');
+    }
+  };
+
+}
+
+  const BACKGROUNDCOLOR = themeMode === 'light' ? 'rgba(255, 255, 255, 0.73)' : 'rgba(34, 34, 34, 0.4)';
 
   return (
     <Box
       sx={{
-        minHeight: '100vh',
         display: 'flex',
+        mr: 10,
         alignItems: 'center',
         justifyContent: 'center',
         p: 2,
-        bgcolor: 'background.default',
+        bgcolor: ' rgba(39, 39, 39, 0)',
       }}
     >
       <Paper
@@ -106,16 +133,18 @@ export default function Register() {
         sx={{
           p: 4,
           width: '100%',
-          maxWidth: 440,
+          maxWidth: 600,
           border: 1,
+          color: 'white',
           borderColor: 'divider',
           borderRadius: 3,
+          bgcolor: `${BACKGROUNDCOLOR}`,
         }}
       >
 
         <Box sx={{ textAlign: 'center', mb: 3 }}>
           <BusinessIcon sx={{ fontSize: 40, color: 'primary.main', mb: 1 }} />
-          <Typography variant="h5" fontWeight={700}>
+          <Typography variant="h5" fontWeight={700} color="text.secondary">
             Create your organization
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
