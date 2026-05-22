@@ -9,14 +9,17 @@ import { useInView } from '../../../hooks/useInView';
 import AnimatedNumber from '../../../components/AnimatedNumber';
 import type { RootState } from '../../../store/store';
 import {  useSelector } from 'react-redux';
+import { useAuthContext } from '../../../hooks/useAuthContext';
+import { useEffect } from 'react';
 import LandingBackground from '../../../assets/landing-background.jpg';
 
 const displayFont = { fontFamily: '"Playfair Display", Georgia, serif' };
 const bodyFont = { fontFamily: '"Outfit", system-ui, sans-serif' };
 
 
-const GOLD = '#e7b41a';
-const BLUE = '#3B82F6';
+const BROWN = '#AD7450';
+const BLUE = 'blue'
+const LIGHTBROWN = '#cfa082'
 const DARK = '#3f3f3fee';
 const CARD_BG = 'rgba(255,255,255,0.04)';
 
@@ -45,7 +48,7 @@ function Reveal({
   );
 }
 
-// ── Feature list ──────────────────────────────────────────
+
 const FEATURES = [
   {
     num: '01',
@@ -106,16 +109,25 @@ const STATS = [
 
 export default function Landing() {
   const navigate = useNavigate();
+
+  const { user, loading } = useAuthContext();
   const { ref: heroRef, inView: heroInView } = useInView();
   const themeMode = useSelector((state: RootState) => state.ui.themeMode);
   const BORDER = themeMode === 'light' ? 'rgba(197, 197, 197, 0.47)' : 'rgba(170, 170, 170, 0.19)';
   const COLOR = themeMode === 'light' ? 'black' : 'white';
   const BACKGROUND = themeMode === 'light' ? 'rgba(177, 177, 177, 0.82)' : 'rgba(63, 63, 63, 0.78)';
   const SUBTEXTCOLOR = themeMode === 'light' ? 'rgba(87, 87, 87, 0.92)' : 'rgba(190, 190, 190, 0.9)';
+  
+  useEffect(() => {
+    if (!loading && user) {
+      navigate('/app/dashboard', { replace: true });
+    }
+  }, [user, loading, navigate]);
 
+  if (loading) return null; 
 
   return (
-    <Box sx={{ bgcolor: {themeMode}, color: {COLOR}, overflow: 'hidden', ...bodyFont }}>
+    <Box sx={{ bgcolor: themeMode, color: COLOR, overflow: 'hidden', ...bodyFont }}>
 
       <Box
         sx={{
@@ -124,7 +136,6 @@ export default function Landing() {
           display: 'flex',
           alignItems: 'center',
 
-          // Fixed office/sales background from Unsplash
           backgroundImage: [
             'linear-gradient(to bottom, rgba(11,15,26,0.75) 0%, rgba(11,15,26,0.65) 60%, rgba(11,15,26,1) 100%)',
             `url(${LandingBackground})`,
@@ -147,8 +158,7 @@ export default function Landing() {
 
         <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 2, py: { xs: 14, md: 20 } }}>
           <Box ref={heroRef} sx={{ maxWidth: 780 }}>
-
-            {/* Status badge */}
+          
             <Box sx={{ ...fadeUp(heroInView, 0), display: 'inline-flex', alignItems: 'center', gap: 1, mb: 4 }}>
               <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#22c55e', boxShadow: '0 0 0 3px rgba(34,197,94,0.25)', animation: 'blink 2s ease-in-out infinite', '@keyframes blink': { '0%,100%': { opacity: 1 }, '50%': { opacity: 0.4 } } }} />
               <Typography sx={{ ...bodyFont, fontSize: 13, fontWeight: 500, color: 'rgba(255,255,255,0.6)', letterSpacing: 1.5, textTransform: 'uppercase' }}>
@@ -174,8 +184,8 @@ export default function Landing() {
               <Box
                 component="span"
                 sx={{
-                  color: GOLD,
-                  textShadow: `0 0 60px ${GOLD}66`,
+                  color: BROWN,
+                  textShadow: `0 0 60px ${BROWN}66`,
                   fontStyle: 'italic',
                 }}
               >
@@ -199,10 +209,9 @@ export default function Landing() {
               and agent leaderboards — all in one place, for free.
             </Typography>
 
-            {/* CTA group */}
             <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', ...fadeUp(heroInView, 0.24) }}>
               <Button
-                onClick={() => navigate('/register')}
+                onClick={() => !user ? navigate('/register') : navigate('/app/dashboard')}
                 variant="contained"
                 size="large"
                 endIcon={<ArrowForwardIcon />}
@@ -213,14 +222,14 @@ export default function Landing() {
                   px: 4,
                   py: 1.75,
                   borderRadius: 2,
-                  bgcolor: GOLD,
-                  color: DARK,
-                  boxShadow: `0 0 40px ${GOLD}44`,
+                  bgcolor: BROWN,
+                  color: 'white',
+                  boxShadow: `0 0 40px ${BROWN}44`,
                   transition: 'all 0.25s ease',
                   '&:hover': {
-                    bgcolor: '#f7d56a',
+                    bgcolor: `${BROWN}`,
                     transform: 'translateY(-2px)',
-                    boxShadow: `0 8px 40px ${GOLD}66`,
+                    boxShadow: `0 8px 40px ${BROWN}66`,
                   },
                 }}
               >
@@ -254,7 +263,7 @@ export default function Landing() {
             <Box sx={{ display: 'flex', gap: 3, mt: 4, flexWrap: 'wrap', ...fadeUp(heroInView, 0.32) }}>
               {['No credit card required', 'Free tier forever', 'Up in minutes'].map(t => (
                 <Box key={t} sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                  <CheckIcon sx={{ fontSize: 14, color: GOLD }} />
+                  <CheckIcon sx={{ fontSize: 14, color: BROWN }} />
                   <Typography sx={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', ...bodyFont }}>
                     {t}
                   </Typography>
@@ -280,7 +289,7 @@ export default function Landing() {
                         ...displayFont,
                         fontSize: { xs: '2.2rem', md: '3rem' },
                         fontWeight: 900,
-                        color: GOLD,
+                        color: BROWN,
                         lineHeight: 1,
                         mb: 0.5,
                       }}
@@ -324,7 +333,7 @@ export default function Landing() {
                   fontWeight: 600,
                   letterSpacing: 3,
                   textTransform: 'uppercase',
-                  color: BLUE,
+                  color: BROWN,
                   mb: 2,
                 }}
               >
@@ -361,7 +370,7 @@ export default function Landing() {
                     transition: 'all 0.3s ease',
                     '&:hover': {
                       pl: { md: 2 },
-                      '& .feat-num': { color: GOLD },
+                      '& .feat-num': { color: BROWN },
                     },
                     '&:last-child': { borderBottom: 'none' },
                   }}
@@ -428,7 +437,7 @@ export default function Landing() {
                   fontWeight: 600,
                   letterSpacing: 3,
                   textTransform: 'uppercase',
-                  color: GOLD,
+                  color: BROWN,
                   mb: 2,
                 }}
               >
@@ -488,7 +497,7 @@ export default function Landing() {
                         width: 36,
                         height: 36,
                         borderRadius: 1.5,
-                        bgcolor: GOLD,
+                        bgcolor: BROWN,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -537,7 +546,7 @@ export default function Landing() {
                     fontWeight: 600,
                     letterSpacing: 3,
                     textTransform: 'uppercase',
-                    color: BLUE,
+                    color: BROWN,
                     mb: 2,
                   }}
                 >
@@ -577,8 +586,8 @@ export default function Landing() {
                     borderRadius: 2,
                     transition: 'all 0.25s ease',
                     '&:hover': {
-                      borderColor: GOLD,
-                      color: GOLD,
+                      borderColor: BROWN,
+                      color: BROWN,
                       bgcolor: 'transparent',
                     },
                   }}
@@ -610,7 +619,7 @@ export default function Landing() {
                     role: 'Agent',
                     tag: 'Staff',
                     desc: 'Contacts, leads, deals, activities, messaging, and AI assistant.',
-                    color: GOLD,
+                    color: BROWN,
                     login: 'Employee ID + password',
                   },
                 ].map((r, i) => (
@@ -675,7 +684,7 @@ export default function Landing() {
                 fontWeight: 600,
                 letterSpacing: 3,
                 textTransform: 'uppercase',
-                color: GOLD,
+                color: BROWN,
                 mb: 3,
               }}
             >
@@ -696,9 +705,9 @@ export default function Landing() {
               <Box
                 component="span"
                 sx={{
-                  color: GOLD,
+                  color: BROWN,
                   fontStyle: 'italic',
-                  textShadow: `0 0 80px ${GOLD}55`,
+                  textShadow: `0 0 80px ${BROWN}55`,
                 }}
               >
                 Start today.
@@ -733,14 +742,14 @@ export default function Landing() {
                   px: 5,
                   py: 2,
                   borderRadius: 2,
-                  bgcolor: GOLD,
-                  color: DARK,
-                  boxShadow: `0 0 60px ${GOLD}44`,
+                  bgcolor: BROWN,
+                  color: 'white',
+                  boxShadow: `0 0 60px ${BROWN}44`,
                   transition: 'all 0.25s ease',
                   '&:hover': {
-                    bgcolor: '#f7d56a',
+                    bgcolor: LIGHTBROWN,
                     transform: 'translateY(-3px)',
-                    boxShadow: `0 12px 60px ${GOLD}66`,
+                    boxShadow: `0 12px 60px ${BROWN}66`,
                   },
                 }}
               >

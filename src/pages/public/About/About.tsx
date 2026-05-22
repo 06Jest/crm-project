@@ -371,7 +371,7 @@ export default function About() {
 
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                 <Typography variant="body2" color="text.secondary">
-                  📧 uni.mailer1111@gmail.com
+                  📧 silvanojestony27@gmail.com
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
                   🐙 https://github.com/06Jest/crm-project

@@ -7,15 +7,22 @@ import {
 } from '@mui/material';
 import EmailIcon from '@mui/icons-material/Email';
 import BadgeIcon from '@mui/icons-material/Badge';
+import {  useSelector } from 'react-redux';
+import { useAuthContext } from '../../../hooks/useAuthContext';
+import { useEffect } from 'react';
+import type { RootState } from '../../../store/store';
+
 
 type LoginMode = 0 | 1;
 
+
 export default function Login() {
   const navigate = useNavigate();
+  const { user } = useAuthContext();
   const [mode, setMode] = useState<LoginMode>(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-
+  const themeMode = useSelector((state: RootState) => state.ui.themeMode);
 
   const [adminForm, setAdminForm] = useState({
     email: '',
@@ -26,20 +33,15 @@ export default function Login() {
     employeeId: '',
     password: '',
   });
-
-  const parseErrorMessage = (error: unknown, fallback: string): string => {
-    if (error instanceof Error) return error.message;
-    if (typeof error === 'string') return error;
-    if (
-      typeof error === 'object' &&
-      error !== null &&
-      'message' in error &&
-      typeof (error as Record<string, unknown>).message === 'string'
-    ) {
-      return (error as Record<string, unknown>).message as string;
-    }
-    return fallback;
-  };
+  
+  useEffect(() => {
+    
+      if (!loading && user) {
+        navigate('/app/dashboard', { replace: true });
+      }
+    }, [user, loading, navigate]);
+  
+    if (loading) return null; 
 
 
   const handleAdminLogin = async (e: React.FormEvent) => {
@@ -55,11 +57,13 @@ export default function Login() {
 
       if (signInError) throw signInError;
       navigate('/app/dashboard');
-    } catch (err: unknown) {
-      setError(parseErrorMessage(err, 'Login failed. Check your email and password.'));
-    } finally {
-      setLoading(false);
-    }
+    } catch (err) {
+    if (err instanceof Error) {
+      setError(err.message);
+      } else {
+        setError('Login failed. Check your email and password.');
+      }
+    }; 
   };
 
 
@@ -109,31 +113,36 @@ export default function Login() {
     }
   };
 
+  const BACKGROUNDCOLOR = themeMode === 'light' ? 'rgba(255, 255, 255, 0.73)' : 'rgba(34, 34, 34, 0.65)';
+
   return (
     <Box
       sx={{
-        minHeight: '100vh',
+        my: 5, 
+        marginRight: 25,
+        height: '70vh',
         display: 'flex',
+        flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         p: 2,
-        bgcolor: 'background.default',
       }}
     >
       <Paper
         elevation={0}
         sx={{
           p: 4,
-          width: '100%',
-          maxWidth: 420,
+          width: '450px',
+          height: '600px',
           border: 1,
           borderColor: 'divider',
           borderRadius: 3,
+          bgcolor: `${BACKGROUNDCOLOR}`,
         }}
       >
 
         <Typography variant="h5" fontWeight={700} textAlign="center" gutterBottom>
-          Sign in to MiniCRM
+          Sign in to uniThread
         </Typography>
         <Typography
           variant="body2"
@@ -149,7 +158,7 @@ export default function Login() {
           value={mode}
           onChange={(_, v) => { setMode(v); setError(''); }}
           variant="fullWidth"
-          sx={{ mb: 3, borderBottom: 1, borderColor: 'divider' }}
+          sx={{ mb: 3, borderBottom: 1, borderColor: 'divider'}}
         >
           <Tab
             icon={<EmailIcon fontSize="small" />}

@@ -8,8 +8,7 @@ import { Badge } from '@mui/material';
 import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '../store/store';
 import { toggleTheme } from '../store/uiSlice';
-import lightLogo from '../assets/crm_logo_transparent.png'
-import darkLogo from '../assets/LogoDarkMode.png'
+import logo from '../assets/logobrown.png'
 import { useState, useEffect } from "react";
 import { useAuthContext } from '../hooks/useAuthContext';
 import { supabase } from "../services/supabase";
@@ -65,11 +64,14 @@ export default function Header() {
   const avatarSrc =  profile?.avatar_url || undefined;
   const { isAdmin, isSuperAdmin, employeeId } = useRole();
   return (
-    <AppBar position="fixed">
+    <AppBar position="fixed" sx={{  bgcolor: !user && themeMode === 'dark' ? 'transparent' : themeMode }}>
       <Toolbar sx={{ userSelect: 'none',display: "flex", justifyContent: "space-between"}}>
-          <img  src={themeMode === 'light' ? lightLogo : darkLogo} alt="Company Logo" style={{ cursor: 'pointer', userSelect: 'none', width: 150 }}  onClick={
+          <Typography variant="h6" color='text.primary' fontWeight={500} sx={{ display: 'flex', alignItems: 'center' }} onClick={
             user ? () => {navigate('/app/dashboard')} :  () => {navigate('/')} 
-          }/>
+          }>
+            <img src={logo} style={{userSelect: 'none', width: 50, marginRight: 3 }} alt="uniThread Logo" />
+            uniThread
+          </Typography>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           { !user && (
             <>

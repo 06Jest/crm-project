@@ -9,6 +9,8 @@ import EmailIcon from '@mui/icons-material/Email';
 import BadgeIcon from '@mui/icons-material/Badge';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import LockResetIcon from '@mui/icons-material/LockReset';
+import {  useSelector } from 'react-redux';
+import type { RootState } from '../../../store/store';
 
 type ResetMode = 0 | 1; 
 
@@ -18,7 +20,7 @@ export default function ForgotPassword() {
   const [error, setError] = useState('');
   const [sent, setSent] = useState(false);
   const [sentTo, setSentTo] = useState('');
-
+  const themeMode = useSelector((state: RootState) => state.ui.themeMode);
 
   const [adminEmail, setAdminEmail] = useState('');
 
@@ -97,17 +99,18 @@ export default function ForgotPassword() {
     }
   };
 
+  const BACKGROUNDCOLOR = themeMode === 'light' ? 'rgba(255, 255, 255, 0.73)' : 'rgba(34, 34, 34, 0.4)';
 
   if (sent) {
     return (
       <Box
         sx={{
-          minHeight: '100vh',
+          minHeight: '70vh',
+          marginRight: 25,
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'center',
           p: 2,
-          bgcolor: 'background.default',
+          bgcolor: 'rgba(39, 39, 39, 0)',
         }}
       >
         <Paper
@@ -118,6 +121,7 @@ export default function ForgotPassword() {
             maxWidth: 420,
             border: 1,
             borderColor: 'divider',
+            bgcolor: `${BACKGROUNDCOLOR}`,
             borderRadius: 3,
             textAlign: 'center',
           }}
@@ -185,12 +189,13 @@ export default function ForgotPassword() {
   return (
     <Box
       sx={{
-        minHeight: '100vh',
+        minHeight: '70vh',
         display: 'flex',
+        marginRight: 25,
         alignItems: 'center',
         justifyContent: 'center',
         p: 2,
-        bgcolor: 'background.default',
+        bgcolor: 'rgba(39, 39, 39, 0)',
       }}
     >
       <Paper
@@ -202,6 +207,7 @@ export default function ForgotPassword() {
           border: 1,
           borderColor: 'divider',
           borderRadius: 3,
+          bgcolor: `${BACKGROUNDCOLOR}`,
         }}
       >
 

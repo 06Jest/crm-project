@@ -79,7 +79,7 @@ export const geocodeAddress = async (
       `https://nominatim.openstreetmap.org/search?q=${encoded}&format=json&limit=1`,
       {
         headers: {
-          'User-Agent': 'uniThread/1.0 (uni.mailer1111@gmail.com)',
+          'User-Agent': 'uniThread/1.0 (silvanojestony27@gmail.com)',
         },
       }
     );
