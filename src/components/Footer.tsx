@@ -21,7 +21,7 @@ import {
   LocationOn as LocationIcon,
   ArrowOutward as ArrowIcon,
 } from '@mui/icons-material';
-import logo from '../assets/logo.png'
+import logo from '../assets/logobrown.png'
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../store/store';
@@ -177,11 +177,11 @@ export default function Footer() {
     >
       <Container maxWidth="lg">
         <Grid container spacing={4} sx={{ mb: 6 }}>
-          <Grid size={{xs: 12, sm: 6, md: 2.5}}>
+          <Grid size={{xs: 10, sm: 6, md: 2.5}}>
             <Box sx={{ mb: 2 }}>
-              <Typography variant="h6" fontWeight={700} sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
-                <img src={logo} style={{userSelect: 'none', width: 40, marginRight: 2 }} alt="uniThread Logo" />
-                UniThread
+              <Typography fontWeight={500} sx={{ mb: 2, display: 'flex', alignItems: 'center', letterSpacing: '0.15em', fontFamily: '"Lexend Exa", sans-serif' }}>
+                <img src={logo} style={{userSelect: 'none', width: 40, marginRight: 5 }} alt="uniThread Logo" />
+                uniThread
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5 }}>
                 A powerful CRM platform designed to help teams manage relationships, close more deals, and grow faster.
@@ -212,7 +212,7 @@ export default function Footer() {
           </Grid>
 
           {footerSections.map((section) => (
-            <Grid size={{xs: 12, sm: 6, md: 2.5}} key={section.title}>
+            <Grid size={{xs: 4, sm: 6, md: 2.5}} key={section.title}>
               <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 2 }}>
                 {section.title}
               </Typography>
@@ -232,7 +232,7 @@ export default function Footer() {
                       alignItems: 'center',
                       gap: 0.5,
                       width: 'fit-content',
-                      fontSize: '0.9rem',
+                      fontSize: '0.8rem',
                       '&:hover': {
                         color: 'primary.main',
                         transform: 'translateX(4px)',
@@ -241,7 +241,7 @@ export default function Footer() {
                   >
                     {link.label}
                     {link.external && (
-                      <ArrowIcon sx={{ fontSize: 12, opacity: 0.6 }} />
+                      <ArrowIcon sx={{ fontSize: 11, opacity: 0.6 }} />
                     )}
                   </Link>
                 ))}
@@ -249,7 +249,7 @@ export default function Footer() {
             </Grid>
           ))}
 
-          <Grid size={{xs: 12, sm: 6, md: 2.5}}>
+          <Grid size={{xs: 6, sm: 6, md: 2.5}}>
             <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 2 }}>
               Get In Touch
             </Typography>
@@ -338,7 +338,7 @@ export default function Footer() {
             © {CURRENT_YEAR} UniThread. All rights reserved.
           </Typography>
 
-          <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', justifyContent: 'center', flex: 1 }}>
+          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', justifyContent: 'center', flex: 1 }}>
             <Link
               component="button"
               variant="caption"
