@@ -124,10 +124,9 @@ export default function Landing() {
     }
   }, [user, loading, navigate]);
 
-  if (loading) return null; 
 
   return (
-    <Box sx={{ bgcolor: themeMode, color: COLOR, overflow: 'hidden', ...bodyFont }}>
+    <Box sx={{ bgcolor: {themeMode} , color: {COLOR}, overflow: 'hidden', ...bodyFont }}>
 
       <Box
         sx={{

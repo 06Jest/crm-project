@@ -120,11 +120,10 @@ export default function Register() {
   return (
     <Box
       sx={{
+        mx: '5%',
         display: 'flex',
-        mr: 10,
         alignItems: 'center',
         justifyContent: 'center',
-        p: 2,
         bgcolor: ' rgba(39, 39, 39, 0)',
       }}
     >
@@ -132,8 +131,11 @@ export default function Register() {
         elevation={0}
         sx={{
           p: 4,
-          width: '100%',
+          width: '80vw',
           maxWidth: 600,
+          height: '85vh',
+          maxHeight: 900,
+          minHeight: 900,
           border: 1,
           color: 'white',
           borderColor: 'divider',

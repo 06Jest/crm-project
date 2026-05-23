@@ -70,14 +70,16 @@ export default function ResetPassword() {
       if (updateError) throw updateError;
 
       setDone(true);
-      // Redirect to login after 2 seconds
+
       setTimeout(() => navigate('/login'), 2000);
-    } catch (err: any) {
-      setError(err.message || 'Failed to update password. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message)
+      } else {
+        setError('Failed to update password. Please try again.');
+      }
+    };
+  }
 
   if (invalidLink) {
     return (

@@ -118,23 +118,26 @@ export default function Login() {
   return (
     <Box
       sx={{
-        my: 5, 
-        marginRight: 25,
+        my: 5,
+        mx: '5%',
         height: '70vh',
         display: 'flex',
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        p: 2,
       }}
     >
       <Paper
         elevation={0}
         sx={{
           p: 4,
-          width: '450px',
-          height: '600px',
+          maxWidth: '430px',
+          height: '60vh',
+          width: '75vw',
+          maxHeight: '550px',
+          minHeight: '450px',
           border: 1,
+          justifySelf: 'center',
           borderColor: 'divider',
           borderRadius: 3,
           bgcolor: `${BACKGROUNDCOLOR}`,
@@ -148,7 +151,6 @@ export default function Login() {
           variant="body2"
           color="text.secondary"
           textAlign="center"
-          sx={{ mb: 3 }}
         >
           Choose your login type below
         </Typography>
@@ -164,13 +166,13 @@ export default function Login() {
             icon={<EmailIcon fontSize="small" />}
             iconPosition="start"
             label="Admin"
-            sx={{ fontSize: 13 }}
+            sx={{ fontSize: 11 }}
           />
           <Tab
             icon={<BadgeIcon fontSize="small" />}
             iconPosition="start"
             label="Agent"
-            sx={{ fontSize: 13 }}
+            sx={{ fontSize: 11 }}
           />
         </Tabs>
 
@@ -187,6 +189,8 @@ export default function Login() {
               <TextField
                 label="Email address"
                 type="email"
+                size="small" 
+                placeholder="loremipsum@gmail.com"
                 value={adminForm.email}
                 onChange={(e) =>
                   setAdminForm({ ...adminForm, email: e.target.value })
@@ -199,6 +203,7 @@ export default function Login() {
               <TextField
                 label="Password"
                 type="password"
+                size="small" 
                 value={adminForm.password}
                 onChange={(e) =>
                   setAdminForm({ ...adminForm, password: e.target.value })
@@ -211,7 +216,7 @@ export default function Login() {
                 type="submit"
                 variant="contained"
                 fullWidth
-                size="large"
+                size="medium"
                 disabled={loading}
               >
                 {loading
@@ -236,13 +241,14 @@ export default function Login() {
                 required
                 fullWidth
                 autoFocus
+                size="small" 
                 placeholder="e.g. EMP-2026-0001"
-                helperText="Your Employee ID was provided by your admin"
                 inputProps={{ style: { textTransform: 'uppercase' } }}
               />
               <TextField
                 label="Password"
                 type="password"
+                size="small" 
                 value={agentForm.password}
                 onChange={(e) =>
                   setAgentForm({ ...agentForm, password: e.target.value })
@@ -255,7 +261,7 @@ export default function Login() {
                 type="submit"
                 variant="contained"
                 fullWidth
-                size="large"
+                size="medium"
                 disabled={loading}
               >
                 {loading
@@ -263,20 +269,6 @@ export default function Login() {
                   : 'Sign in as Agent'
                 }
               </Button>
-            </Box>
-
-            <Box
-              sx={{
-                mt: 2,
-                p: 1.5,
-                bgcolor: 'action.hover',
-                borderRadius: 2,
-              }}
-            >
-              <Typography variant="caption" color="text.secondary">
-                💡 Your Employee ID looks like <strong>EMP-2026-0001</strong>.
-                Contact your admin if you don't have it.
-              </Typography>
             </Box>
           </Box>
         )}
@@ -291,18 +283,20 @@ export default function Login() {
             gap: 1,
           }}
         >
-          <Typography variant="body2" color="text.secondary">
-            No account?{' '}
-            <Link to="/register" style={{ color: 'inherit', fontWeight: 600 }}>
-              Create organization
+          <Typography variant="body2" color="text.secondary" >
+            <Link to="/register" style={{ color: 'inherit', fontWeight: 500, display: 'flex',
+    justifyContent: 'space-between',
+    width: '100%', }}>
+              Create account
             </Link>
+            
           </Typography>
           <Link
             to="/forgot-password"
             style={{ fontSize: 14, color: 'inherit' }}
           >
             Forgot password?
-          </Link>
+          </Link> 
         </Box>
       </Paper>
     </Box>

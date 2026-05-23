@@ -6,7 +6,7 @@ export const getTheme = (mode: PaletteMode) =>
     palette: {
       mode,
       primary:{
-        main: '#1976d2',
+        main: '#AD7450',
       },
 
       background: {
@@ -16,7 +16,7 @@ export const getTheme = (mode: PaletteMode) =>
     },
 
     typography: {
-      fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+      fontFamily: '"Roboto", "Lexend Exa", "Helvetica", "Arial", sans-serif, ',
     },
 
     components: {

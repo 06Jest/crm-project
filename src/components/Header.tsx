@@ -64,12 +64,12 @@ export default function Header() {
   const avatarSrc =  profile?.avatar_url || undefined;
   const { isAdmin, isSuperAdmin, employeeId } = useRole();
   return (
-    <AppBar position="fixed" sx={{  bgcolor: !user && themeMode === 'dark' ? 'transparent' : themeMode }}>
+    <AppBar position="fixed" sx={{  bgcolor: !user && themeMode === 'dark' ? 'rgba(0, 0, 0, 0.2)' : themeMode, boxShadow: !user ? 'none' : '-moz-initial' }}>
       <Toolbar sx={{ userSelect: 'none',display: "flex", justifyContent: "space-between"}}>
-          <Typography variant="h6" color='text.primary' fontWeight={500} sx={{ display: 'flex', alignItems: 'center' }} onClick={
+          <Typography   color='text.primary' fontWeight={500} sx={{ letterSpacing: '0.15em', display: 'flex', alignItems: 'center', fontFamily: '"Lexend Exa", sans-serif' }} onClick={
             user ? () => {navigate('/app/dashboard')} :  () => {navigate('/')} 
           }>
-            <img src={logo} style={{userSelect: 'none', width: 50, marginRight: 3 }} alt="uniThread Logo" />
+            <img src={logo} style={{userSelect: 'none', width: 50, marginRight: 5 }} alt="uniThread Logo" />
             uniThread
           </Typography>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>

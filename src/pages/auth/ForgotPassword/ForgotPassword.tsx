@@ -48,10 +48,12 @@ export default function ForgotPassword() {
       const masked = `${user[0]}***@${domain}`;
       setSentTo(masked);
       setSent(true);
-    } catch (err: any) {
-      setError(err.message || 'Failed to send reset email. Please try again.');
-    } finally {
-      setLoading(false);
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message)
+      } else {
+        setError('Failed to send reset email. Please try again.')
+      }
     }
   };
 
@@ -92,12 +94,14 @@ export default function ForgotPassword() {
       const masked = `${user[0]}***@${domain}`;
       setSentTo(masked);
       setSent(true);
-    } catch (err: any) {
-      setError(err.message || 'Failed to send reset email. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
+    } catch (err) {
+        if (err instanceof Error) {
+          setError(err.message)
+        } else {
+          setError('Failed to send reset email. Please try again.');
+        }
+    };
+  }
 
   const BACKGROUNDCOLOR = themeMode === 'light' ? 'rgba(255, 255, 255, 0.73)' : 'rgba(34, 34, 34, 0.4)';
 
@@ -105,11 +109,10 @@ export default function ForgotPassword() {
     return (
       <Box
         sx={{
-          minHeight: '70vh',
-          marginRight: 25,
+          my: 10, 
+          mx: '5%',
           display: 'flex',
           alignItems: 'center',
-          p: 2,
           bgcolor: 'rgba(39, 39, 39, 0)',
         }}
       >
@@ -117,8 +120,11 @@ export default function ForgotPassword() {
           elevation={0}
           sx={{
             p: 4,
-            width: '100%',
-            maxWidth: 420,
+            width: '70vw',
+            maxWidth: 400,
+            height: '85vh',
+            maxHeight: 400,
+            minHeight: 400,
             border: 1,
             borderColor: 'divider',
             bgcolor: `${BACKGROUNDCOLOR}`,
@@ -189,12 +195,10 @@ export default function ForgotPassword() {
   return (
     <Box
       sx={{
-        minHeight: '70vh',
+        my: 5, 
+        mx: '5%',
         display: 'flex',
-        marginRight: 25,
         alignItems: 'center',
-        justifyContent: 'center',
-        p: 2,
         bgcolor: 'rgba(39, 39, 39, 0)',
       }}
     >
@@ -202,12 +206,16 @@ export default function ForgotPassword() {
         elevation={0}
         sx={{
           p: 4,
-          width: '100%',
+          width: '80vw',
           maxWidth: 420,
+          height: '90vh',
+          maxHeight: 550,
+          minHeight: 550,
           border: 1,
           borderColor: 'divider',
-          borderRadius: 3,
           bgcolor: `${BACKGROUNDCOLOR}`,
+          borderRadius: 3,
+          textAlign: 'center',
         }}
       >
 
