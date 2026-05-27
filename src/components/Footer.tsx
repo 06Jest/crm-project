@@ -161,6 +161,10 @@ export default function Footer() {
       window.open(href, '_blank', 'noopener,noreferrer');
     } else {
       navigate(href);
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth',
+      });
     }
   };
 

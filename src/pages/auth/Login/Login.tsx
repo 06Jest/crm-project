@@ -7,6 +7,10 @@ import {
 } from '@mui/material';
 import EmailIcon from '@mui/icons-material/Email';
 import BadgeIcon from '@mui/icons-material/Badge';
+import Visibility from "@mui/icons-material/Visibility";
+import VisibilityOff from "@mui/icons-material/VisibilityOff";
+import IconButton from "@mui/material/IconButton";
+import InputAdornment from "@mui/material/InputAdornment";
 import {  useSelector } from 'react-redux';
 import { useAuthContext } from '../../../hooks/useAuthContext';
 import { useEffect } from 'react';
@@ -23,6 +27,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const themeMode = useSelector((state: RootState) => state.ui.themeMode);
+  const [showPassword, setShowPassword] = useState(false);
 
   const [adminForm, setAdminForm] = useState({
     email: '',
@@ -57,12 +62,14 @@ export default function Login() {
 
       if (signInError) throw signInError;
       navigate('/app/dashboard');
-    } catch (err) {
-    if (err instanceof Error) {
-      setError(err.message);
+    } catch(err) {
+      if (err instanceof Error) {
+        setError(err.message);
       } else {
         setError('Login failed. Check your email and password.');
       }
+    } finally {
+      setLoading(false);
     }; 
   };
 
@@ -74,8 +81,6 @@ export default function Login() {
 
     try {
       const employeeIdClean = agentForm.employeeId.trim().toUpperCase();
-
-    
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('email, is_active, role')
@@ -103,11 +108,13 @@ export default function Login() {
       if (signInError) {
         throw new Error('Incorrect password. Please try again.');
       }
-
       navigate('/app/dashboard');
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : String(err);
-      setError(message || 'Login failed. Please try again.');
+    } catch (err) {
+      if(err instanceof Error) {
+        setError(err.message);
+      }else{
+        setError('Login failed. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -202,7 +209,7 @@ export default function Login() {
               />
               <TextField
                 label="Password"
-                type="password"
+                type={showPassword ? "text" : "password"}
                 size="small" 
                 value={adminForm.password}
                 onChange={(e) =>
@@ -211,6 +218,18 @@ export default function Login() {
                 required
                 fullWidth
                 autoComplete="current-password"
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        onClick={() => setShowPassword((prev) => !prev)}
+                        edge="end"
+                      >
+                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
               />
               <Button
                 type="submit"
@@ -247,7 +266,7 @@ export default function Login() {
               />
               <TextField
                 label="Password"
-                type="password"
+                type={showPassword ? "text" : "password"}
                 size="small" 
                 value={agentForm.password}
                 onChange={(e) =>
@@ -256,6 +275,18 @@ export default function Login() {
                 required
                 fullWidth
                 autoComplete="current-password"
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        onClick={() => setShowPassword((prev) => !prev)}
+                        edge="end"
+                      >
+                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
               />
               <Button
                 type="submit"

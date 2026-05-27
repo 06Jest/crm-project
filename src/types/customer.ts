@@ -3,6 +3,9 @@ export type CustomerStatus = 'Active' | 'Inactive' | 'Prospect';
 export interface Customer {
   id: string;
   name: string;
+  company: boolean;
+  company_name: string;
+  position: string;
   industry?: string;
   website?: string;
   email?: string;
