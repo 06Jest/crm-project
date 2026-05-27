@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate} from 'react-router-dom';
+import { BrowserRouter, Routes, Route} from 'react-router-dom';
 
 
 
@@ -35,6 +35,12 @@ import Analytics from './pages/app/Analytics/Analytics';
 import ProtectedRoute from './components/ProtectedRoute';
 import ResetPassword from './pages/auth/ForgotPassword/ResetPassword';
 import CompanyProfile from './pages/app/Company/CompanyProfile';
+import SuperAdminRoute from './components/SuperAdminRoute';
+import SuperAdminLayout from './layout/SuperAdminLayout';
+import SuperAdminLogin from './pages/admin-auth/SuperAdminLogin';
+import SuperAdminDashboard from './pages/admin/Dashboard/SuperAdminDashboard';
+import AdminUsers from './pages/admin/AdminUsers/AdminUsers';
+import AdminAccounts from './pages/admin/AdminAccounts/AdminAccounts';
 
 function App() {
 
@@ -84,14 +90,6 @@ function App() {
           }
         />
         <Route
-          path="/app/reports"
-          element={
-            <RoleGuard requiredRole="admin">
-              <Reports />
-            </RoleGuard>
-          }
-        />
-        <Route
           path="/app/settings"
           element={
             <RoleGuard requiredRole="admin">
@@ -100,19 +98,17 @@ function App() {
           }
         />
 
-        // Super admin only (App Analytics):
-        <Route
-          path="/app/analytics"
-          element={
-            <RoleGuard requiredRole="super_admin">
-              <Analytics />
-            </RoleGuard>
-          }
-        />
         
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="/admin-auth/login" element={<SuperAdminLogin />} />
 
-      </Routes>
+        <Route path="/admin/*" element={<SuperAdminRoute />}>
+          <Route element={<SuperAdminLayout />}>
+            <Route path="dashboard" element={<SuperAdminDashboard />} />
+            <Route path="users" element={<AdminUsers />} />
+            <Route path="accounts" element={<AdminAccounts />} />
+          </Route>
+      </Route>
+      </Routes> 
     </BrowserRouter>
   );
 }

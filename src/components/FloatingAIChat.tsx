@@ -122,7 +122,7 @@ export default function FloatingAIChat() {
       if (minimized || !open) {
         setUnreadCount(prev => prev + 1);
       }
-    } catch (err: unknown) {
+    } catch (err) {
       const errorText = err instanceof Error
         ? err.message
         : 'AI unavailable. Make sure the backend is running.';

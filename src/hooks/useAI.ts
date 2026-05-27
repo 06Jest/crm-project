@@ -23,7 +23,7 @@ export function useAI<T = string> (
     try {
       const data = await apiFn(...args);
       setResult(data);
-    } catch (err: unknown) {
+    } catch (err) {
       if (err instanceof Error) {
         setError(err.message);
       } else {

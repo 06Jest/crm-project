@@ -147,8 +147,7 @@ export default function Pricing() {
         <Container maxWidth="md">
           <Grid container spacing={3} alignItems="stretch">
 
-            {/* Free plan */}
-            <Grid sx={{xs:12, md: 6}}>
+            <Grid size={{xs:12, md: 6}}>
               <Card
                 elevation={0}
                 sx={{
@@ -166,7 +165,7 @@ export default function Pricing() {
                   </Typography>
                   <Box sx={{ display: 'flex', alignItems: 'baseline', mb: 1 }}>
                     <Typography variant="h2" fontWeight={900}>
-                      $0
+                      Php 0
                     </Typography>
                     <Typography
                       variant="body1"
@@ -227,7 +226,7 @@ export default function Pricing() {
               </Card>
             </Grid>
 
-            <Grid sx={{xs:12, md: 6}}>
+            <Grid size={{xs:12, md: 6}}>
               <Card
                 elevation={0}
                 sx={{
@@ -261,7 +260,7 @@ export default function Pricing() {
                   </Typography>
                   <Box sx={{ display: 'flex', alignItems: 'baseline', mb: 1 }}>
                     <Typography variant="h2" fontWeight={900}>
-                      $29
+                      Php 1500
                     </Typography>
                     <Typography
                       variant="body1"

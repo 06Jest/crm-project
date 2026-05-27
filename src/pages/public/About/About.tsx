@@ -135,7 +135,7 @@ export default function About() {
       <Box sx={{ py: { xs: 6, md: 10 }, bgcolor: 'background.default' }}>
         <Container maxWidth="lg">
           <Grid container spacing={6} alignItems="center">
-            <Grid sx={{xs:12, md: 6}}>
+            <Grid size={{xs:12, md: 6}}>
               <Typography
                 variant="overline"
                 color="primary"
@@ -168,10 +168,10 @@ export default function About() {
                 giving your organization full visibility and accountability.
               </Typography>
             </Grid>
-            <Grid sx={{xs:12, md: 6}}>
+            <Grid size={{xs:12, md: 6}}>
               <Grid container spacing={2}>
                 {VALUES.map((value) => (
-                  <Grid sx={{xs:12, md: 6}} key={value.title}>
+                  <Grid size={{xs:12, md: 6}} key={value.title}>
                     <Card
                       elevation={0}
                       sx={{
@@ -226,7 +226,7 @@ export default function About() {
 
           <Grid container spacing={3}>
             {TECH_STACK.map((stack) => (
-              <Grid sx={{xs:12, md: 3, sm: 6}} key={stack.category}>
+              <Grid size={{xs:12, md: 3, sm: 6}} key={stack.category}>
                 <Card
                   elevation={0}
                   sx={{
@@ -253,7 +253,6 @@ export default function About() {
                       </Typography>
                     </Box>
 
-                    {/* Tech items */}
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
                       {stack.items.map((item) => (
                         <Typography
@@ -347,7 +346,7 @@ export default function About() {
         <Container maxWidth="md">
           <Grid container spacing={6}>
 
-            <Grid sx={{xs:12, md: 6}}>
+            <Grid size={{xs:12, md: 6}}>
               <Typography
                 variant="overline"
                 color="primary"
@@ -382,7 +381,7 @@ export default function About() {
               </Box>
             </Grid>
 
-            <Grid sx={{xs:12, md: 6}}>
+            <Grid size={{xs:12, md: 6}}>
               <Typography
                 variant="overline"
                 color="primary"

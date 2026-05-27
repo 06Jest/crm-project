@@ -8,11 +8,16 @@ import {
 import BusinessIcon from '@mui/icons-material/Business';
 import {  useSelector } from 'react-redux';
 import type { RootState } from '../../../store/store';
+import Visibility from "@mui/icons-material/Visibility";
+import VisibilityOff from "@mui/icons-material/VisibilityOff";
+import IconButton from "@mui/material/IconButton";
+import InputAdornment from "@mui/material/InputAdornment";
 
 
 export default function Register() {
   const navigate = useNavigate();
   const themeMode = useSelector((state: RootState) => state.ui.themeMode);
+  const [showPassword, setShowPassword] = useState(false);
 
   const [form, setForm] = useState({
     orgName: '',
@@ -46,6 +51,7 @@ export default function Register() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+
   const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
   setError('');
@@ -70,11 +76,8 @@ export default function Register() {
   setLoading(true);
 
   try {
-    // Generate org_id BEFORE creating the user
     const orgId = crypto.randomUUID();
 
-    // Step 1 — Create Supabase Auth user
-    // Store org_id in metadata so it's always in the session
     const { data, error: signUpError } = await supabase.auth.signUp({
       email: form.email,
       password: form.password,
@@ -199,21 +202,45 @@ export default function Register() {
             <TextField
               label="Password"
               name="password"
-              type="password"
+              type={showPassword ? "text" : "password"}
               value={form.password}
               onChange={handleChange}
               required
               fullWidth
               helperText="Password must be at least 12 characters that include uppercase letter, number, and symbol"
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() => setShowPassword((prev) => !prev)}
+                      edge="end"
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
             />
             <TextField
               label="Confirm password"
               name="confirmPassword"
-              type="password"
+              type={showPassword ? "text" : "password"}
               value={form.confirmPassword}
               onChange={handleChange}
               required
               fullWidth
+               InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() => setShowPassword((prev) => !prev)}
+                      edge="end"
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
             />
 
             <Button

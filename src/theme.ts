@@ -24,7 +24,9 @@ export const getTheme = (mode: PaletteMode) =>
         styleOverrides: {
           root: {
             backgroundColor: mode === 'light' ? '#f5f5f5' : '#1e1e1e',
+            
           },
+          
         },
       },
 

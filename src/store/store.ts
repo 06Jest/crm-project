@@ -6,6 +6,7 @@ import activitiesReducer from './activitiesSlice';
 import customersReducer from './customersSlice';
 import messagingReducer from './messagingSlice';
 import dealsReducer from './dealsSlice';
+import superAdminReducer from './superAdminSlice';
 
 export const store = configureStore({
   reducer: {
@@ -15,6 +16,7 @@ export const store = configureStore({
     activities: activitiesReducer,
     customers: customersReducer,
     messaging: messagingReducer,
+    superAdmin: superAdminReducer,
     ui: uiReducer,
   },
 });
