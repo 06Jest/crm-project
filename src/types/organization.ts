@@ -8,7 +8,7 @@ export interface Organization {
   created_at: string;
   subscription_status: SubscriptionStatus;
   subscription_plan: SubscriptionPlan;
-
+  revenue: number;
 
   admin?: {
     name: string;

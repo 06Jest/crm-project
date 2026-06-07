@@ -7,6 +7,7 @@ import App from './App';
 import { getTheme } from './theme';
 import { store } from './store/store' 
 import { AuthProvider } from './context/AuthContext';
+import { SidebarProvider } from './context/SidebarProvider';
 
 export  function ThemedApp() {
   const themeMode = useSelector(
@@ -25,7 +26,9 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
     <AuthProvider>
       <Provider store={store}>
-        <ThemedApp />
+        <SidebarProvider>
+          <ThemedApp />
+        </SidebarProvider>
       </Provider>
     </AuthProvider>
   </React.StrictMode>

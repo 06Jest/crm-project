@@ -1,62 +1,123 @@
-import { supabase } from './supabase';
-import { getInsertMeta } from '../utils/getOrgId';
+
 import type { Contact } from '../types/contact';
 
-export const fetchContactsFromDB = async (): Promise<Contact[]> => {
 
-  const { data, error } = await supabase
-    .from('contacts')
-    .select('*')
-    .order('created_at', { ascending: false });
+const API_URL = `${import.meta.env.VITE_BACKEND_URL}/api/contacts`;
 
-  if (error) throw new Error(error.message);
-  return data as Contact[];
+export const fetchContactsAPI = 
+  async (token: string): 
+    Promise<Contact[]> => {
+      const response =
+        await fetch(
+          `${API_URL}/show-contacts`,
+          {
+            headers: {
+              authorization:
+                `Bearer ${token}`,
+            },
+          }
+        );
+  const result =
+    await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      result.error
+    );
+  }
+  return result.data;
 };
 
-export const addContactToDB = async (
-  contact: Omit<Contact, 'id' | 'created_at'>
-): Promise<Contact> => {
-  const { userName, userId, orgId } = await getInsertMeta();
-  
-  const { data, error } = await supabase
-    .from('contacts')
-    .insert([{
-      ...contact,
-      user_id: userId,
-      org_id: orgId,
-      created_by: userId,
-      assigned_to: userName,
-    }])
-    .select()
-    .single();
+export const addContactAPI =
+  async (
+    token: string,
+    contact: Omit<Contact, 'id' | 'created_at' | 'owner_id' | 'org_id' | 'owner_name' | 'full_name'>
+  ): Promise<Contact> => {
+      const response =
+        await fetch(
+          `${API_URL}/add-contact`,
+          {
+            method: "POST",
 
-  if (error) throw new Error(error.message);
-  return data as Contact;
+            headers: {
+              "Content-Type": "application/json",
+              authorization:
+                `Bearer ${token}`,
+              
+            },
+
+            body: JSON.stringify(contact),
+          }
+        );
+  const result =
+  await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      result.error
+    );
+  }
+  return result.data as Contact;
 };
 
-export const updateContactInDB = async (
-  contact: Contact
-): Promise<Contact> => {
-  const { data, error } = await supabase
-    .from('contacts')
-    .update({
-      name: contact.name,
-      email: contact.email,
-      phone: contact.phone,
-      status: contact.status,
-      notes: contact.notes,
-      assigned_to: contact.assigned_to,
-    })
-    .eq('id', contact.id)
-    .select()
-    .single();
+export const updateContactAPI =
+  async (
+    token: string,
+    id: string,
+    contact: Omit<Contact, 'id' | 'created_at' | 'owner_id' | 'org_id' | 'owner_name' | 'full_name'>
+  ): Promise<Contact> => {
+      const response =
+        await fetch(
+          `${API_URL}/update-contact`,
+          {
+            method: "PATCH",
 
-  if (error) throw new Error(error.message);
-  return data as Contact;
+            headers: {
+              "Content-Type": "application/json",
+              authorization:
+                `Bearer ${token}`,
+              
+            },
+
+            body: JSON.stringify({token, id, contact }),
+          }
+        );
+  const result =
+  await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      result.error
+    );
+  }
+  return result.data as Contact;
 };
 
-export const deleteContactFromDB = async (id: string): Promise<string> => {
-  const { error } = await supabase.from('contacts').delete().eq('id', id);
-  if (error) throw new Error(error.message);
-  return id;
+export const deleteContactAPI =
+  async (token: string, id: string): Promise<string> => {
+      const response =
+        await fetch(
+          `${API_URL}/delete-contact`,
+          {
+            method: "DELETE",
+
+            headers: {
+              "Content-Type": "application/json",
+              authorization:
+                `Bearer ${token}`,
+              
+            },
+
+            body: JSON.stringify({id}),
+          }
+        );
+  const result =
+  await response.json();
+
+  if (!response.ok) {
+    throw new Error( 
+      result.error
+    );
+  }
+  return result.data as string;
 };
