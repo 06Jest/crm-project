@@ -64,7 +64,7 @@ export default function Header() {
   const avatarSrc =  profile?.avatar_url || undefined;
   const { isAdmin, isSuperAdmin, employeeId } = useRole();
   return (
-    <AppBar position="fixed" sx={{  bgcolor: !user && themeMode === 'dark' ? 'rgba(0, 0, 0, 0.2)' : themeMode, boxShadow: !user ? 'none' : '-moz-initial' }}>
+    <AppBar position="fixed" sx={{ zIndex: 9999,  bgcolor: !user && themeMode === 'dark' ? 'rgba(0, 0, 0, 0.2)' : themeMode, boxShadow: !user ? 'none' : '-moz-initial' }}>
       <Toolbar sx={{ userSelect: 'none',display: "flex", justifyContent: "space-between"}}>
           <Typography   color='text.primary' fontWeight={500} sx={{ letterSpacing: '0.15em', display: 'flex', alignItems: 'center', fontFamily: '"Lexend Exa", sans-serif' }} onClick={
             user ? () => {navigate('/app/dashboard')} :  () => {navigate('/')} 

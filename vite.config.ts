@@ -5,6 +5,12 @@ export default defineConfig({
   plugins: [react()],
   server: {
     allowedHosts: ["reputably-pox-gallows.ngrok-free.dev"],
-    port: 5173
+    port: 5173,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+      },
+    },
   }
 })

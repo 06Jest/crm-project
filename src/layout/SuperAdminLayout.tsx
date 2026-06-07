@@ -50,7 +50,7 @@ export default function SuperAdminLayout() {
   const drawerWidth = 260;
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh', position: 'static' }}>
+    <Box sx={{ display: 'flex', minHeight: '100vh', position: 'static', mt: '50px' }}>
       <SuperAdminHeader />
 
       <Drawer

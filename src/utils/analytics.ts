@@ -16,7 +16,7 @@ export const trackPageView = (path: string) => {
 export const trackAIQuery = (feature: string) => {
   if (typeof window.gtag === 'undefined') return;
   window.gtag('event', 'ai_query', {
-    feature, // 'dashboard_summary' | 'contact_intel' | 'deal_predict' | 'compose' | 'chat'
+    feature, 
   });
 };
 

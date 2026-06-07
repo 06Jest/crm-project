@@ -1,6 +1,8 @@
-import { BrowserRouter, Routes, Route} from 'react-router-dom';
-
-
+import { BrowserRouter, Routes, Route, useLocation} from 'react-router-dom';
+import { initializeAnalytics, trackPageView, setAnalyticsUser } from './services/googleAnalyticsService';
+import { useSelector } from 'react-redux';
+import type { RootState } from './store/store';
+import { useEffect } from 'react';
 
 import PublicLayout from './layout/PublicLayout';
 import AuthLayout from './layout/AuthLayout';
@@ -25,6 +27,7 @@ import Leads from './pages/app/Leads/Leads';
 import Deals from './pages/app/Deals/Deals';
 import Activities from './pages/app/Activities/Activities';
 import Customers from './pages/app/Customers/Customers';
+import AddContact from './pages/app/Contacts/AddContact';
 import CustomerLeaderboard from './pages/app/Customers/CustomerLeaderboard';
 import CustomerDetail from './pages/app/Customers/CustomerDetail';
 import Reports from './pages/app/Reports/Reports';
@@ -42,10 +45,24 @@ import SuperAdminDashboard from './pages/admin/Dashboard/SuperAdminDashboard';
 import AdminUsers from './pages/admin/AdminUsers/AdminUsers';
 import AdminAccounts from './pages/admin/AdminAccounts/AdminAccounts';
 
-function App() {
+
+function AppRoutes() {
+  const location = useLocation();
+  const superAdmin = useSelector((state: RootState) => state.superAdmin.user);
+
+  // Track page views on every route change
+  useEffect(() => {
+    trackPageView(location.pathname);
+  }, [location.pathname]);
+
+  // Set user properties when super admin logs in
+  useEffect(() => {
+    if (superAdmin) {
+      setAnalyticsUser(superAdmin.id, superAdmin.role);
+    }
+  }, [superAdmin]);
 
   return (
-    <BrowserRouter>
       <Routes>
         <Route element={<PublicLayout />}>
           <Route path="/" element={<Landing />} />
@@ -66,6 +83,7 @@ function App() {
           <Route element={<AppLayout />}>
             <Route path="/app/dashboard" element={<Dashboard />} />
             <Route path="/app/contacts" element={<Contacts />} />
+            <Route path="/app/addcontact" element={<AddContact />} />
             <Route path="/app/contacts/:id" element={<ContactDetail />} />
             <Route path="/app/leads" element={<Leads />} />
             <Route path="/app/deals" element={<Deals />} />
@@ -109,6 +127,15 @@ function App() {
           </Route>
       </Route>
       </Routes> 
+  );
+}
+function App() {
+  useEffect(() => {
+    initializeAnalytics();
+  }, []);
+  return (
+    <BrowserRouter>
+      <AppRoutes />
     </BrowserRouter>
   );
 }

@@ -44,14 +44,19 @@ function Topbar() {
         position: "fixed",
         left: 0,
         right: 0,
-        borderBottom: 1,
         zIndex: 2,
         borderColor: "divider",
         display: "flex",
         justifyContent: "center",
       }}
     >
-      <Tabs value={location.pathname} onChange={handleChange}>
+      <Tabs value={location.pathname} onChange={handleChange}
+        sx={{
+          '& .MuiTabs-indicator': {
+                  display: 'none',
+                },
+        }}
+      >
         {tabs.map((tab) => (
           <Tab
             key={tab.value}
@@ -59,6 +64,12 @@ function Topbar() {
             iconPosition="start"
             title={tab.label}
             value={tab.value}
+            sx={{
+              transition: "transform 0.2s ease",
+              "&:hover": {
+                transform: "scale(1.6)",
+              },
+            }}
           />
         ))}
       </Tabs>

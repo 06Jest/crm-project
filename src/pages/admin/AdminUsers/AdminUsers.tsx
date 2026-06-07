@@ -33,6 +33,7 @@ import {
 } from '@mui/icons-material';
 import { supabase } from '../../../services/supabase';
 import type { Profile } from '../../../types/profile';
+import { trackUserBanAttempt, trackUserDeleteAttempt, trackEvent } from '../../../services/googleAnalyticsService'
 
 export default function AdminUsers() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
@@ -44,6 +45,7 @@ export default function AdminUsers() {
   const [banReason, setBanReason] = useState('');
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [menuUser, setMenuUser] = useState<Profile | null>(null);
+  
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -70,27 +72,42 @@ export default function AdminUsers() {
   }, []);
 
   const handleBanUser = async (user: Profile, reason: string) => {
-    try {
-      await supabase
-        .from('profiles')
-        .update({
-          is_active: false,
-          is_banned: true,
-          ban_reason: reason,
-        })
-        .eq('id', user.id);
+  try {
+    // FRONTEND: Track user action
+    trackUserBanAttempt(user.id);
 
-      setProfiles(profiles.map(p =>
-        p.id === user.id ? { ...p, is_active: false, is_banned: true } : p
-      ));
+    // FRONTEND: Call backend API
+    const response = await fetch('/api/admin/ban-user', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('super_admin_token')}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        userId: user.id,
+        reason: reason,
+      }),
+    });
 
-      setOpenDialog(false);
-      setSelectedUser(null);
-      setBanReason('');
-    } catch (err) {
-      console.error('Failed to ban user:', err);
+    if (!response.ok) {
+      throw new Error('Failed to ban user');
     }
-  };
+
+    // Update local state
+    setProfiles(profiles.map(u =>
+      u.id === user.id ? { ...u, is_active: false, is_banned: true } : u
+    ));
+
+    setOpenDialog(false);
+    setSelectedUser(null);
+    setBanReason('');
+    
+    trackEvent('super_admin_ban_user_success', { user_id: user.id });
+  } catch (err) {
+    console.error('Failed to ban user:', err);
+    trackEvent('super_admin_ban_user_error', { error: String(err) });
+  }
+};
 
   const handleUnbanUser = async (user: Profile) => {
     try {
@@ -112,17 +129,37 @@ export default function AdminUsers() {
   };
 
   const handleDeleteUser = async (user: Profile) => {
-    try {
+  try {
+    // FRONTEND: Track user action
+    trackUserDeleteAttempt(user.id, user.email);
 
-      await supabase.from('profiles').delete().eq('id', user.id);
+    // FRONTEND: Call backend API
+    const response = await fetch('/api/admin/delete-user', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('super_admin_token')}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        userId: user.id,
+      }),
+    });
 
-      setProfiles(profiles.filter(p => p.id !== user.id));
-      setOpenDialog(false);
-      setSelectedUser(null);
-    } catch (err) {
-      console.error('Failed to delete user:', err);
+    if (!response.ok) {
+      throw new Error('Failed to delete user');
     }
-  };
+
+    // Update local state
+    setProfiles(profiles.filter(u => u.id !== user.id));
+    setOpenDialog(false);
+    setSelectedUser(null);
+    
+    trackEvent('super_admin_delete_user_success', { user_id: user.id });
+  } catch (err) {
+    console.error('Failed to delete user:', err);
+    trackEvent('super_admin_delete_user_error', { error: String(err) });
+  }
+};
 
   const filteredUsers = profiles.filter(p => {
     if (tab === 'admins') return p.role === 'admin';
