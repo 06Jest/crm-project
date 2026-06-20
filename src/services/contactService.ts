@@ -31,7 +31,7 @@ export const fetchContactsAPI =
 export const addContactAPI =
   async (
     token: string,
-    contact: Omit<Contact, 'id' | 'created_at' | 'owner_id' | 'org_id' | 'owner_name' | 'full_name'>
+    contact: Omit<Contact, 'id' | 'lead_id' | 'created_at' | 'owner_id' | 'org_id' | 'owner_name'>
   ): Promise<Contact> => {
       const response =
         await fetch(
@@ -60,11 +60,43 @@ export const addContactAPI =
   return result.data as Contact;
 };
 
+export const addContactFromLeadsAPI =
+  async (
+    token: string,
+    contact: Omit<Contact, 'id' | 'created_at' | 'owner_id' | 'org_id' | 'owner_name' | 'status'>
+  ): Promise<Contact> => {
+      const response =
+        await fetch(
+          `${API_URL}/add-leadscontact`,
+          {
+            method: "POST",
+
+            headers: {
+              "Content-Type": "application/json",
+              authorization:
+                `Bearer ${token}`,
+              
+            },
+
+            body: JSON.stringify(contact),
+          }
+        );
+  const result =
+  await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      result.error
+    );
+  }
+  return result.data as Contact;
+};
+
 export const updateContactAPI =
   async (
     token: string,
     id: string,
-    contact: Omit<Contact, 'id' | 'created_at' | 'owner_id' | 'org_id' | 'owner_name' | 'full_name'>
+    contact: Omit<Contact, 'id' | 'lead_id' | 'created_at' | 'owner_id' | 'org_id' | 'owner_name' >
   ): Promise<Contact> => {
       const response =
         await fetch(

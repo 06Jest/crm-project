@@ -7,17 +7,16 @@ export type DealStage =
 
 export interface Deal {
   id: string;
+  contact_id: string;
   title: string;
-  value: number;
   stage: DealStage;
-  contact_id?: string;
-  contact_name?: string;
-  close_date?: string;
   notes?: string;
-  user_id?: string;
-  org_id?: string;          
-  owned_by?: string;        
+  owner_id: string;         
+  owner_name: string;
+  org_id: string; 
+  value: number;
+  created_at: string;
+  close_date?: string;          
   closed_by?: string;       
-  created_at?: string;
-  won: boolean;
 }
+

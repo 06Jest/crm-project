@@ -21,8 +21,8 @@ function Topbar() {
 
   const tabs = [
     { label: "Dashboard", value: "/app/dashboard", icon: <DashboardIcon /> },
-    { label: "Contacts", value: "/app/contacts", icon: <ContactsIcon /> },
     { label: "Leads", value: "/app/leads", icon: <FolderSharedIcon /> },
+    { label: "Contacts", value: "/app/contacts", icon: <ContactsIcon /> },
     { label: "Deals", value: "/app/deals", icon: <HandshakeIcon /> },
     { label: "Activities", value: "/app/activities", icon: <ViewTimelineIcon /> },
     { label: "Customers", value: "/app/customers", icon: <PersonIcon /> },
@@ -37,6 +37,16 @@ function Topbar() {
       : []),
   ];
 
+const path = location.pathname;
+
+const tabValue =
+  path === "/app/addcontact" || path.startsWith("/app/contacts/")
+    ? "/app/contacts"
+    : path === "/app/addlead" || path.startsWith("/app/leads/")
+    ? "/app/leads"
+    : path;
+    
+
   return (
     <Box
       sx={{
@@ -50,7 +60,7 @@ function Topbar() {
         justifyContent: "center",
       }}
     >
-      <Tabs value={location.pathname} onChange={handleChange}
+      <Tabs value={tabValue} onChange={handleChange}
         sx={{
           '& .MuiTabs-indicator': {
                   display: 'none',
