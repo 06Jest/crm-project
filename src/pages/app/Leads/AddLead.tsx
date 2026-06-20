@@ -14,21 +14,18 @@ import {
   Typography,
 } from "@mui/material";
 
-import { addContact } from "../../../store/contactsSlice";
+import { addLead } from "../../../store/leadsSlice";
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import type { ContactStatus, Gender, Priority, ContactSource } from "../../../types/contact";
+import type { LeadsStatus, Gender, Priority, LeadsSource } from "../../../types/lead";
 
-const STATUS_OPTIONS: ContactStatus[] = [
+const STATUS_OPTIONS: LeadsStatus[] = [
+  "New",
   "Contacted",
   "Qualified",
-  "Opportunity",
-  "Customer",
-  "Inactive",
-  "Lost",
-  "Churned",
+  "Closed",
 ];
 
-const SOURCE_OPTIONS: ContactSource[] = [
+const SOURCE_OPTIONS: LeadsSource[] = [
   "Website",
   "Referral",
   "Facebook",
@@ -64,60 +61,61 @@ const PRIORITY: Priority[] = [
   "Low",
 ];
 
-export default function AddContact() {
+export default function AddLead() {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const themeMode = useSelector((state: RootState) => state.ui.themeMode);
 
   const [form, setForm] = useState({
+    title: "",
     first_name: "",
     last_name: "",
+    suffix: "",
     email: "",
     phone: "",
     gender: "Prefer not to say" as Gender,
-    birth_date: null,
+    birth_date: "",
     company_name: "",
     position: "",
-    source: "Other" as ContactSource,
-    status: "Contacted" as ContactStatus,
+    source: "Other" as LeadsSource,
+    status: "New" as LeadsStatus,
     priority: "Low" as Priority,
+    notes: "",
   });
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
-      setForm({
-        ...form,
-        [e.target.name]: e.target.value,
-      })
+    setForm({
+      ...form,
+      [e.target.name]: e.target.value,
+    });
   };
 
   const handleSubmit = async () => {
-    const birthday =
-      form.birth_date === ''
-        ? null
-        : form.birth_date;
 
-    const newContact = {
+    const newLead = {
+      title: form.title,
       first_name: form.first_name,
       last_name: form.last_name,
+      suffix: form.suffix,
       email: form.email,
       phone: form.phone,
       gender: form.gender,
-      birth_date: birthday,
+      birth_date: form.birth_date || null || '',
       company_name: form.company_name,
       position: form.position,
       source: form.source,
       status: form.status,
       created_at: new Date().toISOString(),
       priority: form.priority,
+      notes: form.notes,
     };
 
-    await dispatch(addContact(newContact));
+    await dispatch(addLead(newLead));
 
-    navigate(`/app/contacts`);
+    navigate(`/app/leads`);
   };
-    
 
   return (
     <Box
@@ -135,9 +133,9 @@ export default function AddContact() {
     >
       <Button 
         startIcon={<ArrowBackIcon/>}
-        onClick={() => navigate('/app/contacts')}
+        onClick={() => navigate('/app/leads')}
         sx={{ alignSelf: 'start'}}>
-        Back to contacts
+        Back to Leads
       </Button>
 
         <Box sx={{
@@ -159,21 +157,21 @@ export default function AddContact() {
             gap: 1,
           }}>
               <TextField
-              label="First Name"
-              name="first_name"
-              required
-              onChange={handleChange}
-              size="small"
-              sx={{
-                fontSize: 13,
-                width: '50%'
-              }}
-            />
+                label="First Name"
+                name="first_name"
+                required
+                onChange={handleChange}
+                size="small"
+                sx={{
+                  fontSize: 13,
+                  width: '50%'
+                }}
+              />
 
             <TextField
               label="Last Name"
               name="last_name"
-              required
+              
               onChange={handleChange}
               size="small"
               sx={{
@@ -202,7 +200,6 @@ export default function AddContact() {
             <TextField
               label="Phone"
               name="phone"
-              required
               onChange={handleChange}
               size="small"
               sx={{
@@ -213,12 +210,8 @@ export default function AddContact() {
           </Box>
           
           <TextField
-            type="email"
             label="Email"
             name="email"
-            required
-            value={form.email}
-            error={form.email.length > 0 && form.email.length < 3}
             onChange={handleChange}
             size="small"
             sx={{
@@ -308,6 +301,18 @@ export default function AddContact() {
           <Typography variant="h5" fontWeight={700} mt={2}>
             Additional Details
           </Typography>
+          <TextField
+              label="Title"
+              name="title"
+              required
+              onChange={handleChange}
+              size="small"
+              fullWidth
+              rows={3}
+              sx={{
+                fontSize: 13,
+              }}
+            />
           <Box sx={{
             display: "flex",
             width: '100%',
@@ -373,6 +378,7 @@ export default function AddContact() {
           <TextField
               label="Notes"
               name="notes"
+              required
               onChange={handleChange}
               size="small"
               multiline
@@ -385,13 +391,13 @@ export default function AddContact() {
             <Button
               variant="contained"
               fullWidth
-              disabled={!form.first_name || !form.email || !form.last_name || !form.phone}
+              disabled={!form.first_name || !form.title || !form.notes}
               onClick={handleSubmit}
               sx={{
                 backgroundColor: 'primary.main'
               }}
             >
-              Add Contact
+              Add Lead
             </Button>
           </Paper>
           

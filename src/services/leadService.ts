@@ -1,57 +1,123 @@
-import { supabase } from './supabase';
-import { getInsertMeta } from '../utils/getOrgId';
+
 import type { Lead } from '../types/lead';
 
-export const fetchLeadsFromDB = async (): Promise<Lead[]> => {
-  const { data, error } = await supabase
-    .from('leads')
-    .select('*')
-    .order('created_at', { ascending: false });
 
-  if (error) throw new Error(error.message);
-  return data as Lead[];
+const API_URL = `${import.meta.env.VITE_BACKEND_URL}/api/leads`;
+
+export const fetchLeadsAPI = 
+  async (token: string): 
+    Promise<Lead[]> => {
+      const response =
+        await fetch(
+          `${API_URL}/show-leads`,
+          {
+            headers: {
+              authorization:
+                `Bearer ${token}`,
+            },
+          }
+        );
+  const result =
+    await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      result.error
+    );
+  }
+  return result.data;
 };
 
-export const addLeadToDB = async (
-  lead: Omit<Lead, 'id' | 'created_at'>
-): Promise<Lead> => {
-  const { userId, orgId } = await getInsertMeta();
+export const addLeadAPI =
+  async (
+    token: string,
+    contact: Omit<Lead, 'id' | 'created_at' | 'owner_id' | 'org_id' | 'owner_name'>
+  ): Promise<Lead> => {
+      const response =
+        await fetch(
+          `${API_URL}/add-lead`,
+          {
+            method: "POST",
 
-  const { data, error } = await supabase
-    .from('leads')
-    .insert([{
-      ...lead,
-      user_id: userId,
-      org_id: orgId,
-      assigned_to: lead.assigned_to || userId,
-    }])
-    .select()
-    .single();
+            headers: {
+              "Content-Type": "application/json",
+              authorization:
+                `Bearer ${token}`,
+              
+            },
 
-  if (error) throw new Error(error.message);
-  return data as Lead;
+            body: JSON.stringify(contact),
+          }
+        );
+  const result =
+  await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      result.error
+    );
+  }
+  return result.data as Lead;
 };
 
-export const updateLeadInDB = async (lead: Lead): Promise<Lead> => {
-  const { data, error } = await supabase
-    .from('leads')
-    .update({
-      title: lead.title,
-      name: lead.name,
-      status: lead.status,
-      notes: lead.notes,
-      assigned_to: lead.assigned_to,
-    })
-    .eq('id', lead.id)
-    .select()
-    .single();
+export const updateLeadAPI =
+  async (
+    token: string,
+    id: string,
+    lead: Omit<Lead, 'id' | 'created_at' | 'owner_id' | 'org_id' | 'owner_name' >
+  ): Promise<Lead> => {
+      const response =
+        await fetch(
+          `${API_URL}/update-lead`,
+          {
+            method: "PATCH",
 
-  if (error) throw new Error(error.message);
-  return data as Lead;
+            headers: {
+              "Content-Type": "application/json",
+              authorization:
+                `Bearer ${token}`,
+              
+            },
+
+            body: JSON.stringify({token, id, lead }),
+          }
+        );
+  const result =
+  await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      result.error
+    );
+  }
+  return result.data as Lead;
 };
 
-export const deleteLeadFromDB = async (id: string): Promise<string> => {
-  const { error } = await supabase.from('leads').delete().eq('id', id);
-  if (error) throw new Error(error.message);
-  return id;
+export const deleteLeadAPI =
+  async (token: string, id: string): Promise<string> => {
+      const response =
+        await fetch(
+          `${API_URL}/delete-lead`,
+          {
+            method: "DELETE",
+
+            headers: {
+              "Content-Type": "application/json",
+              authorization:
+                `Bearer ${token}`,
+              
+            },
+
+            body: JSON.stringify({id}),
+          }
+        );
+  const result =
+  await response.json();
+
+  if (!response.ok) {
+    throw new Error( 
+      result.error
+    );
+  }
+  return result.data as string;
 };

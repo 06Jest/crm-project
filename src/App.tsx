@@ -25,6 +25,7 @@ import Contacts from './pages/app/Contacts/Contacts';
 import ContactDetail from './pages/app/Contacts/ContactDetails';
 import Leads from './pages/app/Leads/Leads';
 import Deals from './pages/app/Deals/Deals';
+import AddLead from './pages/app/Leads/AddLead';
 import Activities from './pages/app/Activities/Activities';
 import Customers from './pages/app/Customers/Customers';
 import AddContact from './pages/app/Contacts/AddContact';
@@ -44,18 +45,23 @@ import SuperAdminLogin from './pages/admin-auth/SuperAdminLogin';
 import SuperAdminDashboard from './pages/admin/Dashboard/SuperAdminDashboard';
 import AdminUsers from './pages/admin/AdminUsers/AdminUsers';
 import AdminAccounts from './pages/admin/AdminAccounts/AdminAccounts';
+import { useSidebar } from '../src/hooks//useSidebar';
 
 
 function AppRoutes() {
   const location = useLocation();
-  const superAdmin = useSelector((state: RootState) => state.superAdmin.user);
+  const superAdmin = useSelector((state: RootState) => state.superAdmin.user);  
+ 
+ const { collapsed, setCollapsed } = useSidebar(); 
 
-  // Track page views on every route change
-  useEffect(() => {
+  
+
+  useEffect(() => {  
+    if (!collapsed) {
+    setCollapsed(true);
+  }
     trackPageView(location.pathname);
   }, [location.pathname]);
-
-  // Set user properties when super admin logs in
   useEffect(() => {
     if (superAdmin) {
       setAnalyticsUser(superAdmin.id, superAdmin.role);
@@ -82,10 +88,11 @@ function AppRoutes() {
         <Route element={<ProtectedRoute/>}>
           <Route element={<AppLayout />}>
             <Route path="/app/dashboard" element={<Dashboard />} />
+            <Route path="/app/leads" element={<Leads />} />
+            <Route path="/app/addlead" element={<AddLead />} />
             <Route path="/app/contacts" element={<Contacts />} />
             <Route path="/app/addcontact" element={<AddContact />} />
             <Route path="/app/contacts/:id" element={<ContactDetail />} />
-            <Route path="/app/leads" element={<Leads />} />
             <Route path="/app/deals" element={<Deals />} />
             <Route path="/app/activities" element={<Activities />} />
             <Route path="/app/customers" element={<Customers />} />

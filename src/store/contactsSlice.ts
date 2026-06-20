@@ -4,6 +4,7 @@ import { supabase  } from "../services/supabase";
 import {
   fetchContactsAPI,
   addContactAPI,
+  addContactFromLeadsAPI,
   updateContactAPI,
   deleteContactAPI,
 } from '../services/contactService';
@@ -47,11 +48,11 @@ export const addContact = createAsyncThunk(
       contact: Omit<
         Contact,
         'id' |
+        'lead_id' |
         'created_at' |
         'owner_id' |
         'org_id' |
-        'owner_name' |
-        'full_name'
+        'owner_name' 
       >, thunkAPI) => {
     try {
 
@@ -75,18 +76,53 @@ export const addContact = createAsyncThunk(
   }
 );
 
-export const updateContact = createAsyncThunk(
-  'contacts/update',
-  async ({id, contact,}:{
-      id: string;
+export const addContactFromLeads = createAsyncThunk(
+  'contacts/move',
+  async (
       contact: Omit<
         Contact,
         'id' |
         'created_at' |
         'owner_id' |
         'org_id' |
-        'owner_name' |
-        'full_name'
+        'status' |
+        'owner_name' 
+      >, thunkAPI) => {
+    try {
+
+      const {data: { session }} = await supabase.auth.getSession();
+      const token = session?.access_token;
+      
+      if (!token) {
+        throw new Error('No token found');
+      }
+
+      return await addContactFromLeadsAPI(token, contact);
+    } catch (err) {
+      if (err instanceof Error) {
+        return thunkAPI.rejectWithValue(err.message);
+      }
+      return thunkAPI
+        .rejectWithValue(
+          'Something went wrong'
+        );
+    }
+  }
+);
+
+export const updateContact = createAsyncThunk(
+  'contacts/update',
+  async ({id, contact}:{
+      id: string;
+      contact: 
+      Omit<
+        Contact,
+        'id' |
+        'lead_id' |
+        'created_at' |
+        'owner_id' |
+        'org_id' |
+        'owner_name'
     >;},thunkAPI) => {
     try {
 
@@ -165,6 +201,14 @@ const contactsSlice = createSlice({
     });
 
     builder.addCase(addContact.rejected, (state, action) => {
+      state.error = action.payload as string;
+    });
+
+    builder.addCase(addContactFromLeads.fulfilled, (state, action) => {
+      state.items.unshift(action.payload);
+    });
+
+    builder.addCase(addContactFromLeads.rejected, (state, action) => {
       state.error = action.payload as string;
     });
 

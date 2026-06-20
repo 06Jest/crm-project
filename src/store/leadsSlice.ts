@@ -1,102 +1,171 @@
-import { createSlice,  createAsyncThunk } from "@reduxjs/toolkit";
-import type { Lead } from '../types/lead';
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import type { Lead, LeadsStatus } from "../types/lead"
+import { supabase  } from "../services/supabase";
 import {
-  fetchLeadsFromDB,
-  addLeadToDB,
-  updateLeadInDB,
-  deleteLeadFromDB,
-}from '../services/leadService';
+  fetchLeadsAPI,
+  addLeadAPI,
+  updateLeadAPI,
+  deleteLeadAPI,
+} from '../services/leadService';
 
-interface LeadState {
+
+
+interface LeadsState {
   items: Lead[];
   loading: boolean;
+  loaded: boolean;
   error: string | null;
-};
+}
 
-const initialState: LeadState = {
+const initialState: LeadsState = {
   items: [],
   loading: false,
-  error: null
-}
+  loaded: false,
+  error: null,
+};
 
 export const fetchLeads = createAsyncThunk(
   'leads/fetchAll',
-  async (_, { rejectWithValue }) => {
+  async (token: string, thunkAPI) => {
     try {
-      return await fetchLeadsFromDB();
-    } catch (err: unknown) {
-      if (err instanceof Error) return rejectWithValue(err.message);
-      return rejectWithValue('Something went wrong');
+      return await fetchLeadsAPI(token);
+    }  catch (err) {
+      if (err instanceof Error) {
+        return thunkAPI.rejectWithValue(err.message);
+      };
+       return thunkAPI
+          .rejectWithValue(
+            'Failed to fetch leads'
+          );  
     }
   }
 );
 
 export const addLead = createAsyncThunk(
   'leads/add',
-  async (lead: Omit<Lead, 'id' | 'created_at'>, { rejectWithValue }) => {
+  async (
+      lead: Omit<
+        Lead,
+        'id' |
+        'created_at' |
+        'owner_id' |
+        'org_id' |
+        'owner_name' 
+      >, thunkAPI) => {
     try {
-      return await addLeadToDB(lead);
-    } catch (err: unknown) {
-      if (err instanceof Error) return rejectWithValue(err.message);
-      return rejectWithValue('Something went wrong');
+
+      const {data: { session }} = await supabase.auth.getSession();
+      const token = session?.access_token;
+      
+      if (!token) {
+        throw new Error('No token found');
+      }
+
+      return await addLeadAPI(token, lead);
+    } catch (err) {
+      if (err instanceof Error) {
+        return thunkAPI.rejectWithValue(err.message);
+      }
+      return thunkAPI
+        .rejectWithValue(
+          'Something went wrong'
+        );
     }
   }
 );
 
+
 export const updateLead = createAsyncThunk(
   'leads/update',
-  async (lead: Lead, { rejectWithValue }) => {
+  async ({id, lead}:{
+      id: string;
+      lead: 
+      Omit<
+        Lead,
+        'id' |
+        'created_at' |
+        'owner_id' |
+        'org_id' |
+        'owner_name'
+    >;},thunkAPI) => {
     try {
-      return await updateLeadInDB(lead);
-    } catch (err: unknown) {
-      if (err instanceof Error) return rejectWithValue(err.message);
-      return rejectWithValue('Something went wrong');
+
+      const {data: { session }} = await supabase.auth.getSession();
+      const token = session?.access_token;
+
+      if (!token) {
+        throw new Error('No token found');
+      }
+      return await updateLeadAPI(token, id, lead);
+    } catch (err) {
+      if (err instanceof Error) {
+        return thunkAPI.rejectWithValue(err.message);
+      }
+      return thunkAPI
+        .rejectWithValue(
+          'Something went wrong'
+        );
     }
   }
 );
 
 export const deleteLead = createAsyncThunk(
   'leads/delete',
-  async (id: string, {rejectWithValue}) => {
+  async (id: string, thunkAPI) => {
     try {
-      return await deleteLeadFromDB(id);
-    } catch (err: unknown) {
-      if (err instanceof Error) return rejectWithValue(err.message);
-      return rejectWithValue('Something went wrong');
+
+      const {data: { session }} = await supabase.auth.getSession();
+      const token = session?.access_token;
+
+      if (!token) {
+        throw new Error('No token found');
+      }
+      return await deleteLeadAPI(token, id);
+    } catch (err) {
+      if (err instanceof Error) {
+        return thunkAPI.rejectWithValue(err.message);
+      }
+      return thunkAPI
+        .rejectWithValue(
+          'Something went wrong'
+        );
     }
   }
 );
 
+
+
 const leadSlice = createSlice({
   name: 'leads',
   initialState,
-  reducers:{
-    
+  reducers: {
     moveLeadLocally: (
       state,
-      action: { payload: { id: string; newStatus: Lead['status']}}
+      action: { payload: { id: string; newStatus: LeadsStatus}}
     ) => {
       const lead = state.items.find((l) => l.id === action.payload.id);
       if (lead) lead.status = action.payload.newStatus;
     }, 
+
   },
 
+
   extraReducers: (builder) => {
-  
     builder.addCase(fetchLeads.pending, (state) => {
       state.loading = true;
       state.error = null;
     });
 
-    builder.addCase(fetchLeads.fulfilled, (state,action) => {
+    builder.addCase(fetchLeads.fulfilled, (state, action) => {
       state.loading = false;
+      state.loaded = true;
       state.items = action.payload;
-    })
+    });
 
     builder.addCase(fetchLeads.rejected, (state, action) => {
       state.loading = false;
       state.error = action.payload as string;
-    });
+    })
 
 
 
@@ -107,29 +176,31 @@ const leadSlice = createSlice({
     builder.addCase(addLead.rejected, (state, action) => {
       state.error = action.payload as string;
     });
+    
 
 
-
-    builder.addCase(updateLead.fulfilled, (state, action)=> {
-      const index = state.items.findIndex((l) => l.id === action.payload.id);
-      if (index !== -1) state.items[index] = action.payload;
+    builder.addCase(updateLead.fulfilled, (state, action) => {
+      const index = state.items.findIndex(c => c.id === action.payload.id);
+      if(index !== -1) state.items[index] = action.payload;
     });
 
-    builder.addCase(updateLead.rejected, (state, action) =>{
-      state.error = action.payload as string;
+    builder.addCase(updateLead.rejected, (state, action) => {
+      state.error = action.payload as string
     });
 
 
 
-    builder.addCase(deleteLead.fulfilled, (state, action)=> {
-      state.items = state.items.filter((l) => l.id !== action.payload);
+    builder.addCase(deleteLead.fulfilled, (state, action) => {
+      state.items = state.items.filter(c => c.id !== action.payload);
     });
 
     builder.addCase(deleteLead.rejected, (state, action) => {
       state.error = action.payload as string;
     });
   },
+
 });
 
 export const { moveLeadLocally } = leadSlice.actions;
 export default leadSlice.reducer;
+

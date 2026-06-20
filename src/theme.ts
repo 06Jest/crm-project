@@ -29,6 +29,21 @@ export const getTheme = (mode: PaletteMode) =>
           
         },
       },
+      MuiMenu: {
+        defaultProps: {
+          disableScrollLock: true,
+        },
+      },
+       MuiDialog: {
+        defaultProps: {
+          disableScrollLock: true,
+        },
+      },
+      MuiPopover: {
+        defaultProps: {
+          disableScrollLock: true,
+        },
+      },
 
       MuiCard: {
         styleOverrides: {
