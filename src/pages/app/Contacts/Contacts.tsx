@@ -3,8 +3,7 @@ import type { AppDispatch, RootState } from "../../../store/store";
 import { supabase } from "../../../services/supabase";
 import { formatDistanceToNow } from 'date-fns';
 import { DataGrid, type GridColDef, useGridApiRef, type GridRowSelectionModel } from '@mui/x-data-grid';
-import { useSidebar } from "../../../hooks/useSidebar";
-import ErrorAlert from "../../../components/Error";
+// import { useSidebar } from "../../../hooks/useSidebar";
 import { alpha } from '@mui/material/styles';
 import { 
   deleteContact,
@@ -29,11 +28,14 @@ import {
   ListItemText,
   CircularProgress,
   Typography,
+  Alert,
+  IconButton,
 } from "@mui/material";
 //import LockIcon from '@mui/icons-material/Lock';
 import DeleteIcon from '@mui/icons-material/Delete';
 // import SearchIcon from '@mui/icons-material/Search';
 import PriorityIcon from '@mui/icons-material/PriorityHighRounded';
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import type { ContactStatus, Priority } from "../../../types/contact";
 import { useState } from "react";
 
@@ -106,7 +108,7 @@ export default function Contacts() {
   const { items: contacts, loading, loaded, error} = useSelector((state:RootState) => state.contacts);
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-  const { collapsed } = useSidebar();
+  // const { collapsed } = useSidebar();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const apiRef = useGridApiRef();
   const [selectedRows, setSelectedRows] = useState<GridRowSelectionModel>({
@@ -232,7 +234,7 @@ const hasSelection =
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 8,  }}>
+      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 20, height: 850 }}>
         <CircularProgress />
       </Box>
     );
@@ -243,22 +245,15 @@ const hasSelection =
         justifyContent: 'center', 
         flexDirection: 'rows',
         flex: 1,
-        minWidth: 1000,
+        minWidth: 750,
         p: 2,
         mx: 2,
         height: 850}}>
-         {error && (
-          <Box  sx={{ 
-            position: 'absolute', 
-            zIndex: 10000,
-            left: '50%',
-            top: 10,
-            transform: 'translateX(-50%)'}}>
-            <ErrorAlert title="Error" message={error}/>
-          </Box>
-         )}
+          <Box sx={{display: {xs: 'none', lg: 'flex'}, flexDirection: 'column',  width: '15%', alignItems: 'end', minWidth: 285, }}>
+            {error && (
 
-          <Box sx={{display: {xs: 'none', lg: 'flex'}, flexDirection: 'column',  width: '15%', alignItems: 'end', minWidth: 285, flex: 0.2}}>
+            <Alert sx={{position: "absolute", top: 150, left: "50%"}} severity="error">{error}</Alert>
+            )}
             <Paper sx={{ height: '50%', maxHeight: 325 , width: '100%', minHeight: 310, m: 1, p: 1, borderRadius: 3,}}>
               <Typography  sx={{
                 pb: 1,
@@ -296,7 +291,7 @@ const hasSelection =
                 borderBottom: 0.2, 
                 borderColor: '#92929238'
               }} variant="h6" fontWeight={700} margin={1} marginLeft={1}>Priorities</Typography>
-              <List sx={{overflowY: 'scroll', height: '75%'}}>
+              <List sx={{overflowY: 'auto', height: '75%'}}>
                 {PriorityList.map((contact) => (
                   <ListItem key={contact.id} onClick={() => navigate(`/app/contacts/${contact.id}`)} sx={{
                       cursor: 'pointer',
@@ -328,20 +323,16 @@ const hasSelection =
               justifyContent: 'center',
               p: 1,
               pt: 0,
-              maxWidth: collapsed ? 1400 : 1200,
-              width: {
-                sm: 500,
-                xs: 600,
-                md: 800,
-                lg: 1000
-              },
+              width: '50vw',
+              minWidth: 300,
               transition: 'width 0.3s ease',
-              maxHeight:  690,
+              maxHeight:  1000,
               display: 'flex',
               flex: 1,
               borderRadius: 3,
               marginLeft: 1,
-              flexDirection: 'column'
+              flexDirection: 'column',
+              overflow: 'auto'
             }}
           >
             <Box sx={{display: 'flex', justifyContent: 'space-between', p: 2,}}>
@@ -354,7 +345,7 @@ const hasSelection =
               }}>
               </Box>
               <Box>
-                <Button 
+                <IconButton
                   onClick={() => navigate(`/app/addcontact`)}
                   sx={{
                   fontSize: 12,
@@ -364,7 +355,9 @@ const hasSelection =
                   borderRadius: 2,
                   mr: 2,
                   fontWeight: 700
-                }}>Add Contacts</Button>
+                }}>
+                  <PersonAddIcon titleAccess="Add Contact"/>
+                </IconButton>
                 <Button
                   onClick={() => setConfirmOpen(true)}
                   disabled={!hasSelection}
@@ -383,17 +376,17 @@ const hasSelection =
             <DataGrid
               sx={{
                 flex: 1,
-                minWidth: 700,
                 minHeight: 0,
                 borderRadius: 3,
                 fontSize: '0.85rem',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                overflow: 'auto'
               }}
               rows={rows}
               columns={columns}
               initialState={{ pagination: { paginationModel } }}
-              pageSizeOptions={[5, 10, 15]}
-              rowHeight={35}
+              pageSizeOptions={[30, 50]}
+              rowHeight={30}
               checkboxSelection
               apiRef={apiRef}
               onRowSelectionModelChange={(ids) => {

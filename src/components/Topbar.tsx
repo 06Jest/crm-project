@@ -4,7 +4,8 @@ import { useNavigate, useLocation } from "react-router-dom";
 
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import ContactsIcon from "@mui/icons-material/Contacts";
-import PersonIcon from "@mui/icons-material/Person";
+import RememberMeIcon from '@mui/icons-material/RememberMe';
+
 import HandshakeIcon from "@mui/icons-material/Handshake";
 import ViewTimelineIcon from "@mui/icons-material/ViewTimeline";
 import FolderSharedIcon from "@mui/icons-material/FolderShared";
@@ -24,8 +25,8 @@ function Topbar() {
     { label: "Leads", value: "/app/leads", icon: <FolderSharedIcon /> },
     { label: "Contacts", value: "/app/contacts", icon: <ContactsIcon /> },
     { label: "Deals", value: "/app/deals", icon: <HandshakeIcon /> },
+    { label: "Customers", value: "/app/customers", icon: <RememberMeIcon /> },
     { label: "Activities", value: "/app/activities", icon: <ViewTimelineIcon /> },
-    { label: "Customers", value: "/app/customers", icon: <PersonIcon /> },
     { label: "Messages", value: "/app/messaging", icon: <ChatBubbleIcon /> },
 
     ...(isAdmin
@@ -44,6 +45,8 @@ const tabValue =
     ? "/app/contacts"
     : path === "/app/addlead" || path.startsWith("/app/leads/")
     ? "/app/leads"
+    : path === "/app/adddeal" || path.startsWith("/app/deals/")
+    ? "/app/deals"
     : path;
     
 
@@ -69,6 +72,7 @@ const tabValue =
       >
         {tabs.map((tab) => (
           <Tab
+            
             key={tab.value}
             icon={tab.icon}
             iconPosition="start"
@@ -78,6 +82,23 @@ const tabValue =
               transition: "transform 0.2s ease",
               "&:hover": {
                 transform: "scale(1.6)",
+              },
+              minWidth: {
+                xs: 60,
+                sm: 90,
+              },
+              minHeight: {
+                xs: 30,
+                sm: 50,
+              },
+              fontSize: {
+                xs: "0.7rem",
+                sm: "0.85rem",
+                md: "1rem",
+              },
+              padding: {
+                xs: "4px 8px",
+                sm: "6px 12px",
               },
             }}
           />

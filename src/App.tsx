@@ -25,6 +25,7 @@ import Contacts from './pages/app/Contacts/Contacts';
 import ContactDetail from './pages/app/Contacts/ContactDetails';
 import Leads from './pages/app/Leads/Leads';
 import Deals from './pages/app/Deals/Deals';
+import AddDeal from './pages/app/Deals/AddDeal'
 import AddLead from './pages/app/Leads/AddLead';
 import Activities from './pages/app/Activities/Activities';
 import Customers from './pages/app/Customers/Customers';
@@ -94,6 +95,7 @@ function AppRoutes() {
             <Route path="/app/addcontact" element={<AddContact />} />
             <Route path="/app/contacts/:id" element={<ContactDetail />} />
             <Route path="/app/deals" element={<Deals />} />
+            <Route path="/app/adddeal" element={<AddDeal />} />
             <Route path="/app/activities" element={<Activities />} />
             <Route path="/app/customers" element={<Customers />} />
             <Route path="/app/customers/leaderboard" element={<CustomerLeaderboard />} />

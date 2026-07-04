@@ -31,7 +31,17 @@ export const fetchContactsAPI =
 export const addContactAPI =
   async (
     token: string,
-    contact: Omit<Contact, 'id' | 'lead_id' | 'created_at' | 'owner_id' | 'org_id' | 'owner_name'>
+    contact: Omit<Contact, 
+    'id' | 
+    'lead_id' | 
+    'created_at' | 
+    'owner_id' | 
+    'org_id' | 
+    'owner_name' |
+    'deleted_at' |
+    'deleted_by' |
+    'updated_by'
+    >
   ): Promise<Contact> => {
       const response =
         await fetch(
@@ -63,7 +73,16 @@ export const addContactAPI =
 export const addContactFromLeadsAPI =
   async (
     token: string,
-    contact: Omit<Contact, 'id' | 'created_at' | 'owner_id' | 'org_id' | 'owner_name' | 'status'>
+    contact: Omit<Contact, 
+          'id' | 
+          'created_at' | 
+          'owner_id' | 
+          'org_id' | 
+          'owner_name' | 
+          'status'  |
+          'deleted_at' |
+          'deleted_by' |
+          'updated_by'>
   ): Promise<Contact> => {
       const response =
         await fetch(
@@ -96,7 +115,17 @@ export const updateContactAPI =
   async (
     token: string,
     id: string,
-    contact: Omit<Contact, 'id' | 'lead_id' | 'created_at' | 'owner_id' | 'org_id' | 'owner_name' >
+    contact: Omit<Contact, 
+    'id' | 
+    'lead_id' | 
+    'created_at' | 
+    'owner_id' | 
+    'org_id' | 
+    'owner_name' |
+    'deleted_at' |
+    'deleted_by' |
+    'updated_by'
+    >
   ): Promise<Contact> => {
       const response =
         await fetch(

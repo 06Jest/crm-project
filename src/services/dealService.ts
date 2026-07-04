@@ -1,68 +1,191 @@
-import { supabase } from './supabase';
-import { getInsertMeta, getUserId } from '../utils/getOrgId';
+
 import type { Deal } from '../types/deal';
 
-export const fetchDealsFromDB = async (): Promise<Deal[]> => {
-  const { data, error } = await supabase
-    .from('deals')
-    .select('*')
-    .order('created_at', { ascending: false });
 
-  if (error) throw new Error(error.message);
-  return data as Deal[];
+const API_URL = `${import.meta.env.VITE_BACKEND_URL}/api/deals`;
+
+export const fetchDealsAPI = 
+  async (token: string): 
+    Promise<Deal[]> => {
+      const response =
+        await fetch(
+          `${API_URL}/show-deals`,
+          {
+            headers: {
+              authorization:
+                `Bearer ${token}`,
+            },
+          }
+        );
+  const result =
+    await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      result.error
+    );
+  }
+  return result.data;
 };
 
-export const addDealToDB = async (
-  deal: Omit<Deal, 'id' | 'created_at'>
-): Promise<Deal> => {
-  const { userId, orgId } = await getInsertMeta();
+export const addDealAPI =
+  async (
+    token: string,
+    deal: Omit<Deal, 
+    'id' | 
+    'created_at' | 
+    'owner_id' | 
+    'org_id' | 
+    'owner_name' |
+    'deleted_at' |
+    'deleted_by' |
+    'updated_by' |
+    'closed_date' |
+    'closed_by'
+    >
+  ): Promise<Deal> => {
+      const response =
+        await fetch(
+          `${API_URL}/add-deal`,
+          {
+            method: "POST",
 
-  const { data, error } = await supabase
-    .from('deals')
-    .insert([{
-      ...deal,
-      user_id: userId,
-      org_id: orgId,
-      owned_by: deal.owned_by || userId,
-    }])
-    .select()
-    .single();
+            headers: {
+              "Content-Type": "application/json",
+              authorization:
+                `Bearer ${token}`,
+              
+            },
 
-  if (error) throw new Error(error.message);
-  return data as Deal;
+            body: JSON.stringify(deal),
+          }
+        );
+  const result =
+  await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      result.error
+    );
+  }
+  return result.data as Deal;
 };
 
-export const updateDealInDB = async (deal: Deal): Promise<Deal> => {
-  const userId = await getUserId();
 
-  // If closing the deal, record who closed it
-  const closedBy =
-    deal.stage === 'Closed Won' || deal.stage === 'Closed Lost'
-      ? userId
-      : deal.closed_by;
 
-  const { data, error } = await supabase
-    .from('deals')
-    .update({
-      title: deal.title,
-      value: deal.value,
-      stage: deal.stage,
-      contact_name: deal.contact_name,
-      close_date: deal.close_date,
-      notes: deal.notes,
-      owned_by: deal.owned_by,
-      closed_by: closedBy,
-    })
-    .eq('id', deal.id)
-    .select()
-    .single();
+export const updateDealAPI =
+  async (
+    token: string,
+    id: string,
+    deal: Omit<Deal, 
+    'id' | 
+    'created_at' |
+    'contact_id' |
+    'owner_id' | 
+    'org_id' | 
+    'owner_name' |
+    'deleted_at' |
+    'deleted_by' |
+    'updated_by' |
+    'closed_date' |
+    'closed_by'
+    >
+  ): Promise<Deal> => {
+      const response =
+        await fetch(
+          `${API_URL}/update-deal`,
+          {
+            method: "PATCH",
 
-  if (error) throw new Error(error.message);
-  return data as Deal;
+            headers: {
+              "Content-Type": "application/json",
+              authorization:
+                `Bearer ${token}`,
+              
+            },
+
+            body: JSON.stringify({token, id, deal }),
+          }
+        );
+  const result =
+  await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      result.error
+    );
+  }
+  return result.data as Deal;
 };
 
-export const deleteDealFromDB = async (id: string): Promise<string> => {
-  const { error } = await supabase.from('deals').delete().eq('id', id);
-  if (error) throw new Error(error.message);
-  return id;
+export const closeDealAPI =
+  async (
+    token: string,
+    id: string,
+    deal: Omit<Deal, 
+    'id' | 
+    'created_at' |
+    'contact_id' |
+    'owner_id' | 
+    'org_id' | 
+    'owner_name' |
+    'deleted_at' |
+    'deleted_by' |
+    'updated_by' 
+    >
+  ): Promise<Deal> => {
+      const response =
+        await fetch(
+          `${API_URL}/close-deal`,
+          {
+            method: "PATCH",
+
+            headers: {
+              "Content-Type": "application/json",
+              authorization:
+                `Bearer ${token}`,
+              
+            },
+
+            body: JSON.stringify({token, id, deal }),
+          }
+        );
+  const result =
+  await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      result.error
+    );
+  }
+  return result.data as Deal;
+};
+
+export const deleteDealAPI =
+  async (token: string, id: string): Promise<string> => {
+      const response =
+        await fetch(
+          `${API_URL}/delete-deal`,
+          {
+            method: "DELETE",
+
+            headers: {
+              "Content-Type": "application/json",
+              authorization:
+                `Bearer ${token}`,
+              
+            },
+
+            body: JSON.stringify({id}),
+          }
+        );
+  const result =
+  await response.json();
+
+  if (!response.ok) {
+    throw new Error( 
+      result.error
+    );
+  }
+  return result.data as string;
 };

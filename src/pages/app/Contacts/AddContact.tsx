@@ -72,6 +72,7 @@ export default function AddContact() {
   const [form, setForm] = useState({
     first_name: "",
     last_name: "",
+    suffix: "",
     email: "",
     phone: "",
     gender: "Prefer not to say" as Gender,
@@ -101,6 +102,7 @@ export default function AddContact() {
     const newContact = {
       first_name: form.first_name,
       last_name: form.last_name,
+      suffix: form.suffix,
       email: form.email,
       phone: form.phone,
       gender: form.gender,

@@ -19,10 +19,17 @@ import { useSidebar } from '../hooks/useSidebar';
           <Box sx={{flex: 1}}>
             <Outlet/>
           </Box>
-          <Box sx={{
-            width: collapsed ? 70 : 350,
-            transition: "width 0.3s ease",
-          }}>
+          <Box 
+            display={{
+              xs: 'none',
+              sm: 'none',
+              md: 'block'
+            }}
+            sx={{
+              width: collapsed ? 70 : 350,
+              transition: "width 0.3s ease",
+            }}
+          >
             <Sidebar />
           </Box>
         </Box>

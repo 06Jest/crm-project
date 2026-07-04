@@ -52,7 +52,10 @@ export const addContact = createAsyncThunk(
         'created_at' |
         'owner_id' |
         'org_id' |
-        'owner_name' 
+        'owner_name' |
+        'deleted_at' |
+        'deleted_by' |
+        'updated_by'
       >, thunkAPI) => {
     try {
 
@@ -86,7 +89,10 @@ export const addContactFromLeads = createAsyncThunk(
         'owner_id' |
         'org_id' |
         'status' |
-        'owner_name' 
+        'owner_name' |
+        'deleted_at' |
+        'deleted_by' |
+        'updated_by'
       >, thunkAPI) => {
     try {
 
@@ -122,7 +128,10 @@ export const updateContact = createAsyncThunk(
         'created_at' |
         'owner_id' |
         'org_id' |
-        'owner_name'
+        'owner_name' |
+        'deleted_at' |
+        'deleted_by' |
+        'updated_by'
     >;},thunkAPI) => {
     try {
 

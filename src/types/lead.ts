@@ -52,5 +52,8 @@ export interface Lead {
   owner_id: string;
   org_id: string;            
   created_at: string;
+  deleted_at: string | null;
+  deleted_by: string | null;
+  updated_by: string | null;
   owner_name: string;
 }

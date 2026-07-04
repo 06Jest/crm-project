@@ -28,7 +28,7 @@ import {
   Box,
   Typography,
   Button,
-  // Paper,
+  Paper,
   Snackbar,
   Card,
   CardContent,
@@ -57,21 +57,22 @@ import SmsIcon from '@mui/icons-material/Sms';
 import PersonIcon from '@mui/icons-material/Person';
 import SearchIcon from '@mui/icons-material/Search';
 import PriorityIcon from '@mui/icons-material/PriorityHighRounded';
+import AddIcon from '@mui/icons-material/Add';
+import FolderSharedIcon from "@mui/icons-material/FolderShared";
 
-const COLUMNS: Lead['status'][] = ['New', 'Contacted', 'Qualified', 'Closed'];
 
-const COLUMN_COLORS: Record<Lead['status'], string> ={
-  New: '#406adf',
-  Contacted: '#ceb440',
-  Qualified: '#41ac47',
-  Closed: '#ec5757',
-};
-const STATUS_OPTIONS: LeadsStatus[] = [
+const STATUS: LeadsStatus[] = [
   "New",
   "Contacted",
   "Qualified",
   "Closed",
 ];
+// const COLUMN_COLORS: Record<LeadsStatus, string> ={
+//   New: '#406adf',
+//   Contacted: '#ceb440',
+//   Qualified: '#41ac47',
+//   Closed: '#ec5757',
+// };
 
 const PRIORITY_COLORS: Record<Priority, string> = {
   Highest: '#df3232',
@@ -129,6 +130,7 @@ export default function Leads() {
   const [form, setForm] = useState<LeadForm>({});
   const [dropResult, setDropResult] = useState<DropResult | null>(null)
   const [openDelete, setOpenDelete] = useState(false);
+  const [invalid, setInvalid] = useState('');
   const [openAddContact, setOpenAddContact] = useState(false);
   const [openEditConfirmation, setOpenEditConfirmation] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
@@ -226,7 +228,7 @@ export default function Leads() {
       last_name: lead.last_name,
       suffix: lead.suffix,
       gender: lead.gender as Gender,
-      birth_date: lead.birth_date || null || '',
+      birth_date: lead.birth_date || null ,
       email: lead.email,
       phone: lead.phone,
       company_name: lead.company_name || '',
@@ -302,7 +304,7 @@ export default function Leads() {
         last_name: lead.last_name,
         suffix: lead.suffix,
         gender: lead.gender,
-        birth_date: lead.birth_date,
+        birth_date: lead.birth_date ||  null,
         email: lead.email,
         phone: lead.phone,
         company_name: lead.company_name,
@@ -331,17 +333,21 @@ export default function Leads() {
     if (!lead) return;
 
     if (oldStatus === 'Qualified' && newStatus === 'New' || newStatus === 'Contacted' ) {
-      alert(`This lead is already in Contacts, Unable to change the status back to '${newStatus}'`)
+      setInvalid(`This lead is already in Contacts, Unable to change the status back to '${newStatus}'`)
+      setTimeout(() => setInvalid(''), 3000);
       return;
     }
     if (oldStatus === 'Qualified' && newStatus === 'Closed'  ) {
-      alert(`This lead is already in Contacts, Unable to change the status to '${newStatus}'. Please proceed to change the status in Contacts Instead`)
+      setInvalid(`This lead is already in Contacts, Unable to change the status to '${newStatus}'. Please proceed to change the status in Contacts Instead`)
+      setTimeout(() => setInvalid(''), 3000);
       return;
     }
     if (oldStatus === 'Closed' &&  newStatus === 'New'  ) {
-      alert(`This lead is already in already Existed, Unable to change the status back to '${newStatus}'`)
+      setInvalid(`This lead is already in already Existed, Unable to change the status back to '${newStatus}'`)
+      setTimeout(() => setInvalid(''), 3000);
       return;
     }
+    
     dispatch(moveLeadLocally({id: leadId, newStatus}));
     
     if (newStatus === 'Qualified') {
@@ -378,7 +384,7 @@ export default function Leads() {
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 20, height: 1200 }}>
         <CircularProgress />
       </Box>
     );
@@ -406,46 +412,61 @@ export default function Leads() {
   };
 
   return (
-    <Box sx={{height: 1200}}>
+    <Box sx={{height: 1000}}>
       {error && (
         <Alert severity="error" sx={{mb: 2}}>
           {error}
         </Alert>
       )}
+      {invalid && (
+        <Alert severity="error" sx={{mb: 2}}>
+          {invalid}
+        </Alert>
+      )}
       <Box sx={{
         display: 'flex', 
         justifyContent: 'space-between', 
-        pb: 2, 
+        mb: 1, 
         ml: '3vw', 
-        mr: '3vw', 
+        mr: '3vw',  
         overflowY: 'auto' }}>
         <Typography marginLeft={1} variant="h5" fontWeight={700}>
           Leads
         </Typography>
-        <Button variant="contained" onClick={() => navigate(`/app/addlead`)}>
-          Add lead
-        </Button>
+        <IconButton
+          title="Add Lead"
+          onClick={() => navigate(`/app/addlead`)}
+          sx={{
+          fontSize: 12,
+          py: 1,
+          px: 2,
+          pl: 1,  
+          border: '1px solid #bbbbbb88',
+          borderRadius: 2,
+          fontWeight: 700
+        }}>
+          <AddIcon sx={{fontSize: '14px', fontWeight: 700, marginRight: "-3px"}}/>
+          <FolderSharedIcon/>
+        </IconButton>
       </Box>
       <DragDropContext onDragEnd={handleDragEnd}>
-        <Box sx={{display: 'flex', gap: 2, pb: 2, ml: '3vw', mr: '3vw', overflowY: 'auto' }}>
-          {COLUMNS.map((column) =>(
+        <Paper sx={{display: 'flex', gap: 2, pb: 2, overflow: 'auto',width: '90vw', mb: 2,  p: '10px', borderRadius: 2, justifySelf: 'center' }}>
+          {STATUS.map((column) =>(
             <Box
               key={column}
-              sx={{ minWidth: 260, flex: 1}}
+              sx={{ width: '100%' ,minWidth: 260, flex: 1}}
             >
               <Box
                 sx={{
-                    bgcolor: COLUMN_COLORS[column],
-                    color: 'white',
                     px: 2,
                     py: 1,
-                    
+                    border: '1px solid #cccccc5b',
                     borderRadius: '8px 8px 0 0',
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
                   }}
-                > <Typography fontWeight={600}>{column}</Typography>
+                > <Typography fontWeight={600} variant="h6">{column}</Typography>
                 <TextField 
                   size="small"
                   value={search[column]}
@@ -465,7 +486,7 @@ export default function Leads() {
                     },
                   }}
                   sx={{
-                    backgroundColor: '#ffffffd8',
+                    border: '1px solid #cecece8f',
                     borderRadius: 5,
                     mx: 2,
                     color: '#383838',
@@ -487,7 +508,7 @@ export default function Leads() {
                 <Chip
                   label={getLeadsByStatus(column).length}
                   size="small"
-                  sx={{ bgcolor: 'rgba(255,255,255,0.3)', color: 'white' }}/>
+                  />
               </Box>
               <Droppable droppableId={column}>
                 {(provided, snapshot) => (
@@ -506,7 +527,7 @@ export default function Leads() {
                       borderRadius: '0 0 8px 8px',
                       p: 1,
                       transition: 'background-color 0.2s ease',
-                      height: 1000,
+                      height: 850,
                     }}
                   >
                     {getLeadsByStatus(column).map((lead, index) => (
@@ -661,9 +682,9 @@ export default function Leads() {
               </Droppable>
             </Box>
           ))}
-        </Box>
+        </Paper>
       </DragDropContext>
-      <Dialog sx={{position: "absolute"}} open={openDelete} onClose={handleCloseDelete}>
+      <Dialog PaperProps={{sx: {position: "absolute", backgroundColor: themeMode === 'dark' ? '#30303065' : '#ffffffa9'}}} open={openDelete} onClose={handleCloseDelete}>
         <DialogTitle sx={{fontWeight: 700}}>
           CONFIRMATION
         </DialogTitle>
@@ -675,9 +696,10 @@ export default function Leads() {
             gap: 2,
             mt: 1,
             maxwidth: 600,
+            
           }}
           >
-            Are you sure you want to delete this lead: <b>{selectedLead?.first_name} {selectedLead?.last_name}?</b>
+            Are you sure you want to delete this lead: <b>{selectedLead?.first_name} {selectedLead?.last_name} {selectedLead?.suffix}?</b>
           </DialogContent>
           <DialogActions>
             <Button onClick={handleCloseDelete}>
@@ -983,7 +1005,7 @@ export default function Leads() {
                         width: '50%'
                       }}
                     >
-                      {STATUS_OPTIONS.map((status) => (
+                      {STATUS.map((status) => (
                         <MenuItem key={status} value={status}>
                           {status}
                         </MenuItem>
@@ -1194,7 +1216,6 @@ export default function Leads() {
             <Box sx={{
               display: 'flex',
               flexDirection: 'column',
-              opacity: 0.3
             }}>
               <Typography variant="body2">Facebook: facebook.com/username</Typography>
               <Typography variant="body2">Instagram: @username</Typography>
