@@ -1,9 +1,13 @@
-import { useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react'
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector} from 'react-redux';
 import type { AppDispatch } from '../../../store/store';
 import { updateContact, deleteContact } from '../../../store/contactsSlice';
 import type {Contact, ContactStatus, Gender, Priority } from "../../../types/contact";
+// import { supabase } from "../../../services/supabase";
+// import {
+//   fetchDeals
+// } from '../../../store/dealsSlice';
 // import { useAI } from '../../../hooks/useAI';
 // import AIInsightCard from '../../../components/AIInsightCard';
 // import { aiApi } from '../../../services/backendApi';
@@ -26,6 +30,7 @@ import {
   Paper,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import PersonIcon from '@mui/icons-material/Person';
@@ -39,6 +44,13 @@ import BusinessIcon from '@mui/icons-material/Business';
 import WorkIcon from '@mui/icons-material/Work';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import PriorityIcon from '@mui/icons-material/PriorityHighRounded';
+import FacebookIcon from '@mui/icons-material/Facebook';
+import InstagramIcon from '@mui/icons-material/Instagram';
+import XIcon from '@mui/icons-material/X';
+import WhatsAppIcon from '@mui/icons-material/WhatsApp';
+import TelegramIcon from '@mui/icons-material/Telegram';
+import LinkedInIcon from '@mui/icons-material/LinkedIn';
+
 import type { RootState } from '../../../store/store';
 import { fixLeafletIcons } from '../../../utils/fixLeafletIcons';
 
@@ -86,10 +98,19 @@ const PRIORITY_COLORS: Record<Priority, string> = {
 export default function ContactDetail() {
 const { id } = useParams<{id: string }>();
 const navigate = useNavigate();
+const location = useLocation();
 const dispatch = useDispatch<AppDispatch>();
 const themeMode = useSelector((state: RootState) => state.ui.themeMode);
 const contact = useSelector((state: RootState) => 
   state.contacts.items.find((c) => c.id === id) 
+);
+
+const contactDeals = useSelector((state: RootState) => 
+  state.deals.items.filter((d) => d.contact_id === contact?.id)
+  .sort(
+    (a, b) =>
+      new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+  )
 );
 
 // const activities = useSelector((s: RootState) => s.activities.items)
@@ -101,6 +122,43 @@ const [isEditing, setIsEditing] = useState(false);
 const [form, setForm] = useState<ContactForm>({});
 const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 const [successMessage, setSuccessMessage] = useState('');
+
+
+
+useEffect(() => {
+  const scrollTo = location.state?.scrollTo;
+
+  if (!scrollTo) return;
+
+  const timer = setTimeout(() => {
+    document.getElementById(scrollTo)?.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
+
+    // Clear the state so it only happens once
+    navigate(location.pathname, {
+      replace: true,
+      state: {},
+    });
+  }, 100);
+
+
+  // const getDealsFromContact = (contact) => {
+
+  // }
+
+  return () => clearTimeout(timer);
+}, [location.state, location.pathname, navigate]);
+
+const formatCurrency = (value: number): string =>
+    new Intl.NumberFormat('en-PH', {
+      style: 'currency',
+      currency: 'PHP',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(value);
+
 
 // const {
 //   result: aiInsight,
@@ -170,7 +228,7 @@ const handleEditStart = () => {
     last_name: contact.last_name,
     suffix: contact.suffix,
     gender: contact.gender as Gender,
-    birth_date: contact.birth_date || null || '',
+    birth_date: contact.birth_date || null,
     email: contact.email,
     phone: contact.phone,
     company_name: contact.company_name || '',
@@ -204,12 +262,22 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
   navigate('/app/contacts');
  };
 
- const formattedDate = contact.created_at ? new Date(contact.created_at).toLocaleDateString('en-US', {
-  year: 'numeric',
-  month: 'long',
-  day: 'numeric'
- })
- :'Unknown';
+  const formattedDate = (created: string | null | undefined) =>
+    created
+      ? new Date(created).toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        })
+      : "Unknown";
+  
+  const dealsStats = () => {
+    return {
+      totalValue: contactDeals.reduce((total: number, deal) => total + deal.value, 0),
+      totalDealCount : contactDeals.length,
+      totalDealWon: contactDeals.reduce((count, deal) => deal.stage === "Closed Won" ? count + 1 : count, 0)
+    }
+  } 
 
  const priorityIcon = () => {
   if (contact.priority === 'High') {
@@ -343,7 +411,63 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
                 <Typography variant="caption" color="text.secondary">
                   Added on
                 </Typography>
-                <Typography>{formattedDate}</Typography>
+                <Typography>{formattedDate(contact.created_at)}</Typography>
+              </Box>
+            </Box>
+            <Divider sx={{ mb: 1, mt: 4}}/>
+            <Typography variant='h6' fontWeight={700}>
+              Social Accounts
+            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <FacebookIcon color="action" />
+              <Box sx={{width: '60%'}}>
+                <Typography variant="caption" color="text.secondary">
+                  Facebook
+                </Typography>
+                <Typography>@JohnDoe</Typography>
+              </Box>
+              <Box sx={{ position: "relative", display: "inline-flex" }}>
+                <XIcon color="action" />
+              </Box>
+              <Box>
+                <Typography variant="caption" color="text.secondary">
+                  X/Twitter
+                </Typography>
+                <Typography>@JohnDoe</Typography>
+              </Box>
+            </Box>
+
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <WhatsAppIcon color="action" />
+              <Box sx={{width: '60%'}}>
+                <Typography variant="caption" color="text.secondary">
+                  Whatsapp
+                </Typography>
+                <Typography>@JohnDoe</Typography>
+              </Box>
+              <LinkedInIcon color="action" />
+              <Box>
+                <Typography variant="caption" color="text.secondary">
+                  LinkedIn
+                </Typography>
+                <Typography>@JohnDoe</Typography>
+              </Box>
+            </Box>
+
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <InstagramIcon color="action" />
+              <Box sx={{width: '60%'}}>
+                <Typography variant="caption" color="text.secondary">
+                  Instagram
+                </Typography>
+                <Typography>@JohnDoe</Typography>
+              </Box>
+              <TelegramIcon color="action" />
+              <Box>
+                <Typography variant="caption" color="text.secondary">
+                  Telegram
+                </Typography>
+                <Typography>@JohnDoe</Typography>
               </Box>
             </Box>
             <Divider sx={{ mb: 1, mt: 4}}/>
@@ -375,338 +499,309 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
                 <Typography>{!contact.department ? 'Not Provided' : contact.department}</Typography>
               </Box>
             </Box>
+            <Divider sx={{ mb: 1, mt: 4}}/>
+            <Typography variant='h6' fontWeight={700}>
+              Deals
+            </Typography>
+            <Box sx={{display: 'flex', gap: 3}}>
+              <Typography fontWeight={700} variant='body2'>Total Deal Value: {dealsStats().totalValue}</Typography>
+              <Typography fontWeight={700} variant='body2'>Total Deals: {dealsStats().totalDealCount}</Typography>
+              <Typography fontWeight={700} variant='body2'>Total Deal Won: {dealsStats().totalDealWon}</Typography>
+            </Box>
+            <Box sx={{display: 'flex', width: '100%', overflow: 'auto', alignItems: 'flex-start'}}>
+              {contactDeals.length === 0 && (
+                <Box>No deals yet</Box>
+              )}
+              {contactDeals.map((deal) => (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, minWidth: 400, maxWidth: 600, maxHeight: 200, justifyContent: 'space-between' }} id={`${deal.id}`}>
+                <Box sx={{width: '80%', display: 'flex', flexDirection: 'column', border: '1px solid #d6d6d6ce', p: '10px 15px ', borderRadius: 3}}>
+                  <Typography fontWeight={700} variant='caption' sx={{textTransform: "uppercase"}}>{deal.title}</Typography>
+                  <Typography variant='caption'>{deal.stage}</Typography>
+                  <Typography fontWeight={700} variant='caption'>{formatCurrency(deal.value)}</Typography>
+                  <Typography sx={{overflowWrap: "break-word"}} variant='caption'>{deal.notes}</Typography>
+                  <Typography sx={{mt: 1, alignSelf: 'end'}} variant='caption'>{formattedDate(deal.created_at)}</Typography>
+                </Box>
+                <Box width={'20%'} sx={{display: 'flex', justifyContent: 'center', alignItems: 'center'}}>
+                  <ArrowForwardIcon/>
+                </Box>
+              </Box>
+              ))}
+            </Box>
+            
             
           </Box>
         )}
 
         {isEditing && (
-           <Box 
-            sx={{
+          <Box 
+          sx={{
+            display: "flex",
+            flexDirection: 'column',
+            width: '100%',
+            minWidth: 450,
+            justifyContent: "center",
+            p: 2,
+            gap: 1,
+          }}>
+          <Typography variant="h5" fontWeight={700} mt={2}>
+          Personal Details
+          </Typography>
+            <Box sx={{
               display: "flex",
-              flexDirection: 'column',
               width: '100%',
-              minWidth: 450,
-              justifyContent: "center",
-              p: 2,
+              justifyContent: "space-between",
               gap: 1,
             }}>
-            <Typography variant="h5" fontWeight={700} mt={2}>
-            Personal Details
-            </Typography>
-              <Box sx={{
-                display: "flex",
-                width: '100%',
-                justifyContent: "space-between",
-                gap: 1,
-              }}>
-                <TextField
-                label="First Name"
-                name="first_name"
+              <TextField
+              label="First Name"
+              name="first_name"
+              required
+              onChange={handleChange}
+              value={form.first_name}
+              size="small"
+              sx={{
+                fontSize: 13,
+                width: '50%'
+              }}
+              />
+    
+              <TextField
+                label="Last Name"
+                name="last_name"
                 required
                 onChange={handleChange}
-                value={form.first_name}
+                value={form.last_name}
                 size="small"
                 sx={{
                   fontSize: 13,
                   width: '50%'
                 }}
-                />
-      
-                <TextField
-                  label="Last Name"
-                  name="last_name"
-                  required
-                  onChange={handleChange}
-                  value={form.last_name}
-                  size="small"
-                  sx={{
-                    fontSize: 13,
-                    width: '50%'
-                  }}
-                />
+              />
 
-              </Box>
+            </Box>
 
-              <Box sx={{
-                display: "flex",
-                width: '100%',
-                justifyContent: "space-between",
-                gap: 1,
-              }}>
-                <TextField
-                  label="Suffix"
-                  name="suffix"
-                  value={form.suffix}
-                  onChange={handleChange}
-                  size="small"
-                  sx={{
-                    fontSize: 13,
-                    width: '50%'
-                  }}
-                />
-    
-                <TextField
-                  type='tel'
-                  label="Phone"
-                  name="phone"
-                  placeholder='63+'
-                  required
-                  onChange={handleChange}
-                  value={form.phone}
-                  size="small"
-                  sx={{
-                    fontSize: 13,
-                    width: '50%'
-                  }}
-                />
-                
-              </Box>
-                
+            <Box sx={{
+              display: "flex",
+              width: '100%',
+              justifyContent: "space-between",
+              gap: 1,
+            }}>
               <TextField
-                label="Email"
-                name="email"
+                label="Suffix"
+                name="suffix"
+                value={form.suffix}
+                onChange={handleChange}
+                size="small"
+                sx={{
+                  fontSize: 13,
+                  width: '50%'
+                }}
+              />
+  
+              <TextField
+                type='tel'
+                label="Phone"
+                name="phone"
+                placeholder='63+'
                 required
                 onChange={handleChange}
-                value={form.email}
+                value={form.phone}
                 size="small"
                 sx={{
                   fontSize: 13,
+                  width: '50%'
+                }}
+              />
+              
+            </Box>
+              
+            <TextField
+              label="Email"
+              name="email"
+              required
+              onChange={handleChange}
+              value={form.email}
+              size="small"
+              sx={{
+                fontSize: 13,
+              }}
+            />
+
+            <Box sx={{
+              display: "flex",
+              width: '100%',
+              justifyContent: "space-between",
+              gap: 1,
+            }}>
+
+              <TextField
+                select
+                label="Gender"
+                name="gender"
+                onChange={handleChange}
+                value={form.gender}
+                size="small"
+                sx={{
+                  fontSize: 13,
+                  width: '50%',
+                }}
+              >
+              {GENDER.map((gender) => (
+                <MenuItem key={gender} value={gender}>
+                  {gender}
+                </MenuItem>
+              ))}
+              </TextField>
+
+              <TextField
+                label="Date of Birth"
+                name="birth_date"
+                type="date"
+                value={form.birth_date}
+                onChange={handleChange}
+                slotProps={{ inputLabel: { shrink: true } }}
+                size="small"
+                sx={{
+                  fontSize: 13,
+                  width: '50%',
+                  '& input' : {
+                    colorScheme: themeMode === 'dark' ? 'dark' : 'light', 
+                  }
                 }}
               />
 
-              <Box sx={{
-                display: "flex",
-                width: '100%',
-                justifyContent: "space-between",
-                gap: 1,
-              }}>
-
-                <TextField
-                  select
-                  label="Gender"
-                  name="gender"
-                  onChange={handleChange}
-                  value={form.gender}
-                  size="small"
-                  sx={{
-                    fontSize: 13,
-                    width: '50%',
-                  }}
-                >
-                {GENDER.map((gender) => (
-                  <MenuItem key={gender} value={gender}>
-                    {gender}
-                  </MenuItem>
-                ))}
-                </TextField>
-
-                <TextField
-                  label="Date of Birth"
-                  name="birth_date"
-                  type="date"
-                  value={form.birth_date}
-                  onChange={handleChange}
-                  slotProps={{ inputLabel: { shrink: true } }}
-                  size="small"
-                  sx={{
-                    fontSize: 13,
-                    width: '50%',
-                    '& input' : {
-                      colorScheme: themeMode === 'dark' ? 'dark' : 'light', 
-                    }
-                  }}
-                />
-
-              </Box>
-              <Typography variant="h5" fontWeight={700} mt={2}>
-                Professional Details
-              </Typography>
+            </Box>
+            <Typography variant="h5" fontWeight={700} mt={2}>
+              Professional Details
+            </Typography>
+            <TextField
+              label="Company"
+              name="company_name"
+              value={form.company_name}
+              onChange={handleChange}
+              size="small"
+              sx={{
+                fontSize: 13,
+              }}
+            />
+            <Box sx={{
+              display: "flex",
+              width: '100%',
+              justifyContent: "space-between",
+              gap: 1,
+            }}>
               <TextField
-                label="Company"
-                name="company_name"
-                value={form.company_name}
+                label="Department"
+                name="department"
+                value={form.department}
                 onChange={handleChange}
                 size="small"
                 sx={{
                   fontSize: 13,
+                  width: '50%'
                 }}
               />
-              <Box sx={{
-                display: "flex",
-                width: '100%',
-                justifyContent: "space-between",
-                gap: 1,
-              }}>
-                <TextField
-                  label="Department"
-                  name="department"
-                  value={form.department}
-                  onChange={handleChange}
-                  size="small"
-                  sx={{
-                    fontSize: 13,
-                    width: '50%'
-                  }}
-                />
-    
-                <TextField
-                  label="Position"
-                  name="position"
-                  value={form.position}
-                  onChange={handleChange}
-                  size="small"
-                  sx={{
-                    fontSize: 13,
-                    width: '50%'
-                  }}
-                />
-              </Box>
-              <Typography variant="h5" fontWeight={700} mt={2}>
-                Additional Details
-              </Typography>
-              <Box sx={{
-                display: "flex",
-                width: '100%',
-                justifyContent: "space-between",
-                gap: 1,
-              }}>
-                <TextField
-                  select
-                  label="Status"
-                  name="status"
-                  value={form.status}
-                  onChange={handleChange}
-                  size="small"
-                  sx={{
-                    fontSize: 13,
-                    width: '50%'
-                  }}
-                >
-                  {STATUS_OPTIONS.map((status) => (
-                    <MenuItem key={status} value={status}>
-                      {status}
-                    </MenuItem>
-                  ))}
-                </TextField>
-    
-                <TextField
-                  select
-                  label="Priority"
-                  name="priority"
-                  onChange={handleChange}
-                  value={form.priority}
-                  size="small"
-                  sx={{
-                    fontSize: 13,
-                    width: '50%'
-                  }}
-                >
-                  {PRIORITY.map((prio) => (
-                    <MenuItem key={prio} value={prio}>
-                      {prio}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              </Box>
-
+  
               <TextField
-                  label="Notes"
-                  name="notes"
-                  value={form.notes}
-                  onChange={handleChange}
-                  size="small"
-                  multiline
-                  rows={3}
-                  sx={{
-                    fontSize: 13,
-                  }}
-                />
+                label="Position"
+                name="position"
+                value={form.position}
+                onChange={handleChange}
+                size="small"
+                sx={{
+                  fontSize: 13,
+                  width: '50%'
+                }}
+              />
+            </Box>
+            <Typography variant="h5" fontWeight={700} mt={2}>
+              Additional Details
+            </Typography>
+            <Box sx={{
+              display: "flex",
+              width: '100%',
+              justifyContent: "space-between",
+              gap: 1,
+            }}>
+              <TextField
+                select
+                label="Status"
+                name="status"
+                value={form.status}
+                onChange={handleChange}
+                size="small"
+                sx={{
+                  fontSize: 13,
+                  width: '50%'
+                }}
+              >
+                {STATUS_OPTIONS.map((status) => (
+                  <MenuItem key={status} value={status}>
+                    {status}
+                  </MenuItem>
+                ))}
+              </TextField>
+  
+              <TextField
+                select
+                label="Priority"
+                name="priority"
+                onChange={handleChange}
+                value={form.priority}
+                size="small"
+                sx={{
+                  fontSize: 13,
+                  width: '50%'
+                }}
+              >
+                {PRIORITY.map((prio) => (
+                  <MenuItem key={prio} value={prio}>
+                    {prio}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Box>
 
-                <Box sx={{display: 'flex', justifyContent: 'space-between', gap: 1}}>
-                  <Button 
-                    onClick={handleEditCancel}
-                    sx={{
-                        backgroundColor: '#7c7c7cb4',
-                        width: '50%',
-                        color: 'white'
-                      }}
-                    >
-                  Cancel
-                  </Button>
-                  <Button
-                    variant="contained"
-                    onClick={handleSave}
-                    disabled={!form.first_name || !form.email || !form.last_name || !form.phone}
-                    sx={{
-                      backgroundColor: 'primary.main',
+            <TextField
+                label="Notes"
+                name="notes"
+                value={form.notes}
+                onChange={handleChange}
+                size="small"
+                multiline
+                rows={3}
+                sx={{
+                  fontSize: 13,
+                }}
+              />
+
+              <Box sx={{display: 'flex', justifyContent: 'space-between', gap: 1}}>
+                <Button 
+                  onClick={handleEditCancel}
+                  sx={{
+                      backgroundColor: '#7c7c7cb4',
                       width: '50%',
+                      color: 'white'
                     }}
                   >
-                    Update Contact
-                  </Button>
-                </Box>
-                
-            </Box>
-          // <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          //   <TextField
-          //     label="Name"
-          //     name="name"
-          //     value={form.name || ''}
-          //     onChange={handleChange}
-          //     fullWidth
-          //   />
-          //   <TextField
-          //     label="Email"
-          //     name="email"
-          //     value={form.email || ''}
-          //     onChange={handleChange}
-          //     fullWidth
-          //   />
-          //   <TextField
-          //     label="Phone"
-          //     name="phone"
-          //     value={form.phone || ''}
-          //     onChange={handleChange}
-          //     fullWidth
-          //   />
-          //   <TextField
-          //     label="Status"
-          //     name="status"
-          //     value={form.status || 'active'}
-          //     onChange={handleChange}
-          //     select
-          //     fullWidth
-          //   >
-          //     <MenuItem value="active">Active</MenuItem>
-          //     <MenuItem value="Prospect">Prospect</MenuItem>
-          //     <MenuItem value="Lead">Lead</MenuItem>
-          //   </TextField>
-
-          //   <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
-          //     <Button variant="contained" onClick={handleSave}>
-          //       Save changes
-          //     </Button>
-          //     <Button onClick={handleEditCancel}>
-          //       Cancel
-          //     </Button>
-          //   </Box>
-          // </Box>
+                Cancel
+                </Button>
+                <Button
+                  variant="contained"
+                  onClick={handleSave}
+                  disabled={!form.first_name || !form.email || !form.last_name || !form.phone}
+                  sx={{
+                    backgroundColor: 'primary.main',
+                    width: '50%',
+                  }}
+                >
+                  Update Contact
+                </Button>
+              </Box>
+              
+          </Box>
         )}
     </Paper>
-    {/* <Paper elevation={1} sx={{ p: 3, borderRadius: 3, mb: 3 }}>
-      <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>
-        AI Insight
-      </Typography>
-      <AIInsightCard
-        title="Contact Intelligence"
-        result={aiInsight}
-        loading={aiLoading}
-        error={aiError}
-        onGenerate={handleGenerateInsight}
-        onClear={clearInsight}
-        buttonLabel="✨ Analyze this contact"
-      />
-    </Paper> */}
     <Dialog
       open={deleteDialogOpen}
       onClose={() => setDeleteDialogOpen(false)}

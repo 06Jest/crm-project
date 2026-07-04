@@ -31,8 +31,12 @@ export default function Sidebar() {
   const themeMode = useSelector((state: RootState) => state.ui.themeMode);
   return (
     <Box
+      display={{ 
+        xs: 'none',
+        sm: 'none',
+        md: 'flex'
+      }}
       sx={{
-        display: 'flex',
         flexDirection: 'column',
         height: '100%',
         position: 'fixed',

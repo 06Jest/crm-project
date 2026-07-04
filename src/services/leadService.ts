@@ -31,7 +31,15 @@ export const fetchLeadsAPI =
 export const addLeadAPI =
   async (
     token: string,
-    contact: Omit<Lead, 'id' | 'created_at' | 'owner_id' | 'org_id' | 'owner_name'>
+    contact: Omit<Lead, 
+        'id' | 
+        'created_at' | 
+        'owner_id' | 
+        'org_id' | 
+        'owner_name' | 
+        'deleted_at' |
+        'deleted_by' |
+        'updated_by'>
   ): Promise<Lead> => {
       const response =
         await fetch(
@@ -64,7 +72,16 @@ export const updateLeadAPI =
   async (
     token: string,
     id: string,
-    lead: Omit<Lead, 'id' | 'created_at' | 'owner_id' | 'org_id' | 'owner_name' >
+    lead: Omit<Lead, 
+    'id' | 
+    'created_at' | 
+    'owner_id' | 
+    'org_id' | 
+    'owner_name' |
+    'deleted_at' |
+    'deleted_by' |
+    'updated_by'
+     >
   ): Promise<Lead> => {
       const response =
         await fetch(

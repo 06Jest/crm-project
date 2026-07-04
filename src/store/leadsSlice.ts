@@ -50,7 +50,10 @@ export const addLead = createAsyncThunk(
         'created_at' |
         'owner_id' |
         'org_id' |
-        'owner_name' 
+        'owner_name' |
+        'deleted_at' |
+        'deleted_by' |
+        'updated_by'
       >, thunkAPI) => {
     try {
 
@@ -86,7 +89,9 @@ export const updateLead = createAsyncThunk(
         'created_at' |
         'owner_id' |
         'org_id' |
-        'owner_name'
+        'owner_name'|
+        'deleted_at' |
+        'deleted_by' 
     >;},thunkAPI) => {
     try {
 
