@@ -17,7 +17,7 @@ import {
   setActiveConversation,
 } from '../../../store/messagingSlice';
 import { subscribeToMessages } from '../../../services/messagingService';
-import { useAuthContext } from '../../../hooks/useAuthContext';
+import { useAuth } from '../../../hooks/useAuth';
 
 import {
   Box, Typography, TextField,  Avatar,
@@ -47,7 +47,7 @@ const formatTime = (dateStr: string): string => {
 };
   export default function Messaging() {
     const dispatch = useDispatch<AppDispatch>();
-    const { user } = useAuthContext();
+    const { user } = useAuth();
 
     const [messageText, setMessageText] = useState('');
     const [selectedContact, setSelectedContact] = useState<Contact["id"]>('');

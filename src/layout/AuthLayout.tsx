@@ -21,7 +21,7 @@ import LandingBackground from '../assets/landing-background.jpg';
           backgroundAttachment: 'fixed',
      }}>
       <Header />
-      <Box component= "main" sx={{mt: 8,p:3,  display:'flex', justifyContent: 'flex-end', alignItems: 'center',
+      <Box component= "main" sx={{mt: 8,p:3,  display:'flex', justifyContent: 'flex-end', alignItems: 'center', minHeight: 900
         
       }}>
         <Outlet/>

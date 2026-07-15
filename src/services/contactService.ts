@@ -1,184 +1,58 @@
+import { apiClient } from "./apiClient";
+import type {
+  AddContact,
+  Contact,
+  UpdateContact,
+} from "../types/contact";
 
-import type { Contact } from '../types/contact';
+export const fetchContactsAPI = async (): Promise<Contact[]> => {
+  const result = await apiClient("/api/contacts/show-contacts", {
+    method: "GET",
+  });
 
-
-const API_URL = `${import.meta.env.VITE_BACKEND_URL}/api/contacts`;
-
-export const fetchContactsAPI = 
-  async (token: string): 
-    Promise<Contact[]> => {
-      const response =
-        await fetch(
-          `${API_URL}/show-contacts`,
-          {
-            headers: {
-              authorization:
-                `Bearer ${token}`,
-            },
-          }
-        );
-  const result =
-    await response.json();
-
-  if (!response.ok) {
-    throw new Error(
-      result.error
-    );
-  }
-  return result.data;
+  return result.data as Contact[];
 };
 
-export const addContactAPI =
-  async (
-    token: string,
-    contact: Omit<Contact, 
-    'id' | 
-    'lead_id' | 
-    'created_at' | 
-    'owner_id' | 
-    'org_id' | 
-    'owner_name' |
-    'deleted_at' |
-    'deleted_by' |
-    'updated_by'
-    >
-  ): Promise<Contact> => {
-      const response =
-        await fetch(
-          `${API_URL}/add-contact`,
-          {
-            method: "POST",
+export const addContactAPI = async (
+  contact: AddContact
+): Promise<Contact> => {
+  const result = await apiClient("/api/contacts/add-contact", {
+    method: "POST",
+    body: JSON.stringify(contact),
+  });
 
-            headers: {
-              "Content-Type": "application/json",
-              authorization:
-                `Bearer ${token}`,
-              
-            },
-
-            body: JSON.stringify(contact),
-          }
-        );
-  const result =
-  await response.json();
-
-  if (!response.ok) {
-    throw new Error(
-      result.error
-    );
-  }
   return result.data as Contact;
 };
 
-export const addContactFromLeadsAPI =
-  async (
-    token: string,
-    contact: Omit<Contact, 
-          'id' | 
-          'created_at' | 
-          'owner_id' | 
-          'org_id' | 
-          'owner_name' | 
-          'status'  |
-          'deleted_at' |
-          'deleted_by' |
-          'updated_by'>
-  ): Promise<Contact> => {
-      const response =
-        await fetch(
-          `${API_URL}/add-leadscontact`,
-          {
-            method: "POST",
+export const addContactFromLeadsAPI = async (
+  contact: AddContact
+): Promise<Contact> => {
+  const result = await apiClient("/api/contacts/add-leadscontact", {
+    method: "POST",
+    body: JSON.stringify(contact),
+  });
 
-            headers: {
-              "Content-Type": "application/json",
-              authorization:
-                `Bearer ${token}`,
-              
-            },
-
-            body: JSON.stringify(contact),
-          }
-        );
-  const result =
-  await response.json();
-
-  if (!response.ok) {
-    throw new Error(
-      result.error
-    );
-  }
   return result.data as Contact;
 };
 
-export const updateContactAPI =
-  async (
-    token: string,
-    id: string,
-    contact: Omit<Contact, 
-    'id' | 
-    'lead_id' | 
-    'created_at' | 
-    'owner_id' | 
-    'org_id' | 
-    'owner_name' |
-    'deleted_at' |
-    'deleted_by' |
-    'updated_by'
-    >
-  ): Promise<Contact> => {
-      const response =
-        await fetch(
-          `${API_URL}/update-contact`,
-          {
-            method: "PATCH",
+export const updateContactAPI = async (
+  id: string,
+  contact: UpdateContact
+): Promise<Contact> => {
+  const result = await apiClient(`/api/contacts/update-contact/${id}`, {
+    method: "POST",
+    body: JSON.stringify(contact),
+  });
 
-            headers: {
-              "Content-Type": "application/json",
-              authorization:
-                `Bearer ${token}`,
-              
-            },
-
-            body: JSON.stringify({token, id, contact }),
-          }
-        );
-  const result =
-  await response.json();
-
-  if (!response.ok) {
-    throw new Error(
-      result.error
-    );
-  }
   return result.data as Contact;
 };
 
-export const deleteContactAPI =
-  async (token: string, id: string): Promise<string> => {
-      const response =
-        await fetch(
-          `${API_URL}/delete-contact`,
-          {
-            method: "DELETE",
+export const deleteContactAPI = async (
+  id: string
+): Promise<string> => {
+  const result = await apiClient(`/api/contacts/delete-contact/${id}`, {
+    method: "DELETE",
+  });
 
-            headers: {
-              "Content-Type": "application/json",
-              authorization:
-                `Bearer ${token}`,
-              
-            },
-
-            body: JSON.stringify({id}),
-          }
-        );
-  const result =
-  await response.json();
-
-  if (!response.ok) {
-    throw new Error( 
-      result.error
-    );
-  }
   return result.data as string;
 };

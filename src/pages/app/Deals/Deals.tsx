@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '../../../store/store';
-import { supabase } from "../../../services/supabase";
 import { useNavigate } from "react-router-dom";
 import {
   fetchDeals,
@@ -13,7 +12,7 @@ import {
   fetchContacts
 } from '../../../store/contactsSlice';
 import type { Deal, DealStage } from '../../../types/deal';
-import type { Contact, Priority } from '../../../types/contact';
+import type { Contact } from '../../../types/contact';
 
 import {
   DragDropContext,
@@ -35,7 +34,6 @@ import {
   DialogActions,
   TextField,
   Snackbar,
-  Alert,
   CircularProgress,
   Chip,
   Popover,
@@ -54,6 +52,9 @@ import InfoIcon from '@mui/icons-material/Info';
 import PriorityIcon from '@mui/icons-material/PriorityHighRounded';
 import HandshakeIcon from "@mui/icons-material/Handshake";
 import AddIcon from '@mui/icons-material/Add';
+import CloseIcon from '@mui/icons-material/Close';
+import type { Priority } from '../../../types/global';
+import ErrorAlert from '../../../components/Error';
 
 const STAGES: DealStage[] = [
   'Prospecting',
@@ -75,9 +76,10 @@ const formatCurrency = (value: number): string =>
 export default function Deals() {
   const { items: deals, loading, loaded, error } = useSelector(
     (state: RootState) => state.deals);
+  const { user, loading: userLoading } = useSelector(
+      (state: RootState) => state.user);
   const { 
-    items: contacts, 
-    loaded: contactsLoaded, 
+    items: contacts
   } = useSelector(
   (state: RootState) => state.contacts);
 
@@ -86,7 +88,7 @@ export default function Deals() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
   const [openSnackbar, setOpenSnackbar] = useState(false);
-  const [anchorEl, setAnchorEl] = useState<SVGSVGElement | null>(null);
+  const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
   const [hoveredDeal, setHoveredDeal] = useState<Deal | null>(null);
   const [showDetails, setShowDetails] = useState<Contact | null>(null);
   const [search, setSearch] = useState<Record<DealStage, string>>({
@@ -97,71 +99,21 @@ export default function Deals() {
       'Closed Lost': '',
     });
 
- useEffect(() => {
-   if (loaded) return;
- 
-   let mounted = true;
- 
-   const load = async () => {
-     try {
-       const {
-         data: { session },
-       } = await supabase.auth.getSession();
- 
-       if (!mounted) return;
- 
-       const token = session?.access_token;
- 
-       if (token) {
-         dispatch(fetchDeals(token));
-       }
-     } catch (err) {
-       console.error(err);
-     }
-   };
- 
-   load();
- 
-   return () => {
-     mounted = false;
-   };
- }, [loaded, dispatch]);
 
- useEffect(() => {
-   if (contactsLoaded) return;
- 
-   let mounted = true;
- 
-   const load = async () => {
-     try {
-       const {
-         data: { session },
-       } = await supabase.auth.getSession();
- 
-       if (!mounted) return;
- 
-       const token = session?.access_token;
- 
-       if (token) {
-         dispatch(fetchContacts(token));
-       }
-     } catch (err) {
-       console.error(err);
-     }
-   };
- 
-   load();
- 
-   return () => {
-     mounted = false;
-   };
- }, [contactsLoaded, dispatch]);
+  useEffect(() => {
+    if (userLoading) return;
+
+    if (user && !loaded) {
+      dispatch(fetchDeals());
+      dispatch(fetchContacts());
+    }
+  }, [userLoading, loaded, user, dispatch]);
 
   const handleMouseEnter = (
-    event: React.MouseEvent<SVGSVGElement | null>,
+    event: React.MouseEvent<HTMLButtonElement | null>,
     deal: Deal
   ) => {
-    setAnchorEl(event.currentTarget as SVGSVGElement);
+    setAnchorEl(event.currentTarget as HTMLButtonElement);
     setHoveredDeal(deal);
     const contact = contacts.find((c) => (c.id === deal.contact_id))
 
@@ -227,10 +179,17 @@ export default function Deals() {
         });
     };
 
-  const handleDeleteConfirm = () => {
-    if (selectedDeal) dispatch(deleteDeal(selectedDeal.id));
-    setDeleteOpen(false);
-    setSelectedDeal(null);
+  const handleDeleteConfirm = async () => {
+    if (selectedDeal) {
+      if (loading) return;
+      try {
+        await dispatch(deleteDeal(selectedDeal.id));
+        setDeleteOpen(false);
+        setSelectedDeal(null);
+      } catch {
+        //Error in state
+      }
+    } 
   };
 
 
@@ -276,7 +235,11 @@ export default function Deals() {
 
   return (
     <Box >
-      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+      {error && (
+        <ErrorAlert
+          message={error}
+        />
+      )}
       <Box sx={{
         display: 'flex',
         justifyContent: 'space-between',
@@ -432,30 +395,32 @@ export default function Deals() {
                               <CardContent sx={{ p: 1, '&:last-child': { pb: 1 }, display: 'flex' }}>
                                 <Box flex={'1'} >
                                   <Box sx={{display: 'flex', justifyContent: 'space-between'}}>
-                                    <Typography fontWeight={600} variant="body2">
+                                    <Typography sx={{cursor: 'pointer'}} title="Deal Title" fontWeight={600} variant="body2">
                                     {(deal.title.length > 25
                                       ? `${deal.title.slice(0, 25)}...`
                                       : deal.title).toUpperCase()}
                                     </Typography>
                                   </Box>
                                   <Box sx={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-                                      <Typography variant="body2">
+                                      <Typography sx={{cursor: 'pointer'}} title="Contact name" variant="body2">
                                         {contact.first_name} {contact.last_name} {contact.suffix}
                                       </Typography>
-                                      <IconButton sx={{p: '8px', border: '1px solid #bbbbbb88', borderRadius: 10,}}>
+                                      <IconButton
+                                        title='Contact Informations'
+                                        onClick={(e) => handleMouseEnter(e, deal)}
+                                        sx={{p: '8px', border: '1px solid #bbbbbb88', borderRadius: 10, cursor: 'pointer'}}>
                                         <PersonIcon 
                                           sx={{fontSize: 20, cursor: 'pointer'}} 
-                                          onMouseEnter={(e) => handleMouseEnter(e, deal)}
-                                          onMouseLeave={handleMouseLeave}
                                         />
                                       </IconButton>
                                   </Box>
                                   
-                                  <Typography variant="caption">
+                                  <Typography sx={{cursor: 'pointer'}} title="Deal owner" variant="caption">
                                     (owner name, to be updated)
                                   </Typography>
                                   {deal.notes && (
                                     <Typography
+                                      title="notes"
                                       variant="caption"
                                       color="text.secondary"
                                       display="block"
@@ -464,6 +429,7 @@ export default function Deals() {
                                         overflow: 'hidden',
                                         textOverflow: 'ellipsis',
                                         whiteSpace: 'nowrap',
+                                        cursor: 'pointer'
                                       }}
                                     >
                                       {deal.notes.length > 40
@@ -508,7 +474,7 @@ export default function Deals() {
                                       borderRadius: 1,
                                       display: 'flex', 
                                       alignItems: 'center'}}>
-                                      <Typography fontWeight={700}>
+                                      <Typography title="Deal Value" fontWeight={700}>
                                         {formatCurrency(deal.value)}
                                       </Typography>
                                     </Box>
@@ -577,7 +543,7 @@ export default function Deals() {
       </Dialog>
       <Popover
         disableRestoreFocus
-        sx={{ pointerEvents: 'none' }}
+        sx={{cursor: 'pointer'}}
         open={Boolean(anchorEl)}
         anchorEl={anchorEl}
         onClose={handleMouseLeave}
@@ -586,11 +552,20 @@ export default function Deals() {
           horizontal: 'left',
         }}
       >
-        <Card sx={{ p: 2, width: 350,
-              whiteSpace: 'normal',
-              overflowWrap: 'break-word',
-              maxHeight: 500,
-              overflow: 'auto'
+        <Box
+          display={'flex'} sx={{justifyContent: 'flex-end'}}>
+          <IconButton 
+            onClick={handleMouseLeave}
+            sx={{cursor: 'pointer'}}>
+            <CloseIcon sx={{fontSize: '15px'}}/>
+          </IconButton>
+        </Box>
+        <Card
+          sx={{ p: 2, pt: 0, width: 350,
+            whiteSpace: 'normal',
+            overflowWrap: 'break-word',
+            maxHeight: 500,
+            overflow: 'auto'
             }}>
           <Box sx={{
             display: 'flex',

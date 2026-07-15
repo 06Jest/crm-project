@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react';
 import { analyticsApi } from '../../../services/backendApi';
 
-
 import {
   Box, Typography, Grid, Card, CardContent,
   CircularProgress, Alert, Chip, Table,
   TableBody, TableCell, TableContainer,
-  TableHead, TableRow,  LinearProgress,
+  TableHead, TableRow,  LinearProgress, Divider
 } from '@mui/material';
 import SecurityIcon from '@mui/icons-material/Security';
 import VisibilityIcon from '@mui/icons-material/Visibility';
@@ -465,5 +464,3 @@ export default function Analytics() {
   );
 }
 
-
-import { Divider } from '@mui/material';

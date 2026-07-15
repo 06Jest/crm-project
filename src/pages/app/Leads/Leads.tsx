@@ -3,19 +3,20 @@ import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "../../../store/store";
 // import { useAuthContext } from '../../../hooks/useAuthContext'
-import { supabase } from "../../../services/supabase";
 
 import {
   fetchLeads,
   // addLead,
   updateLead,
-  deleteLead,
+  deleteLead, 
   moveLeadLocally,
+  updateLeadStatus,
+  clearError,
 } from '../../../store/leadsSlice';
 import {
  addContactFromLeads,
 } from '../../../store/contactsSlice';
-import type { Lead,  LeadsStatus, Gender, Priority, LeadsSource } from '../../../types/lead';
+import { LEAD_STATUSES, type Lead, type LeadStatus, type UpdateLead } from '../../../types/lead';
 
 import {
   DragDropContext,
@@ -38,7 +39,6 @@ import {
   DialogActions,
   TextField,
   MenuItem,
-  Alert,
   CircularProgress,
   IconButton,
   Chip,
@@ -50,7 +50,6 @@ import InfoIcon from '@mui/icons-material/Info';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import CloseIcon from '@mui/icons-material/Close';
-import VisibilityIcon from '@mui/icons-material/Visibility';
 import EmailIcon from '@mui/icons-material/Email';
 import CallIcon from '@mui/icons-material/Call';
 import SmsIcon from '@mui/icons-material/Sms';
@@ -59,20 +58,10 @@ import SearchIcon from '@mui/icons-material/Search';
 import PriorityIcon from '@mui/icons-material/PriorityHighRounded';
 import AddIcon from '@mui/icons-material/Add';
 import FolderSharedIcon from "@mui/icons-material/FolderShared";
-
-
-const STATUS: LeadsStatus[] = [
-  "New",
-  "Contacted",
-  "Qualified",
-  "Closed",
-];
-// const COLUMN_COLORS: Record<LeadsStatus, string> ={
-//   New: '#406adf',
-//   Contacted: '#ceb440',
-//   Qualified: '#41ac47',
-//   Closed: '#ec5757',
-// };
+import { useAuth } from "../../../hooks/useAuth";
+import ErrorAlert from "../../../components/Error";
+import ContactsIcon from '@mui/icons-material/Contacts';
+import { GENDERS, PRIORITIES, SOURCES, SUFFIXES, type Gender, type Priority, type Source, type Suffix } from "../../../types/global";
 
 const PRIORITY_COLORS: Record<Priority, string> = {
   Highest: '#df3232',
@@ -80,51 +69,13 @@ const PRIORITY_COLORS: Record<Priority, string> = {
   Low: '#ffffff00',
 }
 
-const SOURCE_OPTIONS: LeadsSource[] = [
-  "Website",
-  "Referral",
-  "Facebook",
-  "Instagram",
-  "LinkedIn",
-  "Google Search",
-  "Google Ads",
-  "Email Campaign",
-  "Cold Call",
-  "Trade Show",
-  "Webinar",
-  "Partner",
-  "Walk-in",
-  "WhatsApp",
-  "Messenger",
-  "Personal Network",
-  "Direct Conversation",
-  "Networking Event",
-  "Conference",
-  "Friend",
-  "Family",
-  "Other",
-]
-
-const GENDER: Gender[] = [
-  "Male",
-  "Female",
-  "Prefer not to say",
-];
-const PRIORITY: Priority[] = [
-  "Highest",
-  "High",
-  "Low",
-];
-
-type LeadForm = Partial<
-    Omit<Lead, "id" | "created_at" | "owner_id" | "org_id" | "owner_name" | "full_name">
-  >;
+type LeadForm = Partial<UpdateLead>;
 
 export default function Leads() {
   const themeMode = useSelector((state: RootState) => state.ui.themeMode);
   const {items: leads, loading, loaded,  error } = useSelector((state: RootState) => state.leads);
   const dispatch = useDispatch<AppDispatch>();
-  // const { user } = useAuthContext();
+  
   const [isEditing, setIsEditing] = useState(false);
   const [edit, setEdit] = useState(false);
   const [form, setForm] = useState<LeadForm>({});
@@ -132,6 +83,7 @@ export default function Leads() {
   const [openDelete, setOpenDelete] = useState(false);
   const [invalid, setInvalid] = useState('');
   const [openAddContact, setOpenAddContact] = useState(false);
+  const [openInvalid, setOpenInvalid] = useState(false);
   const [openEditConfirmation, setOpenEditConfirmation] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [editingLead, setEditingLead] = useState<Lead | null>();
@@ -139,43 +91,23 @@ export default function Leads() {
   const [anchorEl, setAnchorEl] = useState<SVGSVGElement | null>(null);
   const [hoveredLead, setHoveredLead] = useState<Lead | null>(null);
   const [openSnackbar, setOpenSnackbar] = useState(false);
-  const [search, setSearch] = useState<Record<LeadsStatus, string>>({
+  
+  const [search, setSearch] = useState<Record<LeadStatus, string>>({
     New: '',
     Contacted: '',
     Qualified: '',
     Closed: '',
   });
-  useEffect(() => {
-    
-    if (loaded) return;
-    
-    let mounted = true;
-  
-    const load = async () => {
-      try {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-  
-        if (!mounted) return;
-  
-        const token = session?.access_token;
-  
-        if (token) {
-          dispatch(fetchLeads(token));
-        }
-      } catch (err) {
-        console.error(err);
-      }
-    };
-  
-    load();
-  
-    return () => {
-      mounted = false;
-    };
-  }, [loaded, dispatch]);
 
+    const { user } = useAuth();;
+  
+    useEffect(() => {
+      if (loading) return;
+  
+      if (user && !loaded) {
+        dispatch(fetchLeads());
+      }
+    }, [ user, dispatch, loaded, loading]);
 
   const handleOpenDelete = (lead: Lead) => {
     setSelectedLead(lead); 
@@ -195,8 +127,8 @@ export default function Leads() {
     if (!result.destination) return;
 
     const leadId = result.draggableId;
-    const newStatus = result.destination.droppableId as LeadsStatus;
-    const oldStatus = result.source.droppableId as LeadsStatus;
+    const newStatus = result.destination.droppableId as LeadStatus;
+    const oldStatus = result.source.droppableId as LeadStatus;
 
     const lead = leads.find((l) => l.id === leadId);
     if (!lead) return;
@@ -206,7 +138,7 @@ export default function Leads() {
 
   const handleCloseAddContact = (result: DropResult) => {
     const leadId = result.draggableId;
-    const oldStatus = result.source.droppableId as LeadsStatus;
+    const oldStatus = result.source.droppableId as LeadStatus;
 
     const newStatus = oldStatus;
 
@@ -217,8 +149,12 @@ export default function Leads() {
     setOpenAddContact(false);
   };
 
+  const handleCloseInvalid = () => {
+    setOpenInvalid(false);
+  };
+
   const handleDelete = (id: string) => {
-    dispatch(deleteLead(id));
+     dispatch(deleteLead(id));
   };
 
   const handleOpenEdit = (lead: Lead) => {
@@ -226,16 +162,16 @@ export default function Leads() {
       title: lead.title,
       first_name: lead.first_name,
       last_name: lead.last_name,
-      suffix: lead.suffix,
+      suffix: lead.suffix as Suffix || null ,
       gender: lead.gender as Gender,
       birth_date: lead.birth_date || null ,
-      email: lead.email,
-      phone: lead.phone,
+      email: lead.email || null,
+      phone: lead.phone || null,
       company_name: lead.company_name || '',
       position: lead.position || '',
       department: lead.department || '',
-      source: lead.source as LeadsSource,
-      status: lead.status as LeadsStatus,
+      source: lead.source as Source,
+      status: lead.status as LeadStatus,
       priority: lead.priority as Priority,
       notes: lead.notes || '',
     });
@@ -245,6 +181,7 @@ export default function Leads() {
   };
 
   const handleCloseEdit = () => {
+    dispatch(clearError());
     setEdit(false);
     setIsEditing(false);
     setOpenEditConfirmation(false);
@@ -260,14 +197,23 @@ export default function Leads() {
   const handleNotEditable = () => {
     setEdit(false);
   }
-  const handleEdit = () => {
-    setEdit(false);
-    if (!editingLead) return;
+  const handleEdit = async () => {
+    if (loading) return;
 
-    const leadId = editingLead.id;
+    try {
+      setEdit(false);
+    
+      if (!editingLead) return;
 
-    dispatch(updateLead({ id: leadId, lead: form as Lead }));
-    setIsEditing(false);
+      const leadId = editingLead.id;
+      await dispatch(updateLead({ id: leadId, lead: form as Lead })).unwrap();
+      setIsEditing(false);
+    } catch {
+      setIsEditing(true);
+      setEdit(true);
+      if (!editingLead) return;
+    }
+    
   };
 
   const handleMouseEnter = (
@@ -288,16 +234,26 @@ export default function Leads() {
     if (!result.destination) return;
 
     const leadId = result.draggableId;
-    const newStatus = result.destination.droppableId as LeadsStatus;
-    const oldStatus = result.source.droppableId as LeadsStatus;
+    const newStatus = result.destination.droppableId as LeadStatus;
+    const oldStatus = result.source.droppableId as LeadStatus;
 
     const lead = leads.find((l) => l.id === leadId);
     if (!lead) return;
+
+    
     
     if (newStatus === oldStatus) return;
 
     if (newStatus === 'Qualified') {
+
+      if (!lead.email || !lead.phone) {
+        setOpenInvalid(true);
+        handleCloseAddContact(result);
+        return;
+      }
+
       dispatch(updateLead({id: leadId, lead: {...lead, status:newStatus}}));
+     
       dispatch(addContactFromLeads({
         lead_id: lead.id,
         first_name: lead.first_name,
@@ -312,6 +268,7 @@ export default function Leads() {
         department: lead.department,
         source: lead.source,
         priority: lead.priority,
+        status: 'Contacted',
         notes: lead.notes,
       }));
       navigate('/app/contacts');
@@ -324,41 +281,47 @@ export default function Leads() {
     if (!result.destination) return;
 
     const leadId = result.draggableId;
-    const newStatus = result.destination.droppableId as LeadsStatus;
-    const oldStatus = result.source.droppableId as LeadsStatus;
+    const newStatus = result.destination.droppableId as LeadStatus;
+    const oldStatus = result.source.droppableId as LeadStatus;
 
     if (newStatus === oldStatus) return;
 
     const lead = leads.find((l) => l.id === leadId);
     if (!lead) return;
 
-    if (oldStatus === 'Qualified' && newStatus === 'New' || newStatus === 'Contacted' ) {
-      setInvalid(`This lead is already in Contacts, Unable to change the status back to '${newStatus}'`)
+    if (
+      oldStatus === 'Qualified' &&
+      ['New', 'Contacted', 'Closed'].includes(newStatus)
+    ) {
+      const message =
+        newStatus === 'Closed'
+          ? `This lead is already in Contacts. Unable to change the status to '${newStatus}'. Please change the status in Contacts instead.`
+          : `This lead is already in Contacts. Unable to change the status back to '${newStatus}'.`;
+
+      setInvalid(message);
       setTimeout(() => setInvalid(''), 3000);
       return;
     }
-    if (oldStatus === 'Qualified' && newStatus === 'Closed'  ) {
-      setInvalid(`This lead is already in Contacts, Unable to change the status to '${newStatus}'. Please proceed to change the status in Contacts Instead`)
+
+    if (oldStatus === 'Closed' && newStatus === 'New') {
+      setInvalid(
+        `This lead already exists. Unable to change the status back to '${newStatus}'.`
+      );
       setTimeout(() => setInvalid(''), 3000);
       return;
     }
-    if (oldStatus === 'Closed' &&  newStatus === 'New'  ) {
-      setInvalid(`This lead is already in already Existed, Unable to change the status back to '${newStatus}'`)
-      setTimeout(() => setInvalid(''), 3000);
-      return;
-    }
-    
-    dispatch(moveLeadLocally({id: leadId, newStatus}));
-    
+
+    dispatch(moveLeadLocally({ id: leadId, newStatus }));
+
     if (newStatus === 'Qualified') {
       handleOpenAddContact(result);
     } else {
-      dispatch(updateLead({id: leadId, lead: {...lead, status:newStatus}}));
+      dispatch(updateLeadStatus({ id: leadId, status: newStatus }));
     }
   };
   
 
-  const getLeadsByStatus = (status: LeadsStatus) => {
+  const getLeadsByStatus = (status: LeadStatus) => {
     const query = search[status].toLowerCase().trim();
 
     return leads
@@ -413,16 +376,6 @@ export default function Leads() {
 
   return (
     <Box sx={{height: 1000}}>
-      {error && (
-        <Alert severity="error" sx={{mb: 2}}>
-          {error}
-        </Alert>
-      )}
-      {invalid && (
-        <Alert severity="error" sx={{mb: 2}}>
-          {invalid}
-        </Alert>
-      )}
       <Box sx={{
         display: 'flex', 
         justifyContent: 'space-between', 
@@ -433,6 +386,19 @@ export default function Leads() {
         <Typography marginLeft={1} variant="h5" fontWeight={700}>
           Leads
         </Typography>
+        <Box>
+          {error && (
+          <ErrorAlert
+            message={error}
+          />
+        )}
+        {invalid && (
+          <ErrorAlert
+            message={invalid}
+          />
+        )}
+        </Box>
+        
         <IconButton
           title="Add Lead"
           onClick={() => navigate(`/app/addlead`)}
@@ -451,7 +417,7 @@ export default function Leads() {
       </Box>
       <DragDropContext onDragEnd={handleDragEnd}>
         <Paper sx={{display: 'flex', gap: 2, pb: 2, overflow: 'auto',width: '90vw', mb: 2,  p: '10px', borderRadius: 2, justifySelf: 'center' }}>
-          {STATUS.map((column) =>(
+          {LEAD_STATUSES.map((column) =>(
             <Box
               key={column}
               sx={{ width: '100%' ,minWidth: 260, flex: 1}}
@@ -551,7 +517,7 @@ export default function Leads() {
                           >
                             <CardContent sx={{ p: 1, '&:last-child': { pb: 1 }, display: 'flex' }}>
                               <Box sx={{ width: 60}}>
-                                <Box sx={{width: 50, height: 50, mt: 1, border: '1px solid #a3a3a3', borderRadius: 100}}>
+                                <Box sx={{width: 50, height: 50, mt: 1, mr: 2, border: '1px solid #a3a3a3', borderRadius: 100}}>
                                   <PersonIcon sx={{width: '100%', height: '90%', opacity: 0.7}}/>
                                 </Box>
                               </Box>
@@ -581,7 +547,7 @@ export default function Leads() {
                                       borderRadius: 20,
                                     }} />
                                   ) : null}
-                                    <VisibilityIcon 
+                                    <ContactsIcon 
                                     sx={{cursor: 'pointer', opacity: 0.6}}
                                     onMouseEnter={(e) => handleMouseEnter(e, lead)}
                                     onMouseLeave={handleMouseLeave}
@@ -720,6 +686,7 @@ export default function Leads() {
           </DialogActions>
         </Dialog>
         <Dialog  sx={{position: "absolute", }} maxWidth="md" open={isEditing} onClose={handleCloseEdit}>
+          
           <DialogActions sx={{
             '& .MuiButton-root': {
               fontSize: '0.75rem',
@@ -780,6 +747,11 @@ export default function Leads() {
                       userSelect: edit === true ? 'auto' : 'none',
                     },
                 }}>
+                  {isEditing && error && (
+                    <ErrorAlert
+                      message={error}
+                    />
+                  )}
                   <Typography variant="h6" fontWeight={700}>
                   Personal Details
                   </Typography>
@@ -823,6 +795,7 @@ export default function Leads() {
                     gap: 1,
                   }}>
                     <TextField
+                      select
                       disabled={!edit}
                       label="Suffix"
                       name="suffix"
@@ -833,7 +806,24 @@ export default function Leads() {
                         fontSize: 13,
                         width: '50%'
                       }}
-                    />
+                      slotProps={{
+                        select: {
+                          MenuProps: {
+                            PaperProps: {
+                              sx: {
+                                maxHeight: 250,
+                              },
+                            },
+                          },
+                        },
+                      }}
+                    >
+                    {SUFFIXES.map((suffix) => (
+                        <MenuItem key={suffix} value={suffix}>
+                          {suffix}
+                        </MenuItem>
+                      ))}
+                    </TextField>
 
                     <TextField
                       disabled={!edit}
@@ -880,7 +870,7 @@ export default function Leads() {
                         width: '50%',
                       }}
                     >
-                    {GENDER.map((gender) => (
+                    {GENDERS.map((gender) => (
                       <MenuItem key={gender} value={gender}>
                         {gender}
                       </MenuItem>
@@ -985,29 +975,21 @@ export default function Leads() {
                       sx={{
                         fontSize: 13,
                       }}
-                    >
-                      {SOURCE_OPTIONS.map((source) => (
-                        <MenuItem key={source} value={source}>
-                          {source}
-                        </MenuItem>
-                      ))}
-                    </TextField>
-                    <TextField
-                      select
-                      disabled={!edit}
-                      label="Status"
-                      name="status"
-                      value={form.status}
-                      onChange={handleChange}
-                      size="small"
-                      sx={{
-                        fontSize: 13,
-                        width: '50%'
+                      slotProps={{
+                        select: {
+                          MenuProps: {
+                            PaperProps: {
+                              sx: {
+                                maxHeight: 250,
+                              },
+                            },
+                          },
+                        },
                       }}
                     >
-                      {STATUS.map((status) => (
-                        <MenuItem key={status} value={status}>
-                          {status}
+                      {SOURCES.map((source) => (
+                        <MenuItem key={source} value={source}>
+                          {source}
                         </MenuItem>
                       ))}
                     </TextField>
@@ -1025,7 +1007,7 @@ export default function Leads() {
                         width: '50%'
                       }}
                     >
-                      {PRIORITY.map((prio) => (
+                      {PRIORITIES.map((prio) => (
                         <MenuItem key={prio} value={prio}>
                           {prio}
                         </MenuItem>
@@ -1095,6 +1077,33 @@ export default function Leads() {
                 }}
               >
                 Proceed
+              </Button>
+          </DialogActions>
+        </Dialog>
+        <Dialog sx={{position: "absolute"}} open={openInvalid} onClose={handleCloseInvalid}>
+          <DialogTitle sx={{fontWeight: 700}}>
+            Unable to update as Qualified
+          </DialogTitle>  
+
+          <DialogContent
+            sx = {{
+              display: "flex",
+              flexDirection: "column",
+              gap: 2,
+              mt: 1,
+              maxwidth: 600,
+            }}
+            >
+              Please update the Lead's contact details first before moving to Qualified(Email/Phone)
+            </DialogContent>
+            <DialogActions>
+              <Button 
+                variant="contained"
+                onClick={() => {
+                  handleCloseInvalid();
+                }}
+              >
+                OK
               </Button>
           </DialogActions>
         </Dialog>

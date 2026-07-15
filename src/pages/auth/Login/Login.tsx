@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { supabase } from '../../../services/supabase';
 import {
-  Box, Button, TextField, Typography, Alert,
+  Box, Button, TextField, Typography,
   Paper, CircularProgress, Tabs, Tab, Divider,
 } from '@mui/material';
 import EmailIcon from '@mui/icons-material/Email';
@@ -12,9 +11,10 @@ import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import IconButton from "@mui/material/IconButton";
 import InputAdornment from "@mui/material/InputAdornment";
 import {  useSelector } from 'react-redux';
-import { useAuthContext } from '../../../hooks/useAuthContext';
+import { useAuth } from '../../../hooks/useAuth';
 import { useEffect } from 'react';
 import type { RootState } from '../../../store/store';
+import ErrorAlert from '../../../components/Error';
 
 
 type LoginMode = 0 | 1;
@@ -22,10 +22,7 @@ type LoginMode = 0 | 1;
 
 export default function Login() {
   const navigate = useNavigate();
-  const { user } = useAuthContext();
   const [mode, setMode] = useState<LoginMode>(0);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
   const themeMode = useSelector((state: RootState) => state.ui.themeMode);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -35,88 +32,47 @@ export default function Login() {
   });
 
   const [agentForm, setAgentForm] = useState({
-    employeeId: '',
+    email: '',
     password: '',
   });
-  
-  useEffect(() => {
-    
-      if (!loading && user) {
-        navigate('/app/dashboard', { replace: true });
-      }
-    }, [user, loading, navigate]);
-  
-    if (loading) return null; 
 
+  const {
+  isAuthenticated,
+  loading,
+  error,
+  adminLogin,
+  currentUser,
+  agentLogin
+} = useAuth();
+
+  useEffect(() => {
+
+  if (!loading && isAuthenticated) {
+    navigate("/app/dashboard", { replace: true });
+  }
+}, [isAuthenticated, loading, navigate]);
+  
 
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setLoading(true);
-
-    try {
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: adminForm.email,
-        password: adminForm.password,
-      });
-
-      if (signInError) throw signInError;
-      navigate('/app/dashboard');
-    } catch(err) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError('Login failed. Check your email and password.');
-      }
-    } finally {
-      setLoading(false);
-    }; 
+    try{
+      await adminLogin(adminForm).unwrap();
+      await currentUser().unwrap();
+      navigate("/app/dashboard");
+    } catch {
+      // Error is already stored in auth.error
+    }
   };
 
 
   const handleAgentLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setLoading(true);
-
-    try {
-      const employeeIdClean = agentForm.employeeId.trim().toUpperCase();
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('email, is_active, role')
-        .eq('employee_id', employeeIdClean)
-        .single();
-
-      if (profileError || !profile) {
-        throw new Error('Employee ID not found. Check your ID and try again.');
-      }
-
-      if (!profile.is_active) {
-        throw new Error('Your account has been deactivated. Contact your admin.');
-      }
-
-      if (profile.role !== 'agent') {
-        throw new Error('This login is for agents only. Use the Admin tab.');
-      }
-
-
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: profile.email,
-        password: agentForm.password,
-      });
-
-      if (signInError) {
-        throw new Error('Incorrect password. Please try again.');
-      }
-      navigate('/app/dashboard');
-    } catch (err) {
-      if(err instanceof Error) {
-        setError(err.message);
-      }else{
-        setError('Login failed. Please try again.');
-      }
-    } finally {
-      setLoading(false);
+    try{
+      await agentLogin(agentForm);
+      await currentUser().unwrap();
+      navigate("/app/dashboard");
+    } catch {
+        // Error is already stored in auth.error
     }
   };
 
@@ -165,9 +121,9 @@ export default function Login() {
 
         <Tabs
           value={mode}
-          onChange={(_, v) => { setMode(v); setError(''); }}
+          onChange={(_, v) => { setMode(v); }}
           variant="fullWidth"
-          sx={{ mb: 3, borderBottom: 1, borderColor: 'divider'}}
+          sx={{ mb: 2, borderBottom: 1, borderColor: 'divider'}}
         >
           <Tab
             icon={<EmailIcon fontSize="small" />}
@@ -182,12 +138,14 @@ export default function Login() {
             sx={{ fontSize: 11 }}
           />
         </Tabs>
-
         {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
+          <Box sx={{mb: 2}}>
+            <ErrorAlert
+              message={error}
+            />
+          </Box>
         )}
+        
 
 
         {mode === 0 && (
@@ -236,7 +194,7 @@ export default function Login() {
                 variant="contained"
                 fullWidth
                 size="medium"
-                disabled={loading}
+                disabled={loading || !adminForm.email || !adminForm.password}
               >
                 {loading
                   ? <CircularProgress size={22} color="inherit" />
@@ -252,17 +210,15 @@ export default function Login() {
           <Box component="form" onSubmit={handleAgentLogin}>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               <TextField
-                label="Employee ID"
-                value={agentForm.employeeId}
+                label="Email address"
+                value={agentForm.email}
                 onChange={(e) =>
-                  setAgentForm({ ...agentForm, employeeId: e.target.value })
+                  setAgentForm({ ...agentForm, email: e.target.value })
                 }
                 required
                 fullWidth
                 autoFocus
                 size="small" 
-                placeholder="e.g. EMP-2026-0001"
-                inputProps={{ style: { textTransform: 'uppercase' } }}
               />
               <TextField
                 label="Password"
@@ -293,7 +249,7 @@ export default function Login() {
                 variant="contained"
                 fullWidth
                 size="medium"
-                disabled={loading}
+                disabled={loading || !agentForm.email || !agentForm.password}
               >
                 {loading
                   ? <CircularProgress size={22} color="inherit" />
@@ -316,8 +272,8 @@ export default function Login() {
         >
           <Typography variant="body2" color="text.secondary" >
             <Link to="/register" style={{ color: 'inherit', fontWeight: 500, display: 'flex',
-    justifyContent: 'space-between',
-    width: '100%', }}>
+            justifyContent: 'space-between',
+            width: '100%', }}>
               Create account
             </Link>
             

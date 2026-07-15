@@ -15,7 +15,7 @@ import { aiApi } from '../../../services/backendApi';
 
 import { fetchContacts } from "../../../store/contactsSlice";
 import type { Activity, ActivityType } from "../../../types/activity";
-import { useAuthContext } from "../../../hooks/useAuthContext";
+import { useAuth } from "../../../hooks/useAuth";
 import AgentBadge from '../../../components/AgentBadge';
 
 import {
@@ -90,7 +90,7 @@ export default function Activities() {
   );
 
   const dispatch = useDispatch<AppDispatch>();
-  const { user } = useAuthContext();
+  const { user } = useAuth();
 
   const [open, setOpen] = useState(false);
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null);

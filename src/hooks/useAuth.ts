@@ -1,33 +1,33 @@
-import { useEffect, useState } from "react";
-import { supabase } from "../services/supabase";
-import type { Session, User } from "@supabase/supabase-js";
 
-interface AuthState {
-  session: Session | null;
-  user: User | null;
-  loading: boolean;
-}
+import { useDispatch, useSelector } from "react-redux";
+import type { AppDispatch, RootState } from "../store/store";
+import { 
+  getCurrentUser,
+  adminSignIn,
+  agentSignIn,
+  refresh,
+  changePassword,
+  signOut,
+  signUp
+} from "../store/userSlice";
+import type { ChangePasswordDTO, SignInDTO, SignUpDTO } from "../types/auth";
 
-export const useAuth = (): AuthState => {
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
+export const useAuth = () => {
+  const dispatch = useDispatch<AppDispatch>();
 
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setLoading(false);
-    });
+  const auth = useSelector((state: RootState) => state.user);
 
-    const { data: {subscription} } = supabase.auth.onAuthStateChange((_event,session) => {
-      setSession(session);
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
-  },[]);
   return {
-    session,
-    user: session?.user ?? null,
-    loading,
+    ...auth,
+    currentUser: () => dispatch(getCurrentUser()),
+    register: (dto: SignUpDTO) => dispatch(signUp(dto)),
+    adminLogin: (dto: SignInDTO) => dispatch(adminSignIn(dto)),
+    agentLogin: (dto: SignInDTO) => dispatch(agentSignIn(dto)),
+    isAdmin: auth.user?.role === 'admin',
+    isAgent: auth.user?.role === 'agent',
+    refreshtoken: () => dispatch(refresh()),
+    changePass: (dto: ChangePasswordDTO) =>
+    dispatch(changePassword(dto)),
+    logout: () => dispatch(signOut()),
   };
 };

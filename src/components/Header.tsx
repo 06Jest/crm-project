@@ -1,28 +1,31 @@
-import { AppBar, Toolbar, Button, Box, IconButton, Avatar, Menu, Chip, MenuItem,
-  Divider, Typography } from "@mui/material";
+import { AppBar, Toolbar, Button, Box, IconButton, Avatar, Menu,  MenuItem,
+  Divider, Typography, } from "@mui/material";
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import LightModeIcon from '@mui/icons-material/LightMode';
-import BadgeIcon from '@mui/icons-material/Badge';
-import ChatBubbleIcon from '@mui/icons-material/ChatBubble';
-import { Badge } from '@mui/material';
+// import BadgeIcon from '@mui/icons-material/Badge';
+// import ChatBubbleIcon from '@mui/icons-material/ChatBubble';
+// import { Badge } from '@mui/material';
 import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '../store/store';
 import { toggleTheme } from '../store/uiSlice';
 import logo from '../assets/logobrown.png'
-import { useState, useEffect } from "react";
-import { useAuthContext } from '../hooks/useAuthContext';
-import { supabase } from "../services/supabase";
+import { useState } from "react";
+// import { useAuthContext } from '../hooks/useAuthContext';
+// import { supabase } from "../services/supabase";
 import { useNavigate } from 'react-router-dom';
-import type { Profile } from '../types/profile'
-import { fetchUnreadCounts } from '../store/messagingSlice';
-import { fetchMyProfileFromDB } from "../services/profileService";
-import { useRole } from '../hooks/useRole';
+import { useAuth } from "../hooks/useAuth";
+// import type { Profile } from '../types/profile'
+// import { fetchUnreadCounts } from '../store/messagingSlice';
+// import { fetchMyProfileFromDB } from "../services/profileService";
+// import { useRole } from '../hooks/useRole';
+// import { getCurrentUser } from "../store/userSlice";
 
 
 export default function Header() {
   const dispatch = useDispatch<AppDispatch>();
   const themeMode = useSelector((state: RootState) => state.ui.themeMode);
-  const { user} = useAuthContext();
+  const { logout } = useAuth();
+  
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const menuOpen = Boolean(anchorEl);
@@ -38,31 +41,35 @@ export default function Header() {
 
   const handleLogout = async () => {
     handleMenuClose();
-    await supabase.auth.signOut();
-    navigate('./login');
+    await logout();
+    navigate('/login');
   };
 
-  const [profile, setProfile] = useState<Profile | null>(null);
+  // const [profile, setProfile] = useState<Profile | null>(null);
   
 
-  const unreadCounts = useSelector(
-    (state: RootState) => state.messaging.unreadCounts
-  )
-  useEffect(() => {
-        if (user) {
-          dispatch(fetchUnreadCounts(user.id));
-          fetchMyProfileFromDB(user.id)
-          .then((p) => {
-          setProfile(p);
-          })
-        }
-      }, [dispatch, user]);
+  // const unreadCounts = useSelector(
+  //   (state: RootState) => state.messaging.unreadCounts
+  // )
+  // useEffect(() => {
+  //       if (user) {
+  //         dispatch(fetchUnreadCounts(user.id));
+  //         fetchMyProfileFromDB(user.id)
+  //         .then((p) => {
+  //         setProfile(p);
+  //         })
+  //       }
+  //     }, [dispatch, user]);
     
-  const totalUnread = Object.values(unreadCounts).reduce((a, b) => a + b, 0)
-  const displayName = user?.user_metadata?.name || user?.email || '';
+  // const totalUnread = Object.values(unreadCounts).reduce((a, b) => a + b, 0)
+
+  const { user } = useSelector(
+    (state: RootState) => state.user)
+  
+  const displayName = user?.first_name || user?.email || '';
   const avatarLetter = displayName[0]?.toUpperCase() || '?';
-  const avatarSrc =  profile?.avatar_url || undefined;
-  const { isAdmin, isSuperAdmin, employeeId } = useRole();
+  const avatarSrc =   undefined;
+  // const { isAdmin, isSuperAdmin, employeeId } = useRole();
   return (
     <AppBar position="fixed" sx={{ zIndex: 9999,  bgcolor: !user && themeMode === 'dark' ? 'rgba(0, 0, 0, 0.2)' : themeMode, boxShadow: !user ? 'none' : '-moz-initial' }}>
       <Toolbar sx={{ userSelect: 'none',display: "flex", justifyContent: "space-between"}}>
@@ -80,16 +87,16 @@ export default function Header() {
               
             </>
           )}
-          { user && (
+          {/* { user && (
           <IconButton  title="Chat with agents">
               <Badge 
-                badgeContent={totalUnread}
+                // badgeContent={totalUnread}
                 color="error"
                 invisible={totalUnread === 0}>
                 <ChatBubbleIcon onClick={() => {navigate('/app/messaging')}}/>
               </Badge>
           </IconButton>
-          )}
+          )} */}
           <Button onClick={
             user ? () => {navigate('/app/dashboard')} :  () => {navigate('/')} 
           }  sx={{ fontWeight: 700}} color="primary">Home</Button>
@@ -102,16 +109,16 @@ export default function Header() {
             ): (
               <DarkModeIcon />
             )}
-          </IconButton>
-          {employeeId && (
+           </IconButton>
+          {/*{employeeId && (
             <Chip
               label={employeeId}
               size="small"
               icon={<BadgeIcon />}
               variant="outlined"
               sx={{ fontSize: 11 }}
-            />
-          )}
+            /> 
+          )}*/}
           { user && (
             <>
               <IconButton
@@ -142,7 +149,7 @@ export default function Header() {
                   </Typography>
                 </Box>
                 <Divider />
-                {isAdmin && (
+                {/* {isAdmin && (
                   <MenuItem onClick={() => { handleMenuClose(); navigate('/app/reports'); }}>
                     Reports & Analytics
                   </MenuItem>
@@ -156,7 +163,7 @@ export default function Header() {
                     <MenuItem onClick={() => { handleMenuClose(); navigate('/app/settings'); }}>
                       Settings
                     </MenuItem>
-                  )}
+                  )} */}
                   <MenuItem onClick={handleLogout}
                     sx={{ color: 'error.main' }}>
                     Log out

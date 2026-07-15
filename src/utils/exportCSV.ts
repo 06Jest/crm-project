@@ -1,5 +1,5 @@
 export const exportToCSV = (
-  data: Record<string, any>[],
+  data: Record<string, unknown>[],
   filename: string
 ): void => {
   if (data.length === 0) return;

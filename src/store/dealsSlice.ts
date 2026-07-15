@@ -1,6 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import type { Deal, DealStage } from "../types/deal"
-import { supabase  } from "../services/supabase";
+import type { AddDeal, DealsState, DealStage, UpdateDeal } from "../types/deal"
 import {
   fetchDealsAPI,
   addDealAPI,
@@ -9,14 +8,6 @@ import {
   deleteDealAPI,
 } from '../services/dealService';
 
-
-
-interface DealsState {
-  items: Deal[];
-  loading: boolean;
-  loaded: boolean;
-  error: string | null;
-}
 
 const initialState: DealsState = {
   items: [],
@@ -27,9 +18,9 @@ const initialState: DealsState = {
 
 export const fetchDeals = createAsyncThunk(
   'deals/fetchAll',
-  async (token: string, thunkAPI) => {
+  async (_, thunkAPI) => {
     try {
-      return await fetchDealsAPI(token);
+      return await fetchDealsAPI();
     }  catch (err) {
       if (err instanceof Error) {
         return thunkAPI.rejectWithValue(err.message);
@@ -45,29 +36,9 @@ export const fetchDeals = createAsyncThunk(
 export const addDeal = createAsyncThunk(
   'deals/add',
   async (
-      deal: Omit<
-        Deal,
-        'id' |
-        'created_at' |
-        'owner_id' |
-        'org_id' |
-        'owner_name' |
-        'deleted_at' |
-        'deleted_by' |
-        'updated_by'  |
-        'closed_date' |
-        'closed_by'
-      >, thunkAPI) => {
+      deal: AddDeal, thunkAPI) => {
     try {
-
-      const {data: { session }} = await supabase.auth.getSession();
-      const token = session?.access_token;
-      
-      if (!token) {
-        throw new Error('No token found');
-      }
-
-      return await addDealAPI(token, deal);
+      return await addDealAPI(deal);
     } catch (err) {
       if (err instanceof Error) {
         return thunkAPI.rejectWithValue(err.message);
@@ -85,30 +56,10 @@ export const updateDeal = createAsyncThunk(
   'deals/update',
   async ({id, deal}:{
       id: string;
-      deal: 
-      Omit<
-        Deal,
-        'id' |
-        'created_at' |
-        'contact_id' |
-        'owner_id' |
-        'org_id' |
-        'owner_name'|
-        'deleted_at' |
-        'deleted_by' |
-        'updated_by' |
-        'closed_date' |
-        'closed_by'
-    >;},thunkAPI) => {
+      deal: UpdateDeal},thunkAPI) => {
     try {
 
-      const {data: { session }} = await supabase.auth.getSession();
-      const token = session?.access_token;
-
-      if (!token) {
-        throw new Error('No token found');
-      }
-      return await updateDealAPI(token, id, deal);
+      return await updateDealAPI(id, deal);
     } catch (err) {
       if (err instanceof Error) {
         return thunkAPI.rejectWithValue(err.message);
@@ -123,30 +74,11 @@ export const updateDeal = createAsyncThunk(
 
 export const closeDeal = createAsyncThunk(
   'deals/close',
-  async ({id, deal}:{
+  async ({id, stage}:{
       id: string;
-      deal: 
-      Omit<
-        Deal,
-        'id' |
-        'created_at' |
-        'contact_id' |
-        'owner_id' |
-        'org_id' |
-        'owner_name'|
-        'deleted_at' |
-        'deleted_by' |
-        'updated_by'
-    >;},thunkAPI) => {
+      stage: DealStage},thunkAPI) => {
     try {
-
-      const {data: { session }} = await supabase.auth.getSession();
-      const token = session?.access_token;
-
-      if (!token) {
-        throw new Error('No token found');
-      }
-      return await closeDealAPI(token, id, deal);
+      return await closeDealAPI( id, stage);
     } catch (err) {
       if (err instanceof Error) {
         return thunkAPI.rejectWithValue(err.message);
@@ -163,14 +95,7 @@ export const deleteDeal = createAsyncThunk(
   'deals/delete',
   async (id: string, thunkAPI) => {
     try {
-
-      const {data: { session }} = await supabase.auth.getSession();
-      const token = session?.access_token;
-
-      if (!token) {
-        throw new Error('No token found');
-      }
-      return await deleteDealAPI(token, id);
+      return await deleteDealAPI( id );
     } catch (err) {
       if (err instanceof Error) {
         return thunkAPI.rejectWithValue(err.message);

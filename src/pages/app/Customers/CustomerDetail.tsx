@@ -63,7 +63,10 @@ export default function CustomerDetail() {
         </Typography>
         <Button
           startIcon={<ArrowBackIcon />}
-          onClick={() => navigate('/app/customers')}
+          onClick={() => {
+            
+            navigate('/app/customers')
+          } }
           sx={{ mt: 2 }}
         >
           Back to customers

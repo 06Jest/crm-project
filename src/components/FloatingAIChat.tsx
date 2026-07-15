@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../store/store';
-import { aiApi } from '../services/backendApi';
+// import { aiApi } from '../services/backendApi';
 
 
 import {

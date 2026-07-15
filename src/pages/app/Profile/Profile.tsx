@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import type {  RootState } from '../../../store/store';
-import { useAuthContext } from '../../../hooks/useAuthContext';
+import { useAuth } from '../../../hooks/useAuth';
 import {
   fetchMyProfileFromDB,
   updateProfileInDB,
@@ -34,7 +34,7 @@ import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import LockIcon from '@mui/icons-material/Lock';
 
 export default function Profile () {
-  const { user } = useAuthContext();
+  const { user } = useAuth();
 
   const contacts = useSelector((s: RootState) => s.contacts.items);
   const leads = useSelector((s: RootState) => s.leads.items);

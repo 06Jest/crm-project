@@ -1,16 +1,17 @@
 import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "../../../store/store";
-import { supabase } from "../../../services/supabase";
 import { formatDistanceToNow } from 'date-fns';
 import { DataGrid, type GridColDef, useGridApiRef, type GridRowSelectionModel } from '@mui/x-data-grid';
 // import { useSidebar } from "../../../hooks/useSidebar";
 import { alpha } from '@mui/material/styles';
 import { 
+  clearError,
   deleteContact,
   fetchContacts
 } from "../../../store/contactsSlice";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../../hooks/useAuth";
 
 
 import {
@@ -28,7 +29,6 @@ import {
   ListItemText,
   CircularProgress,
   Typography,
-  Alert,
   IconButton,
 } from "@mui/material";
 //import LockIcon from '@mui/icons-material/Lock';
@@ -36,8 +36,10 @@ import DeleteIcon from '@mui/icons-material/Delete';
 // import SearchIcon from '@mui/icons-material/Search';
 import PriorityIcon from '@mui/icons-material/PriorityHighRounded';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
-import type { ContactStatus, Priority } from "../../../types/contact";
+import type { ContactStatus } from "../../../types/contact";
 import { useState } from "react";
+import type { Priority } from "../../../types/global";
+import ErrorAlert from "../../../components/Error";
 
 
 const STATUS_COLORS: Record<ContactStatus, string> = {
@@ -108,7 +110,6 @@ export default function Contacts() {
   const { items: contacts, loading, loaded, error} = useSelector((state:RootState) => state.contacts);
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-  // const { collapsed } = useSidebar();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const apiRef = useGridApiRef();
   const [selectedRows, setSelectedRows] = useState<GridRowSelectionModel>({
@@ -123,39 +124,22 @@ export default function Contacts() {
     email: contact.email,
     phone: contact.phone,
     status: contact.status,
-    owner_name: contact.owner_name,
+    owner_name: "meow",
     created_at: contact.created_at,
   }));
 
- useEffect(() => {
-  if (loaded) return;
+    
+  const { isAuthenticated } = useAuth();
 
-  let mounted = true;
 
-  const load = async () => {
-    try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+  useEffect(() => {
 
-      if (!mounted) return;
-
-      const token = session?.access_token;
-
-      if (token) {
-        dispatch(fetchContacts(token));
-      }
-    } catch (err) {
-      console.error(err);
+    if (isAuthenticated && !loaded) {
+      dispatch(fetchContacts());
     }
-  };
+  }, [ loaded, isAuthenticated, dispatch]);
 
-  load();
 
-  return () => {
-    mounted = false;
-  };
-}, [loaded, dispatch]);
   
 const recentContacts = [...contacts]
   .sort(
@@ -250,10 +234,7 @@ const hasSelection =
         mx: 2,
         height: 850}}>
           <Box sx={{display: {xs: 'none', lg: 'flex'}, flexDirection: 'column',  width: '15%', alignItems: 'end', minWidth: 285, }}>
-            {error && (
-
-            <Alert sx={{position: "absolute", top: 150, left: "50%"}} severity="error">{error}</Alert>
-            )}
+            
             <Paper sx={{ height: '50%', maxHeight: 325 , width: '100%', minHeight: 310, m: 1, p: 1, borderRadius: 3,}}>
               <Typography  sx={{
                 pb: 1,
@@ -340,13 +321,22 @@ const hasSelection =
               <Box sx={{
                 display: 'flex',
                 width: '50%',
-                justifyContent: 'space-between',
-                alignItems: 'center'
               }}>
+                <Box sx={{width: '100%'}}>
+                  {error && (
+                  <ErrorAlert
+                    message={error}
+                  />
+                )}
+                </Box>
+                
               </Box>
               <Box>
                 <IconButton
-                  onClick={() => navigate(`/app/addcontact`)}
+                  onClick={() => {
+                    dispatch(clearError());
+                    navigate(`/app/addcontact`)
+                  }}
                   sx={{
                   fontSize: 12,
                   py: 1,
@@ -415,7 +405,14 @@ const hasSelection =
                 color="error"
                 onClick={() => {
                   selectedRows.ids.forEach((id) => {
-                    dispatch(deleteContact(String(id)));
+                    if (loading) return;
+
+                    try{
+                      dispatch(deleteContact(String(id))).unwrap();
+                    } catch {
+                      //Error in state
+                    }
+                    
                   });
 
                   setConfirmOpen(false);
