@@ -23,13 +23,13 @@ const TYPE_CONFIG = {
     icon: <TrendingUpIcon sx={{ fontSize: 12 }} />,
     color: '#ed6c02',
     label: 'Lead',
-    getRoute: (_id: string) => `/app/leads`,
+    getRoute: () => `/app/leads`,
   },
   deal: {
     icon: <AttachMoneyIcon sx={{ fontSize: 12 }} />,
     color: '#9c27b0',
     label: 'Deal',
-    getRoute: (_id: string) => `/app/deals`,
+    getRoute: () => `/app/deals`,
   },
 };
 

@@ -1,52 +1,38 @@
-export type LeadsStatus =
-  | "New"
-  | "Contacted"
-  | "Qualified"
-  | "Closed";
+import type { Gender, Priority, Source, Suffix } from "./global";
+
+export interface LeadsState {
+  items: Lead[];
+  loading: boolean;
+  loaded: boolean;
+  error: string | null;
+}
+
+export const LEAD_STATUSES = [
+  "New",
+  "Contacted",
+  "Qualified",
+  "Closed",
+] as const;
+
+export type LeadStatus = typeof LEAD_STATUSES[number];
 
 
-export type LeadsSource = 
-  | "Website"
-  | "Referral"
-  | "Facebook"
-  | "Instagram"
-  | "LinkedIn"
-  | "Google Search"
-  | "Google Ads"
-  | "Email Campaign"
-  | "Cold Call"
-  | "Trade Show"
-  | "Webinar"
-  | "Partner"
-  | "Walk-in"
-  | "WhatsApp"
-  | "Messenger"
-  | "Personal Network"
-  | "Direct Conversation"
-  | "Networking Event"
-  | "Conference"
-  | "Friend"
-  | "Family"
-  | "Other";
-
-export type Gender = "Male" | "Female" | "Prefer not to say";
-export type Priority = "Highest" | "High" | "Low";
 
 export interface Lead {
   id: string;
   title: string;
+  source: Source;
   first_name: string;
   last_name: string;
-  suffix?: string;
+  suffix?: Suffix;
   gender: Gender;
   birth_date?: string | null;
-  email: string;
-  phone: string;
+  email: string | null;
+  phone: string | null;
   company_name?: string;
   position?: string;
   department?: string;
-  source: LeadsSource;
-  status: LeadsStatus;
+  status: LeadStatus;
   priority: Priority;
   notes?: string;
   owner_id: string;
@@ -55,5 +41,39 @@ export interface Lead {
   deleted_at: string | null;
   deleted_by: string | null;
   updated_by: string | null;
-  owner_name: string;
+}
+
+export interface AddLead {
+  title: string;
+  source: Source;
+  first_name: string;
+  last_name: string;
+  suffix?: Suffix;
+  gender: Gender;
+  birth_date?: string | null;
+  email: string | null;
+  phone: string | null;
+  company_name?: string;
+  position?: string;
+  department?: string;
+  status: LeadStatus;
+  priority: Priority;
+  notes?: string;
+}
+export interface UpdateLead {
+  title: string;
+  source: Source;
+  first_name: string;
+  last_name: string;
+  suffix?: Suffix;
+  gender: Gender;
+  birth_date?: string | null;
+  email: string| null;
+  phone: string| null;
+  company_name?: string;
+  position?: string;
+  department?: string;
+  status: LeadStatus;
+  priority: Priority;
+  notes?: string;
 }

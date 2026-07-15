@@ -1,17 +1,28 @@
+export type Role =
+| 'admin'
+| 'agent';
+
+export type ProfileStatus =
+| 'pending'
+| 'inactive'
+| 'active'
+| 'banned'
+| 'deleted';
+
 export interface Profile {
   id: string;
-  name: string;
+  display_name: string | null;
+  first_name: string;
+  last_name: string;
   email: string;
-  role: 'super_admin' | 'admin' | 'agent';
-  employee_id?: string | null;   
-  is_active: boolean;
-  is_banned: boolean;
-  avatar_url?: string | undefined;
-  created_by?: string | null;    
+  phone: string | null;
+  role: Role;
+  org_id: string | null;
+  employee_id: string | null;  
+  position: string | null; 
+  status: ProfileStatus;
+  avatar_url: string | null;  
   created_at?: string;
-
-  org?: {
-    id?: string | null;        
-    name?: string | null;      
-  }
+  deleted_at: string | null;
+  last_login: string | null;
 }

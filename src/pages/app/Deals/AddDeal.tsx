@@ -3,7 +3,6 @@ import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch } from "../../../store/store";
 import { useNavigate } from "react-router-dom";
 import { type RootState } from "../../../store/store";
-import { supabase } from "../../../services/supabase";
 
 import {
   Box,
@@ -31,6 +30,9 @@ const STAGES: DealStage[] = [
 
 export default function AddContact() {
   const { items: contacts, loaded} = useSelector((state:RootState) => state.contacts);
+  const { user, loading: userLoading } = useSelector(
+    (state: RootState) => state.user
+  );
   const dispatch = useDispatch<AppDispatch>();
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
   const navigate = useNavigate();
@@ -43,36 +45,15 @@ export default function AddContact() {
     notes: "",
     value: 0,
   });
+   
 
   useEffect(() => {
-    if (loaded) return;
-  
-    let mounted = true;
-  
-    const load = async () => {
-      try {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-  
-        if (!mounted) return;
-  
-        const token = session?.access_token;
-  
-        if (token) {
-          dispatch(fetchContacts(token));
-        }
-      } catch (err) {
-        console.error(err);
-      }
-    };
-  
-    load();
-  
-    return () => {
-      mounted = false;
-    };
-  }, [loaded, dispatch]);
+    if (userLoading) return;
+
+    if (user && !loaded) {
+      dispatch(fetchContacts());
+    }
+  }, [userLoading, loaded, user, dispatch]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -146,7 +127,6 @@ export default function AddContact() {
             label="Contact"
             name="contact_id"
             value={selectedContact?.first_name}
-            // value={`${selectedContact?.first_name} ${selectedContact?.last_name} ${selectedContact?.suffix}`}
             onChange={handleChange}
             size="small"
             sx={{

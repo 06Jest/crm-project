@@ -4,7 +4,7 @@ import Header from '../components/Header';
 import Topbar from '../components/Topbar';
 import Footer from '../components/Footer';
 import Sidebar from '../components/Sidebar';
-import FloatingAIChat from '../components/FloatingAIChat';
+// import FloatingAIChat from '../components/FloatingAIChat';
 import { useSidebar } from '../hooks/useSidebar';
 
 
@@ -16,7 +16,7 @@ import { useSidebar } from '../hooks/useSidebar';
         <Header />
         <Topbar />   
         <Box component= "main" sx={{mt: 12,pt: 2, width: '100%', display: 'flex'}}>
-          <Box sx={{flex: 1}}>
+          <Box sx={{flex: 1, minHeight: 900}}>
             <Outlet/>
           </Box>
           <Box 
@@ -34,7 +34,7 @@ import { useSidebar } from '../hooks/useSidebar';
           </Box>
         </Box>
         <Footer/>
-        <FloatingAIChat />
+        {/* <FloatingAIChat /> */}
       </Box>
     
   );

@@ -1,21 +1,18 @@
 import type { ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Box, CircularProgress } from '@mui/material';
-import { useRole } from '../hooks/useRole';
+import { useAuth } from '../hooks/useAuth';
 
-interface RoleGuardProps {
+interface AdminGuardProps {
   children: ReactNode;
-
-  requiredRole: 'admin' | 'super_admin';
   redirectTo?: string;
 }
 
-export default function RoleGuard({
+export default function AdminGuard({
   children,
-  requiredRole,
   redirectTo = '/app/dashboard',
-}: RoleGuardProps) {
-  const { isAdmin, isSuperAdmin, loading } = useRole();
+}: AdminGuardProps) {
+  const { isAdmin, loading } = useAuth();
 
 
   if (loading) {
@@ -26,12 +23,7 @@ export default function RoleGuard({
     );
   }
 
-
-  if (requiredRole === 'super_admin' && !isSuperAdmin) {
-    return <Navigate to={redirectTo} replace />;
-  }
-
-  if (requiredRole === 'admin' && !isAdmin) {
+  if ( !isAdmin ) {
     return <Navigate to={redirectTo} replace />;
   }
 

@@ -1,191 +1,60 @@
+import { apiClient } from "./apiClient";
+import type {
+  AddDeal,
+  Deal,
+  DealStage,
+  UpdateDeal,
+} from "../types/deal";
 
-import type { Deal } from '../types/deal';
+export const fetchDealsAPI = async (): Promise<Deal[]> => {
+  const result = await apiClient("/api/deals/show-deals", {
+    method: "GET",
+  });
 
-
-const API_URL = `${import.meta.env.VITE_BACKEND_URL}/api/deals`;
-
-export const fetchDealsAPI = 
-  async (token: string): 
-    Promise<Deal[]> => {
-      const response =
-        await fetch(
-          `${API_URL}/show-deals`,
-          {
-            headers: {
-              authorization:
-                `Bearer ${token}`,
-            },
-          }
-        );
-  const result =
-    await response.json();
-
-  if (!response.ok) {
-    throw new Error(
-      result.error
-    );
-  }
-  return result.data;
+  return result.data as Deal[];
 };
 
-export const addDealAPI =
-  async (
-    token: string,
-    deal: Omit<Deal, 
-    'id' | 
-    'created_at' | 
-    'owner_id' | 
-    'org_id' | 
-    'owner_name' |
-    'deleted_at' |
-    'deleted_by' |
-    'updated_by' |
-    'closed_date' |
-    'closed_by'
-    >
-  ): Promise<Deal> => {
-      const response =
-        await fetch(
-          `${API_URL}/add-deal`,
-          {
-            method: "POST",
+export const addDealAPI = async (
+  deal: AddDeal
+): Promise<Deal> => {
+  const result = await apiClient("/api/deals/add-deal", {
+    method: "POST",
+    body: JSON.stringify(deal),
+  });
 
-            headers: {
-              "Content-Type": "application/json",
-              authorization:
-                `Bearer ${token}`,
-              
-            },
-
-            body: JSON.stringify(deal),
-          }
-        );
-  const result =
-  await response.json();
-
-  if (!response.ok) {
-    throw new Error(
-      result.error
-    );
-  }
   return result.data as Deal;
 };
 
+export const updateDealAPI = async (
+  id: string,
+  deal: UpdateDeal
+): Promise<Deal> => {
+  const result = await apiClient(`/api/deals/update-deal/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(deal),
+  });
 
-
-export const updateDealAPI =
-  async (
-    token: string,
-    id: string,
-    deal: Omit<Deal, 
-    'id' | 
-    'created_at' |
-    'contact_id' |
-    'owner_id' | 
-    'org_id' | 
-    'owner_name' |
-    'deleted_at' |
-    'deleted_by' |
-    'updated_by' |
-    'closed_date' |
-    'closed_by'
-    >
-  ): Promise<Deal> => {
-      const response =
-        await fetch(
-          `${API_URL}/update-deal`,
-          {
-            method: "PATCH",
-
-            headers: {
-              "Content-Type": "application/json",
-              authorization:
-                `Bearer ${token}`,
-              
-            },
-
-            body: JSON.stringify({token, id, deal }),
-          }
-        );
-  const result =
-  await response.json();
-
-  if (!response.ok) {
-    throw new Error(
-      result.error
-    );
-  }
   return result.data as Deal;
 };
 
-export const closeDealAPI =
-  async (
-    token: string,
-    id: string,
-    deal: Omit<Deal, 
-    'id' | 
-    'created_at' |
-    'contact_id' |
-    'owner_id' | 
-    'org_id' | 
-    'owner_name' |
-    'deleted_at' |
-    'deleted_by' |
-    'updated_by' 
-    >
-  ): Promise<Deal> => {
-      const response =
-        await fetch(
-          `${API_URL}/close-deal`,
-          {
-            method: "PATCH",
+export const closeDealAPI = async (
+  id: string,
+  stage: DealStage
+): Promise<Deal> => {
+  const result = await apiClient(`/api/deals/close-deal/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(stage),
+  });
 
-            headers: {
-              "Content-Type": "application/json",
-              authorization:
-                `Bearer ${token}`,
-              
-            },
-
-            body: JSON.stringify({token, id, deal }),
-          }
-        );
-  const result =
-  await response.json();
-
-  if (!response.ok) {
-    throw new Error(
-      result.error
-    );
-  }
   return result.data as Deal;
 };
 
-export const deleteDealAPI =
-  async (token: string, id: string): Promise<string> => {
-      const response =
-        await fetch(
-          `${API_URL}/delete-deal`,
-          {
-            method: "DELETE",
+export const deleteDealAPI = async (
+  id: string
+): Promise<string> => {
+  const result = await apiClient(`/api/deals/delete-deal/${id}`, {
+    method: "DELETE",
+  });
 
-            headers: {
-              "Content-Type": "application/json",
-              authorization:
-                `Bearer ${token}`,
-              
-            },
-
-            body: JSON.stringify({id}),
-          }
-        );
-  const result =
-  await response.json();
-
-  if (!response.ok) {
-    throw new Error( 
-      result.error
-    );
-  }
   return result.data as string;
 };

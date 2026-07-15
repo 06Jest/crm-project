@@ -3,48 +3,40 @@ import { Link } from 'react-router-dom';
 import { supabase } from '../../../services/supabase';
 import {
   Box, Button, TextField, Typography, Alert,
-  Paper, CircularProgress, Tabs, Tab, Divider,
+  Paper, CircularProgress, Divider,
 } from '@mui/material';
-import EmailIcon from '@mui/icons-material/Email';
-import BadgeIcon from '@mui/icons-material/Badge';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import LockResetIcon from '@mui/icons-material/LockReset';
 import {  useSelector } from 'react-redux';
 import type { RootState } from '../../../store/store';
 
-type ResetMode = 0 | 1; 
-
 export default function ForgotPassword() {
-  const [mode, setMode] = useState<ResetMode>(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [sent, setSent] = useState(false);
   const [sentTo, setSentTo] = useState('');
   const themeMode = useSelector((state: RootState) => state.ui.themeMode);
 
-  const [adminEmail, setAdminEmail] = useState('');
+  const [userEmail, setUserEmail] = useState('');
 
-
-  const [agentEmployeeId, setAgentEmployeeId] = useState('');
-
-  const handleAdminReset = async (e: React.FormEvent) => {
+  const handlePasswordReset = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    if (!adminEmail.trim()) {
+    if (!userEmail.trim()) {
       setError('Please enter your email address');
       return;
     }
     setLoading(true);
     try {
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(
-        adminEmail.trim(),
+        userEmail.trim(),
         {
           redirectTo: `${window.location.origin}/reset-password`,
         }
       );
       if (resetError) throw resetError;
 
-      const [user, domain] = adminEmail.split('@');
+      const [user, domain] = userEmail.split('@');
       const masked = `${user[0]}***@${domain}`;
       setSentTo(masked);
       setSent(true);
@@ -56,52 +48,6 @@ export default function ForgotPassword() {
       }
     }
   };
-
-  const handleAgentReset = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    const idClean = agentEmployeeId.trim().toUpperCase();
-    if (!idClean) {
-      setError('Please enter your Employee ID');
-      return;
-    }
-    setLoading(true);
-    try {
-
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('email, is_active')
-        .eq('employee_id', idClean)
-        .single();
-
-      if (profileError || !profile) {
-        throw new Error('Employee ID not found. Please check and try again.');
-      }
-      if (!profile.is_active) {
-        throw new Error('This account has been deactivated. Contact your admin.');
-      }
-
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(
-        profile.email,
-        {
-          redirectTo: `${window.location.origin}/reset-password`,
-        }
-      );
-      if (resetError) throw resetError;
-
-
-      const [user, domain] = profile.email.split('@');
-      const masked = `${user[0]}***@${domain}`;
-      setSentTo(masked);
-      setSent(true);
-    } catch (err) {
-        if (err instanceof Error) {
-          setError(err.message)
-        } else {
-          setError('Failed to send reset email. Please try again.');
-        }
-    };
-  }
 
   const BACKGROUNDCOLOR = themeMode === 'light' ? 'rgba(255, 255, 255, 0.73)' : 'rgba(34, 34, 34, 0.4)';
 
@@ -171,8 +117,7 @@ export default function ForgotPassword() {
               fullWidth
               onClick={() => {
                 setSent(false);
-                setAdminEmail('');
-                setAgentEmployeeId('');
+                setUserEmail('');
               }}
             >
               Try a different email
@@ -235,30 +180,6 @@ export default function ForgotPassword() {
           </Typography>
         </Box>
 
-
-        <Tabs
-          value={mode}
-          onChange={(_, v) => {
-            setMode(v);
-            setError('');
-          }}
-          variant="fullWidth"
-          sx={{ mb: 3, borderBottom: 1, borderColor: 'divider' }}
-        >
-          <Tab
-            icon={<EmailIcon fontSize="small" />}
-            iconPosition="start"
-            label="Admin"
-            sx={{ fontSize: 13 }}
-          />
-          <Tab
-            icon={<BadgeIcon fontSize="small" />}
-            iconPosition="start"
-            label="Agent"
-            sx={{ fontSize: 13 }}
-          />
-        </Tabs>
-
         {error && (
           <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>
             {error}
@@ -266,14 +187,13 @@ export default function ForgotPassword() {
         )}
 
 
-        {mode === 0 && (
-          <Box component="form" onSubmit={handleAdminReset}>
+          <Box component="form" onSubmit={handlePasswordReset}>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               <TextField
                 label="Email address"
                 type="email"
-                value={adminEmail}
-                onChange={(e) => setAdminEmail(e.target.value)}
+                value={userEmail}
+                onChange={(e) => setUserEmail(e.target.value)}
                 required
                 fullWidth
                 autoFocus
@@ -294,40 +214,6 @@ export default function ForgotPassword() {
               </Button>
             </Box>
           </Box>
-        )}
-
-
-        {mode === 1 && (
-          <Box component="form" onSubmit={handleAgentReset}>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <TextField
-                label="Employee ID"
-                value={agentEmployeeId}
-                onChange={(e) =>
-                  setAgentEmployeeId(e.target.value.toUpperCase())
-                }
-                required
-                fullWidth
-                autoFocus
-                placeholder="e.g. EMP-2026-0001"
-                helperText="We will send the reset link to the email on file"
-                inputProps={{ style: { textTransform: 'uppercase' } }}
-              />
-              <Button
-                type="submit"
-                variant="contained"
-                fullWidth
-                size="large"
-                disabled={loading}
-              >
-                {loading
-                  ? <CircularProgress size={22} color="inherit" />
-                  : 'Send reset link'
-                }
-              </Button>
-            </Box>
-          </Box>
-        )}
 
         <Divider sx={{ my: 2 }} />
 

@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector} from 'react-redux';
 import type { AppDispatch } from '../../../store/store';
-import { updateContact, deleteContact } from '../../../store/contactsSlice';
-import type {Contact, ContactStatus, Gender, Priority } from "../../../types/contact";
+import { updateContact, deleteContact, clearError } from '../../../store/contactsSlice';
+import {CONTACT_STATUSES, type Contact, type ContactStatus } from "../../../types/contact";
 // import { supabase } from "../../../services/supabase";
 // import {
 //   fetchDeals
@@ -53,29 +53,10 @@ import LinkedInIcon from '@mui/icons-material/LinkedIn';
 
 import type { RootState } from '../../../store/store';
 import { fixLeafletIcons } from '../../../utils/fixLeafletIcons';
+import { GENDERS, PRIORITIES, SOURCES, SUFFIXES, type Gender, type Priority, type Suffix } from '../../../types/global';
 
 fixLeafletIcons(); 
 
-const STATUS_OPTIONS: ContactStatus[] = [
-  "Contacted",
-  "Qualified",
-  "Opportunity",
-  "Customer",
-  "Inactive",
-  "Lost",
-  "Churned",
-];
-
-const GENDER: Gender[] = [
-  "Male",
-  "Female",
-  "Prefer not to say",
-];
-const PRIORITY: Priority[] = [
-  "Highest",
-  "High",
-  "Low",
-];
 
 const STATUS_COLORS: Record<ContactStatus, string> = {
   Contacted: '#ffffff',
@@ -213,7 +194,10 @@ if (!contact) {
         </Typography>
         <Button
           startIcon={<ArrowBackIcon />}
-          onClick={() => navigate('/app/contacts')}
+          onClick={() => {
+            dispatch(clearError());
+            navigate('/app/contacts')}
+          } 
           sx={{ mt: 2 }}
         >
           Back to contacts
@@ -226,7 +210,7 @@ const handleEditStart = () => {
   setForm({
     first_name: contact.first_name,
     last_name: contact.last_name,
-    suffix: contact.suffix,
+    suffix: contact.suffix as Suffix,
     gender: contact.gender as Gender,
     birth_date: contact.birth_date || null,
     email: contact.email,
@@ -587,16 +571,34 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
               gap: 1,
             }}>
               <TextField
+                select
                 label="Suffix"
                 name="suffix"
-                value={form.suffix}
                 onChange={handleChange}
+                value={form.suffix}
                 size="small"
                 sx={{
                   fontSize: 13,
                   width: '50%'
                 }}
-              />
+                slotProps={{
+                  select: {
+                    MenuProps: {
+                      PaperProps: {
+                        sx: {
+                          maxHeight: 250,
+                        },
+                      },
+                    },
+                  },
+                }}
+              >
+              {SUFFIXES.map((suffix) => (
+                  <MenuItem key={suffix} value={suffix}>
+                    {suffix}
+                  </MenuItem>
+                ))}
+              </TextField>
   
               <TextField
                 type='tel'
@@ -646,7 +648,7 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
                   width: '50%',
                 }}
               >
-              {GENDER.map((gender) => (
+              {GENDERS.map((gender) => (
                 <MenuItem key={gender} value={gender}>
                   {gender}
                 </MenuItem>
@@ -735,7 +737,7 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
                   width: '50%'
                 }}
               >
-                {STATUS_OPTIONS.map((status) => (
+                {CONTACT_STATUSES.map((status) => (
                   <MenuItem key={status} value={status}>
                     {status}
                   </MenuItem>
@@ -754,7 +756,7 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
                   width: '50%'
                 }}
               >
-                {PRIORITY.map((prio) => (
+                {PRIORITIES.map((prio) => (
                   <MenuItem key={prio} value={prio}>
                     {prio}
                   </MenuItem>
@@ -774,6 +776,35 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
                   fontSize: 13,
                 }}
               />
+            <TextField
+              select
+              label="Source"
+              name="source"
+              value={form.source}
+              onChange={handleChange}
+              size="small"
+              fullWidth
+              sx={{
+                fontSize: 13,
+              }}
+              slotProps={{
+                select: {
+                  MenuProps: {
+                    PaperProps: {
+                      sx: {
+                        maxHeight: 250,
+                      },
+                    },
+                  },
+                },
+              }}
+            >
+              {SOURCES.map((source) => (
+                <MenuItem key={source} value={source}>
+                  {source}
+                </MenuItem>
+              ))}
+            </TextField>
 
               <Box sx={{display: 'flex', justifyContent: 'space-between', gap: 1}}>
                 <Button 

@@ -14,71 +14,33 @@ import {
   Typography,
 } from "@mui/material";
 
-import { addLead } from "../../../store/leadsSlice";
+import { addLead, clearError } from "../../../store/leadsSlice";
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import type { LeadsStatus, Gender, Priority, LeadsSource } from "../../../types/lead";
+import { GENDERS, PRIORITIES, SOURCES, SUFFIXES, type Gender, type Priority, type Source, type Suffix } from "../../../types/global";
+import { LEAD_STATUSES, type LeadStatus } from "../../../types/lead";
+import ErrorAlert from "../../../components/Error";
 
-const STATUS_OPTIONS: LeadsStatus[] = [
-  "New",
-  "Contacted",
-  "Qualified",
-  "Closed",
-];
 
-const SOURCE_OPTIONS: LeadsSource[] = [
-  "Website",
-  "Referral",
-  "Facebook",
-  "Instagram",
-  "LinkedIn",
-  "Google Search",
-  "Google Ads",
-  "Email Campaign",
-  "Cold Call",
-  "Trade Show",
-  "Webinar",
-  "Partner",
-  "Walk-in",
-  "WhatsApp",
-  "Messenger",
-  "Personal Network",
-  "Direct Conversation",
-  "Networking Event",
-  "Conference",
-  "Friend",
-  "Family",
-  "Other",
-]
-
-const GENDER: Gender[] = [
-  "Male",
-  "Female",
-  "Prefer not to say",
-];
-const PRIORITY: Priority[] = [
-  "Highest",
-  "High",
-  "Low",
-];
 
 export default function AddLead() {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const themeMode = useSelector((state: RootState) => state.ui.themeMode);
+  const { loading, error} = useSelector((state:RootState) => state.leads);
 
   const [form, setForm] = useState({
     title: "",
     first_name: "",
     last_name: "",
-    suffix: "",
-    email: "",
-    phone: "",
+    suffix: null as Suffix,
+    email: null,
+    phone: null,
     gender: "Prefer not to say" as Gender,
     birth_date: null,
     company_name: "",
     position: "",
-    source: "Other" as LeadsSource,
-    status: "New" as LeadsStatus,
+    source: "Other" as Source,
+    status: "New" as LeadStatus,
     priority: "Low" as Priority,
     notes: "",
   });
@@ -93,14 +55,15 @@ export default function AddLead() {
   };
 
   const handleSubmit = async () => {
-
-    const newLead = {
+    if (loading) return;
+    try {
+      const newLead = {
       title: form.title,
       first_name: form.first_name,
       last_name: form.last_name,
-      suffix: form.suffix,
-      email: form.email,
-      phone: form.phone,
+      suffix: form.suffix || null,
+      email: form.email || null,
+      phone: form.phone || null,
       gender: form.gender,
       birth_date: form.birth_date || null,
       company_name: form.company_name,
@@ -111,10 +74,12 @@ export default function AddLead() {
       priority: form.priority,
       notes: form.notes,
     };
-
-    await dispatch(addLead(newLead));
-
+    await dispatch(addLead(newLead)).unwrap();
     navigate(`/app/leads`);
+
+    } catch {
+      //Error from state
+    }
   };
 
   return (
@@ -133,11 +98,18 @@ export default function AddLead() {
     >
       <Button 
         startIcon={<ArrowBackIcon/>}
-        onClick={() => navigate('/app/leads')}
+        onClick={() => {
+          navigate('/app/leads');
+          dispatch(clearError());
+        } }
         sx={{ alignSelf: 'start'}}>
         Back to Leads
       </Button>
-
+      {error && (
+        <ErrorAlert
+          message={error}
+        />
+      )}
         <Box sx={{
           display: "flex",
           flexDirection: 'column',
@@ -171,7 +143,7 @@ export default function AddLead() {
             <TextField
               label="Last Name"
               name="last_name"
-              
+              required
               onChange={handleChange}
               size="small"
               sx={{
@@ -187,16 +159,34 @@ export default function AddLead() {
             gap: 1,
           }}>
             <TextField
+              select
               label="Suffix"
               name="suffix"
               onChange={handleChange}
+              value={form.suffix}
               size="small"
               sx={{
                 fontSize: 13,
                 width: '50%'
               }}
-            />
-
+              slotProps={{
+                select: {
+                  MenuProps: {
+                    PaperProps: {
+                      sx: {
+                        maxHeight: 250,
+                      },
+                    },
+                  },
+                },
+              }}
+            >
+            {SUFFIXES.map((suffix) => (
+                <MenuItem key={suffix} value={suffix}>
+                  {suffix}
+                </MenuItem>
+              ))}
+            </TextField>
             <TextField
               label="Phone"
               name="phone"
@@ -236,7 +226,7 @@ export default function AddLead() {
                 width: '50%',
               }}
             >
-            {GENDER.map((gender) => (
+            {GENDERS.map((gender) => (
               <MenuItem key={gender} value={gender}>
                 {gender}
               </MenuItem>
@@ -330,8 +320,19 @@ export default function AddLead() {
               sx={{
                 fontSize: 13,
               }}
+              slotProps={{
+                select: {
+                  MenuProps: {
+                    PaperProps: {
+                      sx: {
+                        maxHeight: 250,
+                      },
+                    },
+                  },
+                },
+              }}
             >
-              {SOURCE_OPTIONS.map((source) => (
+              {SOURCES.map((source) => (
                 <MenuItem key={source} value={source}>
                   {source}
                 </MenuItem>
@@ -349,7 +350,7 @@ export default function AddLead() {
                 width: '50%'
               }}
             >
-              {STATUS_OPTIONS.map((status) => (
+              {LEAD_STATUSES.map((status) => (
                 <MenuItem key={status} value={status}>
                   {status}
                 </MenuItem>
@@ -368,7 +369,7 @@ export default function AddLead() {
                 width: '50%'
               }}
             >
-              {PRIORITY.map((prio) => (
+              {PRIORITIES.map((prio) => (
                 <MenuItem key={prio} value={prio}>
                   {prio}
                 </MenuItem>

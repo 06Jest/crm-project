@@ -1,140 +1,56 @@
+import { apiClient } from "./apiClient";
+import type { AddLead, Lead, LeadStatus, UpdateLead } from "../types/lead";
 
-import type { Lead } from '../types/lead';
+export const fetchLeadsAPI = async (): Promise<Lead[]> => {
+  const result = await apiClient("/api/leads/show-leads", {
+    method: "GET",
+  });
 
-
-const API_URL = `${import.meta.env.VITE_BACKEND_URL}/api/leads`;
-
-export const fetchLeadsAPI = 
-  async (token: string): 
-    Promise<Lead[]> => {
-      const response =
-        await fetch(
-          `${API_URL}/show-leads`,
-          {
-            headers: {
-              authorization:
-                `Bearer ${token}`,
-            },
-          }
-        );
-  const result =
-    await response.json();
-
-  if (!response.ok) {
-    throw new Error(
-      result.error
-    );
-  }
-  return result.data;
+  return result.data as Lead[];
 };
 
-export const addLeadAPI =
-  async (
-    token: string,
-    contact: Omit<Lead, 
-        'id' | 
-        'created_at' | 
-        'owner_id' | 
-        'org_id' | 
-        'owner_name' | 
-        'deleted_at' |
-        'deleted_by' |
-        'updated_by'>
-  ): Promise<Lead> => {
-      const response =
-        await fetch(
-          `${API_URL}/add-lead`,
-          {
-            method: "POST",
+export const addLeadAPI = async (
+  lead: AddLead
+): Promise<Lead> => {
+  const result = await apiClient("/api/leads/add-lead", {
+    method: "POST",
+    body: JSON.stringify(lead),
+  });
 
-            headers: {
-              "Content-Type": "application/json",
-              authorization:
-                `Bearer ${token}`,
-              
-            },
-
-            body: JSON.stringify(contact),
-          }
-        );
-  const result =
-  await response.json();
-
-  if (!response.ok) {
-    throw new Error(
-      result.error
-    );
-  }
   return result.data as Lead;
 };
 
-export const updateLeadAPI =
-  async (
-    token: string,
-    id: string,
-    lead: Omit<Lead, 
-    'id' | 
-    'created_at' | 
-    'owner_id' | 
-    'org_id' | 
-    'owner_name' |
-    'deleted_at' |
-    'deleted_by' |
-    'updated_by'
-     >
-  ): Promise<Lead> => {
-      const response =
-        await fetch(
-          `${API_URL}/update-lead`,
-          {
-            method: "PATCH",
+export const updateLeadAPI = async (
+  id: string,
+  lead: UpdateLead
+): Promise<Lead> => {
+  const result = await apiClient(`/api/leads/update-lead/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(lead),
+  });
 
-            headers: {
-              "Content-Type": "application/json",
-              authorization:
-                `Bearer ${token}`,
-              
-            },
-
-            body: JSON.stringify({token, id, lead }),
-          }
-        );
-  const result =
-  await response.json();
-
-  if (!response.ok) {
-    throw new Error(
-      result.error
-    );
-  }
   return result.data as Lead;
 };
 
-export const deleteLeadAPI =
-  async (token: string, id: string): Promise<string> => {
-      const response =
-        await fetch(
-          `${API_URL}/delete-lead`,
-          {
-            method: "DELETE",
+export const updateLeadStatusAPI = async (
+  id: string,
+  status: LeadStatus
+): Promise<Lead> => {
+  
+  const result = await apiClient(`/api/leads/update-lead-status/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify({status}),
+  });
+  
+  return result.data as Lead;
+};
 
-            headers: {
-              "Content-Type": "application/json",
-              authorization:
-                `Bearer ${token}`,
-              
-            },
+export const deleteLeadAPI = async (
+  id: string
+): Promise<string> => {
+  const result = await apiClient(`/api/leads/delete-lead/${id}`, {
+    method: "DELETE",
+  });
 
-            body: JSON.stringify({id}),
-          }
-        );
-  const result =
-  await response.json();
-
-  if (!response.ok) {
-    throw new Error( 
-      result.error
-    );
-  }
   return result.data as string;
 };

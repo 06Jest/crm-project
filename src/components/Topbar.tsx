@@ -1,5 +1,5 @@
 import { Tabs, Tab, Box } from "@mui/material";
-import { useRole } from "../hooks/useRole";
+// import { useRole } from "../hooks/useRole";
 import { useNavigate, useLocation } from "react-router-dom";
 
 import DashboardIcon from "@mui/icons-material/Dashboard";
@@ -14,7 +14,7 @@ import ChatBubbleIcon from '@mui/icons-material/ChatBubble';
 function Topbar() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { isAdmin, isSuperAdmin } = useRole();
+  // const { isAdmin, isSuperAdmin } = useRole();
 
   const handleChange = (_: unknown, newValue: string) => {
     navigate(newValue);
@@ -29,13 +29,13 @@ function Topbar() {
     { label: "Activities", value: "/app/activities", icon: <ViewTimelineIcon /> },
     { label: "Messages", value: "/app/messaging", icon: <ChatBubbleIcon /> },
 
-    ...(isAdmin
-      ? [{ label: "Reports", value: "/app/reports", icon: <DashboardIcon /> }]
-      : []),
+    // ...(isAdmin
+    //   ? [{ label: "Reports", value: "/app/reports", icon: <DashboardIcon /> }]
+    //   : []),
 
-    ...(isSuperAdmin
-      ? [{ label: "Analytics", value: "/app/analytics", icon: <DashboardIcon /> }]
-      : []),
+    // ...(isSuperAdmin
+    //   ? [{ label: "Analytics", value: "/app/analytics", icon: <DashboardIcon /> }]
+    //   : []),
   ];
 
 const path = location.pathname;

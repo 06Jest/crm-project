@@ -1,54 +1,40 @@
-export type  ContactSource = 
-  | "Website"
-  | "Referral"
-  | "Facebook"
-  | "Instagram"
-  | "LinkedIn"
-  | "Google Search"
-  | "Google Ads"
-  | "Email Campaign"
-  | "Cold Call"
-  | "Trade Show"
-  | "Webinar"
-  | "Partner"
-  | "Walk-in"
-  | "WhatsApp"
-  | "Messenger"
-  | "Personal Network"
-  | "Direct Conversation"
-  | "Networking Event"
-  | "Conference"
-  | "Friend"
-  | "Family"
-  | "Other";
+import type { Gender, Priority, Source, Suffix } from "./global";
 
-export type ContactStatus =
-  | "Contacted"
-  | "Qualified"
-  | "Opportunity"
-  | "Customer"
-  | "Inactive"
-  | "Lost"
-  | "Churned";
+export interface ContactsState {
+  items: Contact[];
+  loading: boolean;
+  loaded: boolean;
+  error: string | null;
+}
+
+export const CONTACT_STATUSES = [
+   "Contacted",
+   "Qualified",
+   "Opportunity",
+   "Customer",
+   "Inactive",
+   "Lost",
+   "Churned"
+] as const;
+
+export type ContactStatus = typeof CONTACT_STATUSES[number];
 
 
-export type Gender = "Male" | "Female" | "Prefer not to say";
-export type Priority = "Highest" | "High" | "Low";
 
 export interface Contact {
   id: string;
-  lead_id?: string;
+  lead_id?:string;
   first_name: string;
   last_name: string;
-  suffix?: string;
+  suffix?: Suffix;
   gender: Gender;
   birth_date?: string | null;
   email: string;
   phone: string;
+  source: Source;
   company_name?: string;
-  position?: string;
+  position?: string;  
   department?: string;
-  source: ContactSource;
   status: ContactStatus;
   priority: Priority;
   notes?: string;
@@ -58,5 +44,39 @@ export interface Contact {
   deleted_at: string | null;
   deleted_by: string | null;
   updated_by: string | null;
-  owner_name: string;
+}
+
+export interface AddContact {
+  lead_id?:string;
+  first_name: string;
+  last_name: string;
+  suffix?: Suffix;
+  gender?: Gender;
+  birth_date?: string | null;
+  email: string;
+  phone: string;
+  source?: Source;
+  company_name?: string;
+  position?: string;  
+  department?: string;
+  status: ContactStatus;
+  priority: Priority;
+  notes?: string;
+}
+
+export interface UpdateContact {
+  first_name?: string;
+  last_name?: string;
+  suffix?: Suffix;
+  gender?: Gender;
+  birth_date?: string | null;
+  email?: string;
+  phone?: string;
+  source?: Source;
+  company_name?: string;
+  position?: string;  
+  department?: string;
+  status: ContactStatus;
+  priority: Priority;
+  notes?: string;
 }

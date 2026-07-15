@@ -9,7 +9,7 @@ import { useInView } from '../../../hooks/useInView';
 import AnimatedNumber from '../../../components/AnimatedNumber';
 import type { RootState } from '../../../store/store';
 import {  useSelector } from 'react-redux';
-import { useAuthContext } from '../../../hooks/useAuthContext';
+// import { useAuthContext } from '../../../hooks/useAuthContext';
 import { useEffect } from 'react';
 import LandingBackground from '../../../assets/landing-background.jpg';
 
@@ -109,8 +109,9 @@ const STATS = [
 
 export default function Landing() {
   const navigate = useNavigate();
-
-  const { user, loading } = useAuthContext();
+const { user, loading } = useSelector(
+    (state: RootState) => state.user)
+    
   const { ref: heroRef, inView: heroInView } = useInView();
   const themeMode = useSelector((state: RootState) => state.ui.themeMode);
   const BORDER = themeMode === 'light' ? 'rgba(197, 197, 197, 0.47)' : 'rgba(170, 170, 170, 0.19)';

@@ -1,51 +1,47 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { supabase } from '../../../services/supabase';
 import {
   Box, Button, TextField, Typography,
-  Alert, Paper, CircularProgress, Divider,
+  Paper, CircularProgress, Divider, Dialog,
+  DialogActions, DialogTitle, DialogContent
 } from '@mui/material';
 import BusinessIcon from '@mui/icons-material/Business';
-import {  useSelector } from 'react-redux';
-import type { RootState } from '../../../store/store';
+import {  useDispatch, useSelector } from 'react-redux';
+import type { AppDispatch, RootState } from '../../../store/store';
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import IconButton from "@mui/material/IconButton";
 import InputAdornment from "@mui/material/InputAdornment";
+import ErrorAlert from '../../../components/Error';
+import { useAuth } from '../../../hooks/useAuth';
+import { signUp } from '../../../store/userSlice';
 
 
 export default function Register() {
   const navigate = useNavigate();
+  const dispatch = useDispatch<AppDispatch>();
+  const { loading, error } = useAuth();
   const themeMode = useSelector((state: RootState) => state.ui.themeMode);
   const [showPassword, setShowPassword] = useState(false);
+  const [openRedirect, setOpenRedirect] = useState(false);
 
   const [form, setForm] = useState({
-    orgName: '',
-    name: '',
     email: '',
     password: '',
-    confirmPassword: '',
+    first_name: '',
+    last_name: '',
+    org_name: ''
+    
   });
 
-  const formatName = (text: string) => {
-    let value = text
-      .replace(/[^a-zA-Z\s.]/g, '')
-      .replace(/\s+/g, ' ')
-      .trim()
-      .toLowerCase()
-      .replace(/\b\w/g, (char) => char.toUpperCase());
+  const handleCloseRedirect = () => {
+    setOpenRedirect(false);
+  }
 
-    value = value.replace(/\bJr\b/g, 'Jr.');
-    value = value.replace(/\bSr\b/g, 'Sr.');
-    value = value.replace(/\b(I|Ii|Iii|Iv|V|Vi|Vii|Viii|Ix|X)\b/g,
-      (m) => m.toUpperCase()
-    );
+  const handleRedirect = () => {
+    navigate('/login')
+  }
 
-    return value;
-  };
-
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -53,70 +49,18 @@ export default function Register() {
 
 
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setError('');
+    e.preventDefault();
+  
+    if (loading) return;
 
-  if (!form.orgName.trim()) {
-    setError('Organization name is required');
-    return;
+    try {
+      await  dispatch(signUp(form)).unwrap();
+
+      setOpenRedirect(true);
+    } catch  {
+      //Error in State
+    };
   }
-  if (!form.name.trim()) {
-    setError('Your name is required');
-    return;
-  }
-  if (form.password.length < 12) {
-    setError('Password must be at least 12 characters that include uppercase letter, number, and symbol');
-    return;
-  }
-  if (form.password !== form.confirmPassword) {
-    setError('Passwords do not match');
-    return;
-  }
-
-  setLoading(true);
-
-  try {
-    const orgId = crypto.randomUUID();
-
-    const { data, error: signUpError } = await supabase.auth.signUp({
-      email: form.email,
-      password: form.password,
-      options: {
-        data: {
-          name: formatName(form.name.trim()),
-          role: 'admin',
-          org_id: orgId,          
-          org_name: form.orgName.trim(),
-        },
-      },
-    });
-
-    if (signUpError) throw signUpError;
-    if (!data.user) throw new Error('User creation failed');
-
-
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .update({
-        name: form.name.trim(),
-        role: 'admin',
-        org_id: orgId,
-        org_name: form.orgName.trim(),
-      })
-      .eq('id', data.user.id);
-
-    if (profileError) throw profileError;
-
-    navigate('/app/dashboard');
-  } catch (err) {
-    if (err instanceof Error) {
-    setError(err.message);
-    } else {
-      setError('Registration failed. Please try again.');
-    }
-  };
-
-}
 
   const BACKGROUNDCOLOR = themeMode === 'light' ? 'rgba(255, 255, 255, 0.73)' : 'rgba(34, 34, 34, 0.4)';
 
@@ -157,12 +101,14 @@ export default function Register() {
             your organization and can invite your team after setup.
           </Typography>
         </Box>
-
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        )}
+        <Box sx={{my: 2}}>
+          {error && (
+            <ErrorAlert
+              message={error}
+            />
+          )}
+        </Box>
+        
 
         <Box component="form" onSubmit={handleSubmit}>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -170,8 +116,8 @@ export default function Register() {
 
             <TextField
               label="Organization name"
-              name="orgName"
-              value={form.orgName}
+              name="org_name"
+              value={form.org_name}
               onChange={handleChange}
               placeholder="e.g. Acme Sales Team"
               required
@@ -183,9 +129,17 @@ export default function Register() {
 
 
             <TextField
-              label="Your full name"
-              name="name"
-              value={form.name}
+              label="Your first name"
+              name="first_name"
+              value={form.first_name}
+              onChange={handleChange}
+              required
+              fullWidth
+            />
+            <TextField
+              label="Your last name"
+              name="last_name"
+              value={form.last_name}
               onChange={handleChange}
               required
               fullWidth
@@ -221,34 +175,13 @@ export default function Register() {
                 ),
               }}
             />
-            <TextField
-              label="Confirm password"
-              name="confirmPassword"
-              type={showPassword ? "text" : "password"}
-              value={form.confirmPassword}
-              onChange={handleChange}
-              required
-              fullWidth
-               InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      onClick={() => setShowPassword((prev) => !prev)}
-                      edge="end"
-                    >
-                      {showPassword ? <VisibilityOff /> : <Visibility />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-            />
 
             <Button
               type="submit"
               variant="contained"
               fullWidth
               size="large"
-              disabled={loading}
+              disabled={loading || !form.email || !form.first_name || !form.last_name || !form.last_name || !form.password}
             >
               {loading
                 ? <CircularProgress size={22} color="inherit" />
@@ -272,7 +205,7 @@ export default function Register() {
             🔑 Are you an agent?
           </Typography>
           <Typography variant="caption" color="text.secondary">
-            Ask your admin for your Employee ID and login credentials.
+            Ask your admin for your login credentials.
             Agents do not register here.
           </Typography>
         </Box>
@@ -289,6 +222,29 @@ export default function Register() {
           </Link>
         </Typography>
       </Paper>
+      <Dialog open={openRedirect} onClose={handleCloseRedirect}>
+        <DialogTitle sx={{fontWeight: 700}}>
+          Register Successful
+        </DialogTitle>
+        <DialogContent
+          >
+            The email confirmation is sent in your email, Proceed to login?
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseRedirect}>
+              No
+            </Button>
+            <Button 
+              variant="contained"
+              color="error"
+              onClick={() => {
+                handleRedirect();
+              }}
+            >
+              Yes
+            </Button>
+          </DialogActions>
+      </Dialog>
     </Box>
   );
 }

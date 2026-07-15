@@ -1,9 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useRole } from '../../../hooks/useRole';
 import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '../../../store/store';
 import { toggleTheme, setTheme } from '../../../store/uiSlice';
-import { useAuthContext } from '../../../hooks/useAuthContext';
+import { useAuth } from '../../../hooks/useAuth';
 import { stripeApi } from '../../../services/backendApi';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { useNavigate } from 'react-router-dom';
@@ -64,7 +63,7 @@ interface Subscription {
 
 export default function Settings() {
   const dispatch = useDispatch<AppDispatch>();
-  const { user } = useAuthContext();
+  const { user, isAdmin } = useAuth();
   const navigate = useNavigate();
   const themeMode = useSelector((state: RootState) => state.ui.themeMode);
 
@@ -78,7 +77,6 @@ export default function Settings() {
   const [portalLoading, setPortalLoading] = useState(false);
   const [agents, setAgents] = useState<Profile[]>([]);
   const [agentsLoading, setAgentsLoading] = useState(false);
-  const { profile: adminProfile, isAdmin } = useRole();
   const [createOpen, setCreateOpen] = useState(false);
   const [createForm, setCreateForm] = useState({
     name: '',
@@ -147,10 +145,10 @@ export default function Settings() {
   }
 
   const loadAgents = useCallback(async () => {
-    if (!adminProfile?.org_id) return;
+    if (!user?.org_id) return;
     setAgentsLoading(true);
     try {
-      const data = await fetchAgentsFromDB(adminProfile.org_id);
+      const data = await fetchAgentsFromDB(user.org_id);
       setAgents(data);
     } catch (err) {
       if (err instanceof Error) {
@@ -161,7 +159,7 @@ export default function Settings() {
     } finally {
       setAgentsLoading(false);
     }
-  }, [adminProfile?.org_id]);
+  }, [user?.org_id]);
 
   useEffect(() => {
     if (isAdmin) loadAgents();
@@ -181,7 +179,7 @@ export default function Settings() {
   };
 
   const handleCreateAgent = async () => {
-    if (!adminProfile?.org_id) return;
+    if (!user?.org_id) return;
     setCreateError('');
 
     // Validate

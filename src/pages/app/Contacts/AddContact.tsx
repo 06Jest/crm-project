@@ -14,72 +14,30 @@ import {
   Typography,
 } from "@mui/material";
 
-import { addContact } from "../../../store/contactsSlice";
+import { addContact, clearError } from "../../../store/contactsSlice";
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import type { ContactStatus, Gender, Priority, ContactSource } from "../../../types/contact";
+import { CONTACT_STATUSES, type ContactStatus} from "../../../types/contact";
+import { GENDERS, PRIORITIES, SOURCES, SUFFIXES, type Gender, type Priority, type Source, type Suffix } from "../../../types/global";
+import ErrorAlert from "../../../components/Error";
 
-const STATUS_OPTIONS: ContactStatus[] = [
-  "Contacted",
-  "Qualified",
-  "Opportunity",
-  "Customer",
-  "Inactive",
-  "Lost",
-  "Churned",
-];
-
-const SOURCE_OPTIONS: ContactSource[] = [
-  "Website",
-  "Referral",
-  "Facebook",
-  "Instagram",
-  "LinkedIn",
-  "Google Search",
-  "Google Ads",
-  "Email Campaign",
-  "Cold Call",
-  "Trade Show",
-  "Webinar",
-  "Partner",
-  "Walk-in",
-  "WhatsApp",
-  "Messenger",
-  "Personal Network",
-  "Direct Conversation",
-  "Networking Event",
-  "Conference",
-  "Friend",
-  "Family",
-  "Other",
-]
-
-const GENDER: Gender[] = [
-  "Male",
-  "Female",
-  "Prefer not to say",
-];
-const PRIORITY: Priority[] = [
-  "Highest",
-  "High",
-  "Low",
-];
 
 export default function AddContact() {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const themeMode = useSelector((state: RootState) => state.ui.themeMode);
+   const { loading, error} = useSelector((state:RootState) => state.contacts);
 
   const [form, setForm] = useState({
     first_name: "",
     last_name: "",
-    suffix: "",
-    email: "",
-    phone: "",
+    suffix: null as Suffix,
+    email: null,
+    phone: null,
     gender: "Prefer not to say" as Gender,
     birth_date: null,
     company_name: "",
     position: "",
-    source: "Other" as ContactSource,
+    source: "Other" as Source,
     status: "Contacted" as ContactStatus,
     priority: "Low" as Priority,
   });
@@ -93,31 +51,33 @@ export default function AddContact() {
       })
   };
 
+
+
   const handleSubmit = async () => {
-    const birthday =
-      form.birth_date === ''
-        ? null
-        : form.birth_date;
+    if (loading) return;
 
-    const newContact = {
-      first_name: form.first_name,
-      last_name: form.last_name,
-      suffix: form.suffix,
-      email: form.email,
-      phone: form.phone,
-      gender: form.gender,
-      birth_date: birthday,
-      company_name: form.company_name,
-      position: form.position,
-      source: form.source,
-      status: form.status,
-      created_at: new Date().toISOString(),
-      priority: form.priority,
-    };
+    try {
+      const newContact = {
+        first_name: form.first_name,
+        last_name: form.last_name,
+        suffix: form.suffix,
+        email: form.email!,
+        phone: form.phone!,
+        gender: form.gender,
+        birth_date: form.birth_date,
+        company_name: form.company_name,
+        position: form.position,
+        source: form.source,
+        status: form.status,
+        priority: form.priority,
+      };
 
-    await dispatch(addContact(newContact));
+      await dispatch(addContact(newContact)).unwrap();
 
-    navigate(`/app/contacts`);
+      navigate("/app/contacts");
+    } catch  {
+      //Error in state
+    }
   };
     
 
@@ -137,11 +97,21 @@ export default function AddContact() {
     >
       <Button 
         startIcon={<ArrowBackIcon/>}
-        onClick={() => navigate('/app/contacts')}
+        onClick={() => {
+          dispatch(clearError());
+          navigate('/app/contacts')
+        } }
         sx={{ alignSelf: 'start'}}>
         Back to contacts
       </Button>
-
+      <Box sx={{alignSelf: 'center'}}>
+        {error && (
+        <ErrorAlert
+          message={error}
+        />
+      )}
+      </Box>
+      
         <Box sx={{
           display: "flex",
           flexDirection: 'column',
@@ -151,6 +121,7 @@ export default function AddContact() {
           p: 2,
           gap: 1,
         }}>
+          
           <Typography variant="h5" fontWeight={700}>
           Personal Details
           </Typography>
@@ -191,16 +162,34 @@ export default function AddContact() {
             gap: 1,
           }}>
             <TextField
+              select
               label="Suffix"
               name="suffix"
               onChange={handleChange}
+              value={form.suffix}
               size="small"
               sx={{
                 fontSize: 13,
                 width: '50%'
               }}
-            />
-
+              slotProps={{
+                select: {
+                  MenuProps: {
+                    PaperProps: {
+                      sx: {
+                        maxHeight: 250,
+                      },
+                    },
+                  },
+                },
+              }}
+            >
+            {SUFFIXES.map((suffix) => (
+                <MenuItem key={suffix} value={suffix}>
+                  {suffix}
+                </MenuItem>
+              ))}
+            </TextField>
             <TextField
               label="Phone"
               name="phone"
@@ -220,7 +209,6 @@ export default function AddContact() {
             name="email"
             required
             value={form.email}
-            error={form.email.length > 0 && form.email.length < 3}
             onChange={handleChange}
             size="small"
             sx={{
@@ -245,7 +233,7 @@ export default function AddContact() {
                 width: '50%',
               }}
             >
-            {GENDER.map((gender) => (
+            {GENDERS.map((gender) => (
               <MenuItem key={gender} value={gender}>
                 {gender}
               </MenuItem>
@@ -328,7 +316,7 @@ export default function AddContact() {
                 fontSize: 13,
               }}
             >
-              {SOURCE_OPTIONS.map((source) => (
+              {SOURCES.map((source) => (
                 <MenuItem key={source} value={source}>
                   {source}
                 </MenuItem>
@@ -346,7 +334,7 @@ export default function AddContact() {
                 width: '50%'
               }}
             >
-              {STATUS_OPTIONS.map((status) => (
+              {CONTACT_STATUSES.map((status) => (
                 <MenuItem key={status} value={status}>
                   {status}
                 </MenuItem>
@@ -365,7 +353,7 @@ export default function AddContact() {
                 width: '50%'
               }}
             >
-              {PRIORITY.map((prio) => (
+              {PRIORITIES.map((prio) => (
                 <MenuItem key={prio} value={prio}>
                   {prio}
                 </MenuItem>

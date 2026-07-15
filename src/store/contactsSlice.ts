@@ -1,6 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import type { Contact } from "../types/contact"
-import { supabase  } from "../services/supabase";
+import type { AddContact, ContactsState, UpdateContact } from "../types/contact"
 import {
   fetchContactsAPI,
   addContactAPI,
@@ -9,14 +8,6 @@ import {
   deleteContactAPI,
 } from '../services/contactService';
 
-
-
-interface ContactsState {
-  items: Contact[];
-  loading: boolean;
-  loaded: boolean;
-  error: string | null;
-}
 
 const initialState: ContactsState = {
   items: [],
@@ -27,9 +18,9 @@ const initialState: ContactsState = {
 
 export const fetchContacts = createAsyncThunk(
   'contacts/fetchAll',
-  async (token: string, thunkAPI) => {
+  async (_, thunkAPI) => {
     try {
-      return await fetchContactsAPI(token);
+      return await fetchContactsAPI();
     }  catch (err) {
       if (err instanceof Error) {
         return thunkAPI.rejectWithValue(err.message);
@@ -45,28 +36,9 @@ export const fetchContacts = createAsyncThunk(
 export const addContact = createAsyncThunk(
   'contacts/add',
   async (
-      contact: Omit<
-        Contact,
-        'id' |
-        'lead_id' |
-        'created_at' |
-        'owner_id' |
-        'org_id' |
-        'owner_name' |
-        'deleted_at' |
-        'deleted_by' |
-        'updated_by'
-      >, thunkAPI) => {
+      contact: AddContact, thunkAPI) => {
     try {
-
-      const {data: { session }} = await supabase.auth.getSession();
-      const token = session?.access_token;
-      
-      if (!token) {
-        throw new Error('No token found');
-      }
-
-      return await addContactAPI(token, contact);
+      return await addContactAPI(contact);
     } catch (err) {
       if (err instanceof Error) {
         return thunkAPI.rejectWithValue(err.message);
@@ -82,28 +54,9 @@ export const addContact = createAsyncThunk(
 export const addContactFromLeads = createAsyncThunk(
   'contacts/move',
   async (
-      contact: Omit<
-        Contact,
-        'id' |
-        'created_at' |
-        'owner_id' |
-        'org_id' |
-        'status' |
-        'owner_name' |
-        'deleted_at' |
-        'deleted_by' |
-        'updated_by'
-      >, thunkAPI) => {
+      contact: AddContact, thunkAPI) => {
     try {
-
-      const {data: { session }} = await supabase.auth.getSession();
-      const token = session?.access_token;
-      
-      if (!token) {
-        throw new Error('No token found');
-      }
-
-      return await addContactFromLeadsAPI(token, contact);
+      return await addContactFromLeadsAPI(contact);
     } catch (err) {
       if (err instanceof Error) {
         return thunkAPI.rejectWithValue(err.message);
@@ -120,28 +73,10 @@ export const updateContact = createAsyncThunk(
   'contacts/update',
   async ({id, contact}:{
       id: string;
-      contact: 
-      Omit<
-        Contact,
-        'id' |
-        'lead_id' |
-        'created_at' |
-        'owner_id' |
-        'org_id' |
-        'owner_name' |
-        'deleted_at' |
-        'deleted_by' |
-        'updated_by'
-    >;},thunkAPI) => {
+      contact: UpdateContact
+    },thunkAPI) => {
     try {
-
-      const {data: { session }} = await supabase.auth.getSession();
-      const token = session?.access_token;
-
-      if (!token) {
-        throw new Error('No token found');
-      }
-      return await updateContactAPI(token, id, contact);
+      return await updateContactAPI( id, contact);
     } catch (err) {
       if (err instanceof Error) {
         return thunkAPI.rejectWithValue(err.message);
@@ -158,14 +93,7 @@ export const deleteContact = createAsyncThunk(
   'contacts/delete',
   async (id: string, thunkAPI) => {
     try {
-
-      const {data: { session }} = await supabase.auth.getSession();
-      const token = session?.access_token;
-
-      if (!token) {
-        throw new Error('No token found');
-      }
-      return await deleteContactAPI(token, id);
+      return await deleteContactAPI(id);
     } catch (err) {
       if (err instanceof Error) {
         return thunkAPI.rejectWithValue(err.message);
@@ -183,7 +111,11 @@ export const deleteContact = createAsyncThunk(
 const contactsSlice = createSlice({
   name: 'contacts',
   initialState,
-  reducers: {},
+  reducers: {
+     clearError(state) {
+      state.error = null;
+    },
+  },
 
 
   extraReducers: (builder) => {
@@ -204,46 +136,73 @@ const contactsSlice = createSlice({
     })
 
 
+    builder.addCase(addContact.pending, (state) => {
+      state.loading = true;
+      state.error = null;
+    });
 
     builder.addCase(addContact.fulfilled, (state, action) => {
       state.items.unshift(action.payload);
+      state.loading = false;
     });
 
     builder.addCase(addContact.rejected, (state, action) => {
       state.error = action.payload as string;
+      state.loading = false;
+    });
+
+
+    builder.addCase(addContactFromLeads.pending, (state) => {
+      state.loading = true;
+      state.error = null;
     });
 
     builder.addCase(addContactFromLeads.fulfilled, (state, action) => {
+      state.loading = false;
       state.items.unshift(action.payload);
     });
 
     builder.addCase(addContactFromLeads.rejected, (state, action) => {
       state.error = action.payload as string;
+      state.loading = false;
     });
 
 
+    builder.addCase(updateContact.pending, (state) => {
+      state.loading = true;
+      state.error = null;
+    });
 
     builder.addCase(updateContact.fulfilled, (state, action) => {
       const index = state.items.findIndex(c => c.id === action.payload.id);
       if(index !== -1) state.items[index] = action.payload;
+      state.loading = false;
     });
 
     builder.addCase(updateContact.rejected, (state, action) => {
       state.error = action.payload as string
+      state.loading = false;
     });
 
 
 
+    builder.addCase(deleteContact.pending, (state) => {
+      state.loading = true;
+      state.error = null;
+    });
+
     builder.addCase(deleteContact.fulfilled, (state, action) => {
       state.items = state.items.filter(c => c.id !== action.payload);
+      state.loading = false;
     });
 
     builder.addCase(deleteContact.rejected, (state, action) => {
       state.error = action.payload as string;
+      state.loading = false;
     });
   },
 
 });
-
+export const {  clearError } = contactsSlice.actions;
 export default contactsSlice.reducer;
 

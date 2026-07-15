@@ -9,7 +9,7 @@ import {
   deleteCustomer,
 } from '../../../store/customersSlice';
 import type { Customer, CustomerStatus } from '../../../types/customer';
-import { useAuthContext } from '../../../hooks/useAuthContext';
+import { useAuth } from '../../../hooks/useAuth';
 import { geocodeAddress } from '../../../services/customerService';
 
 import {
@@ -73,7 +73,7 @@ export default function Customers() {
 
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-  const { user } = useAuthContext();
+  const { user } = useAuth();
 
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm);

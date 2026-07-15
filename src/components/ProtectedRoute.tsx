@@ -1,9 +1,9 @@
-import  { useAuthContext } from '../hooks/useAuthContext';
 import { Navigate, Outlet } from 'react-router-dom';
 import { Box, CircularProgress } from '@mui/material'
+import { useAuth } from '../hooks/useAuth';
 
 export default function ProtectedRoute() {
-  const { session, loading } = useAuthContext();
+  const { user, loading} = useAuth();
 
   if (loading) {
     return (
@@ -20,9 +20,8 @@ export default function ProtectedRoute() {
     )
   }
 
-  if(!session) {
-    return <Navigate to="login" replace />
+  if(!user) {
+    return <Navigate to="/login" replace />
   }
-
   return <Outlet />
 }

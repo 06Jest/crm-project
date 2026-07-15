@@ -15,8 +15,7 @@ interface ErrorAlertProps {
 
 export default function ErrorAlert({
   message,
-  title = 'Error',
-  duration = 5000,
+  duration = 3000,
 }: ErrorAlertProps) {
   const [open, setOpen] = useState(true);
 
@@ -30,10 +29,10 @@ export default function ErrorAlert({
 
   return (
     <Collapse in={open}>
-      <Box sx={{ mb: 2, width: 250  }}>
+      <Box sx={{ display: 'flex', justifyContent: 'center', width: '100%'  }}>
         <Alert
           severity="error"
-          variant="filled"
+          variant="outlined"
           elevation={6}
           action={
             <IconButton
@@ -48,9 +47,10 @@ export default function ErrorAlert({
             borderRadius: 3,
             fontWeight: 500,
             boxShadow: 3,
+            width: '100%',
           }}
         >
-          {title}: {message}
+          {message}
         </Alert>
       </Box>
     </Collapse>
