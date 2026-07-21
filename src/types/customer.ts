@@ -1,24 +1,40 @@
-export type CustomerStatus = 'Active' | 'Inactive' | 'Prospect';
+
+
+export interface CustomerState {
+  items: CustomerListItem[];
+  loading: boolean;
+  loaded: boolean;
+  error: string | null;
+}
+
+export const CUSTOMER_STATUSES = [
+   "Active",
+   "Inactive",
+   "At Risk",
+   "Churned"
+] as const;
+
+export type CustomerStatus = typeof CUSTOMER_STATUSES[number];
 
 export interface Customer {
   id: string;
-  name: string;
-  company: boolean;
-  company_name: string;
-  position: string;
-  industry?: string;
-  website?: string;
-  email?: string;
-  phone?: string;
-  address?: string;
-  city?: string;
-  country?: string;
-  latitude?: number;
-  longitude?: number;
+  contact_id: string;
   notes?: string;
-  status: string;
-  user_id?: string;
+  status: CustomerStatus;
+  owner_id: string;
   org_id?: string;          
-  account_manager?: string;  
-  created_at?: string;
+  created_at: string;
+  deleted_at: string | null;
+  deleted_by: string | null;
+  updated_by: string | null;
 }
+
+export interface CustomerListItem extends Customer{
+
+  owner: {
+      id: string;
+      first_name: string;
+      last_name: string;
+  };
+}
+

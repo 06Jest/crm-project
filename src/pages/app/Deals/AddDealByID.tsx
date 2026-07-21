@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch } from "../../../store/store";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { type RootState } from "../../../store/store";
 
 import {
@@ -9,7 +9,6 @@ import {
   Paper,
   TextField,
   Button,
-  MenuItem,
   Typography,
 } from "@mui/material";
 
@@ -17,22 +16,24 @@ import { fetchContactsLists } from "../../../store/contactsSlice";
 import {  type DealStage } from '../../../types/deal';
 import { addDeal, clearError } from "../../../store/dealsSlice";
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import type { Contact } from "../../../types/contact";
 import ErrorAlert from "../../../components/Error";
 import { useAuth } from "../../../hooks/useAuth";
+import { formatName } from "../../../utils/formatText";
 
 
-export default function AddContact() {
-  const { items: contacts, loaded, loading, error} = useSelector((state:RootState) => state.contacts);
-  const { loading:  loadingDeals,error: errorDeals} = useSelector((state:RootState) => state.deals);
+export default function AddDealByID() {
+  const { id } = useParams<{id: string }>();
+  const contact = useSelector((state: RootState) =>
+    state.contacts.items.find((c) => c.id === id)
+  );
+  const { loading, error} = useSelector((state:RootState) => state.deals);
   const { user, loading: userLoading } = useAuth();
   const dispatch = useDispatch<AppDispatch>();
-  const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
+
   const navigate = useNavigate();
   // const themeMode = useSelector((state: RootState) => state.ui.themeMode);
 
   const [form, setForm] = useState({
-    contact_id: null,
     title: "",
     stage: 'Prospecting' as DealStage,
     notes: "",
@@ -41,16 +42,16 @@ export default function AddContact() {
    
 
   useEffect(() => {
-    if (userLoading || loading) return;
+    if (userLoading ) return;
 
     const loadData = async () => {
 
-      if (user && !loaded) {
+      if (user ) {
         await dispatch(fetchContactsLists()).unwrap();
       }
     };
     loadData();
-  }, [userLoading, loaded, loading, user, dispatch]);
+  }, [userLoading, user, dispatch]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -59,23 +60,15 @@ export default function AddContact() {
       ...form,
       [name]: value,
     });
-
-    if (name === "contact_id") {
-      const contact = contacts.find((c) => c.id === value);
-
-      if (contact) {
-        setSelectedContact(contact);
-      }
-    }
   };
 
   const handleSubmit = async () => {
-    
-    if (loadingDeals) return;
+    if (!id) return;
+    if (loading) return;
 
     try {
        const newDeal = {
-        contact_id: form.contact_id!,
+        contact_id: id,
         title: form.title,
         stage: form.stage,
         notes: form.notes,
@@ -118,18 +111,18 @@ export default function AddContact() {
             startIcon={<ArrowBackIcon/>}
             onClick={() => {
               dispatch(clearError())
-              navigate('/app/deals')
+              navigate(`/app/contacts/${id}`)
             }}
             sx={{ alignSelf: 'start', ml: '-40px'}}>
             Back
           </Button>
-           <Box sx={{width: '100%'}}>
-              {error || errorDeals  && (
-                <ErrorAlert
-                  message={error || errorDeals}
-                />
-              )}
-            </Box>
+          <Box sx={{width: '100%'}}>
+            {error &&(
+              <ErrorAlert
+                message={error }
+              />
+            )}
+          </Box>
           <Typography variant="h5" fontWeight={700}>
           Add Deal
           </Typography>
@@ -141,27 +134,15 @@ export default function AddContact() {
             gap: 1,
           }}>        
             <TextField
-              select
-              required
-              label="Contact"
+              disabled
+              label= {formatName(contact?.first_name, contact?.last_name)}
               name="contact_id"
-              value={selectedContact?.first_name}
-              onChange={handleChange}
               size="small"
               sx={{
                 fontSize: 13,
                 width: '50%'
               }}
-            >
-              {contacts.map((contact) => {
-                const fullname = `${contact.first_name} ${contact.last_name} ${contact.suffix ? contact.suffix : ''}`
-                return (
-                <MenuItem key={contact.id} value={contact.id}>
-                  {fullname}
-                </MenuItem>
-                )
-              })}
-            </TextField>
+            />
             <TextField
                 required
                 label="Value"
@@ -212,7 +193,7 @@ export default function AddContact() {
             <Button
               variant="contained"
               fullWidth
-              disabled={!form.contact_id || !form.title || !form.stage || !form.value}
+              disabled={ !form.title || !form.stage || !form.value}
               onClick={handleSubmit}
               sx={{
                 backgroundColor: 'primary.main'

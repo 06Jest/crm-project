@@ -7,6 +7,8 @@ export const getTheme = (mode: PaletteMode) =>
       mode,
       primary:{
         main: '#AD7450',
+        light: '#ebaa82',
+        dark: '#775038',
       },
 
       background: {

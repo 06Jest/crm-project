@@ -38,6 +38,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import ResetPassword from './pages/auth/ForgotPassword/ResetPassword';
 import CompanyProfile from './pages/app/Company/CompanyProfile';
 import { useSidebar } from '../src/hooks//useSidebar';
+import AddDealByID from './pages/app/Deals/AddDealByID';
 
 
 
@@ -81,6 +82,7 @@ function AppRoutes() {
             <Route path="/app/contacts/:id" element={<ContactDetail />} />
             <Route path="/app/deals" element={<Deals />} />
             <Route path="/app/adddeal" element={<AddDeal />} />
+            <Route path="/app/adddeal/:id" element={<AddDealByID />} />
             <Route path="/app/activities" element={<Activities />} /> 
             <Route path="/app/customers" element={<Customers />} />
             <Route path="/app/customers/leaderboard" element={<CustomerLeaderboard />} />

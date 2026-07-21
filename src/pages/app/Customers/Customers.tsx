@@ -1,444 +1,334 @@
-import { useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
-import LeaderboardIcon from '@mui/icons-material/Leaderboard';
-import type { AppDispatch, RootState } from '../../../store/store';
-import {
-  fetchCustomers,
-  addCustomer,
-  deleteCustomer,
-} from '../../../store/customersSlice';
-import type { Customer, CustomerStatus } from '../../../types/customer';
-import { useAuth } from '../../../hooks/useAuth';
-import { geocodeAddress } from '../../../services/customerService';
+import { useDispatch, useSelector } from "react-redux";
+import type { AppDispatch, RootState } from "../../../store/store";
+import { DataGrid, type GridColDef, useGridApiRef, type GridRowSelectionModel } from '@mui/x-data-grid';
+// import { useSidebar } from "../../../hooks/useSidebar";
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../../hooks/useAuth";
+
 
 import {
-  Box, Typography, Button, Card, CardContent,
-  Grid, Dialog, DialogTitle, DialogContent,
-  DialogActions, TextField, MenuItem, Alert,
-  CircularProgress, Chip, IconButton, Avatar,
-  InputAdornment,
-} from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
+  Box,
+  Button,
+  Paper,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  CircularProgress,
+  Typography,
+} from "@mui/material";
+//import LockIcon from '@mui/icons-material/Lock';
 import DeleteIcon from '@mui/icons-material/Delete';
-import SearchIcon from '@mui/icons-material/Search';
-import LocationOnIcon from '@mui/icons-material/LocationOn';
-import LanguageIcon from '@mui/icons-material/Language';
-import BusinessIcon from '@mui/icons-material/Business';
+// import SearchIcon from '@mui/icons-material/Search';
+import { useState } from "react";
+import ErrorAlert from "../../../components/Error";
+import { formatName } from "../../../utils/formatText";
+import { formatRelativeTime } from "../../../utils/formatTime";
+import type { CustomerStatus } from "../../../types/customer";
+import { fetchContactsLists } from "../../../store/contactsSlice";
+import { deleteBulkCustomers, fetchCustomersLists } from "../../../store/customersSlice";
+import { fetchDealsLists } from "../../../store/dealsSlice";
 
-const INDUSTRIES = [
-  'Technology', 'Healthcare', 'Finance', 'Retail',
-  'Manufacturing', 'Education', 'Real Estate',
-  'Hospitality', 'Transportation', 'Other',
+
+const STATUS_COLORS: Record<CustomerStatus, string> = {
+  Active: '#84e77c',
+  Inactive: '#e0e255',
+  "At Risk": '#db9513',  
+  Churned: '#ee5858',
+}
+
+const getColumns = (
+  navigate: ReturnType<typeof useNavigate>
+): GridColDef[] => [
+  {
+    field: 'name',
+    headerName: 'Name',
+    sortable: true,
+    flex: 1,
+    renderCell: (params) => (
+    <Typography sx={{display: 'flex', alignItems: 'center', height: '100%'}} color="primary">
+      {params.value}
+    </Typography>
+    ),
+  },
+  { field: 'email', headerName: 'Email', flex: 1,},
+  { field: 'phone', headerName: 'Phone', flex: 1, },
+  { field: 'status', 
+    headerName: 'Status', 
+    flex: 1,
+    display: 'flex',
+    align: 'left',
+    renderCell: ({ value }) => (
+      <Box sx={{
+        my: '-2px', 
+        px: '8px',
+        py: '2px',
+        fontSize: '11px',
+        fontWeight: 700,
+        color: '#252525e7',
+        letterSpacing: '1px',
+        borderRadius: 3, 
+        backgroundColor: STATUS_COLORS[value as CustomerStatus]}}>
+        {value}
+    </Box>
+    ),
+  },
+  { field: 'open_deals', headerName: 'Open Deals', flex: 1 },
+  { field: 'preferred_contact_time', headerName: 'Preferred time', flex: 1 },
+  { field: 'owner_name', headerName: 'Owner',  flex: 1 },
+  {
+    field: 'created_at',
+    headerName: 'Since',
+    flex: 1,
+    valueGetter: (value) =>
+      value
+        ? formatRelativeTime(new Date(value))
+        : '',
+  },
+  { field: 'action', 
+    headerName: 'Action', 
+    width: 100, 
+    align: 'center',
+    headerAlign: 'center',
+    flex: 1,
+    renderCell: ({ value }) => (
+      <Box sx={{display: 'flex', justifyContent: 'center', alignItems: 'center', paddingTop: '4px'}}>
+        <Button 
+        onClick={() => navigate(`/app/customers/${value}`)}
+        sx={{
+          py: '1px',
+          backgroundColor: 'primary.main',
+          color: 'white',
+          fontSize: '11px',
+          '&:hover': {
+            backgroundColor: 'primary.dark',
+          },
+        }}>
+        View
+    </Button>
+      </Box>
+    )
+  }
 ];
 
-const STATUS_COLORS: Record<CustomerStatus,
-'success' | 'error' | 'warning'
-> = {
-  Active: 'success',
-  Inactive: 'error',
-  Prospect: 'warning',
-};
+const paginationModel = { page: 0, pageSize: 10 };
 
-type FormState = {
-  name: string;
-  industry: string;
-  website: string;
-  email: string;
-  phone: string;
-  address: string;
-  city: string;
-  country: string;
-  notes: string;
-  status: CustomerStatus;
-};
-
-const emptyForm: FormState = {
-  name: '',
-  industry: '',
-  website: '',
-  email: '',
-  phone: '',
-  address: '',
-  city: '',
-  country: '',
-  notes: '',
-  status: 'Active',
-};
 
 export default function Customers() {
-  const { items: customers, loading, error  } = useSelector(
-    (state: RootState) => state.customers
-  );
-
+  const { isAuthenticated } = useAuth();
+  const { items: contacts,  loaded: contactsLoaded } = useSelector((state:RootState) => state.contacts);
+  const { items: deals,  loaded: dealsLoaded } = useSelector((state:RootState) => state.deals);
+  const { items: customers, loading, loaded, error} = useSelector((state:RootState) => state.customers);
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const apiRef = useGridApiRef();
+  const [selectedRows, setSelectedRows] = useState<GridRowSelectionModel>({
+    type: "include",
+    ids: new Set(),
+  });
 
-  const [open, setOpen] = useState(false);
-  const [form, setForm] = useState<FormState>(emptyForm);
-  const [search, setSearch] = useState('');
-  const [geocoding, setGeocoding] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [customerToDelete, setCustomerToDelete] = useState<Customer | null> (null);
+  const columns = getColumns(navigate);
+  
+  const rows = customers.map(customer => {
+    const c = contacts.find(contact => 
+      contact.id === customer.contact_id
+    );
 
-  useEffect(() => {
-    dispatch(fetchCustomers());
-  },[dispatch]);
+    if (!c) return null;
+    
+    let dealsOpen = 0;
+      deals.forEach((deal) => {
+        if(deal.contact_id === customer.contact_id) {
+          if(deal.stage === 'Prospecting' || deal.stage === 'Negotiation' || deal.stage === 'Proposal' ) {
+            dealsOpen++
+          }
+        } 
+      })
 
-  const filteredCustomers = customers.filter((c) => 
-    c.name.toLowerCase().includes(search.toLowerCase()) ||
-    c.industry?.toLowerCase().includes(search.toLowerCase()) || 
-    c.city?.toLowerCase().includes(search.toLowerCase())
-  );
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });;
-  };
-
-  const handleSubmit = async () => {
-    setGeocoding(true);
-
-    let latitude: number | undefined;
-    let longitude: number | undefined;
-
-    const fullAddress = [form.address, form.city, form.country]
-    .filter(Boolean)
-    .join(', ');
-
-    if (fullAddress) {
-      const coords = await geocodeAddress(fullAddress);
-
-      if (coords) {
-        latitude = coords.latitude;
-        longitude = coords.longitude;
-      }
+    
+    return {
+      id: customer.id,
+      name: `${formatName(c.first_name, c.last_name)} ${c.suffix || ''}`,
+      email: c.email,
+      phone: c.phone,
+      status: customer.status,
+      open_deals: dealsOpen,
+      preferred_contact_time: c.preferred_contact_time,
+      owner_name: formatName(customer.owner.first_name, customer.owner.last_name),
+      created_at: customer.created_at,
+      action: customer.id
     }
+  });
 
-    setGeocoding(false);
+    
+  
+useEffect(() => {
+  if (!isAuthenticated) return;
+  // if (loading) return;
 
-    dispatch(addCustomer({
-      ...form,
-      latitude,
-      longitude,
-      user_id: user?.id || '',
-    }));
+  const loadData = async () => {
+    try {
+      const promises = [];
 
-    setOpen(false);
-    setForm(emptyForm);
+      if (!loaded) {
+        promises.push(dispatch(fetchCustomersLists()).unwrap());
+      }
+
+      if (!contactsLoaded) {
+        promises.push(dispatch(fetchContactsLists()).unwrap());
+      }
+
+      if (!dealsLoaded) {
+        promises.push(dispatch  (fetchDealsLists()).unwrap());
+      }
+
+      await Promise.all(promises);
+    } catch {
+      // Error handled by Redux state
+    }
   };
 
-  const handleDeleteClick = (customer: Customer) => {
-    setCustomerToDelete(customer);
-    setDeleteDialogOpen(true);
-  };
+  loadData();
+}, [
+  isAuthenticated,
+  loading,
+  loaded,
+  contactsLoaded,
+  dealsLoaded,
+  dispatch,
+]);
 
-  const handleDeleteConfirm = () => {
-    if (customerToDelete) dispatch(deleteCustomer(customerToDelete.id));
-    setDeleteDialogOpen(false);
-    setCustomerToDelete(null);
-  };
+
+const hasSelection =
+  selectedRows.type === "exclude" ||
+  selectedRows.ids.size > 0;
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 20, height: 850 }}>
         <CircularProgress />
       </Box>
     );
   }
-  
-  return (
-    <Box>
-      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-
-      <Box sx={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        mb: 3,
-        flexWrap: 'wrap',
-        gap: 2,
-      }}>
-        <Typography variant="h5" fontWeight={700}>
-          Customers
-        </Typography>
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          <Button
-            variant="outlined"
-            startIcon={<LeaderboardIcon />}
-            onClick={() => navigate('/app/customers/leaderboard')}
+    return (
+      <Box sx={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        flexDirection: 'rows',
+        flex: 1,
+        minWidth: 750,
+        p: 2,
+        mx: 2,
+        height: 850}}>
+          <Paper
+            sx={{
+              justifyContent: 'center',
+              p: 1,
+              pt: 0,
+              width: '50vw',
+              minWidth: 300,
+              transition: 'width 0.3s ease',
+              maxHeight:  1000,
+              display: 'flex',
+              flex: 1,
+              borderRadius: 3,
+              marginLeft: 1,
+              flexDirection: 'column',
+              overflow: 'auto'
+            }}
           >
-            Leaderboard
-          </Button>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => setOpen(true)}
-          >
-            Add customer
-          </Button>
-        </Box>
-      </Box>
-
-      <TextField
-        placeholder="Search by name, industry, or city..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        fullWidth
-        size="small"
-        sx={{ mb: 3 }}
-        InputProps={{
-          startAdornment: (
-            <InputAdornment position="start">
-              <SearchIcon color="action" />
-            </InputAdornment>
-          ),
-        }}
-      />
-
-      {filteredCustomers.length === 0 ? (
-        <Card elevation={0} sx={{ border: 1, borderColor: 'divider', borderRadius: 3 }}>
-          <CardContent sx={{ textAlign: 'center', py: 6 }}>
-            <BusinessIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 2 }} />
-            <Typography color="text.secondary">
-              {search ? 'No customers match your search' : 'No customers yet. Add your first one!'}
-            </Typography>
-          </CardContent>
-        </Card>
-      ) : (
-        <Grid container spacing={2}>
-          {filteredCustomers.map((customer) => (
-            <Grid sx={{ xs: 12, sm: 6, md: 4 }}  key={customer.id}>
-              <Card
-                elevation={0}
-                sx={{
-                  border: 1,
-                  borderColor: 'divider',
-                  borderRadius: 3,
-                  height: '100%',
-                  cursor: 'pointer',
-                  transition: 'transform 0.2s, box-shadow 0.2s',
-                  '&:hover': {
-                    transform: 'translateY(-2px)',
-                    boxShadow: 4,
-                  },
-                }}
-                onClick={() => navigate(`/app/customers/${customer.id}`)}
-              >
-                <CardContent>
-                  <Box sx={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'flex-start',
-                    mb: 2,
-                  }}>
-                    <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
-                      <Avatar sx={{ bgcolor: 'primary.main', width: 40, height: 40 }}>
-                        {customer.name[0].toUpperCase()}
-                      </Avatar>
-                      <Box>
-                        <Typography variant="body1" fontWeight={700} lineHeight={1.2}>
-                          {customer.name}
-                        </Typography>
-                        <Button
-                          size="small"
-                          variant="text"
-                          onClick={() => navigate(`/app/company/${customer.id}`)}
-                          startIcon={<BusinessIcon />}
-                        >
-                          Company profile
-                        </Button>
-                        {customer.industry && (
-                          <Typography variant="caption" color="text.secondary">
-                            {customer.industry}
-                          </Typography>
-                        )}
-                      </Box>
-                    </Box>
-                    <IconButton
-                      size="small"
-                      color="error"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteClick(customer);
-                      }}
-                    >
-                      <DeleteIcon fontSize="small" />
-                    </IconButton>
-                  </Box>
-
-                  <Chip
-                    label={customer.status}
-                    color={STATUS_COLORS[customer.status]}
-                    size="small"
-                    sx={{ mb: 1.5 }}
+            <Box sx={{display: 'flex', justifyContent: 'space-between', p: 2,}}>
+              <Typography variant="h5" fontWeight={700} margin={1} >Customers</Typography>
+              <Box sx={{
+                display: 'flex',
+                width: '50%',
+              }}>
+                <Box sx={{width: '100%'}}>
+                  {error  && (
+                  <ErrorAlert
+                    message={error}
                   />
-
-                  {(customer.city || customer.country) && (
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
-                      <LocationOnIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
-                      <Typography variant="caption" color="text.secondary">
-                        {[customer.city, customer.country].filter(Boolean).join(', ')}
-                      </Typography>
-                    </Box>
-                  )}
-
-                  {customer.website && (
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      <LanguageIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
-                      <Typography
-                        variant="caption"
-                        color="primary"
-                        sx={{ textDecoration: 'none' }}
-                        component="a"
-                        href={customer.website}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        {customer.website.replace(/^https?:\/\//, '')}
-                      </Typography>
-                    </Box>
-                  )}
-                </CardContent>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
-      )}
-
-      <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="sm">
-        <DialogTitle>Add customer</DialogTitle>
-        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
-          <TextField
-            label="Company name"
-            name="name"
-            value={form.name}
-            onChange={handleChange}
-            fullWidth
-            required
-          />
-          <TextField
-            label="Industry"
-            name="industry"
-            value={form.industry}
-            onChange={handleChange}
-            select
-            fullWidth
-          >
-            {INDUSTRIES.map((i) => (
-              <MenuItem key={i} value={i}>{i}</MenuItem>
-            ))}
-          </TextField>
-          <TextField
-            label="Status"
-            name="status"
-            value={form.status}
-            onChange={handleChange}
-            select
-            fullWidth
-          >
-            <MenuItem value="active">Active</MenuItem>
-            <MenuItem value="inactive">Inactive</MenuItem>
-            <MenuItem value="prospect">Prospect</MenuItem>
-          </TextField>
-          <TextField
-            label="Website"
-            name="website"
-            value={form.website}
-            onChange={handleChange}
-            fullWidth
-            placeholder="https://example.com"
-          />
-          <TextField
-            label="Email"
-            name="email"
-            value={form.email}
-            onChange={handleChange}
-            fullWidth
-          />
-          <TextField
-            label="Phone"
-            name="phone"
-            value={form.phone}
-            onChange={handleChange}
-            fullWidth
-          />
-          <TextField
-            label="Address"
-            name="address"
-            value={form.address}
-            onChange={handleChange}
-            fullWidth
-            placeholder="Street address"
-            helperText="Used for map location — be as specific as possible"
-          />
-          <Box sx={{ display: 'flex', gap: 2 }}>
-            <TextField
-              label="City"
-              name="city"
-              value={form.city}
-              onChange={handleChange}
-              fullWidth
-            />
-            <TextField
-              label="Country"
-              name="country"
-              value={form.country}
-              onChange={handleChange}
-              fullWidth
-            />
-          </Box>
-          <TextField
-            label="Notes"
-            name="notes"
-            value={form.notes}
-            onChange={handleChange}
-            fullWidth
-            multiline
-            rows={3}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpen(false)}>Cancel</Button>
-          <Button
-            variant="contained"
-            onClick={handleSubmit}
-            disabled={!form.name || geocoding}
-          >
-            {geocoding ? (
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <CircularProgress size={16} color="inherit" />
-                Geocoding...
+                )}
+                </Box>
+                
               </Box>
-            ) : 'Add customer'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+              <Box>
+                <Button
+                  onClick={() => setConfirmOpen(true)}
+                  disabled={!hasSelection}
+                >
+                  <DeleteIcon
+                    sx={{
+                      opacity: hasSelection ? 1 : 0,
+                      color: '#e95858'
+                    }}
+                    fontSize="large"
+                  />
+                </Button>
+              </Box>
+            </Box>
+            
+            <DataGrid
+              sx={{
+                flex: 1,
+                minHeight: 0,
+                borderRadius: 3,
+                fontSize: '0.85rem',
+                cursor: 'pointer',
+                overflow: 'auto'
+              }}
+              rows={rows}
+              columns={columns}
+              initialState={{ pagination: { paginationModel } }}
+              pageSizeOptions={[30, 50]}
+              rowHeight={30}
+              checkboxSelection
+              apiRef={apiRef}
+              onRowSelectionModelChange={(ids) => {
+                setSelectedRows(ids);
+              }}
+            />
+            
+          </Paper>
+          <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
+            <DialogTitle>Confirm Delete</DialogTitle>
 
-      <Dialog
-        open={deleteDialogOpen}
-        onClose={() => setDeleteDialogOpen(false)}
-      >
-        <DialogTitle>Delete customer?</DialogTitle>
-        <DialogContent>
-          <Typography>
-            Are you sure you want to delete{' '}
-            <strong>{customerToDelete?.name}</strong>?
-            This cannot be undone.
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
-          <Button
-            color="error"
-            variant="contained"
-            onClick={handleDeleteConfirm}
-          >
-            Delete
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Box>
-  );
+            <DialogContent>
+              Are you sure you want to delete {selectedRows.ids.size === 0  || selectedRows.type === "exclude" ? 'all' : selectedRows.ids.size} selected contact(s)?
+            </DialogContent>
+
+            <DialogActions>
+              <Button onClick={() => setConfirmOpen(false)}>
+                Cancel
+              </Button>
+
+              <Button
+                color="error"
+                onClick={async () => {
+                  if (loading) return;
+                  // setConfirmOpen(false);
+                  try {
+                    const ids = Array.from(selectedRows.ids).map(id => String(id));
+
+                    await dispatch(deleteBulkCustomers(ids)).unwrap();
+
+                    setSelectedRows({
+                      type: "include",
+                      ids: new Set(), 
+                    });
+
+                    setConfirmOpen(false);
+                  } catch {
+                    // Error in state
+                  }
+                }}
+              >
+                Delete
+              </Button>
+            </DialogActions>
+          </Dialog>
+      </Box>
+    );
 }

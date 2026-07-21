@@ -1,4 +1,4 @@
-  // src/api/apiClient.ts
+
 
   const API_URL = import.meta.env.VITE_BACKEND_URL;
 
@@ -58,3 +58,5 @@
 
     return data;
   }
+
+  

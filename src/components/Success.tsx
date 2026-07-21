@@ -7,15 +7,15 @@ import {
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 
-interface ErrorAlertProps {
+interface SuccessAlertProps {
   message: string;
   duration?: number;
 }
 
-export default function ErrorAlert({
+export default function SuccessAlert({
   message,
   duration = 3000,
-}: ErrorAlertProps) {
+}: SuccessAlertProps) {
   const [open, setOpen] = useState(true);
 
   useEffect(() => {
@@ -34,7 +34,7 @@ export default function ErrorAlert({
     <Collapse in={open}>
       <Box sx={{ display: 'flex', justifyContent: 'center', width: '100%'  }}>
         <Alert
-          severity="error"
+          severity="success"
           variant="outlined"
           elevation={6}
           action={

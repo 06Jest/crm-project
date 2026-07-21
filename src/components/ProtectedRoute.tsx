@@ -3,9 +3,9 @@ import { Box, CircularProgress } from '@mui/material'
 import { useAuth } from '../hooks/useAuth';
 
 export default function ProtectedRoute() {
-  const { user, loading} = useAuth();
+  const { user, loading, loaded} = useAuth();
 
-  if (loading) {
+  if (loading || !loaded) {
     return (
       <Box
         sx={{

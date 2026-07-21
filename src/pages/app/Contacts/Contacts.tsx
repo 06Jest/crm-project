@@ -1,17 +1,15 @@
 import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "../../../store/store";
-import { formatDistanceToNow } from 'date-fns';
 import { DataGrid, type GridColDef, useGridApiRef, type GridRowSelectionModel } from '@mui/x-data-grid';
 // import { useSidebar } from "../../../hooks/useSidebar";
 import { alpha } from '@mui/material/styles';
 import { 
   clearError,
-  deleteContact,
-  fetchContacts
+  deleteBulkContacts,
+  fetchContactsLists,
 } from "../../../store/contactsSlice";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../../hooks/useAuth";
 
 
 import {
@@ -36,28 +34,31 @@ import DeleteIcon from '@mui/icons-material/Delete';
 // import SearchIcon from '@mui/icons-material/Search';
 import PriorityIcon from '@mui/icons-material/PriorityHighRounded';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
-import type { ContactStatus } from "../../../types/contact";
+import type { Contact, ContactStatus } from "../../../types/contact";
 import { useState } from "react";
 import type { Priority } from "../../../types/global";
 import ErrorAlert from "../../../components/Error";
+import { formatName } from "../../../utils/formatText";
+import { formatRelativeTime } from "../../../utils/formatTime";
 
 
 const STATUS_COLORS: Record<ContactStatus, string> = {
   Contacted: '#ffffff',
-  Qualified: '#facd91',
-  Opportunity: '#AD7450',
-  Customer: '#ffbb29',  
-  Inactive: '#e65454',
+  Opportunity: '#ffbb29',
+  Customer: '#AD7450',  
   Lost: '#7a0000',
   Churned: '#000000',
 }
+
 const PRIORITY_COLORS: Record<Priority, string> = {
   Highest: '#df3232',
   High: '#cc9e1fd0',
   Low: '#ffffff00',
 }
 
-const columns: GridColDef[] = [
+const getColumns = (
+  navigate: ReturnType<typeof useNavigate>
+): GridColDef[] => [
   {
     field: 'name',
     headerName: 'Name',
@@ -89,18 +90,45 @@ const columns: GridColDef[] = [
     </Box>
     ),
   },
-  { field: 'owner_name', headerName: 'Owner', width: 300, flex: 1 },
+  { field: 'owner_name', 
+    headerName: 'Owner', 
+    flex: 1,
+    align: 'left',
+    
+  },
   {
     field: 'created_at',
     headerName: 'Created',
     flex: 1,
     valueGetter: (value) =>
       value
-        ? formatDistanceToNow(new Date(value), {
-            addSuffix: true,
-          })
+        ? formatRelativeTime(new Date(value))
         : '',
   },
+  { field: 'action', 
+    headerName: 'Action', 
+    width: 100, 
+    flex: 1,
+    align:'center',
+    headerAlign:  'center',
+    renderCell: ({ value }) => (
+      <Box sx={{display: 'flex', justifyContent: 'center', alignItems: 'center', paddingTop: '4px'}}>
+        <Button 
+        onClick={() => navigate(`/app/contacts/${value}`)}
+        sx={{
+          py: '1px',
+          backgroundColor: 'primary.main',
+          color: 'white',
+          fontSize: '11px',
+          '&:hover': {
+            backgroundColor: 'primary.dark',
+          },
+        }}>
+        View
+    </Button>
+      </Box>
+    )
+  }
 ];
 
 const paginationModel = { page: 0, pageSize: 10 };
@@ -116,28 +144,48 @@ export default function Contacts() {
     type: "include",
     ids: new Set(),
   });
+
+  const columns = getColumns(navigate);
+  const fullname = (contact: Contact) => {
+    return `${formatName(contact.first_name, contact.last_name)}`
+  } 
   
   
   const rows = contacts.map(contact => ({
     id: contact.id,
-    name: `${contact.first_name} ${contact.last_name}`,
+    name: fullname(contact),
     email: contact.email,
     phone: contact.phone,
     status: contact.status,
-    owner_name: "meow",
+    owner_name: formatName(contact.owner.first_name, contact.owner.last_name),
     created_at: contact.created_at,
+    action: contact.id
   }));
 
     
-  const { isAuthenticated } = useAuth();
+  
+useEffect(() => {
 
+  if (loading ) return;
 
-  useEffect(() => {
+  const loadData = async () => {
+    try {
 
-    if (isAuthenticated && !loaded) {
-      dispatch(fetchContacts());
+      if (!loaded) {
+        await dispatch(fetchContactsLists()).unwrap();
+      }
+
+    } catch {
+      // Error handled by Redux state
     }
-  }, [ loaded, isAuthenticated, dispatch]);
+  };
+
+  loadData();
+}, [
+  loading,
+  loaded,
+  dispatch,
+]);
 
 
   
@@ -150,13 +198,11 @@ const recentContacts = [...contacts]
   .slice(0, 10);
 
 const recentContactsList = recentContacts.map(contact => ({
-  name: `${contact.first_name} ${contact.last_name}`,
+  name: `${fullname(contact)}`,
   id: contact.id,
   created: contact.created_at
-    ? formatDistanceToNow(new Date(contact.created_at), {
-        addSuffix: true,
-      })
-    : '',
+        ? formatRelativeTime(new Date(contact.created_at))
+        : '',
 }));
 
 const priorityOrder: Record<Priority, number> = {
@@ -181,14 +227,12 @@ const sortedContacts = [...filteredContacts].sort((a, b) => {
 
 
 const PriorityList = sortedContacts.map(contact => ({
-  name: `${contact.first_name} ${contact.last_name}`,
+  name: `${fullname(contact)}`,
   id: contact.id,
   priority: contact.priority,
   created: contact.created_at
-    ? formatDistanceToNow(new Date(contact.created_at), {
-        addSuffix: true,
-      })
-    : '',
+    ? formatRelativeTime(new Date(contact.created_at))
+        : '',
   priorityIcon:  
     contact.priority === 'High' ? (
       <PriorityIcon 
@@ -253,7 +297,9 @@ const hasSelection =
                           alpha(theme.palette.text.primary, 0.08),
                         },}}>
                     <ListItemText
-                      primary={contact.name}
+                      primary={contact.name.length > 25
+                      ? `${(contact.name).slice(0, 25)}...`
+                      : (contact.name)}
                       primaryTypographyProps={{color: "primary", fontSize: 14 }}
                       sx={{textAlign: 'left'}}
                     />
@@ -287,7 +333,10 @@ const hasSelection =
                     <ListItemText
                       primaryTypographyProps={{color: "primary", fontSize: 14 }}
                       sx={{textAlign: 'left', justifyContent: 'center'}} >
-                        {contact.name}
+
+                      {contact.name.length > 25
+                      ? `${(contact.name).slice(0, 25)}...`
+                      : (contact.name)}
                         
                     </ListItemText>
                     <ListItemText 
@@ -323,7 +372,7 @@ const hasSelection =
                 width: '50%',
               }}>
                 <Box sx={{width: '100%'}}>
-                  {error && (
+                  {error  && (
                   <ErrorAlert
                     message={error}
                   />
@@ -379,12 +428,9 @@ const hasSelection =
               rowHeight={30}
               checkboxSelection
               apiRef={apiRef}
+              disableRowSelectionOnClick
               onRowSelectionModelChange={(ids) => {
                 setSelectedRows(ids);
-              }}
-              
-              onRowClick={(contact) => {
-                navigate(`/app/contacts/${contact.id}`);
               }}
             />
             
@@ -403,19 +449,23 @@ const hasSelection =
 
               <Button
                 color="error"
-                onClick={() => {
-                  selectedRows.ids.forEach((id) => {
-                    if (loading) return;
+                onClick={async () => {
+                  if (loading) return;
+                  // setConfirmOpen(false);
+                  try {
+                    const ids = Array.from(selectedRows.ids).map(id => String(id));
 
-                    try{
-                      dispatch(deleteContact(String(id))).unwrap();
-                    } catch {
-                      //Error in state
-                    }
-                    
-                  });
+                    await dispatch(deleteBulkContacts(ids)).unwrap();
 
-                  setConfirmOpen(false);
+                    setSelectedRows({
+                      type: "include",
+                      ids: new Set(),
+                    });
+
+                    setConfirmOpen(false);
+                  } catch {
+                    // Error in state
+                  }
                 }}
               >
                 Delete

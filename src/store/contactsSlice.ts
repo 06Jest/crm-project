@@ -1,11 +1,14 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import type { AddContact, ContactsState, UpdateContact } from "../types/contact"
+import type { AddContact, ContactCareer, ContactSocials, ContactsState, UpdateContact } from "../types/contact"
 import {
-  fetchContactsAPI,
   addContactAPI,
   addContactFromLeadsAPI,
   updateContactAPI,
   deleteContactAPI,
+  deleteBulkContactsAPI,
+  updateSocialsAPI,
+  updateCareerAPI,
+  fetchContactsListsAPI,
 } from '../services/contactService';
 
 
@@ -16,11 +19,11 @@ const initialState: ContactsState = {
   error: null,
 };
 
-export const fetchContacts = createAsyncThunk(
-  'contacts/fetchAll',
+export const fetchContactsLists = createAsyncThunk(
+  'contacts/show-contacts-lists',
   async (_, thunkAPI) => {
     try {
-      return await fetchContactsAPI();
+      return await fetchContactsListsAPI();
     }  catch (err) {
       if (err instanceof Error) {
         return thunkAPI.rejectWithValue(err.message);
@@ -34,7 +37,7 @@ export const fetchContacts = createAsyncThunk(
 );
 
 export const addContact = createAsyncThunk(
-  'contacts/add',
+  'contacts/add-contact',
   async (
       contact: AddContact, thunkAPI) => {
     try {
@@ -70,7 +73,7 @@ export const addContactFromLeads = createAsyncThunk(
 );
 
 export const updateContact = createAsyncThunk(
-  'contacts/update',
+  'contacts/update-contact',
   async ({id, contact}:{
       id: string;
       contact: UpdateContact
@@ -89,11 +92,68 @@ export const updateContact = createAsyncThunk(
   }
 );
 
+export const updateSocials = createAsyncThunk(
+  'contacts/update-socials',
+  async ({id, socials}:{
+      id: string;
+      socials: ContactSocials
+    },thunkAPI) => {
+    try {
+      return await updateSocialsAPI( id, socials);
+    } catch (err) {
+      if (err instanceof Error) {
+        return thunkAPI.rejectWithValue(err.message);
+      }
+      return thunkAPI
+        .rejectWithValue(
+          'Something went wrong'
+        );
+    }
+  }
+);
+
+export const updateCareer = createAsyncThunk(
+  'contacts/update-career',
+  async ({id, career}:{
+      id: string;
+      career: ContactCareer
+    },thunkAPI) => {
+    try {
+      return await updateCareerAPI( id, career);
+    } catch (err) {
+      if (err instanceof Error) {
+        return thunkAPI.rejectWithValue(err.message);
+      }
+      return thunkAPI
+        .rejectWithValue(
+          'Something went wrong'
+        );
+    }
+  }
+);
+
 export const deleteContact = createAsyncThunk(
-  'contacts/delete',
+  'contacts/delete-contact',
   async (id: string, thunkAPI) => {
     try {
       return await deleteContactAPI(id);
+    } catch (err) {
+      if (err instanceof Error) {
+        return thunkAPI.rejectWithValue(err.message);
+      }
+      return thunkAPI
+        .rejectWithValue(
+          'Something went wrong'
+        );
+    }
+  }
+);
+
+export const deleteBulkContacts = createAsyncThunk(
+  'contacts/delete-contacts',
+  async (ids: string[], thunkAPI) => {
+    try {
+      return await deleteBulkContactsAPI(ids);
     } catch (err) {
       if (err instanceof Error) {
         return thunkAPI.rejectWithValue(err.message);
@@ -119,25 +179,24 @@ const contactsSlice = createSlice({
 
 
   extraReducers: (builder) => {
-    builder.addCase(fetchContacts.pending, (state) => {
+    builder.addCase(fetchContactsLists.pending, (state) => {
       state.loading = true;
       state.error = null;
     });
 
-    builder.addCase(fetchContacts.fulfilled, (state, action) => {
+    builder.addCase(fetchContactsLists.fulfilled, (state, action) => {
       state.loading = false;
       state.loaded = true;
       state.items = action.payload;
     });
 
-    builder.addCase(fetchContacts.rejected, (state, action) => {
+    builder.addCase(fetchContactsLists.rejected, (state, action) => {
       state.loading = false;
       state.error = action.payload as string;
     })
 
 
     builder.addCase(addContact.pending, (state) => {
-      state.loading = true;
       state.error = null;
     });
 
@@ -153,7 +212,6 @@ const contactsSlice = createSlice({
 
 
     builder.addCase(addContactFromLeads.pending, (state) => {
-      state.loading = true;
       state.error = null;
     });
 
@@ -169,7 +227,6 @@ const contactsSlice = createSlice({
 
 
     builder.addCase(updateContact.pending, (state) => {
-      state.loading = true;
       state.error = null;
     });
 
@@ -186,8 +243,41 @@ const contactsSlice = createSlice({
 
 
 
+    builder.addCase(updateSocials.pending, (state) => {
+      state.error = null;
+    });
+
+    builder.addCase(updateSocials.fulfilled, (state, action) => {
+      const index = state.items.findIndex(c => c.id === action.payload.id);
+      if(index !== -1) state.items[index] = action.payload;
+      state.loading = false;
+    });
+
+    builder.addCase(updateSocials.rejected, (state, action) => {
+      state.error = action.payload as string
+      state.loading = false;
+    });
+
+
+
+    builder.addCase(updateCareer.pending, (state) => {
+      state.error = null;
+    });
+
+    builder.addCase(updateCareer.fulfilled, (state, action) => {
+      const index = state.items.findIndex(c => c.id === action.payload.id);
+      if(index !== -1) state.items[index] = action.payload;
+      state.loading = false;
+    });
+
+    builder.addCase(updateCareer.rejected, (state, action) => {
+      state.error = action.payload as string
+      state.loading = false;
+    });
+
+
+
     builder.addCase(deleteContact.pending, (state) => {
-      state.loading = true;
       state.error = null;
     });
 
@@ -197,6 +287,23 @@ const contactsSlice = createSlice({
     });
 
     builder.addCase(deleteContact.rejected, (state, action) => {
+      state.error = action.payload as string;
+      state.loading = false;
+    });
+
+
+
+    builder.addCase(deleteBulkContacts.pending, (state) => {
+      state.error = null;
+    });
+
+    builder.addCase(deleteBulkContacts.fulfilled, (state, action) => {
+      state.items = state.items.filter(
+        contact => !action.payload.includes(contact.id));
+      state.loading = false;
+    });
+
+    builder.addCase(deleteBulkContacts.rejected, (state, action) => {
       state.error = action.payload as string;
       state.loading = false;
     });
