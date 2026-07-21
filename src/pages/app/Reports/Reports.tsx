@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '../../../store/store';
-import { fetchContacts } from '../../../store/contactsSlice';
+import { fetchContactsLists } from '../../../store/contactsSlice';
 import type { Deal } from '../../../types/deal'
 import type { Activity } from '../../../types/activity'
 import type { Lead } from '../../../types/lead'
@@ -134,11 +134,11 @@ export default function Reports () {
 
 
   useEffect(() => {
-    if (contacts.length === 0) dispatch(fetchContacts());
-    if (leads.length === 0) dispatch(fetchContacts());
-    if (deals.length === 0) dispatch(fetchContacts());
-    if (activities.length === 0) dispatch(fetchContacts());
-    if (profiles.length === 0) dispatch(fetchContacts());
+    if (contacts.length === 0) dispatch(fetchContactsLists());
+    if (leads.length === 0) dispatch(fetchContactsLists());
+    if (deals.length === 0) dispatch(fetchContactsLists());
+    if (activities.length === 0) dispatch(fetchContactsLists());
+    if (profiles.length === 0) dispatch(fetchContactsLists());
   }, [
     dispatch,
     contacts.length,

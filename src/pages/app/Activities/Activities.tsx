@@ -13,7 +13,7 @@ import {
 import { useAI } from '../../../hooks/useAI';
 import { aiApi } from '../../../services/backendApi';
 
-import { fetchContacts } from "../../../store/contactsSlice";
+import { fetchContactsLists } from "../../../store/contactsSlice";
 import type { Activity, ActivityType } from "../../../types/activity";
 import { useAuth } from "../../../hooks/useAuth";
 import AgentBadge from '../../../components/AgentBadge';
@@ -121,7 +121,7 @@ export default function Activities() {
 
   useEffect(() => {
     dispatch(fetchActivities());
-    dispatch(fetchContacts());
+    dispatch(fetchContactsLists());
   }, [dispatch]);
 
    useEffect(() => {

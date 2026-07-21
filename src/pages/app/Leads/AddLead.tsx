@@ -12,12 +12,12 @@ import {
   Button,
   MenuItem,
   Typography,
+  Autocomplete,
 } from "@mui/material";
 
 import { addLead, clearError } from "../../../store/leadsSlice";
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import { GENDERS, PRIORITIES, SOURCES, SUFFIXES, type Gender, type Priority, type Source, type Suffix } from "../../../types/global";
-import { LEAD_STATUSES, type LeadStatus } from "../../../types/lead";
+import { DEPARTMENTS, GENDERS, INDUSTRIES, PREFERRED_CONTACT_TIMES, PRIORITIES, SOURCES, SUFFIXES, type Gender, type PreferredTime, type Priority, type Source, type Suffix } from "../../../types/global";
 import ErrorAlert from "../../../components/Error";
 
 
@@ -37,12 +37,23 @@ export default function AddLead() {
     phone: null,
     gender: "Prefer not to say" as Gender,
     birth_date: null,
+    industry: "",
     company_name: "",
+    department: "",
     position: "",
+    website: "",
     source: "Other" as Source,
-    status: "New" as LeadStatus,
     priority: "Low" as Priority,
     notes: "",
+    facebook: "",
+    x: "",
+    whatsapp: "",
+    linkedin: "",
+    instagram: "",
+    telegram: "",
+    tiktok: "",
+    viber: "",
+    preferred_contact_time: "Anytime" as PreferredTime,
   });
 
   const handleChange = (
@@ -54,29 +65,42 @@ export default function AddLead() {
     });
   };
 
+
   const handleSubmit = async () => {
     if (loading) return;
+
+    if (!form) return;
     try {
       const newLead = {
       title: form.title,
+      source: form.source,
       first_name: form.first_name,
       last_name: form.last_name,
       suffix: form.suffix || null,
+      gender: form.gender,
       email: form.email || null,
       phone: form.phone || null,
-      gender: form.gender,
       birth_date: form.birth_date || null,
+      industry: form.industry,
       company_name: form.company_name,
+      department: form.department,
       position: form.position,
-      source: form.source,
-      status: form.status,
-      created_at: new Date().toISOString(),
+      website: form.website,
       priority: form.priority,
+      preferred_contact_time: form.preferred_contact_time,
       notes: form.notes,
+      facebook: form.facebook,
+      x: form.x,
+      whatsapp: form.whatsapp,
+      linkedin: form.linkedin,
+      instagram: form.instagram,
+      telegram: form.telegram,
+      tiktok: form.tiktok,
+      viber: form.viber,
     };
     await dispatch(addLead(newLead)).unwrap();
+    dispatch(clearError());
     navigate(`/app/leads`);
-
     } catch {
       //Error from state
     }
@@ -90,10 +114,9 @@ export default function AddLead() {
         flexDirection: 'column',
         alignItems: "center",
         height: '80vh',
-        minHeight: 700,
+        minHeight: 1100,
         width: '80%',
         maxWidth: 1400,
-        mt: 5,
       }}
     >
       <Button 
@@ -103,7 +126,7 @@ export default function AddLead() {
           dispatch(clearError());
         } }
         sx={{ alignSelf: 'start'}}>
-        Back to Leads
+        Back
       </Button>
       {error && (
         <ErrorAlert
@@ -119,6 +142,9 @@ export default function AddLead() {
           p: 2,
           gap: 1,
         }}>
+          <Typography variant="h6" fontWeight={700} sx={{ letterSpacing: 2, mb: 2, ml: '-100px', mt: '-20px' }}>
+            ADD LEAD
+          </Typography>
           <Typography variant="h5" fontWeight={700}>
           Personal Details
           </Typography>
@@ -251,15 +277,105 @@ export default function AddLead() {
           <Typography variant="h5" fontWeight={700} mt={2}>
             Professional Details
           </Typography>
+          <Box sx={{
+            display: "flex",
+            width: '100%',
+            justifyContent: "space-between",
+            gap: 1,
+          }}>
+            <Autocomplete
+              freeSolo
+              sx={{ width: '50%' }}
+              options={INDUSTRIES}
+              value={form.industry}
+              onChange={(_, value) => {
+                setForm(prev => ({
+                  ...prev,
+                  industry: value ?? '',
+                }));
+              }}
+              onInputChange={(_, value) => {
+                setForm(prev => ({
+                  ...prev,
+                  industry: value,
+                }));
+              }}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Industry"
+                  size="small"
+                />
+              )}
+            />
+            <TextField
+              label="Company"
+              name="company_name"
+              onChange={handleChange}
+              size="small"
+              sx={{
+                fontSize: 13,
+                width: '50%'
+              }}
+            />
+          </Box>
+          
+          <Box sx={{
+            display: "flex",
+            width: '100%',
+            justifyContent: "space-between",
+            gap: 1,
+          }}>
+            <Autocomplete
+              freeSolo
+              sx={{ width: '50%' }}
+              options={DEPARTMENTS}
+              value={form.department}
+              onChange={(_, value) => {
+                setForm(prev => ({
+                  ...prev,
+                  department: value ?? '',
+                }));
+              }}
+              onInputChange={(_, value) => {
+                setForm(prev => ({
+                  ...prev,
+                  department: value,
+                }));
+              }}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Department"
+                  size="small"
+                />
+              )}
+              />
+
+            <TextField
+              label="Position"
+              name="position"
+              onChange={handleChange}
+              size="small"
+              sx={{
+                fontSize: 13,
+                width: '50%'
+              }}
+            />
+          </Box>
           <TextField
-            label="Company"
-            name="company_name"
-            onChange={handleChange}
-            size="small"
-            sx={{
-              fontSize: 13,
-            }}
-          />
+              label="Website"
+              name="website"
+              onChange={handleChange}
+              size="small"
+              sx={{
+                fontSize: 13,
+                width: '100%'
+              }}
+            />
+          <Typography variant="h5" fontWeight={700} mt={2}>
+            Social and Messaging Accounts
+          </Typography>
           <Box sx={{
             display: "flex",
             width: '100%',
@@ -267,8 +383,36 @@ export default function AddLead() {
             gap: 1,
           }}>
             <TextField
-              label="Department"
-              name="department"
+              label="Facebook"
+              name="facebook"
+              onChange={handleChange}
+              size="small"
+              sx={{
+                fontSize: 13,
+                width: '50%'
+              }}
+            />
+            <TextField
+              label="X/Twitter"
+              name="x"
+              onChange={handleChange}
+              size="small"
+              sx={{
+                fontSize: 13,
+                width: '50%'
+              }}
+            />
+          </Box>
+          
+          <Box sx={{
+            display: "flex",
+            width: '100%',
+            justifyContent: "space-between",
+            gap: 1,
+          }}>
+            <TextField
+              label="Tiktok"
+              name="tiktok"
               onChange={handleChange}
               size="small"
               sx={{
@@ -278,8 +422,65 @@ export default function AddLead() {
             />
 
             <TextField
-              label="Position"
-              name="position"
+              label="Whatsapp"
+              name="whatsapp"
+              onChange={handleChange}
+              size="small"
+              sx={{
+                fontSize: 13,
+                width: '50%'
+              }}
+            />
+          </Box>
+
+          <Box sx={{
+            display: "flex",
+            width: '100%',
+            justifyContent: "space-between",
+            gap: 1,
+          }}>
+            <TextField
+              label="Instagram"
+              name="instagram"
+              onChange={handleChange}
+              size="small"
+              sx={{
+                fontSize: 13,
+                width: '50%'
+              }}
+            />
+
+            <TextField
+              label="Telegram"
+              name="telegram"
+              onChange={handleChange}
+              size="small"
+              sx={{
+                fontSize: 13,
+                width: '50%'
+              }}
+            />
+          </Box>
+          <Box sx={{
+            display: "flex",
+            width: '100%',
+            justifyContent: "space-between",
+            gap: 1,
+          }}>
+            <TextField
+              label="Linkedin"
+              name="linkedin"
+              onChange={handleChange}
+              size="small"
+              sx={{
+                fontSize: 13,
+                width: '50%'
+              }}
+            />
+
+            <TextField
+              label="Viber"
+              name="viber"
               onChange={handleChange}
               size="small"
               sx={{
@@ -319,6 +520,7 @@ export default function AddLead() {
               fullWidth
               sx={{
                 fontSize: 13,
+                width: '40%'
               }}
               slotProps={{
                 select: {
@@ -340,23 +542,22 @@ export default function AddLead() {
             </TextField>
             <TextField
               select
-              label="Status"
-              name="status"
-              value={form.status}
+              label="Preferred Time"
+              name="preferred_contact_time"
               onChange={handleChange}
+              value={form.preferred_contact_time}
               size="small"
               sx={{
                 fontSize: 13,
-                width: '50%'
+                width: '30%'
               }}
             >
-              {LEAD_STATUSES.map((status) => (
-                <MenuItem key={status} value={status}>
-                  {status}
+              {PREFERRED_CONTACT_TIMES.map((time) => (
+                <MenuItem key={time} value={time}>
+                  {time}
                 </MenuItem>
               ))}
             </TextField>
-
             <TextField
               select
               label="Priority"
@@ -366,7 +567,7 @@ export default function AddLead() {
               size="small"
               sx={{
                 fontSize: 13,
-                width: '50%'
+                width: '30%'
               }}
             >
               {PRIORITIES.map((prio) => (

@@ -5,17 +5,13 @@ import type { AppDispatch, RootState } from "../../../store/store";
 // import { useAuthContext } from '../../../hooks/useAuthContext'
 
 import {
-  fetchLeads,
-  // addLead,
   updateLead,
   deleteLead, 
   moveLeadLocally,
   updateLeadStatus,
   clearError,
+  fetchLeadsLists,
 } from '../../../store/leadsSlice';
-import {
- addContactFromLeads,
-} from '../../../store/contactsSlice';
 import { LEAD_STATUSES, type Lead, type LeadStatus, type UpdateLead } from '../../../types/lead';
 
 import {
@@ -29,7 +25,6 @@ import {
   Box,
   Typography,
   Button,
-  Paper,
   Snackbar,
   Card,
   CardContent,
@@ -44,7 +39,8 @@ import {
   Chip,
   Popover,
   InputAdornment,
-  Divider
+  Divider,
+  Autocomplete,
 } from '@mui/material';
 import InfoIcon from '@mui/icons-material/Info';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -58,10 +54,11 @@ import SearchIcon from '@mui/icons-material/Search';
 import PriorityIcon from '@mui/icons-material/PriorityHighRounded';
 import AddIcon from '@mui/icons-material/Add';
 import FolderSharedIcon from "@mui/icons-material/FolderShared";
-import { useAuth } from "../../../hooks/useAuth";
+// import { useAuth } from "../../../hooks/useAuth";
 import ErrorAlert from "../../../components/Error";
-import ContactsIcon from '@mui/icons-material/Contacts';
-import { GENDERS, PRIORITIES, SOURCES, SUFFIXES, type Gender, type Priority, type Source, type Suffix } from "../../../types/global";
+import { DEPARTMENTS, GENDERS, INDUSTRIES, PREFERRED_CONTACT_TIMES, PRIORITIES, SOURCES, SUFFIXES, type Gender, type PreferredTime, type Priority, type Source, type Suffix } from "../../../types/global";
+import { formatName, formatTitle } from "../../../utils/formatText";
+import { calculateAge } from "../../../utils/calculateAge";
 
 const PRIORITY_COLORS: Record<Priority, string> = {
   Highest: '#df3232',
@@ -69,16 +66,14 @@ const PRIORITY_COLORS: Record<Priority, string> = {
   Low: '#ffffff00',
 }
 
-type LeadForm = Partial<UpdateLead>;
-
 export default function Leads() {
   const themeMode = useSelector((state: RootState) => state.ui.themeMode);
   const {items: leads, loading, loaded,  error } = useSelector((state: RootState) => state.leads);
   const dispatch = useDispatch<AppDispatch>();
-  
+  // const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [edit, setEdit] = useState(false);
-  const [form, setForm] = useState<LeadForm>({});
+  
   const [dropResult, setDropResult] = useState<DropResult | null>(null)
   const [openDelete, setOpenDelete] = useState(false);
   const [invalid, setInvalid] = useState('');
@@ -86,9 +81,9 @@ export default function Leads() {
   const [openInvalid, setOpenInvalid] = useState(false);
   const [openEditConfirmation, setOpenEditConfirmation] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
-  const [editingLead, setEditingLead] = useState<Lead | null>();
+  const [editingLead, setEditingLead] = useState<UpdateLead | null>();
   const navigate = useNavigate();
-  const [anchorEl, setAnchorEl] = useState<SVGSVGElement | null>(null);
+  const [anchorEl, setAnchorEl] = useState<HTMLDivElement | null>(null);
   const [hoveredLead, setHoveredLead] = useState<Lead | null>(null);
   const [openSnackbar, setOpenSnackbar] = useState(false);
   
@@ -98,16 +93,58 @@ export default function Leads() {
     Qualified: '',
     Closed: '',
   });
+  const [form, setForm] = useState<UpdateLead>({
+    id: "",
+    title: "",
+    first_name: "",
+    last_name: "",
+    suffix: null as Suffix,
+    email: null,
+    phone: null,
+    gender: "Prefer not to say" as Gender,
+    birth_date: null,
+    industry: "",
+    company_name: "",
+    department: "",
+    position: "",
+    website: "",
+    source: "Other" as Source,
+    priority: "Low" as Priority,
+    notes: "",
+    facebook: "",
+    x: "",
+    whatsapp: "",
+    linkedin: "",
+    instagram: "",
+    telegram: "",
+    tiktok: "",
+    viber: "",
+    preferred_contact_time: "Anytime" as PreferredTime,
+  });
 
-    const { user } = useAuth();;
+
+
   
-    useEffect(() => {
-      if (loading) return;
   
-      if (user && !loaded) {
-        dispatch(fetchLeads());
+  useEffect(() => {
+    if (loading) return;
+
+    const loadData = async () => {
+      try {
+
+        if (!loaded) {
+          await dispatch(fetchLeadsLists()).unwrap();
+        }
+      } catch {
+        // Error handled by Redux state
       }
-    }, [ user, dispatch, loaded, loading]);
+    };
+    loadData();
+  }, [
+    loading,
+    loaded,
+    dispatch,
+  ]);
 
   const handleOpenDelete = (lead: Lead) => {
     setSelectedLead(lead); 
@@ -153,27 +190,38 @@ export default function Leads() {
     setOpenInvalid(false);
   };
 
-  const handleDelete = (id: string) => {
-     dispatch(deleteLead(id));
+  const handleDelete = async (id: string) => {
+    await dispatch(deleteLead(id)).unwrap();
   };
 
-  const handleOpenEdit = (lead: Lead) => {
+  const handleOpenEdit = (lead: UpdateLead) => {
     setForm({
+      id: lead.id,
       title: lead.title,
       first_name: lead.first_name,
       last_name: lead.last_name,
       suffix: lead.suffix as Suffix || null ,
       gender: lead.gender as Gender,
       birth_date: lead.birth_date || null ,
-      email: lead.email || null,
-      phone: lead.phone || null,
+      email: lead.email || null || '',
+      phone: lead.phone || null || '',
+      industry: lead.industry || '',
       company_name: lead.company_name || '',
       position: lead.position || '',
       department: lead.department || '',
+      website: lead.website || '',
       source: lead.source as Source,
-      status: lead.status as LeadStatus,
       priority: lead.priority as Priority,
       notes: lead.notes || '',
+      preferred_contact_time: lead.preferred_contact_time as PreferredTime,
+      facebook: lead.facebook || '',
+      x: lead.x || '',
+      whatsapp: lead.whatsapp || '',
+      linkedin: lead.linkedin || '',
+      instagram: lead.instagram || '',
+      telegram: lead.telegram || '',
+      tiktok: lead.tiktok || '',
+      viber: lead.viber || '',
     });
     setEditingLead(lead);
     setIsEditing(true);
@@ -217,10 +265,10 @@ export default function Leads() {
   };
 
   const handleMouseEnter = (
-    event: React.MouseEvent<SVGSVGElement | null>,
+    event: React.MouseEvent<HTMLDivElement>,
     lead: Lead
   ) => {
-    setAnchorEl(event.currentTarget as SVGSVGElement);
+    setAnchorEl(event.currentTarget);
     setHoveredLead(lead);
   };
 
@@ -229,7 +277,7 @@ export default function Leads() {
     setHoveredLead(null);
   };
 
-  const handleAddContact = (result: DropResult) => {
+  const handleAddContact = async (result: DropResult) => {
 
     if (!result.destination) return;
 
@@ -240,42 +288,21 @@ export default function Leads() {
     const lead = leads.find((l) => l.id === leadId);
     if (!lead) return;
 
-    
-    
     if (newStatus === oldStatus) return;
 
-    if (newStatus === 'Qualified') {
 
-      if (!lead.email || !lead.phone) {
-        setOpenInvalid(true);
-        handleCloseAddContact(result);
-        return;
-      }
-
-      dispatch(updateLead({id: leadId, lead: {...lead, status:newStatus}}));
-     
-      dispatch(addContactFromLeads({
-        lead_id: lead.id,
-        first_name: lead.first_name,
-        last_name: lead.last_name,
-        suffix: lead.suffix,
-        gender: lead.gender,
-        birth_date: lead.birth_date ||  null,
-        email: lead.email,
-        phone: lead.phone,
-        company_name: lead.company_name,
-        position: lead.position,
-        department: lead.department,
-        source: lead.source,
-        priority: lead.priority,
-        status: 'Contacted',
-        notes: lead.notes,
-      }));
-      navigate('/app/contacts');
+    if (!lead.email?.trim() && !lead.phone?.trim()) {
+      setOpenInvalid(true);
+      handleCloseAddContact(result);
+      return;
     }
+
+    await dispatch(updateLeadStatus({ id: leadId, status: newStatus })).unwrap();
+    
+    navigate('/app/contacts');
   }
 
-  const handleDragEnd = (result: DropResult) => {
+  const handleDragEnd = async (result: DropResult) => {
     setDropResult(result);
 
     if (!result.destination) return;
@@ -303,7 +330,8 @@ export default function Leads() {
       return;
     }
 
-    if (oldStatus === 'Closed' && newStatus === 'New') {
+    if (oldStatus === 'Closed' && 
+      ['New', 'Contacted', 'Qualified'].includes(newStatus)) {
       setInvalid(
         `This lead already exists. Unable to change the status back to '${newStatus}'.`
       );
@@ -316,7 +344,7 @@ export default function Leads() {
     if (newStatus === 'Qualified') {
       handleOpenAddContact(result);
     } else {
-      dispatch(updateLeadStatus({ id: leadId, status: newStatus }));
+      await dispatch(updateLeadStatus({ id: leadId, status: newStatus })).unwrap();
     }
   };
   
@@ -353,50 +381,26 @@ export default function Leads() {
     );
   }
 
-  const calculateAge = (birthDate: string) => {
-    const today = new Date();
-    const birth = new Date(birthDate);
-
-    let age = today.getFullYear() - birth.getFullYear();
-
-    const monthDiff = today.getMonth() - birth.getMonth();
-
-    if (
-      monthDiff < 0 ||
-      (monthDiff === 0 && today.getDate() < birth.getDate())
-    ) {
-      age--;
-    }
-
-    if (age <= 0) {
-      return '—';
-    }
-    return age;
-  };
+  
 
   return (
     <Box sx={{height: 1000}}>
       <Box sx={{
         display: 'flex', 
         justifyContent: 'space-between', 
-        mb: 1, 
-        ml: '3vw', 
-        mr: '3vw',  
+        justifySelf: 'center', 
+        width: '80vw',
+        maxWidth: 1400, 
         overflowY: 'auto' }}>
-        <Typography marginLeft={1} variant="h5" fontWeight={700}>
+        <Typography sx={{alignSelf: 'end'}} marginLeft={2} variant="h5" fontWeight={700}>
           Leads
         </Typography>
         <Box>
-          {error && (
-          <ErrorAlert
-            message={error}
-          />
-        )}
-        {invalid && (
-          <ErrorAlert
-            message={invalid}
-          />
-        )}
+          {(error  || invalid) &&  (
+            <ErrorAlert
+              message={(error  || invalid) ?? "An unknown error occurred."}
+            />
+          )}
         </Box>
         
         <IconButton
@@ -404,9 +408,9 @@ export default function Leads() {
           onClick={() => navigate(`/app/addlead`)}
           sx={{
           fontSize: 12,
-          py: 1,
           px: 2,
           pl: 1,  
+          mr: 2,
           border: '1px solid #bbbbbb88',
           borderRadius: 2,
           fontWeight: 700
@@ -416,25 +420,29 @@ export default function Leads() {
         </IconButton>
       </Box>
       <DragDropContext onDragEnd={handleDragEnd}>
-        <Paper sx={{display: 'flex', gap: 2, pb: 2, overflow: 'auto',width: '90vw', mb: 2,  p: '10px', borderRadius: 2, justifySelf: 'center' }}>
+        <Box sx={{display: 'flex', gap: 1, pb: 2, overflow: 'auto', width: '80vw', maxWidth: 1400, mb: 2,  p: '10px', borderRadius: 2, justifySelf: 'center' }}>
           {LEAD_STATUSES.map((column) =>(
             <Box
               key={column}
               sx={{ width: '100%' ,minWidth: 260, flex: 1}}
             >
               <Box
-                sx={{
-                    px: 2,
-                    py: 1,
-                    border: '1px solid #cccccc5b',
-                    borderRadius: '8px 8px 0 0',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                  }}
+                sx={(theme) => ({
+                  px: 2,
+                  py: 1,
+                  borderRadius: '3px 3px 0 0 ',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+
+                  bgcolor: theme.palette.mode === 'dark'
+                    ? '#3a3a3a'
+                    : '#d6d4d4d3',
+                })}
                 > <Typography fontWeight={600} variant="h6">{column}</Typography>
                 <TextField 
                   size="small"
+                  
                   value={search[column]}
                   onChange={(e) =>
                     setSearch((prev) => ({
@@ -452,8 +460,9 @@ export default function Leads() {
                     },
                   }}
                   sx={{
-                    border: '1px solid #cecece8f',
+                    border: '1px solid #eeeeee8f',
                     borderRadius: 5,
+                    backgroundColor: '#FFFFFF',
                     mx: 2,
                     color: '#383838',
                     '& .MuiOutlinedInput-notchedOutline': {
@@ -486,10 +495,7 @@ export default function Leads() {
                       bgcolor: snapshot.isDraggingOver
                         ? 'action.hover'
                         : 'background.paper',
-                      border: 1,
-                      borderTop: 0,
                       overflowY: 'auto',
-                      borderColor: 'divider',
                       borderRadius: '0 0 8px 8px',
                       p: 1,
                       transition: 'background-color 0.2s ease',
@@ -517,18 +523,33 @@ export default function Leads() {
                           >
                             <CardContent sx={{ p: 1, '&:last-child': { pb: 1 }, display: 'flex' }}>
                               <Box sx={{ width: 60}}>
-                                <Box sx={{width: 50, height: 50, mt: 1, mr: 2, border: '1px solid #a3a3a3', borderRadius: 100}}>
+                                <Box 
+                                  onMouseEnter={(e) => handleMouseEnter(e, lead)}
+                                  onMouseLeave={handleMouseLeave}
+                                  sx={{
+                                    width: 40, 
+                                    height: 40, 
+                                    mt: 1, 
+                                    mr: 2, 
+                                    cursor: 'pointer',
+                                    border: '1px solid #a3a3a3', 
+                                    borderRadius: 100}}>
                                   <PersonIcon sx={{width: '100%', height: '90%', opacity: 0.7}}/>
                                 </Box>
                               </Box>
                               <Box flex={'1'}>
                                 <Box sx={{display: 'flex', justifyContent: 'space-between'}}>
-                                  <Typography fontWeight={600} variant="body2">
-                                  {lead.title.length > 25
-                                    ? `${lead.title.slice(0, 25)}...`
-                                    : lead.title}
+                                  <Typography
+                                  title="Lead Title"
+                                  sx={{cursor: 'pointer', fontSize: '16px'}}
+                                   fontWeight={600} >
+                                  {lead.title.length > 18
+                                    ? `${formatTitle(lead.title).slice(0, 18)}...`
+                                    : formatTitle(lead.title).toUpperCase()}
                                   </Typography>
-                                  <Box sx={{display: 'flex', alignItems: 'center'}}>
+                                  <Box
+                                    title={`${lead.priority} Priority`}
+                                   sx={{display: 'flex', alignItems: 'center', cursor: 'pointer'}}>
                                     {lead.priority === 'High' ? (
                                     <PriorityIcon 
                                     sx={{
@@ -547,41 +568,73 @@ export default function Leads() {
                                       borderRadius: 20,
                                     }} />
                                   ) : null}
-                                    <ContactsIcon 
-                                    sx={{cursor: 'pointer', opacity: 0.6}}
-                                    onMouseEnter={(e) => handleMouseEnter(e, lead)}
-                                    onMouseLeave={handleMouseLeave}
-                                  />
+                                     <IconButton
+                                      size="small"
+                                      onClick={() => handleOpenEdit(lead)}
+                                    >
+                                      <InfoIcon titleAccess="Full details" fontSize="small" />
+                                    </IconButton>
                                   </Box>
                                   
                                 </Box>
-                                <Box sx={{ display: 'flex'}}>
-                                    <Typography variant="caption" color="text.secondary">
-                                    {lead.first_name} {lead.last_name} {lead.suffix} 
+                                <Box
+                                  title="Lead full name"
+                                  sx={{ display: 'flex', cursor: 'pointer'}}>
+                                    <Typography sx={{fontSize: '11px', fontWeight: 700}}>
+                                    {formatName(lead.first_name, lead.last_name)} {lead.suffix} 
                                   </Typography>
                                 </Box>
-                                
                                 {lead.notes && (
                                   <Typography
+                                    title="Lead Notes"
                                     variant="caption"
                                     color="text.secondary"
                                     display="block"
                                     sx={{
-                                      mt: 0.5,
-                                      overflow: 'hidden',
-                                      textOverflow: 'ellipsis',
-                                      whiteSpace: 'nowrap',
+                                      mt: 0.3,
+                                      width: '100%',
+                                      wordBreak: 'break-word',
+                                      cursor: 'pointer'
                                     }}
                                   >
-                                    {lead.notes.length > 40
-                                    ? `${lead.notes.slice(0, 40)}...`
+                                    {lead.notes.length > 100
+                                    ? `${lead.notes.slice(0, 100)}...`
                                     : lead.notes}
                                   </Typography>
                                 )}
                                 <Box sx={{
+                                  display: 'flex', 
+                                  alignItems: 'center',
+                                  mt: '3px' 
+                                  }}>
+                                  <Typography 
+                                  title="Deal Owner"
+                                  color="text.secondary"
+                                  sx={{ px: '5px', py: '1px', 
+                                    border: `1px solid`,
+                                    borderColor: 'primary.main',
+                                    color: 'primary.main',
+                                    borderRadius: 8,
+                                    fontSize: '9px',
+                                    cursor: 'pointer',
+                                    mr: 1
+                                    }}
+                                  >{formatName(lead.owner.first_name, lead.owner.last_name)}</Typography>
+                                  <Typography 
+                                    title="Preferred Time to contact"
+                                    color="text.secondary"
+                                    sx={{ px: '5px', py: '1px', 
+                                      border: '1px solid #7a7a7a98',
+                                      backgroundColor: '#cccccc00',
+                                      borderRadius: 8,
+                                      fontSize: '9px',
+                                      cursor: 'pointer'
+                                    }}
+                                  >{lead.preferred_contact_time}</Typography>
+                                </Box>
+                                <Box sx={{
                                   display: 'flex',
                                   justifyContent: 'space-between',
-                                  mt: 1,
                                 }}>
                                   <Box sx={{
                                     display: 'flex',
@@ -621,12 +674,6 @@ export default function Leads() {
                                   <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
                                     <IconButton
                                       size="small"
-                                      onClick={() => handleOpenEdit(lead)}
-                                    >
-                                      <InfoIcon titleAccess="Full details" fontSize="small" />
-                                    </IconButton>
-                                    <IconButton
-                                      size="small"
                                       color="error"
                                       onClick={() => handleOpenDelete(lead)}
                                     >
@@ -648,7 +695,7 @@ export default function Leads() {
               </Droppable>
             </Box>
           ))}
-        </Paper>
+        </Box>
       </DragDropContext>
       <Dialog PaperProps={{sx: {position: "absolute", backgroundColor: themeMode === 'dark' ? '#30303065' : '#ffffffa9'}}} open={openDelete} onClose={handleCloseDelete}>
         <DialogTitle sx={{fontWeight: 700}}>
@@ -685,23 +732,24 @@ export default function Leads() {
               </Button>
           </DialogActions>
         </Dialog>
-        <Dialog  sx={{position: "absolute", }} maxWidth="md" open={isEditing} onClose={handleCloseEdit}>
+        <Dialog  sx={{position: "absolute", maxHeight: 800, top: 100 }} maxWidth="md" open={isEditing} onClose={handleCloseEdit}>
           
           <DialogActions sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
             '& .MuiButton-root': {
               fontSize: '0.75rem',
               padding: '2px 3px',
               minWidth: 30,
-              marginRight: 1,
             },
           }}>
-            <Button size="small" >  
+            <Button size="small" sx={{ border: '1px solid', borderColor: 'primary.main', borderRadius: 2}}>  
               <EditIcon 
               onClick={handleEditable}
               titleAccess="Edit" 
-              sx={{ fontSize: 20}}  />
+              sx={{ fontSize: 16, my: '1px' }}  />
             </Button>
-            <Button size="small" sx={{ m: 0}}>
+            <Button size="small" >
               <CloseIcon 
               color="error"
               onClick={handleCloseEdit}
@@ -709,342 +757,682 @@ export default function Leads() {
               sx={{ 
                 backgroundColor: '#e45353',
                 color: 'white', 
-                borderRadius: 1, 
-                p: 0.5}}    />
+                borderRadius: 1, }}    />
             </Button>
           </DialogActions>
           <Box sx={{
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'center',
-            border: '1px solid #ccc',
-            borderRadius: 3,
             p: 2,
             mx: 5,
-            mb: 3,
+            mb: 1,
           }}>
+          <DialogContent
+            sx = {{
+              display: "flex",
+              flexDirection: "column",
+              gap: 2,
+              mt: 1,
+              width: {
+                xs: 250,
+                sm: 300,
+                md: 400,
+                lg: 500
+              },
+            }}>
+            <Box sx={{
+              display: "flex",
+              width: '100%',
+              flexDirection: 'column',
+              overflow: 'auto',
+              justifyContent: "center",
+              gap: 1,
               
-              <DialogContent
-                sx = {{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 2,
-                  mt: 1,
-                  width: {
-                    xs: 300,
-                    sm: 450,
-                    md: 650,
-                    lg: 800
-                  },
-                }}>
-                <Box sx={{
-                  display: "flex",
-                  width: '100%',
-                  flexDirection: 'column',
-                  justifyContent: "center",
-                  gap: 1,
-                  '& .MuiTextField-root': {
-                      userSelect: edit === true ? 'auto' : 'none',
+              '& .MuiTextField-root': {
+                  userSelect: edit === true ? 'auto' : 'none',
+                },
+            }}>
+              {isEditing && error && (
+                <ErrorAlert
+                  message={error}
+                />
+              )}
+              <Typography variant="h6" fontWeight={700}>
+              Personal Details
+              </Typography>
+              <Box sx={{
+                display: "flex",
+                width: '100%',
+                justifyContent: "space-between",
+                gap: 1,
+                
+              }}>
+                <TextField
+                  disabled={!edit}
+                  label="First Name"
+                  name="first_name"
+                  required
+                  value={!edit && !form.first_name ? 'Not provided' : form.first_name}
+                  onChange={handleChange}
+                  size="small"
+                  sx={{
+                    width: '50%',
+                    '& .MuiInputBase-input': {
+                      py: '3px',
+                      fontSize: 14
                     },
-                }}>
-                  {isEditing && error && (
-                    <ErrorAlert
-                      message={error}
-                    />
-                  )}
-                  <Typography variant="h6" fontWeight={700}>
-                  Personal Details
-                  </Typography>
-                  <Box sx={{
-                    display: "flex",
-                    width: '100%',
-                    justifyContent: "space-between",
-                    gap: 1,
-                  }}>
-                    <TextField
-                      disabled={!edit}
-                      label="First Name"
-                      name="first_name"
-                      required
-                      value={form.first_name}
-                      onChange={handleChange}
-                      size="small"
-                      sx={{
-                        fontSize: 13,
-                        width: '50%'
-                      }}
-                    />
+                  }}
+                  slotProps={{
+                    inputLabel: {
+                      shrink: true,
+                    },
+                  }}
+                />
 
-                    <TextField
-                      disabled={!edit}
-                      label="Last Name"
-                      name="last_name"
-                      value={form.last_name}
-                      onChange={handleChange}
-                      size="small"
-                      sx={{
-                        fontSize: 13,
-                        width: '50%'
-                      }}
-                    />
-                  </Box>
-                  <Box sx={{
-                    display: "flex",
-                    width: '100%',
-                    justifyContent: "space-between",
-                    gap: 1,
-                  }}>
-                    <TextField
-                      select
-                      disabled={!edit}
-                      label="Suffix"
-                      name="suffix"
-                      onChange={handleChange}
-                      value={form.suffix}
-                      size="small"
-                      sx={{
-                        fontSize: 13,
-                        width: '50%'
-                      }}
-                      slotProps={{
-                        select: {
-                          MenuProps: {
-                            PaperProps: {
-                              sx: {
-                                maxHeight: 250,
-                              },
-                            },
+                <TextField
+                  disabled={!edit}
+                  label="Last Name"
+                  name="last_name"
+                  value={!edit && !form.last_name ? 'Not provided' : form.last_name}
+                  onChange={handleChange}
+                  size="small"
+                  sx={{
+                    fontSize: 13,
+                    width: '50%',
+                    '& .MuiInputBase-input': {
+                      py: '3px',
+                      fontSize: 14
+                    },
+                  }}
+                  slotProps={{
+                    inputLabel: {
+                      shrink: true,
+                    },
+                  }}
+                />
+              </Box>
+              <Box sx={{
+                display: "flex",
+                width: '100%',
+                justifyContent: "space-between",
+                gap: 1,
+              }}>
+                <TextField
+                  select
+                  disabled={!edit}
+                  label="Suffix"
+                  name="suffix"
+                  onChange={handleChange}
+                  value={!edit && !form.suffix ? 'None' : form.suffix}
+                  size="small"
+                  sx={{
+                    width: '50%',
+                    '& .MuiInputBase-input': {
+                      py: '3px',
+                      fontSize: 14
+                    },
+                  }}
+                  slotProps={{
+                    inputLabel: {
+                      shrink: true,
+                    },
+                    select: {
+                      MenuProps: {
+                        PaperProps: {
+                          sx: {
+                            maxHeight: 250,
                           },
                         },
-                      }}
-                    >
-                    {SUFFIXES.map((suffix) => (
-                        <MenuItem key={suffix} value={suffix}>
-                          {suffix}
-                        </MenuItem>
-                      ))}
-                    </TextField>
+                      },
+                    },
+                  }}
+                >
+                {SUFFIXES.map((suffix) => (
+                    <MenuItem key={suffix} value={suffix}>
+                      {suffix}
+                    </MenuItem>
+                  ))}
+                </TextField>
 
+                <TextField
+                  disabled={!edit}
+                  type="tel"
+                  label="Phone"
+                  name="phone"
+                  value={!edit && !form.phone ? 'Not provided' : form.phone}
+                  onChange={handleChange}
+                  size="small"
+                  sx={{
+                    width: '50%',
+                    '& .MuiInputBase-input': {
+                      py: '3px',
+                      fontSize: 14
+                    },
+                  }}
+                  slotProps={{
+                    inputLabel: {
+                      shrink: true,
+                    },
+                  }}
+                />
+              </Box>
+              
+              <TextField
+                disabled={!edit}
+                label="Email"
+                name="email"
+                value={!edit && !form.email ? 'Not provided' : form.email}
+                onChange={handleChange}
+                size="small"
+                sx={{
+                  '& .MuiInputBase-input': {
+                      py: '3px',
+                      fontSize: 14
+                    },
+                }}
+                slotProps={{
+                  inputLabel: {
+                    shrink: true,
+                  },
+                }}
+              />
+              <Box sx={{
+                display: "flex",
+                width: '100%',
+                justifyContent: "space-between",
+                gap: 1,
+              }}>
+                <TextField
+                  select
+                  disabled={!edit}
+                  label="Gender"
+                  name="gender"   
+                  onChange={handleChange}
+                  value={form.gender }
+                  size="small"
+                  sx={{
+                    width: '50%',
+                    '& .MuiInputBase-input': {
+                      py: '3px',
+                      fontSize: 14
+                    },
+                  }}
+                  slotProps={{
+                    inputLabel: {
+                      shrink: true,
+                    },
+                  }}
+                >
+                {GENDERS.map((gender) => (
+                  <MenuItem key={gender} value={gender}>
+                    {gender}
+                  </MenuItem>
+                ))}
+                </TextField>
+                <TextField
+                  disabled={!edit}
+                  label="Date of Birth"
+                  name="birth_date"
+                  type="date"
+                  value={form.birth_date}
+                  onChange={handleChange}
+                  slotProps={{ inputLabel: { shrink: true } }}
+                  size="small"
+                  sx={{
+                    width: '50%',
+                    '& input' : {
+                      colorScheme: themeMode === 'dark' ? 'dark' : 'light', 
+                    },
+                    '& .MuiInputBase-input': {
+                      py: '3px',
+                      fontSize: 14
+                    },
+                  }}
+                />
+              </Box>
+              <Typography variant="h6" fontWeight={700} mt={2}>
+                Professional Details
+              </Typography>
+              <Box sx={{
+                display: "flex",
+                width: '100%',
+                justifyContent: "space-between",
+                gap: 1,
+              }}>
+                <Autocomplete
+                  freeSolo
+                  disabled={!edit}
+                  sx={{ width: '50%',
+                    '& .MuiOutlinedInput-root': {
+                      height: 28 
+                    },
+                    }}
+                  options={DEPARTMENTS}
+                  value={!edit && !form.department ? 'Not provided' : form.department}
+                  onChange={(_, value) => {
+                    setForm(prev => ({
+                      ...prev,
+                      department: value ?? '',
+                    }));
+                  }}
+                  onInputChange={(_, value) => {
+                    setForm(prev => ({
+                      ...prev,
+                      department: value,
+                    }));
+                  }}
+                  renderInput={(params) => (
                     <TextField
-                      disabled={!edit}
-                      type="tel"
-                      label="Phone"
-                      name="phone"
-                      value={form.phone}
-                      onChange={handleChange}
+                      {...params}
+                      slotProps={{ inputLabel: { shrink: true } }}
+                      label="Department"
                       size="small"
-                      sx={{
-                        fontSize: 13,
-                        width: '50%'
+                        sx={{
+                        '& .MuiInputBase-input': {
+                      py: '3px',
+                      fontSize: 14
+                    },
                       }}
                     />
-                  </Box>
-                  
-                  <TextField
-                    disabled={!edit}
-                    label="Email"
-                    name="email"
-                    value={form.email}
-                    onChange={handleChange}
-                    size="small"
-                    sx={{
-                      fontSize: 13,
-                    }}
-                  />
-                  <Box sx={{
-                    display: "flex",
-                    width: '100%',
-                    justifyContent: "space-between",
-                    gap: 1,
-                  }}>
+                  )}
+                />
+                <Autocomplete
+                  freeSolo
+                  disabled={!edit}
+                  sx={{
+                    width: '50%',
+                    '& .MuiOutlinedInput-root': {
+                      height: 28 
+                    },
+                  }}
+                  options={INDUSTRIES}
+                  value={!edit && !form.industry ? 'Not provided' : form.industry}
+                  onChange={(_, value) => {
+                    setForm(prev => ({
+                      ...prev,
+                      industry: value ?? '',
+                    }));
+                  }}
+                  onInputChange={(_, value) => {
+                    setForm(prev => ({
+                      ...prev,
+                      industry: value,
+                    }));
+                  }}
+                  renderInput={(params) => (
                     <TextField
-                      select
-                      disabled={!edit}
-                      label="Gender"
-                      name="gender"   
-                      onChange={handleChange}
-                      value={form.gender}
-                      size="small"
-                      sx={{
-                        fontSize: 13,
-                        width: '50%',
-                      }}
-                    >
-                    {GENDERS.map((gender) => (
-                      <MenuItem key={gender} value={gender}>
-                        {gender}
-                      </MenuItem>
-                    ))}
-                    </TextField>
-                    <TextField
-                      disabled={!edit}
-                      label="Date of Birth"
-                      name="birth_date"
-                      type="date"
-                      value={form.birth_date}
-                      onChange={handleChange}
+                      {...params}
                       slotProps={{ inputLabel: { shrink: true } }}
+                      label="Industry"
                       size="small"
                       sx={{
-                        fontSize: 13,
-                        width: '50%',
-                        '& input' : {
-                          colorScheme: themeMode === 'dark' ? 'dark' : 'light', 
+                        '& .MuiInputBase-input': {
+                      fontSize: 14
                         }
                       }}
                     />
-                  </Box>
-                  <Typography variant="h6" fontWeight={700} mt={2}>
-                    Professional Details
-                  </Typography>
-                  <TextField
-                    disabled={!edit}
-                    label="Company"
-                    name="company_name"
-                    value={form.company_name}
-                    onChange={handleChange}
-                    size="small"
-                    sx={{
-                      fontSize: 13,
-                    }}
-                  />
-                  <Box sx={{
-                    display: "flex",
+                  )}
+                />
+              </Box>
+              <Box sx={{
+                display: "flex",
+                width: '100%',
+                justifyContent: "space-between",
+                gap: 1,
+              }}>
+                
+                <TextField
+                  disabled={!edit}
+                  label="Company"
+                  name="company_name"
+                  value={!edit && !form.company_name ? 'Not provided' : form.company_name}
+                  slotProps={{ inputLabel: { shrink: true } }}
+                  onChange={handleChange}
+                  size="small"
+                  sx={{
+                    width: '50%',
+                    '& .MuiInputBase-input': {
+                        py: '3px',
+                        fontSize: 14
+                      },
+                  }}
+              />
+                <TextField
+                  disabled={!edit}
+                  label="Position"
+                  name="position"
+                  value={!edit && !form.position ? 'Not provided' : form.position}
+                  onChange={handleChange}
+                  size="small"
+                  slotProps={{ inputLabel: { shrink: true } }}
+                  sx={{
+                    width: '50%',
+                    '& .MuiInputBase-input': {
+                      py: '3px',
+                      fontSize: 14
+                    },
+                  }}
+                />
+              </Box>
+              <TextField
+                  disabled={!edit}
+                  label="Website Url"
+                  name="website"
+                  value={!edit && !form.website ? 'Not provided' : form.website}
+                  onChange={handleChange}
+                  size="small"
+                  slotProps={{ inputLabel: { shrink: true } }}
+                  sx={{
                     width: '100%',
-                    justifyContent: "space-between",
-                    gap: 1,
-                  }}>
-                    <TextField
-                      disabled={!edit}
-                      label="Department"
-                      name="department"
-                      value={form.company_name}
-                      onChange={handleChange}
-                      size="small"
-                      sx={{
-                        fontSize: 13,
-                        width: '50%'
-                      }}
-                    />
-
-                    <TextField
-                      disabled={!edit}
-                      label="Position"
-                      name="position"
-                      value={form.position}
-                      onChange={handleChange}
-                      size="small"
-                      sx={{
-                        fontSize: 13,
-                        width: '50%'
-                      }}
-                    />
-                  </Box>
-                  <Typography variant="h6" fontWeight={700} mt={2}>
-                    Additional Details
-                  </Typography>
-                  <TextField
-                    disabled={!edit}
-                      label="Title"
-                      value={form.title}
-                      name="title"
-                      required
-                      onChange={handleChange}
-                      size="small"
-                      fullWidth
-                      rows={3}
-                      sx={{
-                        fontSize: 13,
-                      }}
-                    />
-                  <Box sx={{
-                    display: "flex",
-                    width: '100%',
-                    justifyContent: "space-between",
-                    gap: 1,
-                  }}>
-                    <TextField
-                      select
-                      disabled={!edit}
-                      label="Source"
-                      name="source"
-                      value={form.source}
-                      onChange={handleChange}
-                      size="small"
-                      fullWidth
-                      sx={{
-                        fontSize: 13,
-                      }}
-                      slotProps={{
-                        select: {
-                          MenuProps: {
-                            PaperProps: {
-                              sx: {
-                                maxHeight: 250,
-                              },
-                            },
+                    '& .MuiInputBase-input': {
+                      py: '3px',
+                      fontSize: 14
+                    },
+                  }}
+                />
+              <Typography variant="h6" fontWeight={700} mt={2}>
+                Social and Messaging Accounts
+              </Typography>
+              <Box sx={{
+                display: "flex",
+                width: '100%',
+                justifyContent: "space-between",
+                gap: 1,
+              }}>
+                <TextField
+                  disabled={!edit}
+                  label="Facebook"
+                  name="facebook"
+                  value={!edit && !form.facebook ? 'Not provided' : form.facebook}
+                  onChange={handleChange}
+                  size="small"
+                  slotProps={{ inputLabel: { shrink: true } }}
+                  sx={{
+                    width: '50%',
+                    '& .MuiInputBase-input': {
+                      py: '3px',
+                      fontSize: 14
+                    },
+                  }}
+                />
+                <TextField
+                  disabled={!edit}
+                  label="X/ Twitter"
+                  name="x"
+                  value={!edit && !form.x ? 'Not provided' : form.x}
+                  onChange={handleChange}
+                  size="small"
+                  slotProps={{ inputLabel: { shrink: true } }}
+                  sx={{
+                    width: '50%',
+                    '& .MuiInputBase-input': {
+                      py: '3px',
+                      fontSize: 14
+                    },
+                  }}
+                />
+              </Box>
+              <Box sx={{
+                display: "flex",
+                width: '100%',
+                justifyContent: "space-between",
+                gap: 1,
+              }}>
+                <TextField
+                  disabled={!edit}
+                  label="Instagram"
+                  name="instagram"
+                  value={!edit && !form.instagram ? 'Not provided' : form.instagram}
+                  slotProps={{ inputLabel: { shrink: true } }}
+                  onChange={handleChange}
+                  size="small"
+                  sx={{
+                    width: '50%',
+                    '& .MuiInputBase-input': {
+                        py: '3px',
+                        fontSize: 14,
+                      },
+                  }}
+              />
+                <TextField
+                  disabled={!edit}
+                  label="Whatsapp"
+                  name="whatsapp"
+                  value={!edit && !form.whatsapp ? 'Not provided' : form.whatsapp}
+                  onChange={handleChange}
+                  size="small"
+                  slotProps={{ inputLabel: { shrink: true } }}
+                  sx={{
+                    width: '50%',
+                    '& .MuiInputBase-input': {
+                      py: '3px',
+                      fontSize: 14
+                    },
+                  }}
+                />
+              </Box>
+              <Box sx={{
+                display: "flex",
+                width: '100%',
+                justifyContent: "space-between",
+                gap: 1,
+              }}>
+                <TextField
+                  disabled={!edit}
+                  label="Tiktok"
+                  name="tiktok"
+                  value={!edit && !form.tiktok ? 'Not provided' : form.tiktok}
+                  slotProps={{ inputLabel: { shrink: true } }}
+                  onChange={handleChange}
+                  size="small"
+                  sx={{
+                    width: '50%',
+                    '& .MuiInputBase-input': {
+                        py: '3px',
+                        fontSize: 14
+                      },
+                  }}
+              />
+                <TextField
+                  disabled={!edit}
+                  label="Telegram"
+                  name="telegram"
+                  value={!edit && !form.telegram ? 'Not provided' : form.telegram}
+                  onChange={handleChange}
+                  size="small"
+                  slotProps={{ inputLabel: { shrink: true } }}
+                  sx={{
+                    width: '50%',
+                    '& .MuiInputBase-input': {
+                      py: '3px',
+                      fontSize: 14
+                    },
+                  }}
+                />
+              </Box>
+              <Box sx={{
+                display: "flex",
+                width: '100%',
+                justifyContent: "space-between",
+                gap: 1,
+              }}>
+                <TextField
+                  disabled={!edit}
+                  label="Linkedin"
+                  name="linkedin"
+                  value={!edit && !form.linkedin ? 'Not provided' : form.linkedin}
+                  slotProps={{ inputLabel: { shrink: true } }}
+                  onChange={handleChange}
+                  size="small"
+                  sx={{
+                    width: '50%',
+                    '& .MuiInputBase-input': {
+                        py: '3px',
+                        fontSize: 14
+                      },
+                  }}
+              />
+                <TextField
+                  disabled={!edit}
+                  label="Viber"
+                  name="viber"
+                  value={!edit && !form.viber ? 'Not provided' : form.viber}
+                  onChange={handleChange}
+                  size="small"
+                  slotProps={{ inputLabel: { shrink: true } }}
+                  sx={{
+                    width: '50%',
+                    '& .MuiInputBase-input': {
+                      py: '3px',
+                      fontSize: 14
+                    },
+                  }}
+                />
+              </Box>
+              <Typography variant="h6" fontWeight={700} mt={2}>
+                Additional Details
+              </Typography>
+              <TextField
+                disabled={!edit}
+                  label="Title"
+                  value={form.title}
+                  name="title"
+                  required
+                  onChange={handleChange}
+                  size="small"
+                  fullWidth
+                  rows={3}
+                  slotProps={{ inputLabel: { shrink: true } }}
+                  sx={{
+                    '& .MuiInputBase-input': {
+                      py: '3px',
+                      fontSize: 14
+                    },
+                  }}
+                />
+              <Box sx={{
+                display: "flex",
+                width: '100%',
+                justifyContent: "space-between",
+                gap: 1,
+              }}>
+                <TextField
+                  select
+                  disabled={!edit}
+                  label="Source"
+                  name="source"
+                  value={form.source}
+                  onChange={handleChange}
+                  size="small"
+                  sx={{
+                    width: '50%',
+                    '& .MuiInputBase-input': {
+                      py: '3px',
+                      
+                      fontSize: 14
+                    },
+                  }}
+                  slotProps={{
+                    inputLabel: { shrink: true },
+                    select: {
+                      MenuProps: {
+                        PaperProps: {
+                          sx: {
+                            maxHeight: 250,
                           },
                         },
-                      }}
-                    >
-                      {SOURCES.map((source) => (
-                        <MenuItem key={source} value={source}>
-                          {source}
-                        </MenuItem>
-                      ))}
-                    </TextField>
-
-                    <TextField
-                      select
-                      disabled={!edit}
-                      label="Priority"
-                      name="priority"
-                      onChange={handleChange}
-                      value={form.priority}
-                      size="small"
-                      sx={{
-                        fontSize: 13,
-                        width: '50%'
-                      }}
-                    >
-                      {PRIORITIES.map((prio) => (
-                        <MenuItem key={prio} value={prio}>
-                          {prio}
-                        </MenuItem>
-                      ))}
-                    </TextField>
-                  </Box>
-                  <TextField
-                      label="Notes"
-                      name="notes"
-                      required
-                      disabled={!edit}
-                      value={form.notes}
-                      onChange={handleChange}
-                      size="small"
-                      multiline
-                      rows={3}
-                      sx={{
-                        fontSize: 13,
-                      }}
-                  />    
-              </Box > 
-              </DialogContent>
-              <DialogActions sx={{ display: edit === true ? 'flex' : 'none'}}>
-                <Button onClick={handleNotEditable}>
-                  Cancel
-                </Button>
-                <Button 
-                  variant="contained"
-                  onClick={() => {
-                    handleOpenEditConfirmation();
+                      },
+                    },
                   }}
-                  >
-                  Submit
-                </Button>
-              </DialogActions>
+                >
+                  {SOURCES.map((source) => (
+                    <MenuItem key={source} value={source}>
+                      {source}
+                    </MenuItem>
+                  ))}
+                </TextField>
+                <TextField
+                  select
+                  disabled={!edit}
+                  label="Preferred Time"
+                  name="preferred_contact_time"
+                  onChange={handleChange}
+                  value={form.preferred_contact_time}
+                  size="small"
+                  slotProps={{ inputLabel: { shrink: true } }}
+                  sx={{
+                    width: '25%',
+                    '& .MuiInputBase-input': {
+                      py: '3px',
+                      fontSize: 14
+                    },
+                  }}
+                >
+                  {PREFERRED_CONTACT_TIMES.map((time) => (
+                    <MenuItem key={time} value={time}>
+                      {time}
+                    </MenuItem>
+                  ))}
+                </TextField>
+                <TextField
+                  select
+                  disabled={!edit}
+                  label="Priority"
+                  name="priority"
+                  onChange={handleChange}
+                  value={form.priority}
+                  size="small"
+                  slotProps={{ inputLabel: { shrink: true } }}
+                  sx={{
+                    width: '25%',
+                    '& .MuiInputBase-input': {
+                      py: '3px',
+                      fontSize: 14
+                    },
+                  }}
+                >
+                  {PRIORITIES.map((prio) => (
+                    <MenuItem key={prio} value={prio}>
+                      {prio}
+                    </MenuItem>
+                  ))}
+                </TextField>
               </Box>
-          
+              <TextField
+                label="Notes"
+                name="notes"
+                required
+                disabled={!edit}
+                value={form.notes}
+                onChange={handleChange}
+                size="small"
+                multiline
+                rows={3}
+                slotProps={{ inputLabel: { shrink: true } }}
+                sx={{
+                  '& .MuiInputBase-input': {
+                    py: '3px',
+                    fontSize: 14
+                  },
+                }}
+              />    
+          </Box > 
+          </DialogContent>
+          <DialogActions sx={{ display: edit === true ? 'flex' : 'none'}}>
+            <Button onClick={handleNotEditable}>
+              Cancel
+            </Button>
+            <Button 
+              variant="contained"
+              onClick={() => {
+                handleOpenEditConfirmation();
+              }}
+              >
+              Submit
+            </Button>
+          </DialogActions>
+          </Box>
         </Dialog>
         <Dialog sx={{position: "absolute"}} open={openAddContact} onClose={handleCloseAddContact}>
           <DialogTitle sx={{fontWeight: 700}}>
@@ -1177,7 +1565,7 @@ export default function Leads() {
                 flexDirection: 'column'
               }}>
                 <Typography variant="h6" fontWeight={700}>
-                  {hoveredLead?.first_name} {hoveredLead?.last_name} {hoveredLead?.suffix}
+                  {formatName(hoveredLead?.first_name, hoveredLead?.last_name)} {hoveredLead?.suffix}
                   {hoveredLead?.priority === 'High' ? (
                   <PriorityIcon 
                   sx={{
@@ -1198,40 +1586,80 @@ export default function Leads() {
                 ) : null}
                 </Typography>
 
+                {hoveredLead?.email && (
                 <Typography variant="body2">
-                  {!hoveredLead?.email ? '————' : hoveredLead?.email}
+                  {hoveredLead?.email}
                 </Typography>
-
+                )}
+                {hoveredLead?.phone && (
                 <Typography variant="body2">
-                  {!hoveredLead?.phone ? '————' : hoveredLead?.phone}
+                  {hoveredLead?.phone}
                 </Typography>
+                )}
               </Box>
               <Box sx={{
                 display: 'flex',
                 flexDirection: 'column'
               }}>
+                {hoveredLead?.gender !== 'Prefer not to say' && (
                 <Typography variant="body2">
-                  {hoveredLead?.gender === 'Prefer not to say' ? '————' : hoveredLead?.gender }
+                  {hoveredLead?.gender }
                 </Typography>
+                )}
+                {hoveredLead?.birth_date && (
                 <Typography variant="body2">
                   Age: {!hoveredLead?.birth_date
-                  ? '0'
+                  ? ''
                   : calculateAge(hoveredLead.birth_date)}
-
                 </Typography>
+                )}
               </Box>
             </Box>
-            <Divider sx={{mt: 2, mb: 1}}></Divider>
-            <Box sx={{
+            <Box 
+            sx={{
               display: 'flex',
               flexDirection: 'column',
             }}>
-              <Typography variant="body2">Facebook: facebook.com/username</Typography>
-              <Typography variant="body2">Instagram: @username</Typography>
-              <Typography variant="body2">TikTok: @username</Typography>
-              <Typography variant="body2">Telegram: @username</Typography>
-              <Typography variant="body2">WhatsApp: +63 XXX XXX XXXX</Typography>
-              <Typography variant="body2">Viber: +63 XXX XXX XXXX</Typography>
+              {hoveredLead?.facebook && (
+                <Typography variant="body2">
+                  Facebook: facebook.com/{hoveredLead.facebook}
+                </Typography>
+              )}
+              {hoveredLead?.instagram && (
+                <Typography variant="body2">
+                  Instagram: @{hoveredLead.instagram}
+                </Typography>
+              )}
+              {hoveredLead?.tiktok && (
+                <Typography variant="body2">
+                  TikTok: @{hoveredLead.tiktok}
+                </Typography>
+              )}
+              {hoveredLead?.x && (
+                <Typography variant="body2">
+                  X/Twitter: @{hoveredLead.x}
+                </Typography>
+              )}
+              {hoveredLead?.linkedin && (
+                <Typography variant="body2">
+                  LinkedIn: linkedin.com/in/{hoveredLead.linkedin}
+                </Typography>
+              )}
+              {hoveredLead?.telegram && (
+                <Typography variant="body2">
+                  Telegram: @{hoveredLead.telegram}
+                </Typography>
+              )}
+              {hoveredLead?.whatsapp && (
+                <Typography variant="body2">
+                  WhatsApp: {hoveredLead.whatsapp}
+                </Typography>
+              )}
+              {hoveredLead?.viber && (
+                <Typography variant="body2">
+                  Viber: {hoveredLead.viber}
+                </Typography>
+              )}
             </Box>
             <Divider sx={{mt: 2, mb: 1}}></Divider>
             <Typography marginBottom={1} variant="body1" fontWeight={700}>

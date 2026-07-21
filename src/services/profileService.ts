@@ -48,3 +48,14 @@ export const updateNameInAuth = async (name: string): Promise<void> => {
   });
   if (error) throw new Error(error.message)
 };
+import type { ProfileIDName } from "../types/profile";
+import { apiClient } from "./apiClient";
+
+export const fetchMembersIDNamesAPI = async (): Promise<ProfileIDName[]> => {
+  const result = await apiClient(`/api/org/members`, {
+    method: "GET",
+  });
+
+  return result.data as ProfileIDName[];
+};
+

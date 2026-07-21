@@ -1,11 +1,11 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import type  { AddLead, LeadsState, LeadStatus,UpdateLead } from "../types/lead"
 import {
-  fetchLeadsAPI,
   addLeadAPI,
   updateLeadAPI,
   deleteLeadAPI,
   updateLeadStatusAPI,
+  fetchLeadsListsAPI,
 } from '../services/leadService';
 
 
@@ -16,11 +16,12 @@ const initialState: LeadsState = {
   error: null,
 };
 
-export const fetchLeads = createAsyncThunk(
-  'leads/show-leads',
+
+export const fetchLeadsLists = createAsyncThunk(
+  'leads/show-leads-lists',
   async (_, thunkAPI) => {
     try {
-      return await fetchLeadsAPI();
+      return await fetchLeadsListsAPI();
     }  catch (err) {
       if (err instanceof Error) {
         return thunkAPI.rejectWithValue(err.message);
@@ -54,7 +55,7 @@ export const addLead = createAsyncThunk(
 
 
 export const updateLead = createAsyncThunk(
-  'leads/update-lead`',
+  'leads/update-lead',
   async ({id, lead}:{
       id: string;
       lead: UpdateLead
@@ -126,25 +127,25 @@ const leadSlice = createSlice({
 
 
   extraReducers: (builder) => {
-    builder.addCase(fetchLeads.pending, (state) => {
+    
+    builder.addCase(fetchLeadsLists.pending, (state) => {
       state.loading = true;
       state.error = null;
     });
 
-    builder.addCase(fetchLeads.fulfilled, (state, action) => {
+    builder.addCase(fetchLeadsLists.fulfilled, (state, action) => {
       state.loading = false;
       state.loaded = true;
       state.items = action.payload;
     });
 
-    builder.addCase(fetchLeads.rejected, (state, action) => {
+    builder.addCase(fetchLeadsLists.rejected, (state, action) => {
       state.loading = false;
       state.error = action.payload as string;
     })
 
 
     builder.addCase(addLead.pending, (state) => {
-      state.loading = true;
       state.error = null;
     });
 
@@ -160,7 +161,6 @@ const leadSlice = createSlice({
     
 
     builder.addCase(updateLead.pending, (state) => {
-      state.loading = true;
       state.error = null;
     });
 
@@ -178,7 +178,6 @@ const leadSlice = createSlice({
 
 
     builder.addCase(updateLeadStatus.pending, (state) => {
-      state.loading = true;
       state.error = null;
     });
 
@@ -195,7 +194,6 @@ const leadSlice = createSlice({
 
 
     builder.addCase(deleteLead.pending, (state) => {
-      state.loading = true;
       state.error = null;
     });
 

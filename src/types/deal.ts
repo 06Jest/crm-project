@@ -1,16 +1,19 @@
 export interface DealsState {
-  items: Deal[];
+  items: DealListItem[];
   loading: boolean;
   loaded: boolean;
   error: string | null;
 }
 
-export type DealStage = 
-| 'Prospecting'
-| 'Proposal'
-| 'Negotiation'
-| 'Closed Won'
-| 'Closed Lost';
+export const DEAL_STAGES = [ 
+ 'Prospecting',
+ 'Proposal',
+ 'Negotiation',
+ 'Closed Won',
+ 'Closed Lost',
+] as const;
+
+export type DealStage = typeof DEAL_STAGES[number]
 
 export interface Deal {
   id: string;
@@ -29,6 +32,16 @@ export interface Deal {
   closed_by?: string;       
 }
 
+export interface DealListItem extends Deal {
+
+  owner: {
+      id: string;
+      first_name: string;
+      last_name: string;
+  };
+  
+}
+
 export interface AddDeal {
   contact_id: string;
   title: string;
@@ -39,7 +52,6 @@ export interface AddDeal {
 
 export interface UpdateDeal {
   title?: string;
-  stage?: DealStage;
   notes?: string;
   value?: number;      
 }

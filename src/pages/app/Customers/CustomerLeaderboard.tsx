@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import type { AppDispatch, RootState } from '../../../store/store';
-import { fetchCustomers } from '../../../store/customersSlice';
-import { fetchDeals } from '../../../store/dealsSlice';
+import { fetchCustomersLists } from '../../../store/customersSlice';
+import { fetchDealsLists } from '../../../store/dealsSlice';
 import { fetchActivities } from '../../../store/activitiesSlice';
 
 import {
@@ -105,8 +105,8 @@ const formatCurrency = (value: number): string =>
       const [timePeriod, setTimePeriod] = useState<TimePeriod>('all');
 
       useEffect(() => {
-        if (customers.length === 0) dispatch(fetchCustomers());
-        if (deals.length === 0) dispatch(fetchDeals());
+        if (customers.length === 0) dispatch(fetchCustomersLists());
+        if (deals.length === 0) dispatch(fetchDealsLists());
         if (activities.length === 0) dispatch(fetchActivities()); 
       }, [dispatch, customers.length, deals.length, activities.length]);
 

@@ -1,0 +1,324 @@
+to do before application:
+
+2 days	customers
+1 day	dashboard
+2 day	chat
+2 days	settings(admin privilege)
+1 day	email
+2 day	ai
+2 days	responsive
+3 days	test-polish(
+error handling,
+success handling,
+UI,
+agent registration,
+verification cycle,
+etc..)
+1 day  deploy-documentation
+
+
+to do during application:
+
+2 days	analytics
+2 days	lazy loading
+2 days	tasks
+2 days	activities
+2 days	leaderboard
+2 days	notes
+3 day	  sms
+2 day	  calls
+7 days	super admin
+2 days 	companies
+2 days	archive
+3 days  websocket
+1 day   multi national support(currency, phone number)
+2 days  addresses
+2 days	tutorials
+2 day   data placeholders(auto generated but optional)	
+4 days	caching redis
+5 days	tan stack migration
+7 days  full documentation( about, help, contact us, roadmap, terms, privacy)
+
+
+tomorrow:
+-add deal button in contact profile
+
+Customers
+- backend crud
+- frontend crud
+- customers (table)[fullname, priority, status, email, phone, open deals, owner, actions]
+- customer profile
+- add deal button in customer profile
+- customer status
+- dedicated change status button in profile
+- map for customer address if provided
+- 
+
+# CRM Improvement Checklist
+
+## UI & Design
+- [ ] Reduce excessive borders throughout the application.
+- [ ] Increase whitespace and padding between components.
+- [ ] Improve typography hierarchy (titles, subtitles, descriptions).
+- [ ] Standardize font sizes across all pages.
+- [ ] Standardize border radius for all components.
+- [ ] Improve color consistency for status badges.
+- [ ] Add subtle shadows to cards and dialogs.
+- [ ] Improve card layout and alignment.
+- [ ] Improve icon spacing and alignment.
+- [ ] Use generated avatar initials when no profile image exists.
+- [ ] Add hover effects to cards.
+- [ ] Add hover effects to table rows.
+- [ ] Add hover effects to buttons and icons.
+- [ ] Improve spacing inside tables.
+- [ ] Add alternating row backgrounds (optional).
+- [ ] Improve mobile responsiveness.
+- [ ] Optimize layout for ultrawide monitors.
+- [ ] Create a complete design system.
+
+## Tables
+- [ ] Sticky table headers.
+- [ ] Resizable columns.
+- [ ] Sort by every important column.
+- [ ] Advanced filtering.
+- [ ] Saved filters.
+- [ ] Bulk actions.
+- [ ] Select all rows.
+- [ ] Export selected rows.
+- [ ] Better pagination controls.
+- [ ] Rows per page selector.
+- [ ] Display total record count.
+
+## Search
+- [ ] Better search placeholders.
+- [ ] Global search across all modules.
+- [ ] Search history.
+- [ ] Recent searches.
+- [ ] Search by multiple fields.
+- [ ] Highlight matched keywords.
+
+## Empty States
+- [ ] Friendly empty state illustrations/icons.
+- [ ] Empty state descriptions.
+- [ ] Empty state action buttons.
+- [ ] Loading skeletons.
+- [ ] Better loading indicators.
+- [ ] Better error pages.
+
+## User Experience
+- [ ] Entire cards clickable.
+- [ ] Keyboard shortcuts.
+- [ ] Command palette (Ctrl + K).
+- [ ] Right-click context menus.
+- [ ] Optimistic UI updates.
+- [ ] Undo delete.
+- [ ] Better confirmation dialogs.
+- [ ] Toast notifications.
+- [ ] Smooth animations.
+- [ ] Smooth drag-and-drop animations.
+- [ ] Auto-save drafts.
+- [ ] Unsaved changes warning.
+
+## Dashboard
+- [ ] Revenue summary.
+- [ ] Monthly sales.
+- [ ] Leads by source.
+- [ ] Conversion funnel.
+- [ ] Recent activities.
+- [ ] Upcoming tasks.
+- [ ] Upcoming meetings.
+- [ ] Performance charts.
+- [ ] Top performing agents.
+- [ ] Sales goals.
+- [ ] Daily KPI widgets.
+- [ ] Custom dashboard widgets.
+
+## Leads
+- [ ] Lead scoring.
+- [ ] Lead priority.
+- [ ] Lead source analytics.
+- [ ] Duplicate detection.
+- [ ] Merge duplicate leads.
+- [ ] Lead assignment rules.
+- [ ] Lead timeline.
+- [ ] Follow-up reminders.
+- [ ] Notes.
+- [ ] Attachments.
+- [ ] Lead tags.
+
+## Contacts
+- [ ] Contact timeline.
+- [ ] Contact tags.
+- [ ] Favorite contacts.
+- [ ] Relationship history.
+- [ ] Custom fields.
+- [ ] Contact notes.
+- [ ] Contact activities.
+- [ ] Communication history.
+- [ ] Multiple addresses.
+- [ ] Multiple phone numbers.
+
+## Deals
+- [ ] Pipeline customization.
+- [ ] Custom deal stages.
+- [ ] Probability percentage.
+- [ ] Expected closing date.
+- [ ] Lost reason.
+- [ ] Deal history.
+- [ ] Revenue forecasting.
+- [ ] Deal attachments.
+- [ ] Deal notes.
+- [ ] Deal reminders.
+
+## Customers
+- [ ] Customer health score.
+- [ ] Customer lifetime value.
+- [ ] Open invoices.
+- [ ] Customer timeline.
+- [ ] Customer support history.
+- [ ] Customer segmentation.
+- [ ] Customer satisfaction score.
+- [ ] Renewal reminders.
+
+## Activities
+- [ ] Calls.
+- [ ] Emails.
+- [ ] Meetings.
+- [ ] Tasks.
+- [ ] Notes.
+- [ ] Activity timeline.
+- [ ] Activity calendar.
+- [ ] Activity reminders.
+- [ ] Recurring activities.
+
+## Team Management
+- [ ] Team dashboard.
+- [ ] Leaderboards.
+- [ ] Performance metrics.
+- [ ] Sales targets.
+- [ ] Team announcements.
+- [ ] Team calendar.
+- [ ] Team activity feed.
+
+## Communication
+- [ ] Internal chat.
+- [ ] Email integration.
+- [ ] SMS integration.
+- [ ] Call history.
+- [ ] Email templates.
+- [ ] Email tracking.
+- [ ] Meeting scheduler.
+- [ ] Calendar synchronization.
+- [ ] Notifications center.
+
+## AI Features
+- [ ] AI email generation.
+- [ ] AI follow-up suggestions.
+- [ ] AI lead summaries.
+- [ ] AI customer summaries.
+- [ ] AI deal analysis.
+- [ ] AI sentiment analysis.
+- [ ] AI meeting summaries.
+- [ ] AI task recommendations.
+
+## Reporting & Analytics
+- [ ] Revenue reports.
+- [ ] Conversion reports.
+- [ ] Agent performance reports.
+- [ ] Pipeline reports.
+- [ ] Customer reports.
+- [ ] Lead source reports.
+- [ ] Activity reports.
+- [ ] Export reports to PDF.
+- [ ] Export reports to Excel.
+- [ ] Scheduled reports.
+
+## Organization
+- [ ] Multi-tenant branding.
+- [ ] Company logo.
+- [ ] Custom company colors.
+- [ ] Organization settings.
+- [ ] Timezone settings.
+- [ ] Currency settings.
+- [ ] Language settings.
+
+## Permissions
+- [ ] Role management.
+- [ ] Permission management.
+- [ ] Custom roles.
+- [ ] Page permissions.
+- [ ] Field-level permissions.
+- [ ] Audit logs.
+
+## Billing (SaaS)
+- [ ] Subscription plans.
+- [ ] Trial management.
+- [ ] Billing history.
+- [ ] Invoice generation.
+- [ ] Payment methods.
+- [ ] Usage limits.
+- [ ] Feature restrictions.
+- [ ] Upgrade/Downgrade plans.
+
+## Data Management
+- [ ] CSV import.
+- [ ] CSV export.
+- [ ] Excel import.
+- [ ] Excel export.
+- [ ] Backup.
+- [ ] Restore.
+- [ ] Duplicate detection.
+- [ ] Merge records.
+- [ ] Archive records.
+- [ ] Soft delete.
+
+## Performance
+- [ ] Lazy loading.
+- [ ] Code splitting.
+- [ ] Virtualized tables.
+- [ ] Image optimization.
+- [ ] Query optimization.
+- [ ] API caching.
+- [ ] TanStack Query integration.
+- [ ] Background synchronization.
+- [ ] Debounced search.
+
+## Security
+- [ ] Two-factor authentication.
+- [ ] Login history.
+- [ ] Session management.
+- [ ] Device management.
+- [ ] Password strength indicator.
+- [ ] Rate limiting.
+- [ ] Audit logs.
+- [ ] Activity logs.
+
+## Developer Experience
+- [ ] Reusable component library.
+- [ ] Theme system.
+- [ ] Design tokens.
+- [ ] Consistent spacing system.
+- [ ] Consistent typography system.
+- [ ] Consistent color palette.
+- [ ] Form validation improvements.
+- [ ] Better error handling.
+- [ ] Unit tests.
+- [ ] Integration tests.
+- [ ] End-to-end tests.
+- [ ] API documentation.
+- [ ] User documentation.
+
+## Nice-to-Have
+- [ ] Dark mode improvements.
+- [ ] Keyboard navigation.
+- [ ] Accessibility (ARIA).
+- [ ] Drag-and-drop everywhere.
+- [ ] Favorite records.
+- [ ] Recently viewed records.
+- [ ] Pinned records.
+- [ ] Quick actions menu.
+- [ ] Command palette.
+- [ ] Browser notifications.
+- [ ] Progressive Web App (PWA).
+- [ ] Offline support.
+

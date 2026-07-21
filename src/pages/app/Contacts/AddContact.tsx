@@ -12,14 +12,14 @@ import {
   Button,
   MenuItem,
   Typography,
+  Autocomplete,
 } from "@mui/material";
 
 import { addContact, clearError } from "../../../store/contactsSlice";
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import { CONTACT_STATUSES, type ContactStatus} from "../../../types/contact";
-import { GENDERS, PRIORITIES, SOURCES, SUFFIXES, type Gender, type Priority, type Source, type Suffix } from "../../../types/global";
+import { type AddContact, type ContactStatus} from "../../../types/contact";
+import { DEPARTMENTS, GENDERS, INDUSTRIES, PREFERRED_CONTACT_TIMES, PRIORITIES, SOURCES, SUFFIXES, type Gender,  type PreferredTime,  type Priority, type Source, type Suffix } from "../../../types/global";
 import ErrorAlert from "../../../components/Error";
-
 
 export default function AddContact() {
   const dispatch = useDispatch<AppDispatch>();
@@ -35,11 +35,24 @@ export default function AddContact() {
     phone: null,
     gender: "Prefer not to say" as Gender,
     birth_date: null,
+    industry: "",
+    department: "",
+    website: "",
     company_name: "",
     position: "",
     source: "Other" as Source,
     status: "Contacted" as ContactStatus,
     priority: "Low" as Priority,
+    preferred_contact_time: "Anytime" as PreferredTime,
+    notes: "",
+    facebook: "",
+    x: "",
+    whatsapp: "",
+    linkedin: "",
+    instagram: "",
+    telegram: "",
+    tiktok: "",
+    viber: "",
   });
 
   const handleChange = (
@@ -64,12 +77,25 @@ export default function AddContact() {
         email: form.email!,
         phone: form.phone!,
         gender: form.gender,
-        birth_date: form.birth_date,
+        birth_date: form.birth_date || null,
+        industry: form.industry,
+        department: form.department,
         company_name: form.company_name,
         position: form.position,
+        website: form.website,
         source: form.source,
         status: form.status,
         priority: form.priority,
+        preferred_contact_time: form.preferred_contact_time,
+        notes: form.notes,
+        facebook: form.facebook,
+        x: form.x,
+        whatsapp: form.whatsapp,
+        linkedin: form.linkedin,
+        instagram: form.instagram,
+        telegram: form.telegram,
+        tiktok: form.tiktok,
+      viber: form.viber,
       };
 
       await dispatch(addContact(newContact)).unwrap();
@@ -88,11 +114,10 @@ export default function AddContact() {
         justifySelf: 'center',
         flexDirection: 'column',
         alignItems: "center",
-        height: '80vh',
+        height: 1100,
         minHeight: 700,
         width: '80%',
         maxWidth: 1400,
-        mt: 5,
       }}
     >
       <Button 
@@ -102,7 +127,7 @@ export default function AddContact() {
           navigate('/app/contacts')
         } }
         sx={{ alignSelf: 'start'}}>
-        Back to contacts
+        Back
       </Button>
       <Box sx={{alignSelf: 'center'}}>
         {error && (
@@ -121,8 +146,10 @@ export default function AddContact() {
           p: 2,
           gap: 1,
         }}>
-          
-          <Typography variant="h5" fontWeight={700}>
+          <Typography variant="h6" fontWeight={700} sx={{ letterSpacing: 2, mb: 2, ml: '-100px', mt: '-20px' }}>
+          ADD CONTACT
+          </Typography>
+          <Typography variant="h6" fontWeight={700}>
           Personal Details
           </Typography>
           <Box sx={{
@@ -255,33 +282,83 @@ export default function AddContact() {
               }}
             />
           </Box>
-          <Typography variant="h5" fontWeight={700} mt={2}>
+          <Typography variant="h6" fontWeight={700} mt={2}>
             Professional Details
           </Typography>
-          <TextField
-            label="Company"
-            name="company_name"
-            onChange={handleChange}
-            size="small"
-            sx={{
-              fontSize: 13,
-            }}
-          />
           <Box sx={{
             display: "flex",
             width: '100%',
             justifyContent: "space-between",
             gap: 1,
           }}>
-            <TextField
-              label="Department"
-              name="department"
+            <Autocomplete
+              freeSolo
+              sx={{ width: '50%' }}
+              options={INDUSTRIES}
+              value={form.industry}
+              onChange={(_, value) => {
+                setForm(prev => ({
+                  ...prev,
+                  industry: value ?? '',
+                }));
+              }}
+              onInputChange={(_, value) => {
+                setForm(prev => ({
+                  ...prev,
+                  industry: value,
+                }));
+              }}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Industry"
+                  size="small"
+                />
+              )}
+            />
+            
+             <TextField
+              label="Company"
+              name="company_name"
               onChange={handleChange}
               size="small"
               sx={{
                 fontSize: 13,
                 width: '50%'
               }}
+            />
+          </Box>
+         
+          <Box sx={{
+            display: "flex",
+            width: '100%',
+            justifyContent: "space-between",
+            gap: 1,
+          }}>
+            <Autocomplete
+              freeSolo
+              sx={{ width: '50%' }}
+              options={DEPARTMENTS}
+              value={form.department}
+              onChange={(_, value) => {
+                setForm(prev => ({
+                  ...prev,
+                  department: value ?? '',
+                }));
+              }}
+              onInputChange={(_, value) => {
+                setForm(prev => ({
+                  ...prev,
+                  department: value,
+                }));
+              }}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Department"
+                  size="small"
+                />
+              )}
             />
 
             <TextField
@@ -295,7 +372,133 @@ export default function AddContact() {
               }}
             />
           </Box>
-          <Typography variant="h5" fontWeight={700} mt={2}>
+          <TextField
+              label="Website Url"
+              name="website"
+              onChange={handleChange}
+              size="small"
+              sx={{
+                fontSize: 13,
+                width: '100%'
+              }}
+            />
+          <Typography variant="h6" fontWeight={700} mt={2}>
+            Social and Messaging Accounts
+          </Typography>
+          <Box sx={{
+            display: "flex",
+            width: '100%',
+            justifyContent: "space-between",
+            gap: 1,
+          }}>
+            <TextField
+              label="Facebook"
+              name="facebook"
+              onChange={handleChange}
+              size="small"
+              sx={{
+                fontSize: 13,
+                width: '50%'
+              }}
+            />
+            <TextField
+              label="X/Twitter"
+              name="x"
+              onChange={handleChange}
+              size="small"
+              sx={{
+                fontSize: 13,
+                width: '50%'
+              }}
+            />
+          </Box>
+          
+          <Box sx={{
+            display: "flex",
+            width: '100%',
+            justifyContent: "space-between",
+            gap: 1,
+          }}>
+            <TextField
+              label="Tiktok"
+              name="tiktok"
+              onChange={handleChange}
+              size="small"
+              sx={{
+                fontSize: 13,
+                width: '50%'
+              }}
+            />
+
+            <TextField
+              label="Whatsapp"
+              name="whatsapp"
+              onChange={handleChange}
+              size="small"
+              sx={{
+                fontSize: 13,
+                width: '50%'
+              }}
+            />
+          </Box>
+
+          <Box sx={{
+            display: "flex",
+            width: '100%',
+            justifyContent: "space-between",
+            gap: 1,
+          }}>
+            <TextField
+              label="Instagram"
+              name="instagram"
+              onChange={handleChange}
+              size="small"
+              sx={{
+                fontSize: 13,
+                width: '50%'
+              }}
+            />
+
+            <TextField
+              label="Telegram"
+              name="telegram"
+              onChange={handleChange}
+              size="small"
+              sx={{
+                fontSize: 13,
+                width: '50%'
+              }}
+            />
+          </Box>
+          <Box sx={{
+            display: "flex",
+            width: '100%',
+            justifyContent: "space-between",
+            gap: 1,
+          }}>
+            <TextField
+              label="Linkedin"
+              name="linkedin"
+              onChange={handleChange}
+              size="small"
+              sx={{
+                fontSize: 13,
+                width: '50%'
+              }}
+            />
+
+            <TextField
+              label="Viber"
+              name="viber"
+              onChange={handleChange}
+              size="small"
+              sx={{
+                fontSize: 13,
+                width: '50%'
+              }}
+            />
+          </Box>
+          <Typography variant="h6" fontWeight={700} mt={2}>
             Additional Details
           </Typography>
           <Box sx={{
@@ -314,6 +517,18 @@ export default function AddContact() {
               fullWidth
               sx={{
                 fontSize: 13,
+                width: '40%'
+              }}
+              slotProps={{
+                select: {
+                  MenuProps: {
+                    PaperProps: {
+                      sx: {
+                        maxHeight: 250,
+                      },
+                    },
+                  },
+                },
               }}
             >
               {SOURCES.map((source) => (
@@ -324,23 +539,22 @@ export default function AddContact() {
             </TextField>
             <TextField
               select
-              label="Status"
-              name="status"
-              value={form.status}
+              label="Preferred Time"
+              name="preferred_contact_time"
               onChange={handleChange}
+              value={form.preferred_contact_time}
               size="small"
               sx={{
                 fontSize: 13,
-                width: '50%'
+                width: '30%'
               }}
             >
-              {CONTACT_STATUSES.map((status) => (
-                <MenuItem key={status} value={status}>
-                  {status}
+              {PREFERRED_CONTACT_TIMES.map((time) => (
+                <MenuItem key={time} value={time}>
+                  {time}
                 </MenuItem>
               ))}
             </TextField>
-
             <TextField
               select
               label="Priority"
@@ -350,7 +564,7 @@ export default function AddContact() {
               size="small"
               sx={{
                 fontSize: 13,
-                width: '50%'
+                width: '30%'
               }}
             >
               {PRIORITIES.map((prio) => (

@@ -1,100 +1,65 @@
-import { supabase } from "./supabase";
-import type { Customer } from '../types/customer';
-import { getInsertMeta } from '../utils/getOrgId';
+import { apiClient } from "./apiClient";
+import type { Customer, CustomerListItem, CustomerStatus } from "../types/customer";
 
-export const fetchCustomersFromDB = async (): Promise<Customer[]> => {
-  const { data, error } = await supabase
-    .from('customers')
-    .select('*')
-    .order('created_at', { ascending: false });
+export const fetchCustomersAPI = async (): Promise<Customer[]> => {
+  const result = await apiClient("/api/customers/show-customers", {
+    method: "GET",
+  });
 
-  if (error) throw new Error(error.message);
-  return data as Customer[];
+  return result.data as Customer[];
 };
 
-export const addCustomerToDB = async (
-  customer: Omit<Customer, 'id' | 'created_at'>
-): Promise<Customer> => {
-  const { userId, orgId } = await getInsertMeta();
-
-  const { data, error } = await supabase
-    .from('customers')
-    .insert([{
-      ...customer,
-      user_id: userId,
-      org_id: orgId,
-      account_manager: customer.account_manager || userId,
-    }])
-    .select()
-    .single();
-
-  if (error) throw new Error(error.message);
-  return data as Customer;
+export const fetchCustomersListsAPI = async (): Promise<CustomerListItem[]> => {
+  const result = await apiClient("/api/customers/show-customers-lists", {
+    method: "GET",
+  });
+  console.log("Customers API:", result.data);
+  return result.data as CustomerListItem[];
 };
 
-export const updateCustomerInDB = async (
-  customer: Customer
-): Promise<Customer> => {
-  const { data, error} = await supabase
-    .from('customers')
-    .update({
-      name: customer.name,
-      industry: customer.industry,
-      website: customer.website,
-      email: customer.email,
-      phone: customer.phone,
-      address: customer.address,
-      city: customer.city,
-      country: customer.country,
-      latitude: customer.latitude,
-      longitude: customer.longitude,
-      notes: customer.notes,
-      status: customer.status,
-    })
-    .eq('id', customer.id)
-    .select()
-    .single();
 
-  if (error) throw new Error(error.message);
-  return data as Customer;
-}
+export const updateCustomerNotesAPI = async (
+  id: string,
+  notes: string
+): Promise<CustomerListItem> => {
+  const result = await apiClient(`/api/customers/update-customer-notes/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify({notes}),
+  });
 
-export const deleteCustomerFromDB = async (id: string): Promise<string> => {
-  const { error } = await supabase
-    .from('customers')
-    .delete()
-    .eq('id', id);
-
-  if (error) throw new Error(error.message);
-  return id;
+  return result.data as CustomerListItem;
 };
 
-export const geocodeAddress = async (
-  address: string
-): Promise<{ latitude: number; longitude: number } | null> => {
-  try {
-    const encoded = encodeURIComponent(address);
+export const updateCustomerStatusAPI = async (
+  id: string,
+  status: CustomerStatus
+): Promise<CustomerListItem> => {
+  const result = await apiClient(`/api/customers/update-customer-status/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify({status}),
+  });
 
-    const response = await fetch(
-      `https://nominatim.openstreetmap.org/search?q=${encoded}&format=json&limit=1`,
-      {
-        headers: {
-          'User-Agent': 'uniThread/1.0 (silvanojestony27@gmail.com)',
-        },
-      }
-    );
+  return result.data as CustomerListItem;
+};
 
-    const data = await response.json();
 
-    if (data && data.length > 0) {
-      return {
-        latitude: parseFloat(data[0].lat),
-        longitude: parseFloat(data[0].lon),
-      };
-    }
+export const deleteCustomerAPI = async (
+  id: string
+): Promise<string> => {
+  const result = await apiClient(`/api/customers/delete-customer/${id}`, {
+    method: "DELETE",
+  });
 
-    return null;;
-  } catch {
-    return null;
-  }
+  return result.data as string;
+};
+
+export const deleteBulkCustomersAPI = async (
+  ids: string[]
+): Promise<string> => {
+  const result = await apiClient(`/api/customers/delete-customers`, {
+    method: "DELETE",
+    body: JSON.stringify({ids}),
+  });
+
+  return result.data as string;
 };

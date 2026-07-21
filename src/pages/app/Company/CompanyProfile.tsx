@@ -2,11 +2,11 @@ import { useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '../../../store/store';
-import { fetchContacts } from '../../../store/contactsSlice';
-import { fetchLeads } from '../../../store/leadsSlice';
-import { fetchDeals } from '../../../store/dealsSlice';
+import { fetchContactsLists } from '../../../store/contactsSlice';
+import { fetchLeadsLists } from '../../../store/leadsSlice';
+import { fetchDealsLists } from '../../../store/dealsSlice';
 import { fetchActivities } from '../../../store/activitiesSlice';
-import { fetchCustomers } from '../../../store/customersSlice';
+import { fetchCustomersLists } from '../../../store/customersSlice';
 
 import {
   Box, Typography, Grid, Card, CardContent,
@@ -49,10 +49,10 @@ export default function CompanyProfile() {
   const { items: activities } = useSelector((s: RootState) => s.activities);
 
   useEffect(() => {
-    if (customers.length === 0) dispatch(fetchCustomers());
-    if (contacts.length === 0) dispatch(fetchContacts());
-    if (leads.length === 0) dispatch(fetchLeads());
-    if (deals.length === 0) dispatch(fetchDeals());
+    if (customers.length === 0) dispatch(fetchCustomersLists());
+    if (contacts.length === 0) dispatch(fetchContactsLists());
+    if (leads.length === 0) dispatch(fetchLeadsLists());
+    if (deals.length === 0) dispatch(fetchDealsLists());
     if (activities.length === 0) dispatch(fetchActivities());
   }, [dispatch]);
 
