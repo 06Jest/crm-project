@@ -27,7 +27,7 @@ import {
   Chart as ChartJS,
   CategoryScale, LinearScale,
   BarElement, LineElement, PointElement,
-  ArcElement, Title, Tooltip, type TooltipItem, Legend,
+  ArcElement, Title, Tooltip, type TooltipItem, Legend, Filler,
 } from 'chart.js';
 import { Bar, Line, Doughnut } from 'react-chartjs-2';
 
@@ -44,7 +44,7 @@ import {
 ChartJS.register(
   CategoryScale, LinearScale, BarElement,
   LineElement, PointElement, ArcElement,
-  Title, Tooltip, Legend
+  Title, Tooltip, Legend, Filler,
 );
 
 const baseOptions = {

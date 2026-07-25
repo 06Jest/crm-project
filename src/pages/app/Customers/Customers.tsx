@@ -4,7 +4,6 @@ import { DataGrid, type GridColDef, useGridApiRef, type GridRowSelectionModel } 
 // import { useSidebar } from "../../../hooks/useSidebar";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../../hooks/useAuth";
 
 
 import {
@@ -112,13 +111,12 @@ const getColumns = (
   }
 ];
 
-const paginationModel = { page: 0, pageSize: 10 };
+const paginationModel = { page: 0, pageSize: 30 };
 
 
 export default function Customers() {
-  const { isAuthenticated } = useAuth();
-  const { items: contacts,  loaded: contactsLoaded } = useSelector((state:RootState) => state.contacts);
-  const { items: deals,  loaded: dealsLoaded } = useSelector((state:RootState) => state.deals);
+  const { items: contacts,  loaded: cLd } = useSelector((state:RootState) => state.contacts);
+  const { items: deals,  loaded: dLd } = useSelector((state:RootState) => state.deals);
   const { items: customers, loading, loaded, error} = useSelector((state:RootState) => state.customers);
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
@@ -156,17 +154,20 @@ export default function Customers() {
       status: customer.status,
       open_deals: dealsOpen,
       preferred_contact_time: c.preferred_contact_time,
-      owner_name: formatName(customer.owner.first_name, customer.owner.last_name),
+      owner_name: customer.owner
+        ? formatName(customer.owner.first_name, customer.owner.last_name)
+        : "Unassigned",
       created_at: customer.created_at,
       action: customer.id
     }
-  });
+  }).filter(Boolean);
 
     
-  
+  const needsLoading = !cLd || !dLd || !loaded;
+
 useEffect(() => {
-  if (!isAuthenticated) return;
-  // if (loading) return;
+
+  if (!needsLoading) return;
 
   const loadData = async () => {
     try {
@@ -176,12 +177,12 @@ useEffect(() => {
         promises.push(dispatch(fetchCustomersLists()).unwrap());
       }
 
-      if (!contactsLoaded) {
+      if (!cLd) {
         promises.push(dispatch(fetchContactsLists()).unwrap());
       }
 
-      if (!dealsLoaded) {
-        promises.push(dispatch  (fetchDealsLists()).unwrap());
+      if (!dLd) {
+        promises.push(dispatch(fetchDealsLists()).unwrap());
       }
 
       await Promise.all(promises);
@@ -192,11 +193,11 @@ useEffect(() => {
 
   loadData();
 }, [
-  isAuthenticated,
   loading,
   loaded,
-  contactsLoaded,
-  dealsLoaded,
+  cLd,
+  dLd,
+  needsLoading,
   dispatch,
 ]);
 
@@ -286,6 +287,7 @@ const hasSelection =
               rowHeight={30}
               checkboxSelection
               apiRef={apiRef}
+              disableRowSelectionOnClick
               onRowSelectionModelChange={(ids) => {
                 setSelectedRows(ids);
               }}

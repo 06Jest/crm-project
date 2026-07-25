@@ -161,6 +161,7 @@ const dealSlice = createSlice({
     builder.addCase(fetchDealsLists.rejected, (state, action) => {
       state.error = action.payload as string;
       state.loading = false;
+      state.loaded = false;
     })
 
 

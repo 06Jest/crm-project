@@ -9,7 +9,7 @@ import RememberMeIcon from '@mui/icons-material/RememberMe';
 import HandshakeIcon from "@mui/icons-material/Handshake";
 import ViewTimelineIcon from "@mui/icons-material/ViewTimeline";
 import FolderSharedIcon from "@mui/icons-material/FolderShared";
-import ChatBubbleIcon from '@mui/icons-material/ChatBubble';
+// import ChatBubbleIcon from '@mui/icons-material/ChatBubble';
 
 function Topbar() {
   const navigate = useNavigate();
@@ -27,7 +27,7 @@ function Topbar() {
     { label: "Deals", value: "/app/deals", icon: <HandshakeIcon /> },
     { label: "Customers", value: "/app/customers", icon: <RememberMeIcon /> },
     { label: "Activities", value: "/app/activities", icon: <ViewTimelineIcon /> },
-    { label: "Messages", value: "/app/messaging", icon: <ChatBubbleIcon /> },
+    // { label: "Messages", value: "/app/messaging", icon: <ChatBubbleIcon /> },
 
     // ...(isAdmin
     //   ? [{ label: "Reports", value: "/app/reports", icon: <DashboardIcon /> }]
@@ -72,16 +72,20 @@ const tabValue =
       >
         {tabs.map((tab) => (
           <Tab
-            
             key={tab.value}
             icon={tab.icon}
             iconPosition="start"
             title={tab.label}
             value={tab.value}
             sx={{
-              transition: "transform 0.2s ease",
-              "&:hover": {
-                transform: "scale(1.6)",
+              transformOrigin: "top",
+              "& .MuiSvgIcon-root": {
+                transformOrigin: "top",
+                transition: "transform .3s ease",
+              },
+              "&:hover .MuiSvgIcon-root": {
+                transform: "scale(1.4)",
+
               },
               minWidth: {
                 xs: 60,

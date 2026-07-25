@@ -18,7 +18,7 @@ import {
   Chart as ChartJS,
   CategoryScale, LinearScale,
   LineElement, PointElement,
-  ArcElement, Title, Tooltip, Legend,
+  ArcElement, Title, Tooltip, Legend, Filler,
 } from 'chart.js';
 import { Line, Doughnut } from 'react-chartjs-2';
 import { CHART_COLORS, CHART_COLORS_ALPHA } from '../../../utils/chartColors';
@@ -26,7 +26,7 @@ import { CHART_COLORS, CHART_COLORS_ALPHA } from '../../../utils/chartColors';
 ChartJS.register(
   CategoryScale, LinearScale,
   LineElement, PointElement,
-  ArcElement, Title, Tooltip, Legend
+  ArcElement, Title, Tooltip, Legend, Filler,
 );
 
 

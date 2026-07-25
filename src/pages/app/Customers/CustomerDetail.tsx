@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector} from 'react-redux';
 import type { AppDispatch } from '../../../store/store';
@@ -14,7 +14,7 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogActions,
+  DialogActions,  
   Paper,
   IconButton,
   TextField,
@@ -34,7 +34,7 @@ import type { RootState } from '../../../store/store';
 import ErrorAlert from '../../../components/Error';
 import { formatName, formatTitle } from '../../../utils/formatText';
 import type { Priority } from '../../../types/global';
-import { clearError, deleteCustomer, updateCustomerNotes, updateCustomerStatus } from '../../../store/customersSlice';
+import { clearError, deleteCustomer, fetchCustomersLists, updateCustomerNotes, updateCustomerStatus } from '../../../store/customersSlice';
 import { CUSTOMER_STATUSES, type CustomerStatus } from '../../../types/customer';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { formattedDate } from '../../../utils/formatTime';
@@ -45,6 +45,9 @@ import ModeEditIcon from '@mui/icons-material/ModeEdit';
 import CheckIcon from '@mui/icons-material/Check';
 import CancelIcon from '@mui/icons-material/Cancel';
 import { DataGrid, type GridColDef } from '@mui/x-data-grid';
+import { fetchContactsLists } from '../../../store/contactsSlice';
+import { fetchDealsLists } from '../../../store/dealsSlice';
+import { fetchMembersIDNames } from '../../../store/ProfileSlice';
 
 const PRIORITY_COLORS: Record<Priority, string> = {
   Highest: '#df3232',
@@ -93,8 +96,10 @@ export default function CustomerDetail() {
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<CustomerStatus | "">("");
   const [updateStatus, setUpdateStatus] = useState(false);
-  const { error } = useSelector((state: RootState) => state.customers)
-  const {items: profiles} = useSelector((state: RootState) => state.profile)
+  const { loaded: contactsLoaded } = useSelector((state: RootState) => state.contacts)
+  const { loaded: dealsLoaded } = useSelector((state: RootState) => state.deals)
+  const { error, loaded: customersLoaded } = useSelector((state: RootState) => state.customers)
+  const {items: profiles, loaded: profilesLoaded} = useSelector((state: RootState) => state.profile)
   const customer = useSelector((state: RootState) =>
     state.customers.items.find((c) => c.id === id)
   );
@@ -103,8 +108,11 @@ export default function CustomerDetail() {
     state.contacts.items.find((c) => c.id === customer?.contact_id)
   );
 
-  const allDeals = useSelector((state: RootState) => 
-    state.deals.items.filter((d) => d.contact_id === contact?.id));
+  const deals = useSelector((state: RootState) => state.deals.items);
+
+  const allDeals = useMemo(() => {
+    return deals.filter((d) => d.contact_id === contact?.id);
+  }, [deals, contact?.id]);
 
   const totalWonValue = useSelector((state: RootState) =>
   state.deals.items.reduce((total, deal) => {
@@ -115,6 +123,19 @@ export default function CustomerDetail() {
   }, 0)
   );
   
+    useEffect(() => {
+      
+    if (!customersLoaded) dispatch(fetchCustomersLists()).unwrap();
+    if (!contactsLoaded) dispatch(fetchContactsLists()).unwrap();
+    if (!dealsLoaded) dispatch(fetchDealsLists()).unwrap();
+    if (!profilesLoaded) dispatch(fetchMembersIDNames()).unwrap();
+  }, [
+    customersLoaded,
+    contactsLoaded,
+    dealsLoaded,
+    profilesLoaded,
+    dispatch,
+  ]);
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   // const [successMessage, setSuccessMessage] = useState('');
@@ -141,6 +162,8 @@ export default function CustomerDetail() {
       </Box>
     );
   }
+
+  
   const handleDeleteConfirm = async () => {
     if (!customer) return;
 
@@ -232,11 +255,14 @@ export default function CustomerDetail() {
   const wonDeals = allDeals.filter((d) => d.stage === 'Closed Won');
   const lostDeals = allDeals.filter((d) => d.stage === 'Closed Lost');
   const biggestWonDeal = wonDeals.reduce((max, deal) => {
-  return deal.value > max.value ? deal : max;
-}, allDeals[0]);
+    if (!max || deal.value > max.value) {
+      return deal;
+    }
 
-  const wonBy = profiles.find((p) => p.id === biggestWonDeal.closed_by)
-  const lostBy = profiles.find((p) => p.id === recentLost[0].closed_by  )
+    return max;
+  }, wonDeals[0]);  
+
+  
   const recentLost = [...lostDeals]
   .sort(
     (a, b) =>
@@ -251,6 +277,12 @@ export default function CustomerDetail() {
   const lostPercent= allDeals
     ? Math.round((lostDeals.length / allDeals.length) * 100)
     : 0;
+
+  const wonBy = profiles.find((p) => p.id === biggestWonDeal.closed_by)
+  const lostBy = recentLost[0]
+  ? profiles.find((p) => p.id === recentLost[0].closed_by)
+  : undefined;
+
 
   return (
     <Box sx={{ maxWidth: 800, mx: 'auto' }}>
@@ -283,7 +315,7 @@ export default function CustomerDetail() {
           Deals
         </Button>
       </Box>
-      <Paper elevation={1} sx={{ p: 4, borderRadius: 3, mb: 3, mt: 2 }}>
+      <Paper elevation={1} sx={{ p: 4, borderRadius: 3, mt: 2 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1, width: '100%' }}>
           <Box sx={{display: 'flex', width: 100, mr: 2, flexDirection: 'column', justifyContent: 'space-between', height: 185 }}>
             <Box sx={{width: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', height:100, border: '1px solid #ccccccd8', borderRadius: 100}}>
@@ -335,7 +367,7 @@ export default function CustomerDetail() {
               <Box sx={{display: 'flex', width: '40%', alignItems: 'center', justifyContent: 'end' }}>
                 <PaidIcon color="action" sx={{fontSize: '15px'}}/>
                 <Box title={`Total revenue from ${formatName(contact.first_name, contact.last_name)} ${contact.suffix || ''} `} sx={{ ml: 1, cursor: 'pointer' }}>
-                  <Typography sx={{fontSize: '14px', fontWeight: 700}}>{formatCurrency(totalWonValue)}</Typography>
+                  <Typography sx={{fontSize: '14px', fontWeight: 700, letterSpacing: '2px',}}>{formatCurrency(totalWonValue)}</Typography>
                 </Box>
               </Box>
             </Box>
@@ -348,13 +380,13 @@ export default function CustomerDetail() {
               <Typography title="Notes" fontWeight={500} fontSize={12} sx={{cursor: 'pointer', minHeight: 52, width: '95%', ml: '10px' }}>
                 {customer?.notes}
               </Typography>
-              <Box width={'5%'}>
+              <Box width={'5%'} >
                 <IconButton onClick={() => {
                   setIsEditingNotes(true)
                   handleEditNotes()
                 }}
-                title='Edit Notes' sx={{opacity: hoveredNotes ? 1 : 0, p: 0}}>
-                  <EditNoteIcon/>
+                title='Edit Notes' sx={{opacity: hoveredNotes ? 1 : 0, p: 0,  transition: "all 0.3s ease", transform: hoveredNotes ? "translateX(0)" : "translateX(8px)",}}>
+                  <EditNoteIcon />
                 </IconButton>
               </Box>
             </Box>
@@ -450,8 +482,8 @@ export default function CustomerDetail() {
                       backgroundColor: STATUS_COLORS[customer?.status as CustomerStatus],
                     }}
                   />
-                  <IconButton onClick={() => setUpdateStatus(true)} title='Update Status' sx={{p:'2px',mt: 1,}}>
-                    <ModeEditIcon sx={{opacity: hovered ? 1 : 0, fontSize: '13px'}}/>
+                  <IconButton onClick={() => setUpdateStatus(true)} title='Update Status' sx={{p:'1px',mt: 1,}}>
+                    <ModeEditIcon sx={{ fontSize: '13px', opacity: hovered ? 1 : 0,  transition: "all 0.3s ease", transform: hovered ? "translateX(0)" : "translateX(8px)",}}/>
                   </IconButton>
                 </Box>
                 ): (
@@ -508,94 +540,102 @@ export default function CustomerDetail() {
           </Box>
         </Box>
       </Paper>
-      <Paper elevation={1} sx={{ p: 4, borderRadius: 3, mb: 3, mt: 2 }}>
-        <Typography variant='h6' fontWeight={700} sx={{justifySelf: 'flex-start'}}>
-              Deals
-          </Typography>
+      <Paper elevation={1} sx={{ p: 2, borderRadius: 3, my: 2 }}>
+        <Typography ml={2} variant='h6' fontWeight={700} sx={{justifySelf: 'flex-start'}}>
+              DEALS
+        </Typography>
+        <Box sx={{ height: 320, mt: 3,   width: '100%', mb: 3}}>
+          <DataGrid
+            rows={rows}
+            columns={columns}
+            getRowId={(row) => row.id}
+            initialState={{ pagination: { paginationModel } }}
+            pageSizeOptions={[5, 10]}
+            rowHeight={32}
+            sx={{ pb: 0, fontSize: '13px', borderRadius: 4, border: 'none' }}
+          />
+        </Box>
+      </Paper>
         <Box  sx={{display: 'flex', flexDirection: 'column', width: '100%', alignItems:'center'}}>
           
-          <Box sx={{display: 'flex', flexDirection: 'column', width: '80%'}}>
-            <Box sx={{display: 'flex', justifyContent: 'space-between', gap: 3, width: '100%'}}>
-              <Box sx={{display: 'flex', flexDirection: 'column', justifyContent: 'space-between', width: '33%', border: '1px solid #c7c7c78a', p: '4px 12px', borderRadius: 3, }}>
-                <Box sx={{height: '10%', fontSize: '11px'}}>
-                  Total Deals
+          <Box sx={{display: 'flex', flexDirection: 'column', width: '100%', }}>
+            <Box sx={{display: 'flex', justifyContent: 'space-between', gap: 2, width: '100%' ,height: 125}}>
+              <Paper sx={{display: 'flex', flexDirection: 'column', justifyContent: 'space-between', width: '33%', border: '1px solid #c7c7c78a', p: '4px 12px', borderRadius: 3, }}>
+                <Box  sx={{height: '20%', fontSize: '11px'}}>
+                   Total Deals
                 </Box>
-                <Box sx={{height: '60%', textAlign: 'center'}}>
-                  <Typography variant='h2' sx={{fontWeight: 700, fontFamily: 'cursive',}}>{allDeals.length}</Typography>
+                <Box sx={{height: '60%'}}>
+                  <Typography variant='h3' sx={{fontWeight: 700}}>{allDeals.length}</Typography>
                 </Box>
                 <Box sx={{display: 'flex', justifyContent: 'space-between' , height:'20%', fontSize: '11px'}}>
                   <Box>won: {wonPercent}%</Box>
                   <Box>lost: {lostPercent}%</Box>
                 </Box>
-              </Box>
-              <Box sx={{display: 'flex', flexDirection: 'column', justifyContent: 'space-between', width: '33%', border: '1px solid #c7c7c78a', p: '4px 12px', borderRadius: 3}}>
-                <Box sx={{height: '10%', fontSize: '11px'}}>
+              </Paper>
+              <Paper sx={{display: 'flex', flexDirection: 'column', justifyContent: 'space-between', width: '33%', border: '1px solid #c7c7c78a', p: '4px 12px', borderRadius: 3}}>
+                <Box sx={{height: '20%', fontSize: '11px'}}>
                   Open Deals
                 </Box>
-                <Box sx={{height: '60%', textAlign: 'center'}}>
-                  <Typography variant='h2' sx={{fontWeight: 700, fontFamily: 'cursive',}}>{openDeals.length}</Typography>
+                <Box sx={{height: '60%'}}>
+                  <Typography variant='h3' sx={{fontWeight: 700}}>{openDeals.length}</Typography>
                 </Box>
                 <Box sx={{display: 'flex', justifyContent: 'space-between' , height:'20%', fontSize: '11px'}}>
                   <Typography sx={{fontSize: '11px'}}>Total value:</Typography>
                   <Typography sx={{fontSize: '11px'}}>{totalArrayValues(openDeals.map((deal) => deal.value))}</Typography>
                 </Box>
-              </Box>
-              <Box sx={{display: 'flex', flexDirection: 'column', justifyContent: 'space-between', width: '33%'  , border: '1px solid #c7c7c78a', p: '4px 12px', borderRadius: 3}}>
-                <Box sx={{height: '10%', fontSize: '11px'}}>
+              </Paper>
+              <Paper sx={{display: 'flex', flexDirection: 'column', justifyContent: 'space-between', width: '33%'  , border: '1px solid #c7c7c78a', p: '4px 12px', borderRadius: 3}}>
+                <Box sx={{height: '20%', fontSize: '11px'}}>
                   Deals Won
                 </Box>
-                <Box sx={{height: '60%', textAlign: 'center'}}>
-                  <Typography variant='h2' sx={{fontWeight: 700, fontFamily: 'cursive',}}>{wonDeals.length}</Typography>
+                <Box sx={{height: '60%'}}>
+                  <Typography variant='h3' sx={{fontWeight: 700}}>{wonDeals.length}</Typography>
                 </Box>
                 <Box sx={{display: 'flex', justifyContent: 'space-between' , height:'20%', }}>
                   <Typography sx={{fontSize: '11px'}}>revenue:</Typography>
                   <Typography sx={{fontSize: '11px'}}>{totalArrayValues(wonDeals.map((deal) => deal.value))}</Typography>
                 </Box>
-              </Box>
-            </Box>
-            <Box sx={{display: 'flex', mt: 2, justifyContent: 'center', gap: 3, width: '100%'}}>
-              <Box sx={{display: 'flex', flexDirection: 'column', width:'50%', border: '1px solid #c7c7c78a', p: '4px 12px', borderRadius: 3}}>
-                <Box sx={{height: 15, fontSize: '11px'}}>
-                  Biggest Deal Won
-                </Box>
-                <Box sx={{flex: 1, my: 2}}>
-                  <Typography sx={{fontFamily: 'cursive', fontWeight: 700}} variant='h4' ml={4}>{formatCurrency(biggestWonDeal.value)}</Typography>
-                  <Box mx={4} >{biggestWonDeal.title}</Box>
-                </Box>
-                <Box sx={{height: 15, display: 'flex', justifyContent: 'space-between', fontSize: '11px'}}>
-                  <Box>{formattedDate(biggestWonDeal.close_date)}</Box>
-                  <Box>Won by:{wonBy?.display_name}</Box>
-                </Box>
-              </Box>
-              <Box sx={{display: 'flex', flexDirection: 'column', width:'50%', border: '1px solid #c7c7c78a', p: '4px 12px', borderRadius: 3}}>
-                <Box sx={{height: 15, fontSize: '11px'}}>
-                  Recent Lost Deal
-                </Box>
-                <Box sx={{flex: 1, my: 2}}>
-                  <Typography sx={{fontFamily: 'cursive', fontWeight: 700}} variant='h4' ml={4}>{formatCurrency(recentLost[0].value)}</Typography>
-                  <Box mx={4} >{recentLost[0].title}</Box>
-                </Box>
-                <Box sx={{height: 15, display: 'flex', justifyContent: 'space-between', fontSize: '11px'}}>
-                  <Box>{formattedDate(recentLost[0].close_date)}</Box>
-                  <Box>Lost by:{lostBy?.display_name}</Box>
-                </Box>
-              </Box>
-            </Box>
-            <Box sx={{ height: 320, mt: 3,   width: '100%', mb: 3}}>
-              <DataGrid
-                rows={rows}
-                columns={columns}
-                getRowId={(row) => row.id}
-                initialState={{ pagination: { paginationModel } }}
-                pageSizeOptions={[5, 10]}
-                rowHeight={32}
-                sx={{ border: '1px solid #c7c7c78a', p: 2, pb: 0, fontSize: '13px', borderRadius: 4, }}
-              />
+              </Paper>
             </Box>
           </Box>
-          
+          <Box sx={{display: 'flex', my: 2, justifyContent: 'center', gap: 2, width: '100%'}}>
+            <Paper sx={{display: 'flex', flexDirection: 'column', width:'50%', border: '1px solid #c7c7c78a', p: '4px 12px', borderRadius: 3}}>
+              <Box sx={{height: 15, fontSize: '11px'}}>
+                Biggest Deal Won
+              </Box>
+              <Box sx={{flex: 1, my: 2}}>
+                <Typography sx={{ fontWeight: 700}} variant='h4'>{biggestWonDeal 
+                  ? formatCurrency(biggestWonDeal.value)
+                  : "No won deals"
+                }</Typography>
+                <Box>
+                  {biggestWonDeal?.title ?? "No won deals"}
+                </Box>
+              </Box>
+              <Box sx={{height: 15, display: 'flex', justifyContent: 'space-between', fontSize: '11px'}}>
+                <Box>{formattedDate(biggestWonDeal.close_date) ?? '???'}</Box>
+                <Box sx={{cursor: 'pointer'}} title={`Won by: ${wonBy?.display_name}`}>{wonBy?.display_name ?? '???'}</Box>
+              </Box>
+            </Paper>
+            <Paper sx={{display: 'flex', flexDirection: 'column', width:'50%', border: '1px solid #c7c7c78a', p: '4px 12px', borderRadius: 3}}>
+              <Box sx={{height: 15, fontSize: '11px'}}>
+                Recent Lost Deal
+              </Box>
+              <Box sx={{flex: 1, my: 2}}> 
+                <Typography sx={{ fontWeight: 700}} variant='h4'>{recentLost[0]
+                  ? formatCurrency(recentLost[0].value)
+                  : "0"
+                }</Typography>
+                <Box >{recentLost[0]?.title ?? "No lost deals yet"}</Box>
+              </Box>
+              <Box sx={{height: 15, display: 'flex', justifyContent: 'space-between', fontSize: '11px'}}>
+                <Box>{recentLost[0]?.title ?? ""}</Box>
+                <Box sx={{cursor: 'pointer'}} title={`Lost by: ${lostBy?.display_name}`}>{lostBy?.display_name}</Box>
+              </Box>
+            </Paper>
+          </Box>
+            
         </Box>
-      </Paper>
       <Dialog
         open={deleteDialogOpen}
         onClose={() => setDeleteDialogOpen(false)}

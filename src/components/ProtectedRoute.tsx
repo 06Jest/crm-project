@@ -4,7 +4,6 @@ import { useAuth } from '../hooks/useAuth';
 
 export default function ProtectedRoute() {
   const { user, loading, loaded} = useAuth();
-
   if (loading || !loaded) {
     return (
       <Box

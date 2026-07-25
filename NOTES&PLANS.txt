@@ -1,15 +1,23 @@
 to do before application:
 
-2 days	customers
-1 day	dashboard
-2 day	chat
+*1 day	  notes
+*1 day	  email
+2 day	  chat
+1 days	tasks
+1 day	  sms
+1 day	  calls 
+1 days	activities
+1 days	leaderboard
+1 days	customers
+1 day	  dashboard
+2 days	analytics
 2 days	settings(admin privilege)
-1 day	email
-2 day	ai
+3 day	  ai
 2 days	responsive
-3 days	test-polish(
+4 days	test-polish(
 error handling,
 success handling,
+loading handling,
 UI,
 agent registration,
 verification cycle,
@@ -19,24 +27,24 @@ etc..)
 
 to do during application:
 
-2 days	analytics
+
+2 days  Org member display id
+2 days  Dedicated Agent Registration
+2 days	Display id
 2 days	lazy loading
-2 days	tasks
-2 days	activities
-2 days	leaderboard
-2 days	notes
-3 day	  sms
-2 day	  calls
 7 days	super admin
 2 days 	companies
 2 days	archive
+2 days  email templates(react email)
 3 days  websocket
 1 day   multi national support(currency, phone number)
 2 days  addresses
 2 days	tutorials
 2 day   data placeholders(auto generated but optional)	
 4 days	caching redis
+3 days  data display id (rpc/ postgre functions)
 5 days	tan stack migration
+2 days  multi data migration
 7 days  full documentation( about, help, contact us, roadmap, terms, privacy)
 
 

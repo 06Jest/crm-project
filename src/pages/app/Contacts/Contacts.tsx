@@ -277,50 +277,104 @@ const hasSelection =
         p: 2,
         mx: 2,
         height: 850}}>
-          <Box sx={{display: {xs: 'none', lg: 'flex'}, flexDirection: 'column',  width: '15%', alignItems: 'end', minWidth: 285, }}>
-            
-            <Paper sx={{ height: '50%', maxHeight: 325 , width: '100%', minHeight: 310, m: 1, p: 1, borderRadius: 3,}}>
-              <Typography  sx={{
-                pb: 1,
-                borderBottom: 0.2, 
-                borderColor: '#92929238'
-              }} variant="h6" fontWeight={700} margin={1} marginLeft={1}>Recently Added</Typography>
-              <List>
-                {recentContactsList.map((contact) => (
-                  <ListItem key={contact.id} onClick={() => navigate(`/app/contacts/${contact.id}`)} sx={{
-                        cursor: 'pointer',
-                        height: 15,
-                        py: 1.4,
-                        borderRadius: 4,
-                        '&:hover': {
-                          bgcolor: (theme) =>
-                          alpha(theme.palette.text.primary, 0.08),
-                        },}}>
-                    <ListItemText
-                      primary={contact.name.length > 25
-                      ? `${(contact.name).slice(0, 25)}...`
-                      : (contact.name)}
-                      primaryTypographyProps={{color: "primary", fontSize: 14 }}
-                      sx={{textAlign: 'left'}}
-                    />
-                    <ListItemText
-                      sx={{textAlign: 'right'}}
-                      primaryTypographyProps={{ fontSize: 11}}
-                      primary={contact.created}
-                    />
-                  </ListItem>
-                ))}
-              </List>
-            </Paper>
-            <Paper sx={{ height: '50%',maxHeight: 325, width: '100%', minWidth: 200, minHeight: 310, m: 1, p: 1, borderRadius: 3}}>
-              <Typography sx={{
-                pb: 1,
-                borderBottom: 0.2, 
-                borderColor: '#92929238'
-              }} variant="h6" fontWeight={700} margin={1} marginLeft={1}>Priorities</Typography>
-              <List sx={{overflowY: 'auto', height: '75%'}}>
-                {PriorityList.map((contact) => (
-                  <ListItem key={contact.id} onClick={() => navigate(`/app/contacts/${contact.id}`)} sx={{
+        <Paper
+          sx={{
+            justifyContent: 'center',
+            p: 1,
+            pt: 0,
+            width: '50vw',
+            minWidth: 300,
+            transition: 'width 0.3s ease',
+            maxHeight:  1000,
+            display: 'flex',
+            flex: 1,
+            borderRadius: 3,
+            marginRight: 6,
+            flexDirection: 'column',
+            overflow: 'auto'
+          }}
+        >
+          <Box sx={{display: 'flex', justifyContent: 'space-between', p: 2,}}>
+            <Typography variant="h5" fontWeight={700} margin={1} >Contacts</Typography>
+            <Box sx={{
+              display: 'flex',
+              width: '50%',
+            }}>
+              <Box sx={{width: '100%'}}>
+                {error  && (
+                <ErrorAlert
+                  message={error}
+                />
+              )}
+              </Box>
+              
+            </Box>
+            <Box>
+              <IconButton
+                onClick={() => {
+                  dispatch(clearError());
+                  navigate(`/app/addcontact`)
+                }}
+                sx={{
+                fontSize: 12,
+                py: 1,
+                px: 2,
+                border: '1px solid #bbbbbb88',
+                borderRadius: 2,
+                mr: 2,
+                fontWeight: 700
+              }}>
+                <PersonAddIcon titleAccess="Add Contact"/>
+              </IconButton>
+              <Button
+                onClick={() => setConfirmOpen(true)}
+                disabled={!hasSelection}
+              >
+                <DeleteIcon
+                  sx={{
+                    opacity: hasSelection ? 1 : 0,
+                    color: '#e95858'
+                  }}
+                  fontSize="large"
+                />
+              </Button>
+            </Box>
+          </Box>
+          
+          <DataGrid
+            sx={{
+              flex: 1,
+              minHeight: 0,
+              borderRadius: 3,
+              fontSize: '0.85rem',
+              cursor: 'pointer',
+              overflow: 'auto'
+            }}
+            rows={rows}
+            columns={columns}
+            initialState={{ pagination: { paginationModel } }}
+            pageSizeOptions={[30, 50]}
+            rowHeight={30}
+            checkboxSelection
+            apiRef={apiRef}
+            disableRowSelectionOnClick
+            onRowSelectionModelChange={(ids) => {
+              setSelectedRows(ids);
+            }}
+          />
+          
+        </Paper>
+        <Box sx={{display: {xs: 'none', lg: 'flex'}, flexDirection: 'column',  width: '15%', alignItems: 'end', minWidth: 270, }}>
+          
+          <Paper sx={{ height: '50%', maxHeight: 300 , width: '100%', minHeight: 310, mx: 1,mb: 1, p: 1, borderRadius: 3,}}>
+            <Typography  sx={{
+              pb: 1,
+              borderBottom: 0.2, 
+              borderColor: '#92929238'
+            }} variant="h6" fontWeight={700} margin={1} marginLeft={1}>Recently Added</Typography>
+            <List>
+              {recentContactsList.map((contact) => (
+                <ListItem key={contact.id} onClick={() => navigate(`/app/contacts/${contact.id}`)} sx={{
                       cursor: 'pointer',
                       height: 15,
                       py: 1.4,
@@ -329,112 +383,58 @@ const hasSelection =
                         bgcolor: (theme) =>
                         alpha(theme.palette.text.primary, 0.08),
                       },}}>
-                    {contact.priorityIcon}
-                    <ListItemText
-                      primaryTypographyProps={{color: "primary", fontSize: 14 }}
-                      sx={{textAlign: 'left', justifyContent: 'center'}} >
-
-                      {contact.name.length > 25
-                      ? `${(contact.name).slice(0, 25)}...`
-                      : (contact.name)}
-                        
-                    </ListItemText>
-                    <ListItemText 
-                      sx={{textAlign: 'right'}}
-                      primaryTypographyProps={{ fontSize: 11}}
-                    >{contact.created}</ListItemText>
-                  </ListItem>
-                ))}
-              </List>
-            </Paper>
-          </Box>
-          <Paper
-            sx={{
-              justifyContent: 'center',
-              p: 1,
-              pt: 0,
-              width: '50vw',
-              minWidth: 300,
-              transition: 'width 0.3s ease',
-              maxHeight:  1000,
-              display: 'flex',
-              flex: 1,
-              borderRadius: 3,
-              marginLeft: 1,
-              flexDirection: 'column',
-              overflow: 'auto'
-            }}
-          >
-            <Box sx={{display: 'flex', justifyContent: 'space-between', p: 2,}}>
-              <Typography variant="h5" fontWeight={700} margin={1} >Contacts</Typography>
-              <Box sx={{
-                display: 'flex',
-                width: '50%',
-              }}>
-                <Box sx={{width: '100%'}}>
-                  {error  && (
-                  <ErrorAlert
-                    message={error}
+                  <ListItemText
+                    primary={contact.name.length > 25
+                    ? `${(contact.name).slice(0, 25)}...`
+                    : (contact.name)}
+                    primaryTypographyProps={{color: "primary", fontSize: 14 }}
+                    sx={{textAlign: 'left'}}
                   />
-                )}
-                </Box>
-                
-              </Box>
-              <Box>
-                <IconButton
-                  onClick={() => {
-                    dispatch(clearError());
-                    navigate(`/app/addcontact`)
-                  }}
-                  sx={{
-                  fontSize: 12,
-                  py: 1,
-                  px: 2,
-                  border: '1px solid #bbbbbb88',
-                  borderRadius: 2,
-                  mr: 2,
-                  fontWeight: 700
-                }}>
-                  <PersonAddIcon titleAccess="Add Contact"/>
-                </IconButton>
-                <Button
-                  onClick={() => setConfirmOpen(true)}
-                  disabled={!hasSelection}
-                >
-                  <DeleteIcon
-                    sx={{
-                      opacity: hasSelection ? 1 : 0,
-                      color: '#e95858'
-                    }}
-                    fontSize="large"
+                  <ListItemText
+                    sx={{textAlign: 'right'}}
+                    primaryTypographyProps={{ fontSize: 11}}
+                    primary={contact.created}
                   />
-                </Button>
-              </Box>
-            </Box>
-            
-            <DataGrid
-              sx={{
-                flex: 1,
-                minHeight: 0,
-                borderRadius: 3,
-                fontSize: '0.85rem',
-                cursor: 'pointer',
-                overflow: 'auto'
-              }}
-              rows={rows}
-              columns={columns}
-              initialState={{ pagination: { paginationModel } }}
-              pageSizeOptions={[30, 50]}
-              rowHeight={30}
-              checkboxSelection
-              apiRef={apiRef}
-              disableRowSelectionOnClick
-              onRowSelectionModelChange={(ids) => {
-                setSelectedRows(ids);
-              }}
-            />
-            
+                </ListItem>
+              ))}
+            </List>
           </Paper>
+          <Paper sx={{ height: '50%',maxHeight: 300, width: '100%', minWidth: 200, minHeight: 310, mx: 1, mt: 1, p: 1, borderRadius: 3}}>
+            <Typography sx={{
+              pb: 1,
+              borderBottom: 0.2, 
+              borderColor: '#92929238'
+            }} variant="h6" fontWeight={700} margin={1} marginLeft={1}>Priorities</Typography>
+            <List sx={{overflowY: 'auto', height: '75%'}}>
+              {PriorityList.map((contact) => (
+                <ListItem key={contact.id} onClick={() => navigate(`/app/contacts/${contact.id}`)} sx={{
+                    cursor: 'pointer',
+                    height: 15,
+                    py: 1.4,
+                    borderRadius: 4,
+                    '&:hover': {
+                      bgcolor: (theme) =>
+                      alpha(theme.palette.text.primary, 0.08),
+                    },}}>
+                  {contact.priorityIcon}
+                  <ListItemText
+                    primaryTypographyProps={{color: "primary", fontSize: 14 }}
+                    sx={{textAlign: 'left', justifyContent: 'center'}} >
+
+                    {contact.name.length > 25
+                    ? `${(contact.name).slice(0, 25)}...`
+                    : (contact.name)}
+                      
+                  </ListItemText>
+                  <ListItemText 
+                    sx={{textAlign: 'right'}}
+                    primaryTypographyProps={{ fontSize: 11}}
+                  >{contact.created}</ListItemText>
+                </ListItem>
+              ))}
+            </List>
+          </Paper>
+        </Box>
           <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
             <DialogTitle>Confirm Delete</DialogTitle>
 

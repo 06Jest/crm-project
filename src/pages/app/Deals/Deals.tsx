@@ -248,7 +248,9 @@ export default function Deals() {
 
     const dealId = dragResult.draggableId;
     const newStage = dragResult.destination.droppableId as DealStage;
+    dispatch(moveDealLocally({ id: dealId, newStage }));
     await dispatch(updateDealStage({ id: dealId, stage: newStage })).unwrap();
+    dispatch(clearError())
   }
 
 
@@ -303,7 +305,8 @@ export default function Deals() {
         justifyContent: 'space-between',
         alignItems: 'center',
         mb: 1,
-        mx: '3vw',
+        width: '84vw',
+        justifySelf: 'center'
       }}>
         <Typography variant="h5" fontWeight={700}>
           Deals
@@ -332,7 +335,7 @@ export default function Deals() {
       <Box 
         sx={{
           overflow: 'auto', 
-          width: '90vw', 
+          width: '85vw', 
           mb: 2,  
           p: '10px', 
           borderRadius: 2, 

@@ -13,7 +13,6 @@ export const fetchCustomersListsAPI = async (): Promise<CustomerListItem[]> => {
   const result = await apiClient("/api/customers/show-customers-lists", {
     method: "GET",
   });
-  console.log("Customers API:", result.data);
   return result.data as CustomerListItem[];
 };
 

@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, useLocation} from 'react-router-dom';
+import { Routes, Route, useLocation} from 'react-router-dom';
 import { useEffect } from 'react';
 
 import PublicLayout from './layout/PublicLayout';
@@ -78,11 +78,11 @@ function AppRoutes() {
             <Route path="/app/leads" element={<Leads />} />
             <Route path="/app/addlead" element={<AddLead />} />
             <Route path="/app/contacts" element={<Contacts />} />
-            <Route path="/app/addcontact" element={<AddContact />} />
+            <Route path="/app/contacts/addcontact" element={<AddContact />} />
             <Route path="/app/contacts/:id" element={<ContactDetail />} />
             <Route path="/app/deals" element={<Deals />} />
-            <Route path="/app/adddeal" element={<AddDeal />} />
-            <Route path="/app/adddeal/:id" element={<AddDealByID />} />
+            <Route path="/app/deals/adddeal" element={<AddDeal />} />
+            <Route path="/app/deals/adddeal/:id" element={<AddDealByID />} />
             <Route path="/app/activities" element={<Activities />} /> 
             <Route path="/app/customers" element={<Customers />} />
             <Route path="/app/customers/leaderboard" element={<CustomerLeaderboard />} />
@@ -116,9 +116,7 @@ function AppRoutes() {
 }
 function App() {
   return (
-    <BrowserRouter>
       <AppRoutes />
-    </BrowserRouter>
   );
 }
 
