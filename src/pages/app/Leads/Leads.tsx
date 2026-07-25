@@ -57,7 +57,7 @@ import FolderSharedIcon from "@mui/icons-material/FolderShared";
 // import { useAuth } from "../../../hooks/useAuth";
 import ErrorAlert from "../../../components/Error";
 import { DEPARTMENTS, GENDERS, INDUSTRIES, PREFERRED_CONTACT_TIMES, PRIORITIES, SOURCES, SUFFIXES, type Gender, type PreferredTime, type Priority, type Source, type Suffix } from "../../../types/global";
-import { formatName, formatTitle } from "../../../utils/formatText";
+import { formatName, formatShortTitle } from "../../../utils/formatText";
 import { calculateAge } from "../../../utils/calculateAge";
 
 const PRIORITY_COLORS: Record<Priority, string> = {
@@ -543,9 +543,7 @@ export default function Leads() {
                                   title="Lead Title"
                                   sx={{cursor: 'pointer', fontSize: '16px'}}
                                    fontWeight={600} >
-                                  {lead.title.length > 18
-                                    ? `${formatTitle(lead.title).slice(0, 18)}...`
-                                    : formatTitle(lead.title).toUpperCase()}
+                                  {formatShortTitle(lead.title).toUpperCase()}
                                   </Typography>
                                   <Box
                                     title={`${lead.priority} Priority`}
@@ -624,7 +622,7 @@ export default function Leads() {
                                     title="Preferred Time to contact"
                                     color="text.secondary"
                                     sx={{ px: '5px', py: '1px', 
-                                      border: '1px solid #7a7a7a98',
+                                      border: '1px solid #291b1b94',
                                       backgroundColor: '#cccccc00',
                                       borderRadius: 8,
                                       fontSize: '9px',

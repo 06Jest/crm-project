@@ -11,14 +11,12 @@ import { useSidebar } from '../hooks/useSidebar';
 
  function AppLayout() {
   const { collapsed } = useSidebar();
+  
   return (
       <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
         <Header />
         <Topbar />   
         <Box component= "main" sx={{mt: 12,pt: 2, width: '100%', display: 'flex'}}>
-          <Box sx={{flex: 1, minHeight: 900}}>
-            <Outlet/>
-          </Box>
           <Box 
             display={{
               xs: 'none',
@@ -26,12 +24,16 @@ import { useSidebar } from '../hooks/useSidebar';
               md: 'block'
             }}
             sx={{
-              width: collapsed ? 70 : 350,
+              width: collapsed ? 70 : 200,
               transition: "width 0.3s ease",
             }}
           >
             <Sidebar />
           </Box>
+          <Box sx={{flex: 1, minHeight: 900}}>
+            <Outlet/>
+          </Box>
+          
         </Box>
         <Footer/>
         {/* <FloatingAIChat /> */}

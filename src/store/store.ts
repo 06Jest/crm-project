@@ -8,15 +8,19 @@ import uiReducer from './uiSlice'
 import customersReducer from './customersSlice';
 // import messagingReducer from './messagingSlice';
 import dealsReducer from './dealsSlice';
+import emailsReducer from './emailSlice';
+import notesReducer from './notesSlice';
 // import superAdminReducer from './superAdminSlice';
 
 export const store = configureStore({
   reducer: {
-    user: userReducer,
+    user: userReducer, 
     profile: profileReducer,
     contacts: contactsReducer,
     leads: leadsReducer,
     deals: dealsReducer,
+    notes: notesReducer,
+    emails: emailsReducer,
     // activities: activitiesReducer,
     customers: customersReducer,
     // messaging: messagingReducer,

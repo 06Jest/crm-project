@@ -142,6 +142,7 @@ const leadSlice = createSlice({
     builder.addCase(fetchLeadsLists.rejected, (state, action) => {
       state.loading = false;
       state.error = action.payload as string;
+      state.loaded = false;
     })
 
 

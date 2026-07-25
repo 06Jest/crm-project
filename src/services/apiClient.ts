@@ -29,7 +29,7 @@
       );
 
       if (refreshResponse.ok) {
-        return  fetch(
+        const retryResponse = await fetch(
           `${API_URL}${endpoint}`,
           {
             credentials: "include",
@@ -40,6 +40,18 @@
             ...options,
           }
         );
+
+        const retryData = await retryResponse.json().catch(() => null);
+
+        if (!retryResponse.ok) {
+          throw new Error(
+            retryData?.error ??
+            retryData?.message ??
+            `API Error: ${retryResponse.status}`
+          );
+        }
+
+        return retryData;
       }
     }
 

@@ -172,7 +172,7 @@ const userSlice = createSlice({
       .addCase(getCurrentUser.fulfilled, (state, action) => {
         state.loading = false;
         state.loaded = true;
-        state.user = action.payload;
+        state.user = action.payload.profile;
         state.isAuthenticated = true;
       })
 

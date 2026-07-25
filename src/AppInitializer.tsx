@@ -9,10 +9,11 @@ export default function AppInitializer({ children }: Props) {
   const { loaded, loading, currentUser } = useAuth();
 
   useEffect(() => {
-  if (!loaded && !loading) {
-    currentUser();
-  }
-}, [loaded, loading]);
+    
+    if (!loaded && !loading) {
+      currentUser();
+    }
+  }, [loaded, loading, currentUser]);
   
   return <>{children}</>;
 }
