@@ -28,13 +28,13 @@ etc..)
 to do during application:
 
 
-2 days  Org member display id
 2 days  Dedicated Agent Registration
-2 days	Display id
+2 days	Display ids(org/members/all data)
 2 days	lazy loading
 7 days	super admin
 2 days 	companies
 2 days	archive
+2 days  chat feature enhancement(typing, isOnline, file insert)
 2 days  email templates(react email)
 3 days  websocket
 1 day   multi national support(currency, phone number)

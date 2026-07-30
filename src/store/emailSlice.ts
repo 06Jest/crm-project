@@ -202,11 +202,6 @@ const emailSlice = createSlice({
 
   extraReducers:(builder)=>{
 
-
-    /*
-      FETCH EMAILS
-    */
-
     builder
 
     .addCase(fetchEmails.pending,(state)=>{
