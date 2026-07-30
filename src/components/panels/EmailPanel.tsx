@@ -98,9 +98,7 @@ const SIDEBAR_ITEMS: {
   { key: "failed", label: "Failed", icon: <ErrorOutlineIcon fontSize="small" /> },
 ];
 
-// Extends the textStyle mark with a `fontSize` attribute so the toolbar's
-// font-size dropdown can apply/clear an inline style, same way Color and
-// FontFamily add their own attributes to the same mark.
+
 const FontSize = TextStyle.extend({
   addAttributes() {
     return {
@@ -491,10 +489,11 @@ export default function EmailPanel() {
     if (!editor || view !== "editor") return;
 
     editor.commands.setContent(activeEmail?.body_html ?? "");
-    editor.setEditable(isDraft);
+    editor.setEditable(activeEmail?.status === "draft" || !activeEmail);
+
     setEditBodyHtml(activeEmail?.body_html ?? "");
     setEditBodyText(activeEmail?.body_text ?? "");
-  }, [editor, view, activeId]);
+  }, [editor, view, activeEmail]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -517,6 +516,22 @@ export default function EmailPanel() {
       // Error handled by Redux state
     }
   };
+  useEffect(() => {
+    if (view !== "editor") return;
+
+    const timer = setTimeout(() => {
+      autoSaveDraft();
+    }, 3000); 
+
+    return () => clearTimeout(timer);
+  }, [
+    editRecipient,
+    editSubject,
+    editBodyText,
+    editBodyHtml,
+    ownerId,
+    view,
+  ]);
 
   const resetEditorState = () => {
     setEditRecipient("");
@@ -610,11 +625,11 @@ export default function EmailPanel() {
   const buildComposePayload = () => ({
     recipient_email: editRecipient.trim(),
     subject: editSubject.trim(),
-    body_text: editBodyText.trim(),
     body_html: editBodyHtml,
-    lead_id: ownerType === "lead" ? ownerId : undefined,
-    contact_id: ownerType === "contact" ? ownerId : undefined,
-    customer_id: ownerType === "customer" ? ownerId : undefined,
+    body_text: editBodyText,
+    lead_id: ownerType === "lead" ? ownerId || undefined : undefined,
+    contact_id: ownerType === "contact" ? ownerId || undefined : undefined,
+    customer_id: ownerType === "customer" ? ownerId || undefined : undefined,
   });
 
   const buildUpdatePayload = () => ({
@@ -642,6 +657,11 @@ export default function EmailPanel() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleOpenEmail = async (email: EmailListItem) => {
+    await leaveEditor();
+    openExistingEmail(email);
   };
 
   const handleSend = async () => {
@@ -756,9 +776,9 @@ export default function EmailPanel() {
     }
 
     const hasContent =
-      editRecipient.trim() ||
-      editSubject.trim() ||
-      editBodyText.trim();
+      editRecipient.trim().length > 0 ||
+      editSubject.trim().length > 0 ||
+      editBodyText.trim().length > 0;
 
     if (hasContent) {
       setSaving(true);
@@ -771,26 +791,52 @@ export default function EmailPanel() {
               email: buildUpdatePayload(),
             })
           ).unwrap();
-        } else if (ownerId) {
-          await dispatch(addEmailDraft(buildComposePayload())).unwrap();
+        } else {
+          await dispatch(
+            addEmailDraft(buildComposePayload())
+          ).unwrap();
         }
-      } catch {
-        // optional
       } finally {
         setSaving(false);
       }
-    }
+}
 
     setView("list");
     setActiveId(null);
     resetEditorState();
   };
 
+  const autoSaveDraft = async () => {
+      if (view !== "editor") return;
+
+      const hasContent =
+          editRecipient.trim() ||
+          editSubject.trim() ||
+          editBodyText.trim();
+
+      if (!hasContent) return;
+
+      if (activeId) {
+          await dispatch(
+              updateEmailDraft({
+                  id: activeId,
+                  email: buildUpdatePayload(),
+              })
+          ).unwrap();
+      } else {
+          const created = await dispatch(
+              addEmailDraft(buildComposePayload())
+          ).unwrap();
+
+          setActiveId(created.id);
+      }
+  };
+
   return (
     <Box sx={{ display: "flex", height: "100%", minHeight: 0 }}>
       <Box
         sx={{
-          width: 168,
+          width: 130,
           flexShrink: 0,
           display: "flex",
           flexDirection: "column",
@@ -805,17 +851,18 @@ export default function EmailPanel() {
           variant="contained"
           disableElevation
           startIcon={<AddIcon fontSize="small" />}
-          onClick={() => {
+          onClick={async () => {
             dispatch(clearError());
+            await leaveEditor();
             openNewEmail();
           }}
           sx={{
             borderRadius: 6,
             textTransform: "none",
             fontWeight: 600,
-            fontSize: 13,
+            fontSize: 12,
             py: 0.8,
-            mb: 1.5,
+            mb: 1,
             boxShadow: 1,
           }}
         >
@@ -832,6 +879,7 @@ export default function EmailPanel() {
                 onClick={async () => {
                   await leaveEditor();
                   setStatusFilter(key);
+                  
                 }}
                 sx={{
                   cursor: "pointer",
@@ -938,7 +986,7 @@ export default function EmailPanel() {
                       <ListItem
                         key={email.id}
                         disableGutters
-                        onClick={() => openExistingEmail(email)}
+                        onClick={() => handleOpenEmail(email)}
                         sx={{
                           p: 0,
                           alignItems: "flex-start",

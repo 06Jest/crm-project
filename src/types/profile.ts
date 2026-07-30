@@ -48,6 +48,14 @@ export interface DisplayProfile {
 export interface ProfileIDName {
   id: string;
   display_name: string;
+  avatar_url?: string;  
+}
+
+export interface ChatProfile {
+  id: string;
+  display_name: string;
+  avatar_url: string | null;
+  is_online?: boolean;
 }
 
 export interface AddProfileDTO {

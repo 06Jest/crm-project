@@ -11,8 +11,8 @@ export const formatName = (fn?: string, ln?: string) => {
 export const formatShortTitle = (str: string) => {
   let newStr = formatTitle(str);
 
-  if (newStr.length > 20) {
-    newStr = `${str.slice(0, 20)}...`;
+  if (newStr.length > 25) {
+    newStr = `${str.slice(0, 25)}...`;
   }
   return newStr;
 }

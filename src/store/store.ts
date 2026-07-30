@@ -10,6 +10,9 @@ import customersReducer from './customersSlice';
 import dealsReducer from './dealsSlice';
 import emailsReducer from './emailSlice';
 import notesReducer from './notesSlice';
+import tasksReducer from './tasksSlice'
+import conversatiosReducer from './conversationsSlice'
+import messagesReducer from './messagesSlice'
 // import superAdminReducer from './superAdminSlice';
 
 export const store = configureStore({
@@ -21,6 +24,9 @@ export const store = configureStore({
     deals: dealsReducer,
     notes: notesReducer,
     emails: emailsReducer,
+    tasks: tasksReducer,
+    conversations: conversatiosReducer,
+    messages: messagesReducer,
     // activities: activitiesReducer,
     customers: customersReducer,
     // messaging: messagingReducer,

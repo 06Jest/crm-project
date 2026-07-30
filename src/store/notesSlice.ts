@@ -7,8 +7,6 @@ import type {
 } from "../types/notes";
 
 import {
-  // fetchPublicNotesAPI,
-  // fetchPrivateNotesAPI,
   addNoteAPI,
   updateNoteAPI,
   deletePrivateNoteAPI,

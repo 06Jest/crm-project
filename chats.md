@@ -1,3 +1,689 @@
+
+EXMPLE STATE IN DASHBOARD:
+  const { items: contacts, loading: cL, error: cE, loaded: cLd } = useSelector((s: RootState) => s.contacts);
+  const { items: leads, loading: lL, loaded:lLd } = useSelector((s: RootState) => s.leads);
+  const { items: deals, loading: dL, loaded: dLd } = useSelector((s: RootState) => s.deals);
+  const { items: customers, loading: cuL, loaded: cuLd } = useSelector((s: RootState) => s.customers);
+ const needsLoading = !cLd || !lLd || !dLd || !cuLd;
+
+  useEffect(() => {
+  if (!needsLoading) return;
+
+  const loadData = async () => {
+    const requests = [];
+
+    if (!cLd) requests.push(dispatch(fetchContactsLists()).unwrap());
+    if (!lLd) requests.push(dispatch(fetchLeadsLists()).unwrap());
+    if (!dLd) requests.push(dispatch(fetchDealsLists()).unwrap());
+    if (!cuLd) requests.push(dispatch(fetchCustomersLists()).unwrap());
+
+    await Promise.all(requests);
+  };
+
+  loadData();
+}, [
+  dispatch,
+  cLd,
+  lLd,
+  dLd,
+  cuLd,
+  needsLoading
+]);
+
+CONVERSATION SLICE: 
+
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+
+import type {
+  ConversationListItem,
+  ConversationsState,
+} from "../types/chat";
+
+import {
+  fetchConversationsAPI,
+  fetchDirectConversationAPI,
+  createDirectConversationAPI,
+} from '../services/chatService';
+
+const initialState: ConversationsState = {
+  items: [],
+  loading: false,
+  loaded: false,
+  error: null,
+};
+
+export const fetchConversations = createAsyncThunk(
+  "chat/conversations",
+  async (_, thunkAPI) => {
+    try {
+      return await fetchConversationsAPI();
+    } catch (err) {
+      if (err instanceof Error) {
+        return thunkAPI.rejectWithValue(err.message);
+      }
+
+      return thunkAPI.rejectWithValue(
+        "Failed to fetch conversations"
+      );
+    }
+  }
+);
+
+export const fetchDirectConversation = createAsyncThunk(
+  "chat/direct-conversation",
+  async (userId: string, thunkAPI) => {
+    try {
+      return await fetchDirectConversationAPI(userId);
+    } catch (err) {
+      if (err instanceof Error) {
+        return thunkAPI.rejectWithValue(err.message);
+      }
+
+      return thunkAPI.rejectWithValue(
+        "Failed to fetch direct conversation"
+      );
+    }
+  }
+);
+
+export const createDirectConversation = createAsyncThunk(
+  "chat/create-direct-conversation",
+  async (profileId: string, thunkAPI) => {
+    try {
+      return await createDirectConversationAPI(profileId);
+    } catch (err) {
+      if (err instanceof Error) {
+        return thunkAPI.rejectWithValue(err.message);
+      }
+
+      return thunkAPI.rejectWithValue(
+        "Failed to create direct conversation"
+      );
+    }
+  }
+);
+
+const conversationSlice = createSlice({
+  name: "conversation",
+  initialState,
+
+  reducers: {
+    clearError(state) {
+      state.error = null;
+    },
+
+    clearConversations(state) {
+      state.items = [];
+      state.loaded = false;
+    },
+  },
+
+  extraReducers: (builder) => {
+    builder.addCase(fetchConversations.pending, (state) => {
+      state.loading = true;
+      state.error = null;
+    });
+
+    builder.addCase(fetchConversations.fulfilled, (state, action) => {
+      state.loading = false;
+      state.loaded = true;
+      state.items = action.payload;
+    });
+
+    builder.addCase(fetchConversations.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.payload as string;
+    });
+
+    builder.addCase(fetchDirectConversation.pending, (state) => {
+      state.error = null;
+    });
+
+    builder.addCase(fetchDirectConversation.fulfilled, (state, action) => {
+      const conversation = action.payload;
+
+      if (!conversation) return;
+
+      const exists = state.items.some(
+        (item) => item.id === conversation.id
+      );
+
+      if (!exists) {
+        state.items.unshift(conversation as ConversationListItem);
+      }
+    });
+
+    builder.addCase(fetchDirectConversation.rejected, (state, action) => {
+      state.error = action.payload as string;
+    });
+
+    builder.addCase(createDirectConversation.pending, (state) => {
+      state.error = null;
+    });
+
+    builder.addCase(createDirectConversation.fulfilled, (state, action) => {
+      const exists = state.items.some(
+        (item) => item.id === action.payload.id
+      );
+
+      if (!exists) {
+        state.items.unshift(action.payload as ConversationListItem);
+      }
+    });
+
+    builder.addCase(createDirectConversation.rejected, (state, action) => {
+      state.error = action.payload as string;
+    });
+  },
+});
+
+export const {
+  clearError,
+  clearConversations,
+} = conversationSlice.actions;
+
+export default conversationSlice.reducer;
+
+MESSAGES SLICE: 
+
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+
+import type {
+  AddMessage,
+  MessagesState,
+} from "../types/chat";
+
+import {
+  fetchMessagesAPI,
+  sendMessageAPI,
+  editMessageAPI,
+  deleteMessageAPI,
+} from "../services/chatService";
+
+const initialState: MessagesState = {
+  items: [],
+  loading: false,
+  loaded: false,
+  sending: false,
+  error: null,
+};
+
+export const fetchMessages = createAsyncThunk(
+  "chat/messages",
+  async (conversationId: string, thunkAPI) => {
+    try {
+      return await fetchMessagesAPI(conversationId);
+    } catch (err) {
+      if (err instanceof Error) {
+        return thunkAPI.rejectWithValue(err.message);
+      }
+
+      return thunkAPI.rejectWithValue(
+        "Failed to fetch messages"
+      );
+    }
+  }
+);
+
+export const sendMessage = createAsyncThunk(
+  "chat/send-message",
+  async (
+    {
+      conversationId,
+      message,
+    }: {
+      conversationId: string;
+      message: AddMessage;
+    },
+    thunkAPI
+  ) => {
+    try {
+      return await sendMessageAPI(
+        conversationId,
+        message
+      );
+    } catch (err) {
+      if (err instanceof Error) {
+        return thunkAPI.rejectWithValue(err.message);
+      }
+
+      return thunkAPI.rejectWithValue(
+        "Failed to send message"
+      );
+    }
+  }
+);
+
+export const editMessage = createAsyncThunk(
+  "chat/edit-message",
+  async (
+    {
+      id,
+      content,
+    }: {
+      id: string;
+      content: string;
+    },
+    thunkAPI
+  ) => {
+    try {
+      return await editMessageAPI(
+        id,
+        content
+      );
+    } catch (err) {
+      if (err instanceof Error) {
+        return thunkAPI.rejectWithValue(err.message);
+      }
+
+      return thunkAPI.rejectWithValue(
+        "Failed to edit message"
+      );
+    }
+  }
+);
+
+export const deleteMessage = createAsyncThunk(
+  "chat/delete-message",
+  async (id: string, thunkAPI) => {
+    try {
+      return await deleteMessageAPI(id);
+    } catch (err) {
+      if (err instanceof Error) {
+        return thunkAPI.rejectWithValue(err.message);
+      }
+
+      return thunkAPI.rejectWithValue(
+        "Failed to delete message"
+      );
+    }
+  }
+);
+
+const messageSlice = createSlice({
+  name: "messages",
+  initialState,
+
+  reducers: {
+    clearError(state) {
+      state.error = null;
+    },
+
+    clearMessages(state) {
+      state.items = [];
+      state.loaded = false;
+      state.loading = false;
+      state.error = null;
+    },
+  },
+
+  extraReducers: (builder) => {
+
+    builder.addCase(fetchMessages.pending, (state) => {
+      state.loading = true;
+      state.error = null;
+    });
+
+    builder.addCase(fetchMessages.fulfilled, (state, action) => {
+      state.loading = false;
+      state.loaded = true;
+      state.items = action.payload;
+    });
+
+    builder.addCase(fetchMessages.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.payload as string;
+    });
+
+    builder.addCase(sendMessage.pending, (state) => {
+      state.sending = true;
+      state.error = null;
+    });
+
+    builder.addCase(sendMessage.fulfilled, (state, action) => {
+      state.sending = false;
+      state.items.push(action.payload);
+    });
+
+    builder.addCase(sendMessage.rejected, (state, action) => {
+      state.sending = false;
+      state.error = action.payload as string;
+    });
+
+    builder.addCase(editMessage.pending, (state) => {
+      state.error = null;
+    });
+
+    builder.addCase(editMessage.fulfilled, (state, action) => {
+
+      const index = state.items.findIndex(
+        (message) => message.id === action.payload.id
+      );
+
+      if (index !== -1) {
+        state.items[index] = action.payload;
+      }
+
+    });
+
+    builder.addCase(editMessage.rejected, (state, action) => {
+      state.error = action.payload as string;
+    });
+
+    builder.addCase(deleteMessage.pending, (state) => {
+      state.error = null;
+    });
+
+    builder.addCase(deleteMessage.fulfilled, (state, action) => {
+
+      state.items = state.items.filter(
+        (message) => message.id !== action.payload
+      );
+
+    });
+
+    builder.addCase(deleteMessage.rejected, (state, action) => {
+      state.error = action.payload as string;
+    });
+
+  },
+});
+
+export const {
+  clearError,
+  clearMessages,
+} = messageSlice.actions;
+
+export default messageSlice.reducer;
+
+
+export interface ConversationsState {
+  items: ConversationListItem[],
+  loading: boolean,
+  loaded: boolean,
+  error: string | null
+}
+
+export interface MessagesState {
+  items: MessageListItem[],
+  loading: boolean,
+  loaded: boolean,
+  sending: boolean,
+  error: string | null
+}
+export const CONVERSATION_TYPES = [
+  "announcement",
+  "organization",
+  "direct",
+] as const;
+
+export type ConversationType = typeof CONVERSATION_TYPES[number];
+
+export const CHAT_TARGET_TYPES = [
+  "lead",
+  "contact",
+  "deal",
+  "customer",
+] as const;
+
+export type ChatTargetType = typeof CHAT_TARGET_TYPES[number];
+
+export interface ChatTarget {
+  entity_type: ChatTargetType;
+  entity_id: string;
+}
+
+
+export interface Conversation {
+  id: string;
+  org_id: string;
+  type: ConversationType;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+  last_message_id: string;
+  deleted_at: string | null;
+}
+
+export interface ConversationMember {
+  id: string;
+  conversation_id: string;
+  profile_id: string;
+  joined_at: string;
+  last_read_at: string | null;
+}
+
+export interface Message {
+  id: string;
+  conversation_id: string;
+  sender_id: string;
+  content: string;
+  entity_type: ChatTargetType | null;
+  entity_id: string | null;
+  created_at: string;
+  updated_at: string;
+  edited_at: string | null;
+  deleted_at: string | null;
+}
+
+export interface CreateConversation {
+  type: ConversationType;
+  member_ids: string[];
+}
+
+
+export interface AddMessage {
+  content: string;
+  entity_type?: ChatTargetType | null;
+  entity_id?: string | null;
+}
+
+
+export interface ConversationWithLastMessage extends Conversation {
+
+  last_message: {
+    id: string,
+    sender_id: string,
+    content: string,
+    created_at: string
+  } | null;
+
+}
+
+export interface ConversationListItem extends ConversationWithLastMessage {
+
+  last_message: {
+    id: string,
+    sender_id: string,
+    content: string,
+    created_at: string
+  } | null;
+
+  other_participant_id?: string;
+}
+
+export interface UserConversationData {
+  conversations: ConversationWithLastMessage[];
+  members: {
+    conversation_id: string;
+    profile_id: string;
+  }[];
+}
+
+export interface MessageListItem extends Message {
+  sender: {
+    id: string;
+    first_name: string;
+    last_name: string;
+    avatar_url: string | null;
+  };
+}
+
+export interface ConversationMemberListItem
+  extends ConversationMember {
+  profile: {
+    id: string;
+    first_name: string;
+    last_name: string;
+    avatar_url: string | null;
+  };
+}
+
+file imports '../../store/(slice)
+app dispatch '../../store/store'
+types '../../types/chat.ts
+
+theme: 
+import { createTheme } from "@mui/material/styles";
+import type { PaletteMode } from "@mui/material";
+
+export const getTheme = (mode: PaletteMode) =>
+  createTheme({
+    palette: {
+      mode,
+      primary:{
+        main: '#AD7450',
+        light: '#ebaa82',
+        dark: '#775038',
+      },
+
+      background: {
+        default: mode === 'light' ? '#f5f5f5' : '#121212',
+        paper: mode === 'light' ? '#ffffff' : '#1e1e1e',
+      },
+    },
+
+    typography: {
+      fontFamily: '"Roboto", "Lexend Exa", "Helvetica", "Arial", sans-serif, ',
+    },
+
+    components: {
+      MuiAppBar: {
+        styleOverrides: {
+          root: {
+            backgroundColor: mode === 'light' ? '#f5f5f5' : '#1e1e1e',
+            
+          },
+          
+        },
+      },
+      MuiMenu: {
+        defaultProps: {
+          disableScrollLock: true,
+        },
+      },
+       MuiDialog: {
+        defaultProps: {
+          disableScrollLock: true,
+        },
+      },
+      MuiPopover: {
+        defaultProps: {
+          disableScrollLock: true,
+        },
+      },
+
+      MuiCard: {
+        styleOverrides: {
+          root: {
+            border: mode === 'dark' ? '1px solid #333' : 'none',
+          },
+        },
+      },
+    },
+  });
+
+
+unread will just font bold, read will be default
+
+
+Redux Ready
+Uses your existing:
+conversationSlice
+messageSlice
+fetchConversations
+fetchMessages
+sendMessage
+editMessage
+deleteMessage
+createDirectConversation
+markConversationAsRead
+
+
+1 file only
+react, typescript, mui
+
+no tanstack
+
+chat ui default view(messenger like)
+
+┌─────────────────────────────────────────────┐
+│ Chats                                       │
+├─────────────────────────────────────────────┤
+│ 🔍 Search people...                         │
+├─────────────────────────────────────────────┤
+
+📢 ANNOUNCEMENTS
+Quarterly sales meeting tomorrow at 10 AM...
+______________________________________________
+
+
+🏢 ORGANIZATION
+Welcome our new team members...
+______________________________________________
+
+
+👤 John Doe
+Can you review the proposal?
+______________________________________________
+
+👤 Jane Smith
+I'll finish the report today.
+______________________________________________
+
+👤 Michael Lee
+Thanks! See you tomorrow.
+______________________________________________
+
+👤 Sarah Wilson
+I've updated the customer record.
+______________________________________________
+
+
+______________________________________________
+
+
+view 2(clicking any conversation)
+┌─────────────────────────────────────────────┐
+│ ← John Doe                                  │
+├─────────────────────────────────────────────┤
+
+
+                                  Messages...
+
+
+Messages...
+
+
+                                  Messages...
+
+
+
+Messages...
+
+
+
+                                  Messages...
+
+
+
+Messages...
+______________________________________________
+add entity type (select)
+add add entity id(select) Type a message...     send button           
+──────────────────────────────────────────────
+
+You may use this as reference for convention but not really as a copy machine:
 import { useState, useMemo, useEffect } from "react";
 import {
   Box,
@@ -20,11 +706,10 @@ import {
   DialogContent,
   DialogActions,
   Button,
-  DialogContentText,
 } from "@mui/material";
 
 import AddIcon from "@mui/icons-material/Add";
-
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import SearchIcon from "@mui/icons-material/Search";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import LockIcon from "@mui/icons-material/Lock";
@@ -53,9 +738,6 @@ import { formatName, formatShortTitle, formatTitle } from "../../utils/formatTex
 import { useAuth } from "../../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { Person } from "@mui/icons-material";
-import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
-import { alpha } from '@mui/material/styles';
-import DeleteIcon from '@mui/icons-material/Delete';
 
 export default function NotesPanel() {
   const dispatch = useDispatch<AppDispatch>();
@@ -578,13 +1260,11 @@ const removeNote = async (note: NoteListItem) => {
                                 )}
                               </IconButton>
                               {note.author_id === userId && (
-                              <IconButton
-                                title="Delete note"
-                                color="error"  sx={{p: '2px'}} onClick={(e) => {
+                              <IconButton sx={{p: '2px'}} onClick={(e) => {
                                 e.stopPropagation();
                                 handleOpenDelete(note)
                               }}>
-                                <DeleteIcon sx={{ fontSize: '15px', }}/>
+                                <DeleteOutlineIcon sx={{ fontSize: '15px', }}/>
                               </IconButton>
                               )}
                             </Box>
@@ -676,12 +1356,12 @@ const removeNote = async (note: NoteListItem) => {
             </Box>
             
             {activeNote && canEdit && (
-              <IconButton title="Delete note" color="error" sx={{opacity: canEdit ? 1 : 0}} size="small" 
+              <IconButton sx={{opacity: canEdit ? 1 : 0}} size="small" 
               onClick={(e) => {
                 e.stopPropagation();
                 handleOpenDelete(activeNote)
               }} disabled={saving}>
-                <DeleteIcon  fontSize="small" />
+                <DeleteOutlineIcon fontSize="small" />
               </IconButton>
             )}
           </Box>
@@ -850,50 +1530,20 @@ const removeNote = async (note: NoteListItem) => {
           />
         </Box>
       )}
-      <Dialog
-        open={openDelete}
-        onClose={() => setOpenDelete(false)}
-        maxWidth="xs"
-        fullWidth
-        PaperProps={{ sx: { borderRadius: 3 } }}
-      >
-        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1.5, fontWeight: 600, pb: 1 }}>
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: 40,
-              height: 40,
-              borderRadius: '50%',
-              bgcolor: (theme) => alpha(theme.palette.error.main, 0.1),
-              color: 'error.main',
-              flexShrink: 0,
-            }}
-          >
-            <WarningAmberRoundedIcon />
-          </Box>
-          Delete note?
-        </DialogTitle>
+      <Dialog open={openDelete} onClose={() => setOpenDelete(false)}>
+        <DialogTitle>Confirm Delete</DialogTitle>
 
         <DialogContent>
-          <DialogContentText>
-            Are you sure you want to delete{' '}
-            <Box component="span" sx={{ fontWeight: 600, color: 'text.primary' }}>
-              {selectedNote?.title}
-            </Box>
-            ? This can't be undone.
-          </DialogContentText>
+          Are you sure you want to delete this Note({selectedNote?.title})?
         </DialogContent>
 
-        <DialogActions sx={{ px: 3, pb: 2.5 }}>
-          <Button onClick={() => setOpenDelete(false)} color="inherit">
+        <DialogActions>
+          <Button onClick={() => setOpenDelete(false)}>
             Cancel
           </Button>
+
           <Button
-            variant="contained"
             color="error"
-            disableElevation
             onClick={() => {
               if (!selectedNote) return;
               removeNote(selectedNote);

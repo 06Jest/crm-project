@@ -60,7 +60,7 @@ export default function Sidebar() {
         pt: 9,
         borderLeft: 0.2, 
         borderColor: '#63636338',
-        backgroundColor: themeMode === 'dark' ? '#313131a8' : '#ffffffbe'
+        backgroundColor: themeMode === 'dark' ? '#535353a8' : '#ffffffbe'
       }}
     >
       <Box sx={{ m: 1 , px: 0.5, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
