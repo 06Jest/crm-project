@@ -206,7 +206,6 @@ useEffect(() => {
   const activeConversation = conversations.find((c) => c.id === activeId) ?? null;
   
   const getDisplayName = (conversation: ConversationListItem): string => {
-    console.log(conversation);
     if (conversation.type === "announcement") return "Announcements";
     if (conversation.type === "organization") return "Organization";
 
@@ -361,7 +360,6 @@ useEffect(() => {
       const conversation = await dispatch(
         createDirectConversation(profileId)
       ).unwrap();
-      console.log(conversations);
 
       await openConversation(conversation as ConversationListItem);
     } catch {
@@ -1054,3 +1052,5 @@ useEffect(() => {
 </Box>
   );
 }
+
+
