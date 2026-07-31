@@ -6,7 +6,7 @@ import leadsReducer from "./leadsSlice"
 import uiReducer from './uiSlice'
 // import activitiesReducer from './activitiesSlice';
 import customersReducer from './customersSlice';
-// import messagingReducer from './messagingSlice';
+import callsReducer from './callsSlice';
 import dealsReducer from './dealsSlice';
 import emailsReducer from './emailSlice';
 import notesReducer from './notesSlice';
@@ -29,7 +29,7 @@ export const store = configureStore({
     messages: messagesReducer,
     // activities: activitiesReducer,
     customers: customersReducer,
-    // messaging: messagingReducer,
+    calls: callsReducer,
     // superAdmin: superAdminReducer,
     ui: uiReducer,
   },

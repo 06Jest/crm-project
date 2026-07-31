@@ -82,7 +82,7 @@ export default function TasksPanel() {
 
   const {
     items: members,
-    loaded: membersLoaded,
+    loaded: mLd,
   } = useSelector((state: RootState) => state.profile);
 
   const { items: contacts, loaded: cLd } = useSelector((s: RootState) => s.contacts);
@@ -138,7 +138,7 @@ export default function TasksPanel() {
         if (!lLd) await dispatch(fetchLeadsLists()).unwrap();
         if (!dLd) await dispatch(fetchDealsLists()).unwrap();
         if (!cuLd) await dispatch(fetchCustomersLists()).unwrap();
-        if (!membersLoaded) {
+        if (!mLd) {
           await dispatch(fetchMembersIDNames()).unwrap();
         }
       } catch {
@@ -146,7 +146,7 @@ export default function TasksPanel() {
       }
     };
     loadData();
-  },[tLd, cLd, lLd, dLd, cuLd, membersLoaded, dispatch]);
+  },[tLd, cLd, lLd, dLd, cuLd, mLd, dispatch]);
 
   const refresh = async () => {
     try {

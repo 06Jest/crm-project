@@ -1,17 +1,19 @@
 to do before application:
 
+*1 days	customers(3 days)
 *1 day	  notes
 *1 day	  email
-2 day	  chat
-1 days	tasks
+*2 day	  chat (4 days)
+*1 days	tasks
 1 day	  sms
 1 day	  calls 
 1 days	activities
 1 days	leaderboard
-1 days	customers
 1 day	  dashboard
-2 days	analytics
 2 days	settings(admin privilege)
+
+(Too Good to be true)
+2 days	analytics
 3 day	  ai
 2 days	responsive
 4 days	test-polish(
@@ -22,11 +24,13 @@ UI,
 agent registration,
 verification cycle,
 etc..)
-1 day  deploy-documentation
+
+(Must)
+1 day  deploy-documentation-Preparation-Loom Video - READme.md
+
 
 
 to do during application:
-
 
 2 days  Dedicated Agent Registration
 2 days	Display ids(org/members/all data)
