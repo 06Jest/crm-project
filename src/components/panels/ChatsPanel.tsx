@@ -35,7 +35,7 @@ import EditIcon from "@mui/icons-material/Edit";
 import CloseIcon from "@mui/icons-material/Close";
 import CheckIcon from "@mui/icons-material/Check";
 import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
-import { alpha } from '@mui/material/styles';
+import { alpha, type Theme } from '@mui/material/styles';
 import DeleteIcon from '@mui/icons-material/Delete';
 
 import type { AppDispatch, RootState } from "../../store/store";
@@ -76,11 +76,51 @@ import ErrorAlert from "../Error";
 import type { ProfileIDName } from "../../types/profile";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../services/supabase";
-import { fetchMembersIDNames } from "../../store/ProfileSlice";
+import { fetchMembersIDNames } from "../../store/profileSlice";
 
 
 type EntitySelectOption = { id: string; label: string };
 type EntityChoice = ChatTargetType | "none";
+
+// ---- purely presentational helpers (no data/logic impact) ----
+const AVATAR_PALETTE = [
+  "#4f5fce",
+  "#0f8f7a",
+  "#c4577a",
+  "#c17d2a",
+  "#7965d1",
+  "#2c8fb0",
+  "#b1544a",
+  "#4a935a",
+];
+
+function stringToAvatarColor(input: string) {
+  let hash = 0;
+  for (let i = 0; i < input.length; i++) hash = input.charCodeAt(i) + ((hash << 5) - hash);
+  return AVATAR_PALETTE[Math.abs(hash) % AVATAR_PALETTE.length];
+}
+
+function getInitials(input: string) {
+  const trimmed = input.trim();
+  if (!trimmed) return "?";
+  const parts = trimmed.split(/\s+/).filter(Boolean);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+function relativeTime(dateStr: string) {
+  const date = new Date(dateStr);
+  const diffMs = Date.now() - date.getTime();
+  const diffMin = Math.floor(diffMs / 60000);
+  if (diffMin < 1) return "now";
+  if (diffMin < 60) return `${diffMin}m`;
+  const diffHr = Math.floor(diffMin / 60);
+  if (diffHr < 24) return `${diffHr}h`;
+  const diffDay = Math.floor(diffHr / 24);
+  if (diffDay < 7) return `${diffDay}d`;
+  return date.toLocaleDateString([], { month: "short", day: "numeric" });
+}
+// ---------------------------------------------------------------
 
 export default function ChatPanel() {
   const dispatch = useDispatch<AppDispatch>();
@@ -453,30 +493,34 @@ useEffect(() => {
   const renderConversationRow = (conversation: ConversationListItem) => {
     const unread = isUnread(conversation);
     const preview = conversation.last_message?.content ?? "No messages yet";
+    const displayName = getDisplayName(conversation);
 
     let avatar = (
-      <Avatar>
+      <Avatar sx={{ bgcolor: stringToAvatarColor(displayName) }}>
         <PersonIcon fontSize="small" />
       </Avatar>
     );
 
     if (conversation.type === "announcement") {
       avatar = (
-        <Avatar>
+        <Avatar sx={{ bgcolor: "warning.main" }}>
           <CampaignIcon fontSize="small" />
         </Avatar>
       );
     } else if (conversation.type === "organization") {
       avatar = (
-        <Avatar>
+        <Avatar sx={{ bgcolor: "info.main" }}>
           <BusinessIcon fontSize="small" />
         </Avatar>
       );
     } else if (conversation.other_participant?.id) {
       avatar = (
-        <Avatar src={conversation.other_participant.avatar_url ?? undefined}>
+        <Avatar
+          src={conversation.other_participant.avatar_url ?? undefined}
+          sx={{ bgcolor: stringToAvatarColor(displayName) }}
+        >
          {!conversation.other_participant.avatar_url && (
-           <PersonIcon fontSize="small" />
+           getInitials(displayName)
           )}
         </Avatar>
       );
@@ -490,32 +534,79 @@ useEffect(() => {
         sx={{
           py: 1,
           px: 1,
+          mb: 0.25,
+          borderRadius: 2,
           cursor: "pointer",
-          borderBottom: "1px solid",
-          borderColor: "#63636322",
+          transition: "background-color 0.15s ease",
           "&:hover": { bgcolor: "action.hover" },
         }}
       >
-        <ListItemAvatar>{avatar}</ListItemAvatar>
+        <ListItemAvatar>
+          <Box sx={{ position: "relative", width: 40 }}>
+            {avatar}
+            {unread && (
+              <Box
+                sx={{
+                  position: "absolute",
+                  top: -2,
+                  right: 4,
+                  width: 10,
+                  height: 10,
+                  borderRadius: "50%",
+                  bgcolor: "primary.main",
+                  border: "2px solid",
+                  borderColor: "background.paper",
+                }}
+              />
+            )}
+          </Box>
+        </ListItemAvatar>
         <ListItemText
           primary={
-            <Typography sx={{ fontWeight: unread ? 700 : 400, fontSize: "0.9rem" }}>
-              {getDisplayName(conversation)}
-            </Typography>
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1 }}>
+              <Typography noWrap sx={{ fontWeight: unread ? 700 : 600, fontSize: "0.88rem" }}>
+                {displayName}
+              </Typography>
+              {conversation.last_message && (
+                <Typography
+                  sx={{
+                    fontSize: "0.68rem",
+                    flexShrink: 0,
+                    color: unread ? "primary.main" : "text.secondary",
+                    fontWeight: unread ? 700 : 400,
+                  }}
+                >
+                  {relativeTime(conversation.last_message.created_at)}
+                </Typography>
+              )}
+            </Box>
           }
           secondary={
-            <Typography
-              sx={{
-                fontWeight: unread ? 700 : 400,
-                fontSize: "0.78rem",
-                opacity: unread ? 0.9 : 0.6,
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {preview}
-            </Typography>
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1, mt: "1px" }}>
+              <Typography
+                noWrap
+                sx={{
+                  fontWeight: unread ? 600 : 400,
+                  fontSize: "0.78rem",
+                  color: unread ? "text.primary" : "text.secondary",
+                  flex: 1,
+                  minWidth: 0,
+                }}
+              >
+                {preview}
+              </Typography>
+              {unread && (
+                <Box
+                  sx={{
+                    minWidth: 8,
+                    height: 8,
+                    borderRadius: "50%",
+                    bgcolor: "primary.main",
+                    flexShrink: 0,
+                  }}
+                />
+              )}
+            </Box>
           }
         />
       </ListItem>
@@ -526,7 +617,7 @@ useEffect(() => {
     <Box sx={{ display: "flex", flexDirection: "column", height: "100%", width: "100%" }}>
       {view === "list" && (
         <>
-          <Typography sx={{ fontWeight: 700, fontSize: "1.1rem", px: 1, pb: 1 }}>
+          <Typography sx={{ fontWeight: 700, fontSize: "1.15rem", px: 1, pb: 1.25 }}>
             Chats
           </Typography>
 
@@ -554,9 +645,9 @@ useEffect(() => {
                 <Box component="li" {...props}>
                     <Avatar
                         src={option.avatar_url ?? undefined}
-                        sx={{ mr: 1, width: 32, height: 32 }}
+                        sx={{ mr: 1, width: 32, height: 32, bgcolor: stringToAvatarColor(option.display_name), fontSize: 12 }}
                     >
-                        {!option.avatar_url && <PersonIcon fontSize="small" />}
+                        {!option.avatar_url && getInitials(option.display_name)}
                     </Avatar>
 
                     {formatTitle(option.display_name)}
@@ -567,7 +658,15 @@ useEffect(() => {
                 <TextField
                     {...params}
                     placeholder="Search people..."
-                    sx={{ px: 1, mb: 1 }}
+                    sx={{
+                      px: 1,
+                      mb: 1.5,
+                      "& .MuiOutlinedInput-root": {
+                        borderRadius: 999,
+                        bgcolor: "action.hover",
+                      },
+                      "& .MuiOutlinedInput-notchedOutline": { border: "none" },
+                    }}
                     InputProps={{
                         ...params.InputProps,
                         startAdornment: (
@@ -600,14 +699,18 @@ useEffect(() => {
 
                 {grouped.announcements.map(renderConversationRow)}
                 {grouped.organization.map(renderConversationRow)}
+                {grouped.announcements.length + grouped.organization.length > 0 && grouped.direct.length > 0 && (
+                  <Divider sx={{ my: 1 }} />
+                )}
                 {grouped.direct.map(renderConversationRow)}
 
                 {grouped.announcements.length === 0 &&
                   grouped.organization.length === 0 &&
                   grouped.direct.length === 0 && (
-                    <Typography variant="body2" sx={{ opacity: 0.5, textAlign: "center", mt: 4 }}>
-                      No conversations found
-                    </Typography>
+                    <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", mt: 6, opacity: 0.45 }}>
+                      <PersonIcon sx={{ fontSize: 38, mb: 1 }} />
+                      <Typography variant="body2">No conversations found</Typography>
+                    </Box>
                   )}
               </List>
             </Box>
@@ -622,16 +725,46 @@ useEffect(() => {
             sx={{
               display: "flex",
               alignItems: "center",
+              gap: 1,
               px: 1,
               py: 1,
               borderBottom: "1px solid",
-              borderColor: "#63636322",
+              borderColor: "divider",
             }}
           >
-            <IconButton size="small" title="Back" onClick={backToList}>
+            <IconButton
+              size="small"
+              title="Back"
+              onClick={backToList}
+              sx={{ border: "1px solid", borderColor: "divider", borderRadius: 2 }}
+            >
               <ArrowBackIcon fontSize="small" />
             </IconButton>
-            <Typography sx={{ ml: 1, fontWeight: 700, fontSize: "0.95rem" }}>
+
+            <Avatar
+              src={activeConversation.type === "direct" ? activeConversation.other_participant?.avatar_url ?? undefined : undefined}
+              sx={{
+                width: 32,
+                height: 32,
+                fontSize: 12,
+                bgcolor:
+                  activeConversation.type === "announcement"
+                    ? "warning.main"
+                    : activeConversation.type === "organization"
+                    ? "info.main"
+                    : stringToAvatarColor(getDisplayName(activeConversation)),
+              }}
+            >
+              {activeConversation.type === "announcement" ? (
+                <CampaignIcon fontSize="small" />
+              ) : activeConversation.type === "organization" ? (
+                <BusinessIcon fontSize="small" />
+              ) : !activeConversation.other_participant?.avatar_url ? (
+                getInitials(getDisplayName(activeConversation))
+              ) : null}
+            </Avatar>
+
+            <Typography sx={{ fontWeight: 700, fontSize: "0.95rem" }}>
               {getDisplayName(activeConversation)}
             </Typography>
           </Box>
@@ -642,7 +775,7 @@ useEffect(() => {
             </Box>
           )}
           
-          <Box sx={{ flex: 1, overflowY: "auto",}}>
+          <Box sx={{ flex: 1, overflowY: "auto", bgcolor: (theme) => alpha(theme.palette.text.primary, 0.015), px: 0.5 }}>
             <Box
               sx={{
                 height: 350,
@@ -720,10 +853,11 @@ useEffect(() => {
                         alignItems: "center",
                         gap: 0.5,
                         mr: 1,
-                        opacity: hoveredMessageId === message.id ? 1 : 0
+                        opacity: hoveredMessageId === message.id ? 1 : 0,
+                        transition: "opacity 0.15s ease",
                       }}
                     >
-                      <Typography sx={{ fontSize: '0.75rem', opacity: 0.5 }}>
+                      <Typography sx={{ fontSize: '0.72rem', opacity: 0.5, whiteSpace: "nowrap" }}>
                         {new Date(message.created_at).toLocaleString([], {
                           month: "short",
                           day: "numeric",
@@ -735,14 +869,17 @@ useEffect(() => {
 
                       <>
                         {now - new Date(message.created_at).getTime() < 15 * 60 * 1000 && (
-                          <IconButton size="small" sx={{ p: "2px" }} onClick={() => startEdit(message)}>
+                          <IconButton
+                            size="small"
+                            sx={{ p: "3px", "&:hover": { bgcolor: "action.hover" } }}
+                            onClick={() => startEdit(message)}
+                          >
                             <EditIcon sx={{ fontSize: '0.85rem' }} />
                           </IconButton>
                         )}
                         <IconButton
                           size="small"
-                          sx={{ p: "2px" }}
-                          
+                          sx={{ p: "3px", "&:hover": { bgcolor: "action.hover", color: "error.main" } }}
                           onClick={(e) => {
                                 e.stopPropagation();
                                 handleOpenDelete(message)
@@ -757,21 +894,34 @@ useEffect(() => {
                      
                       sx={{ maxWidth: "70%" }}>
 
-                      <Box sx={{display: 'flex', justifySelf: isOwn ?'end' : 'start',}}>
+                      <Box sx={{display: 'flex', justifySelf: isOwn ?'end' : 'start', alignItems: 'flex-end'}}>
                         {!isOwn && (
-                          <Box
+                          <Avatar
                             title={formatName(message.sender.first_name, message.sender.last_name)}
-                            sx={{cursor: 'pointer', height: 30, width: 30, border: '1px solid #bebebea2', borderRadius: 10, mr: 0.5, display: 'flex', justifyContent: 'center', alignItems: 'center'}}>
-                              <PersonIcon sx={{ fontSize: '22px'}}/>   
-                          </Box>
+                            sx={{
+                              cursor: 'pointer',
+                              height: 28,
+                              width: 28,
+                              mr: 0.75,
+                              fontSize: 11,
+                              fontWeight: 700,
+                              bgcolor: stringToAvatarColor(formatName(message.sender.first_name, message.sender.last_name)),
+                              flexShrink: 0,
+                            }}
+                          >
+                            {getInitials(formatName(message.sender.first_name, message.sender.last_name))}
+                          </Avatar>
                         )}
                         <Paper
                           elevation={0}
                           sx={{
                             px: 1.5,
-                            py: 0.6,
+                            py: 0.75,
                             display: 'flex',
-                            borderRadius: 5,
+                            borderRadius: 3,
+                            ...(isOwn
+                              ? { borderBottomRightRadius: 4 }
+                              : { borderBottomLeftRadius: 4 }),
                             flexDirection: 'column',
                             justifySelf: isOwn ?'end' : 'start',
                             width: "fit-content",
@@ -780,7 +930,9 @@ useEffect(() => {
                             wordBreak: "break-word",
                             bgcolor: isOwn ? "primary.main" : "background.paper",
                             color: isOwn ? "primary.contrastText" : "text.primary",
-                            border: isOwn ? "none" : "1px solid #63636322",
+                            border: isOwn ? "none" : "1px solid",
+                            borderColor: "divider",
+                            boxShadow: isOwn ? "none" : "0 1px 2px rgba(0,0,0,0.04)",
                           }}
                         >
                           {isEditing ? (
@@ -823,7 +975,7 @@ useEffect(() => {
                             </Box>
                           ) : (
 
-                            <Typography sx={{ fontSize: "0.85rem", whiteSpace: "pre-wrap", fontStyle: message.deleted_at ? "italic" : "normal",  }}>
+                            <Typography sx={{ fontSize: "0.85rem", whiteSpace: "pre-wrap", opacity: message.deleted_at ? 0.6 : 1, fontStyle: message.deleted_at ? "italic" : "normal",  }}>
                               { message.deleted_at === null ? message.content : 'Message deleted'}
                             </Typography>
                           )} 
@@ -836,33 +988,34 @@ useEffect(() => {
                                 navigate(`/app/${message.entity_type}s/${message.entity_id}`)
                                 }}
                                 title={`View ${getValue(message.entity_type, message.entity_id)} Details`}
-                                elevation={2} 
+                                elevation={0} 
                                 sx={{
                                 display: 'flex',
                                 width: "fit-content",
                                 maxWidth: "100%", 
-                                alignItems: 'start',
+                                alignItems: 'center',
                                 justifyContent: 'start', 
-                                backgroundColor: '#f3f3f3', 
-                                color: '#1b1b1b', mt: 1,  
+                                bgcolor: (theme: Theme) => alpha(theme.palette.text.primary, isOwn ? 0.12 : 0.045),
+                                color: isOwn ? "primary.contrastText" : "text.primary",
+                                mt: 1,  
                                 borderRadius: 2, 
                                 p: 1, 
                                 cursor:'pointer', 
-                                "&:hover": {backgroundColor: '#e0e0e0'}
+                                "&:hover": { bgcolor: (theme: Theme) => alpha(theme.palette.text.primary, isOwn ? 0.2 : 0.08) }
                               }}>
-                              <Box sx={{ height: 40, width: 40, border: '1px solid #bebebea2', borderRadius: 10, mr: 1, display: 'flex', justifyContent: 'center', alignItems: 'center'}}>
-                                <PersonIcon sx={{ fontSize: '22px'}}/>
+                              <Box sx={{ height: 34, width: 34, borderRadius: "50%", bgcolor: (theme: Theme) => alpha(theme.palette.text.primary, 0.08), mr: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', flexShrink: 0 }}>
+                                <PersonIcon sx={{ fontSize: '18px'}}/>
                               </Box>
                               <Box 
                               sx={{
                                 flex: "none",
                                 minWidth: 0,
                               }}>
-                                <Typography sx={{ fontSize: "0.85rem",fontWeight: 700, opacity: 0.7, mt: 0.5,  }}>
+                                <Typography sx={{ fontSize: "0.7rem", fontWeight: 700, opacity: 0.7, letterSpacing: 0.3 }}>
                                 {message.entity_type.toUpperCase()}
                                 </Typography>
-                                <Typography sx={{ fontSize: "0.85rem",whiteSpace: "pre-line", opacity: 0.7, mt: 0.5,  }}>
-                                • {getValue(message.entity_type, message.entity_id)}
+                                <Typography sx={{ fontSize: "0.8rem", fontWeight: 600, whiteSpace: "pre-line", mt: "1px" }}>
+                                {getValue(message.entity_type, message.entity_id)}
                                 </Typography>
                               </Box>
                             </Paper>
@@ -879,10 +1032,12 @@ useEffect(() => {
                         alignItems: "center",
                         gap: 0.5,
                         ml: 1,
-                        opacity: hoveredMessageId === message.id ? 1 : 0
+                        alignSelf: "flex-end",
+                        opacity: hoveredMessageId === message.id ? 1 : 0,
+                        transition: "opacity 0.15s ease",
                       }}
                     >
-                      <Typography sx={{ fontSize: "0.75rem", opacity: 0.5 }}>
+                      <Typography sx={{ fontSize: "0.72rem", opacity: 0.5, whiteSpace: "nowrap" }}>
                         {new Date(message.created_at).toLocaleString([], {
                           month: "short",
                           day: "numeric",
@@ -902,12 +1057,12 @@ useEffect(() => {
 
           <Divider />
           {isAgent && activeConversation.type === 'announcement' ? (
-          <Box sx={{mt: 1, textAlign: 'center'}}>
+          <Box sx={{ mt: 1, mb: 0.5, textAlign: 'center', fontSize: '0.8rem', color: 'text.secondary', py: 1 }}>
               Only Admins can Chat in Announcement
           </Box>
           ) : (
-            <Box sx={{ display: "flex", alignItems: "center", p: 0.5 }}>
-            <Box>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, p: 0.75 }}>
+            <Box sx={{ display: "flex", alignItems: "center", bgcolor: "action.hover", borderRadius: 999, pl: 0.5 }}>
               <FormControl size="small">
                 <Select
                   value={entityType}
@@ -917,7 +1072,7 @@ useEffect(() => {
                   }}
                   sx={{
                     width: 100,
-                    "& .MuiInputBase-input": { py: "3px", fontSize: '0.85rem', fontWeight: 700, p: 0 },
+                    "& .MuiInputBase-input": { py: "5px", fontSize: '0.8rem', fontWeight: 700, pl: "10px" },
                     "& .MuiOutlinedInput-notchedOutline": { border: "none" },
                   }}
                 >
@@ -945,7 +1100,7 @@ useEffect(() => {
                       renderValue: (selected) => {
                         if (!selected) {
                           return (
-                            <span style={{ color: "#999", fontSize: '0.85rem' }}>Choose {entityType}</span>
+                            <span style={{ color: "#999", fontSize: '0.8rem' }}>Choose {entityType}</span>
                           );
                         }
                         const opt = entityOptions.find((o) => o.id === selected);
@@ -956,7 +1111,7 @@ useEffect(() => {
                       },
                     }}
                     sx={{
-                      "& .MuiInputBase-input": { py: "3px", fontSize: '0.85rem', p: 0  },
+                      "& .MuiInputBase-input": { py: "5px", fontSize: '0.8rem', pl: "2px" },
                       "& .MuiOutlinedInput-notchedOutline": { border: "none" },
                     }}
                   >
@@ -982,12 +1137,30 @@ useEffect(() => {
                   handleSend();
                 }
               }}
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: 999,
+                  bgcolor: "action.hover",
+                },
+                "& .MuiOutlinedInput-notchedOutline": { border: "none" },
+                "& .MuiInputBase-input": { fontSize: "0.85rem", py: "8px" },
+              }}
             />
 
             <Tooltip title="Send">
               <span>
-                <IconButton color="primary" disabled={!canSend} onClick={handleSend}>
-                  {sending ? <CircularProgress size={18} /> : <SendIcon fontSize="small" />}
+                <IconButton
+                  color="primary"
+                  disabled={!canSend}
+                  onClick={handleSend}
+                  sx={{
+                    bgcolor: canSend ? "primary.main" : "action.hover",
+                    color: canSend ? "primary.contrastText" : "text.disabled",
+                    "&:hover": { bgcolor: canSend ? "primary.dark" : "action.hover" },
+                    "&.Mui-disabled": { color: "text.disabled" },
+                  }}
+                >
+                  {sending ? <CircularProgress size={18} sx={{ color: "inherit" }} /> : <SendIcon fontSize="small" />}
                 </IconButton>
               </span>
             </Tooltip>
@@ -1052,5 +1225,3 @@ useEffect(() => {
 </Box>
   );
 }
-
-

@@ -16,10 +16,12 @@ import {
   DialogActions,
   CircularProgress,
   Typography,
+  IconButton,
 } from "@mui/material";
 //import LockIcon from '@mui/icons-material/Lock';
 import DeleteIcon from '@mui/icons-material/Delete';
 // import SearchIcon from '@mui/icons-material/Search';
+import GroupsIcon from '@mui/icons-material/Groups';
 import { useState } from "react";
 import ErrorAlert from "../../../components/Error";
 import { formatName } from "../../../utils/formatText";
@@ -46,7 +48,7 @@ const getColumns = (
     sortable: true,
     flex: 1,
     renderCell: (params) => (
-    <Typography sx={{display: 'flex', alignItems: 'center', height: '100%'}} color="primary">
+    <Typography sx={{display: 'flex', alignItems: 'center', height: '100%', fontWeight: 600}} color="primary">
       {params.value}
     </Typography>
     ),
@@ -60,15 +62,28 @@ const getColumns = (
     align: 'left',
     renderCell: ({ value }) => (
       <Box sx={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '6px',
         my: '-2px', 
-        px: '8px',
-        py: '2px',
+        px: '10px',
+        py: '3px',
         fontSize: '11px',
         fontWeight: 700,
-        color: '#252525e7',
-        letterSpacing: '1px',
-        borderRadius: 3, 
-        backgroundColor: STATUS_COLORS[value as CustomerStatus]}}>
+        color: (theme) =>
+          theme.palette.mode === "dark"
+            ? "#fff"
+            : "#252525e7",
+        letterSpacing: '0.6px',
+        borderRadius: 10, 
+        width: 'fit-content',
+        backgroundColor: `${STATUS_COLORS[value as CustomerStatus]}75`}}>
+        <Box sx={{
+          width: 6,
+          height: 6,
+          borderRadius: '50%',
+          backgroundColor: STATUS_COLORS[value as CustomerStatus],
+        }} />
         {value}
     </Box>
     ),
@@ -95,11 +110,16 @@ const getColumns = (
       <Box sx={{display: 'flex', justifyContent: 'center', alignItems: 'center', paddingTop: '4px'}}>
         <Button 
         onClick={() => navigate(`/app/customers/${value}`)}
+        disableElevation
         sx={{
-          py: '1px',
+          py: '2px',
+          px: '12px',
+          borderRadius: 6,
+          textTransform: 'none',
           backgroundColor: 'primary.main',
           color: 'white',
           fontSize: '11px',
+          fontWeight: 700,
           '&:hover': {
             backgroundColor: 'primary.dark',
           },
@@ -224,7 +244,8 @@ const hasSelection =
         mx: 2,
         height: 850}}>
           <Paper
-            sx={{
+            variant="outlined"
+            sx={(theme) => ({
               justifyContent: 'center',
               p: 1,
               pt: 0,
@@ -237,11 +258,33 @@ const hasSelection =
               borderRadius: 3,
               marginLeft: 1,
               flexDirection: 'column',
-              overflow: 'auto'
-            }}
+              overflow: 'auto',
+              border: `1px solid ${theme.palette.mode === 'dark' ? '#3a3a3a' : '#e3e3e3'}`,
+            })}
           >
-            <Box sx={{display: 'flex', justifyContent: 'space-between', p: 2,}}>
-              <Typography variant="h5" fontWeight={700} margin={1} >Customers</Typography>
+            <Box sx={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 2,}}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+                <Box sx={(theme) => ({
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: 40,
+                  height: 40,
+                  borderRadius: 2,
+                  bgcolor: theme.palette.mode === 'dark' ? '#2a2a2a' : '#eef1f6',
+                  color: 'primary.main',
+                })}>
+                  <GroupsIcon />
+                </Box>
+                <Box>
+                  <Typography variant="h5" fontWeight={800} letterSpacing={-0.3} lineHeight={1.2}>
+                    Customers
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {rows.length} {rows.length === 1 ? 'customer' : 'customers'} on file
+                  </Typography>
+                </Box>
+              </Box>
               <Box sx={{
                 display: 'flex',
                 width: '50%',
@@ -256,30 +299,55 @@ const hasSelection =
                 
               </Box>
               <Box>
-                <Button
+                <IconButton
                   onClick={() => setConfirmOpen(true)}
                   disabled={!hasSelection}
+                  title="Delete selected"
+                  sx={{
+                    borderRadius: 2,
+                    border: '1px solid',
+                    borderColor: hasSelection ? '#e9585866' : 'transparent',
+                    transition: 'border-color 0.15s ease, background-color 0.15s ease',
+                    '&:hover': {
+                      backgroundColor: hasSelection ? '#e9585818' : 'transparent',
+                    },
+                  }}
                 >
                   <DeleteIcon
                     sx={{
                       opacity: hasSelection ? 1 : 0,
                       color: '#e95858'
                     }}
-                    fontSize="large"
+                    fontSize="medium"
                   />
-                </Button>
+                </IconButton>
               </Box>
             </Box>
             
             <DataGrid
-              sx={{
+              sx={(theme) => ({
                 flex: 1,
                 minHeight: 0,
-                borderRadius: 3,
+                border: 'none',
+                borderTop: `1px solid ${theme.palette.mode === 'dark' ? '#3a3a3a' : '#e3e3e3'}`,
+                borderRadius: '0 0 12px 12px',
                 fontSize: '0.85rem',
                 cursor: 'pointer',
-                overflow: 'auto'
-              }}
+                overflow: 'auto',
+                '& .MuiDataGrid-columnHeaders': {
+                  backgroundColor: theme.palette.mode === 'dark' ? '#242424' : '#f7f8fa',
+                  fontWeight: 700,
+                },
+                '& .MuiDataGrid-columnHeaderTitle': {
+                  fontWeight: 700,
+                },
+                '& .MuiDataGrid-row:hover': {
+                  backgroundColor: theme.palette.mode === 'dark' ? '#2a2a2a' : '#f4f6f9',
+                },
+                '& .MuiDataGrid-cell:focus, & .MuiDataGrid-cell:focus-within': {
+                  outline: 'none',
+                },
+              })}
               rows={rows}
               columns={columns}
               initialState={{ pagination: { paginationModel } }}
@@ -294,20 +362,27 @@ const hasSelection =
             />
             
           </Paper>
-          <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
-            <DialogTitle>Confirm Delete</DialogTitle>
+          <Dialog
+            PaperProps={{ sx: { borderRadius: 3 } }}
+            open={confirmOpen}
+            onClose={() => setConfirmOpen(false)}
+          >
+            <DialogTitle sx={{ fontWeight: 700 }}>Confirm delete</DialogTitle>
 
             <DialogContent>
               Are you sure you want to delete {selectedRows.ids.size === 0  || selectedRows.type === "exclude" ? 'all' : selectedRows.ids.size} selected contact(s)?
             </DialogContent>
 
-            <DialogActions>
-              <Button onClick={() => setConfirmOpen(false)}>
+            <DialogActions sx={{ pb: 2, px: 3 }}>
+              <Button onClick={() => setConfirmOpen(false)} sx={{ textTransform: 'none', fontWeight: 600 }}>
                 Cancel
               </Button>
 
               <Button
                 color="error"
+                variant="contained"
+                disableElevation
+                sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 2 }}
                 onClick={async () => {
                   if (loading) return;
                   // setConfirmOpen(false);
@@ -334,3 +409,4 @@ const hasSelection =
       </Box>
     );
 }
+

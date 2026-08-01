@@ -1,10 +1,11 @@
 import { configureStore } from "@reduxjs/toolkit"
 import userReducer from "./userSlice"
-import profileReducer from "./ProfileSlice"
+import profileReducer from "./profileSlice"
+import dashboardReducer from './dashboardSlice'
 import contactsReducer from "./contactsSlice"
 import leadsReducer from "./leadsSlice"
 import uiReducer from './uiSlice'
-// import activitiesReducer from './activitiesSlice';
+import activitiesReducer from './activitiesSlice';
 import customersReducer from './customersSlice';
 import callsReducer from './callsSlice';
 import dealsReducer from './dealsSlice';
@@ -13,12 +14,13 @@ import notesReducer from './notesSlice';
 import tasksReducer from './tasksSlice'
 import conversatiosReducer from './conversationsSlice'
 import messagesReducer from './messagesSlice'
-// import superAdminReducer from './superAdminSlice';
+import smsReducer from './smsSlice'
 
 export const store = configureStore({
   reducer: {
     user: userReducer, 
     profile: profileReducer,
+    dashboard: dashboardReducer,
     contacts: contactsReducer,
     leads: leadsReducer,
     deals: dealsReducer,
@@ -27,10 +29,10 @@ export const store = configureStore({
     tasks: tasksReducer,
     conversations: conversatiosReducer,
     messages: messagesReducer,
-    // activities: activitiesReducer,
+    activities: activitiesReducer,
     customers: customersReducer,
     calls: callsReducer,
-    // superAdmin: superAdminReducer,
+    sms: smsReducer,
     ui: uiReducer,
   },
 });

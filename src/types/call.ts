@@ -73,7 +73,7 @@ export interface CreateCall {
   contact_id?: string | null;
   assigned_to?: string | null;
   subject: string;
-  notes?: string | null;
+  notes?: string;
   type: CallType;
   priority?: CallPriority;
   scheduled_for?: string | null;
@@ -81,7 +81,7 @@ export interface CreateCall {
 
 export interface UpdateCall {
   subject?: string;
-  notes?: string | null;
+  notes?: string;
   type?: CallType;
   priority?: CallPriority;
   scheduled_for?: string;
@@ -130,7 +130,7 @@ export interface CreateCallInput {
   subject: string;
   type: CallType;
   priority?: CallPriority;
-  notes?: string | null;
+  notes?: string;
   lead_id?: string | null;
   contact_id?: string | null;
   assigned_to?: string;

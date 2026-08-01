@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch } from "../../../store/store";
@@ -13,13 +14,46 @@ import {
   MenuItem,
   Typography,
   Autocomplete,
+  Avatar,
 } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 
 import { addContact, clearError } from "../../../store/contactsSlice";
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
+import WorkOutlineIcon from '@mui/icons-material/WorkOutline';
+import ShareIcon from '@mui/icons-material/Share';
+import NotesIcon from '@mui/icons-material/Notes';
+import PersonAddAlt1Icon from '@mui/icons-material/PersonAddAlt1';
 import { type AddContact, type ContactStatus} from "../../../types/contact";
 import { DEPARTMENTS, GENDERS, INDUSTRIES, PREFERRED_CONTACT_TIMES, PRIORITIES, SOURCES, SUFFIXES, type Gender,  type PreferredTime,  type Priority, type Source, type Suffix } from "../../../types/global";
 import ErrorAlert from "../../../components/Error";
+
+function SectionHeader({ icon, title, subtitle }: { icon: React.ReactNode; title: string; subtitle?: string }) {
+  return (
+    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}>
+      <Avatar
+        sx={{
+          width: 34,
+          height: 34,
+          bgcolor: (theme) => alpha(theme.palette.primary.main, 0.12),
+          color: "primary.main",
+        }}
+      >
+        {icon}
+      </Avatar>
+      <Box>
+        <Typography variant="h6" fontWeight={700} sx={{ fontSize: 16, lineHeight: 1.2 }}>
+          {title}
+        </Typography>
+        {subtitle && (
+          <Typography sx={{ fontSize: 12, color: "text.secondary" }}>{subtitle}</Typography>
+        )}
+      </Box>
+    </Box>
+  );
+}
+
 
 export default function AddContact() {
   const dispatch = useDispatch<AppDispatch>();
@@ -105,6 +139,13 @@ export default function AddContact() {
       //Error in state
     }
   };
+
+  const canSubmit = !!form.first_name && !!form.email && !!form.last_name && !!form.phone;
+
+  const fieldSx = {
+    fontSize: 13,
+    "& .MuiOutlinedInput-root": { borderRadius: 2 },
+  };
     
 
   return (
@@ -114,27 +155,57 @@ export default function AddContact() {
         justifySelf: 'center',
         flexDirection: 'column',
         alignItems: "center",
-        height: 1100,
+        height: 1300,
         minHeight: 700,
         width: '80%',
         maxWidth: 1400,
+        pb: 4,
       }}
     >
-      <Button 
-        startIcon={<ArrowBackIcon/>}
-        onClick={() => {
-          dispatch(clearError());
-          navigate('/app/contacts')
-        } }
-        sx={{ alignSelf: 'start'}}>
-        Back
-      </Button>
-      <Box sx={{alignSelf: 'center'}}>
-        {error && (
-        <ErrorAlert
-          message={error}
-        />
+      <Box sx={{ width: '50%', minWidth: 450, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <Button 
+          startIcon={<ArrowBackIcon/>}
+          onClick={() => {
+            dispatch(clearError());
+            navigate('/app/contacts')
+          } }
+          sx={{ alignSelf: 'start', textTransform: "none", fontWeight: 600, borderRadius: 2 }}>
+          Back
+        </Button>
+      </Box>
+
+      {error && (
+        <Box sx={{ width: '50%', minWidth: 450, mt: 1 }}>
+          <ErrorAlert
+            message={error}
+          />
+        </Box>
       )}
+
+      <Box sx={{
+        display: "flex",
+        alignItems: "center",
+        gap: 1.5,
+        width: '50%',
+        minWidth: 450,
+        mt: 2,
+        mb: 1,
+      }}>
+        <Avatar
+          sx={{
+            width: 44,
+            height: 44,
+            bgcolor: (theme) => alpha(theme.palette.primary.main, 0.14),
+            color: "primary.main",
+          }}
+        >
+          <PersonAddAlt1Icon />
+        </Avatar>
+        <Box>
+          <Typography variant="h5" fontWeight={800} sx={{ letterSpacing: 0.5, lineHeight: 1.2 }}>
+            Add Contact
+          </Typography>
+        </Box>
       </Box>
       
         <Box sx={{
@@ -143,462 +214,500 @@ export default function AddContact() {
           width: '50%',
           minWidth: 450,
           justifyContent: "center",
-          p: 2,
-          gap: 1,
+          gap: 2,
         }}>
-          <Typography variant="h6" fontWeight={700} sx={{ letterSpacing: 2, mb: 2, ml: '-100px', mt: '-20px' }}>
-          ADD CONTACT
-          </Typography>
-          <Typography variant="h6" fontWeight={700}>
-          Personal Details
-          </Typography>
-          <Box sx={{
-            display: "flex",
-            width: '100%',
-            justifyContent: "space-between",
-            gap: 1,
-          }}>
+
+          <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 3, borderColor: "divider" }}>
+            <SectionHeader icon={<PersonOutlineIcon fontSize="small" />} title="Personal Details" />
+
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+              <Box sx={{
+                display: "flex",
+                width: '100%',
+                justifyContent: "space-between",
+                gap: 1.5,
+              }}>
+                  <TextField
+                  label="First Name"
+                  name="first_name"
+                  required
+                  onChange={handleChange}
+                  size="small"
+                  sx={{
+                    ...fieldSx,
+                    width: '50%'
+                  }}
+                />
+
+                <TextField
+                  label="Last Name"
+                  name="last_name"
+                  required
+                  onChange={handleChange}
+                  size="small"
+                  sx={{
+                    ...fieldSx,
+                    width: '50%'
+                  }}
+                />
+              </Box>
+              <Box sx={{
+                display: "flex",
+                width: '100%',
+                justifyContent: "space-between",
+                gap: 1.5,
+              }}>
+                <TextField
+                  select
+                  label="Suffix"
+                  name="suffix"
+                  onChange={handleChange}
+                  value={form.suffix}
+                  size="small"
+                  sx={{
+                    ...fieldSx,
+                    width: '50%'
+                  }}
+                  slotProps={{
+                    select: {
+                      MenuProps: {
+                        PaperProps: {
+                          sx: {
+                            maxHeight: 250,
+                          },
+                        },
+                      },
+                    },
+                  }}
+                >
+                {SUFFIXES.map((suffix) => (
+                    <MenuItem key={suffix} value={suffix}>
+                      {suffix}
+                    </MenuItem>
+                  ))}
+                </TextField>
+                <TextField
+                  label="Phone"
+                  name="phone"
+                  required
+                  onChange={handleChange}
+                  size="small"
+                  sx={{
+                    ...fieldSx,
+                    width: '50%'
+                  }}
+                />
+              </Box>
+              
               <TextField
-              label="First Name"
-              name="first_name"
-              required
-              onChange={handleChange}
-              size="small"
-              sx={{
-                fontSize: 13,
-                width: '50%'
-              }}
+                type="email"
+                label="Email"
+                name="email"
+                required
+                value={form.email}
+                onChange={handleChange}
+                size="small"
+                fullWidth
+                sx={fieldSx}
+              />
+              <Box sx={{
+                display: "flex",
+                width: '100%',
+                justifyContent: "space-between",
+                gap: 1.5,
+              }}>
+                <TextField
+                  select
+                  label="Gender"
+                  name="gender"
+                  onChange={handleChange}
+                  value={form.gender}
+                  size="small"
+                  sx={{
+                    ...fieldSx,
+                    width: '50%',
+                  }}
+                >
+                {GENDERS.map((gender) => (
+                  <MenuItem key={gender} value={gender}>
+                    {gender}
+                  </MenuItem>
+                ))}
+                </TextField>
+                <TextField
+                  label="Date of Birth"
+                  name="birth_date"
+                  type="date"
+                  onChange={handleChange}
+                  slotProps={{ inputLabel: { shrink: true } }}
+                  size="small"
+                  sx={{
+                    ...fieldSx,
+                    width: '50%',
+                    '& input' : {
+                      colorScheme: themeMode === 'dark' ? 'dark' : 'light', 
+                    }
+                  }}
+                />
+              </Box>
+            </Box>
+          </Paper>
+
+          <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 3, borderColor: "divider" }}>
+            <SectionHeader icon={<WorkOutlineIcon fontSize="small" />} title="Professional Details" />
+
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+              <Box sx={{
+                display: "flex",
+                width: '100%',
+                justifyContent: "space-between",
+                gap: 1.5,
+              }}>
+                <Autocomplete
+                  freeSolo
+                  sx={{ width: '50%' }}
+                  options={INDUSTRIES}
+                  value={form.industry}
+                  onChange={(_, value) => {
+                    setForm(prev => ({
+                      ...prev,
+                      industry: value ?? '',
+                    }));
+                  }}
+                  onInputChange={(_, value) => {
+                    setForm(prev => ({
+                      ...prev,
+                      industry: value,
+                    }));
+                  }}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Industry"
+                      size="small"
+                      sx={fieldSx}
+                    />
+                  )}
+                />
+                
+                 <TextField
+                  label="Company"
+                  name="company_name"
+                  onChange={handleChange}
+                  size="small"
+                  sx={{
+                    ...fieldSx,
+                    width: '50%'
+                  }}
+                />
+              </Box>
+             
+              <Box sx={{
+                display: "flex",
+                width: '100%',
+                justifyContent: "space-between",
+                gap: 1.5,
+              }}>
+                <Autocomplete
+                  freeSolo
+                  sx={{ width: '50%' }}
+                  options={DEPARTMENTS}
+                  value={form.department}
+                  onChange={(_, value) => {
+                    setForm(prev => ({
+                      ...prev,
+                      department: value ?? '',
+                    }));
+                  }}
+                  onInputChange={(_, value) => {
+                    setForm(prev => ({
+                      ...prev,
+                      department: value,
+                    }));
+                  }}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Department"
+                      size="small"
+                      sx={fieldSx}
+                    />
+                  )}
+                />
+
+                <TextField
+                  label="Position"
+                  name="position"
+                  onChange={handleChange}
+                  size="small"
+                  sx={{
+                    ...fieldSx,
+                    width: '50%'
+                  }}
+                />
+              </Box>
+              <TextField
+                  label="Website Url"
+                  name="website"
+                  onChange={handleChange}
+                  size="small"
+                  fullWidth
+                  sx={fieldSx}
+                />
+            </Box>
+          </Paper>
+
+          <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 3, borderColor: "divider" }}>
+            <SectionHeader
+              icon={<ShareIcon fontSize="small" />}
+              title="Social & Messaging"
+              subtitle="Optional — add any accounts you have on hand"
             />
 
-            <TextField
-              label="Last Name"
-              name="last_name"
-              required
-              onChange={handleChange}
-              size="small"
-              sx={{
-                fontSize: 13,
-                width: '50%'
-              }}
-            />
-          </Box>
-          <Box sx={{
-            display: "flex",
-            width: '100%',
-            justifyContent: "space-between",
-            gap: 1,
-          }}>
-            <TextField
-              select
-              label="Suffix"
-              name="suffix"
-              onChange={handleChange}
-              value={form.suffix}
-              size="small"
-              sx={{
-                fontSize: 13,
-                width: '50%'
-              }}
-              slotProps={{
-                select: {
-                  MenuProps: {
-                    PaperProps: {
-                      sx: {
-                        maxHeight: 250,
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+              <Box sx={{
+                display: "flex",
+                width: '100%',
+                justifyContent: "space-between",
+                gap: 1.5,
+              }}>
+                <TextField
+                  label="Facebook"
+                  name="facebook"
+                  onChange={handleChange}
+                  size="small"
+                  sx={{
+                    ...fieldSx,
+                    width: '50%'
+                  }}
+                />
+                <TextField
+                  label="X/Twitter"
+                  name="x"
+                  onChange={handleChange}
+                  size="small"
+                  sx={{
+                    ...fieldSx,
+                    width: '50%'
+                  }}
+                />
+              </Box>
+              
+              <Box sx={{
+                display: "flex",
+                width: '100%',
+                justifyContent: "space-between",
+                gap: 1.5,
+              }}>
+                <TextField
+                  label="Tiktok"
+                  name="tiktok"
+                  onChange={handleChange}
+                  size="small"
+                  sx={{
+                    ...fieldSx,
+                    width: '50%'
+                  }}
+                />
+
+                <TextField
+                  label="Whatsapp"
+                  name="whatsapp"
+                  onChange={handleChange}
+                  size="small"
+                  sx={{
+                    ...fieldSx,
+                    width: '50%'
+                  }}
+                />
+              </Box>
+
+              <Box sx={{
+                display: "flex",
+                width: '100%',
+                justifyContent: "space-between",
+                gap: 1.5,
+              }}>
+                <TextField
+                  label="Instagram"
+                  name="instagram"
+                  onChange={handleChange}
+                  size="small"
+                  sx={{
+                    ...fieldSx,
+                    width: '50%'
+                  }}
+                />
+
+                <TextField
+                  label="Telegram"
+                  name="telegram"
+                  onChange={handleChange}
+                  size="small"
+                  sx={{
+                    ...fieldSx,
+                    width: '50%'
+                  }}
+                />
+              </Box>
+              <Box sx={{
+                display: "flex",
+                width: '100%',
+                justifyContent: "space-between",
+                gap: 1.5,
+              }}>
+                <TextField
+                  label="Linkedin"
+                  name="linkedin"
+                  onChange={handleChange}
+                  size="small"
+                  sx={{
+                    ...fieldSx,
+                    width: '50%'
+                  }}
+                />
+
+                <TextField
+                  label="Viber"
+                  name="viber"
+                  onChange={handleChange}
+                  size="small"
+                  sx={{
+                    ...fieldSx,
+                    width: '50%'
+                  }}
+                />
+              </Box>
+            </Box>
+          </Paper>
+
+          <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 3, borderColor: "divider" }}>
+            <SectionHeader icon={<NotesIcon fontSize="small" />} title="Additional Details" />
+
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+              <Box sx={{
+                display: "flex",
+                width: '100%',
+                justifyContent: "space-between",
+                gap: 1.5,
+              }}>
+                <TextField
+                  select
+                  label="Source"
+                  name="source"
+                  value={form.source}
+                  onChange={handleChange}
+                  size="small"
+                  fullWidth
+                  sx={{
+                    ...fieldSx,
+                    width: '40%'
+                  }}
+                  slotProps={{
+                    select: {
+                      MenuProps: {
+                        PaperProps: {
+                          sx: {
+                            maxHeight: 250,
+                          },
+                        },
                       },
                     },
-                  },
-                },
-              }}
-            >
-            {SUFFIXES.map((suffix) => (
-                <MenuItem key={suffix} value={suffix}>
-                  {suffix}
-                </MenuItem>
-              ))}
-            </TextField>
-            <TextField
-              label="Phone"
-              name="phone"
-              required
-              onChange={handleChange}
-              size="small"
-              sx={{
-                fontSize: 13,
-                width: '50%'
-              }}
-            />
-          </Box>
-          
-          <TextField
-            type="email"
-            label="Email"
-            name="email"
-            required
-            value={form.email}
-            onChange={handleChange}
-            size="small"
+                  }}
+                >
+                  {SOURCES.map((source) => (
+                    <MenuItem key={source} value={source}>
+                      {source}
+                    </MenuItem>
+                  ))}
+                </TextField>
+                <TextField
+                  select
+                  label="Preferred Time"
+                  name="preferred_contact_time"
+                  onChange={handleChange}
+                  value={form.preferred_contact_time}
+                  size="small"
+                  sx={{
+                    ...fieldSx,
+                    width: '30%'
+                  }}
+                >
+                  {PREFERRED_CONTACT_TIMES.map((time) => (
+                    <MenuItem key={time} value={time}>
+                      {time}
+                    </MenuItem>
+                  ))}
+                </TextField>
+                <TextField
+                  select
+                  label="Priority"
+                  name="priority"
+                  onChange={handleChange}
+                  value={form.priority}
+                  size="small"
+                  sx={{
+                    ...fieldSx,
+                    width: '30%'
+                  }}
+                >
+                  {PRIORITIES.map((prio) => (
+                    <MenuItem key={prio} value={prio}>
+                      {prio}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              </Box>
+              <TextField
+                  label="Notes"
+                  name="notes"
+                  onChange={handleChange}
+                  size="small"
+                  multiline
+                  rows={3}
+                  fullWidth
+                  sx={fieldSx}
+                />
+            </Box>
+          </Paper>
+
+          <Paper
+            variant="outlined"
             sx={{
-              fontSize: 13,
+              position: "sticky",
+              bottom: 12,
+              p: 1.5,
+              borderRadius: 3,
+              borderColor: "divider",
+              bgcolor: "background.paper",
+              boxShadow: "0 -2px 12px rgba(0,0,0,0.08)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 2,
+              zIndex: 1200,
             }}
-          />
-          <Box sx={{
-            display: "flex",
-            width: '100%',
-            justifyContent: "space-between",
-            gap: 1,
-          }}>
-            <TextField
-              select
-              label="Gender"
-              name="gender"
-              onChange={handleChange}
-              value={form.gender}
-              size="small"
-              sx={{
-                fontSize: 13,
-                width: '50%',
-              }}
-            >
-            {GENDERS.map((gender) => (
-              <MenuItem key={gender} value={gender}>
-                {gender}
-              </MenuItem>
-            ))}
-            </TextField>
-            <TextField
-              label="Date of Birth"
-              name="birth_date"
-              type="date"
-              onChange={handleChange}
-              slotProps={{ inputLabel: { shrink: true } }}
-              size="small"
-              sx={{
-                fontSize: 13,
-                width: '50%',
-                '& input' : {
-                  colorScheme: themeMode === 'dark' ? 'dark' : 'light', 
-                }
-              }}
-            />
-          </Box>
-          <Typography variant="h6" fontWeight={700} mt={2}>
-            Professional Details
-          </Typography>
-          <Box sx={{
-            display: "flex",
-            width: '100%',
-            justifyContent: "space-between",
-            gap: 1,
-          }}>
-            <Autocomplete
-              freeSolo
-              sx={{ width: '50%' }}
-              options={INDUSTRIES}
-              value={form.industry}
-              onChange={(_, value) => {
-                setForm(prev => ({
-                  ...prev,
-                  industry: value ?? '',
-                }));
-              }}
-              onInputChange={(_, value) => {
-                setForm(prev => ({
-                  ...prev,
-                  industry: value,
-                }));
-              }}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label="Industry"
-                  size="small"
-                />
-              )}
-            />
-            
-             <TextField
-              label="Company"
-              name="company_name"
-              onChange={handleChange}
-              size="small"
-              sx={{
-                fontSize: 13,
-                width: '50%'
-              }}
-            />
-          </Box>
-         
-          <Box sx={{
-            display: "flex",
-            width: '100%',
-            justifyContent: "space-between",
-            gap: 1,
-          }}>
-            <Autocomplete
-              freeSolo
-              sx={{ width: '50%' }}
-              options={DEPARTMENTS}
-              value={form.department}
-              onChange={(_, value) => {
-                setForm(prev => ({
-                  ...prev,
-                  department: value ?? '',
-                }));
-              }}
-              onInputChange={(_, value) => {
-                setForm(prev => ({
-                  ...prev,
-                  department: value,
-                }));
-              }}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label="Department"
-                  size="small"
-                />
-              )}
-            />
-
-            <TextField
-              label="Position"
-              name="position"
-              onChange={handleChange}
-              size="small"
-              sx={{
-                fontSize: 13,
-                width: '50%'
-              }}
-            />
-          </Box>
-          <TextField
-              label="Website Url"
-              name="website"
-              onChange={handleChange}
-              size="small"
-              sx={{
-                fontSize: 13,
-                width: '100%'
-              }}
-            />
-          <Typography variant="h6" fontWeight={700} mt={2}>
-            Social and Messaging Accounts
-          </Typography>
-          <Box sx={{
-            display: "flex",
-            width: '100%',
-            justifyContent: "space-between",
-            gap: 1,
-          }}>
-            <TextField
-              label="Facebook"
-              name="facebook"
-              onChange={handleChange}
-              size="small"
-              sx={{
-                fontSize: 13,
-                width: '50%'
-              }}
-            />
-            <TextField
-              label="X/Twitter"
-              name="x"
-              onChange={handleChange}
-              size="small"
-              sx={{
-                fontSize: 13,
-                width: '50%'
-              }}
-            />
-          </Box>
-          
-          <Box sx={{
-            display: "flex",
-            width: '100%',
-            justifyContent: "space-between",
-            gap: 1,
-          }}>
-            <TextField
-              label="Tiktok"
-              name="tiktok"
-              onChange={handleChange}
-              size="small"
-              sx={{
-                fontSize: 13,
-                width: '50%'
-              }}
-            />
-
-            <TextField
-              label="Whatsapp"
-              name="whatsapp"
-              onChange={handleChange}
-              size="small"
-              sx={{
-                fontSize: 13,
-                width: '50%'
-              }}
-            />
-          </Box>
-
-          <Box sx={{
-            display: "flex",
-            width: '100%',
-            justifyContent: "space-between",
-            gap: 1,
-          }}>
-            <TextField
-              label="Instagram"
-              name="instagram"
-              onChange={handleChange}
-              size="small"
-              sx={{
-                fontSize: 13,
-                width: '50%'
-              }}
-            />
-
-            <TextField
-              label="Telegram"
-              name="telegram"
-              onChange={handleChange}
-              size="small"
-              sx={{
-                fontSize: 13,
-                width: '50%'
-              }}
-            />
-          </Box>
-          <Box sx={{
-            display: "flex",
-            width: '100%',
-            justifyContent: "space-between",
-            gap: 1,
-          }}>
-            <TextField
-              label="Linkedin"
-              name="linkedin"
-              onChange={handleChange}
-              size="small"
-              sx={{
-                fontSize: 13,
-                width: '50%'
-              }}
-            />
-
-            <TextField
-              label="Viber"
-              name="viber"
-              onChange={handleChange}
-              size="small"
-              sx={{
-                fontSize: 13,
-                width: '50%'
-              }}
-            />
-          </Box>
-          <Typography variant="h6" fontWeight={700} mt={2}>
-            Additional Details
-          </Typography>
-          <Box sx={{
-            display: "flex",
-            width: '100%',
-            justifyContent: "space-between",
-            gap: 1,
-          }}>
-            <TextField
-              select
-              label="Source"
-              name="source"
-              value={form.source}
-              onChange={handleChange}
-              size="small"
-              fullWidth
-              sx={{
-                fontSize: 13,
-                width: '40%'
-              }}
-              slotProps={{
-                select: {
-                  MenuProps: {
-                    PaperProps: {
-                      sx: {
-                        maxHeight: 250,
-                      },
-                    },
-                  },
-                },
-              }}
-            >
-              {SOURCES.map((source) => (
-                <MenuItem key={source} value={source}>
-                  {source}
-                </MenuItem>
-              ))}
-            </TextField>
-            <TextField
-              select
-              label="Preferred Time"
-              name="preferred_contact_time"
-              onChange={handleChange}
-              value={form.preferred_contact_time}
-              size="small"
-              sx={{
-                fontSize: 13,
-                width: '30%'
-              }}
-            >
-              {PREFERRED_CONTACT_TIMES.map((time) => (
-                <MenuItem key={time} value={time}>
-                  {time}
-                </MenuItem>
-              ))}
-            </TextField>
-            <TextField
-              select
-              label="Priority"
-              name="priority"
-              onChange={handleChange}
-              value={form.priority}
-              size="small"
-              sx={{
-                fontSize: 13,
-                width: '30%'
-              }}
-            >
-              {PRIORITIES.map((prio) => (
-                <MenuItem key={prio} value={prio}>
-                  {prio}
-                </MenuItem>
-              ))}
-            </TextField>
-          </Box>
-          <TextField
-              label="Notes"
-              name="notes"
-              onChange={handleChange}
-              size="small"
-              multiline
-              rows={3}
-              sx={{
-                fontSize: 13,
-              }}
-            />
-          <Paper>
+          >
+            <Typography sx={{ fontSize: 12, color: "text.secondary", pl: 1 }}>
+              {canSubmit ? "Ready to add this contact." : "First name, last name, email, and phone are required."}
+            </Typography>
             <Button
               variant="contained"
-              fullWidth
-              disabled={!form.first_name || !form.email || !form.last_name || !form.phone}
+              disabled={!canSubmit || loading}
               onClick={handleSubmit}
+              disableElevation
               sx={{
-                backgroundColor: 'primary.main'
+                borderRadius: 2.5,
+                textTransform: "none",
+                fontWeight: 700,
+                px: 3,
+                py: 1,
+                boxShadow: "0 1px 4px rgba(0,0,0,0.18)",
               }}
             >
-              Add Contact
+              {loading ? "Adding…" : "Add Contact"}
             </Button>
           </Paper>
-          
       </Box >  
     </Box>
   );

@@ -4,12 +4,11 @@ import { useNavigate, useLocation } from "react-router-dom";
 
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import ContactsIcon from "@mui/icons-material/Contacts";
-import RememberMeIcon from '@mui/icons-material/RememberMe';
+import PermContactCalendarIcon from '@mui/icons-material/PermContactCalendar';
 
 import HandshakeIcon from "@mui/icons-material/Handshake";
-import ViewTimelineIcon from "@mui/icons-material/ViewTimeline";
-import FolderSharedIcon from "@mui/icons-material/FolderShared";
-// import ChatBubbleIcon from '@mui/icons-material/ChatBubble';
+import EventNoteIcon from '@mui/icons-material/EventNote';
+import PersonSearchIcon from '@mui/icons-material/PersonSearch';
 
 function Topbar() {
   const navigate = useNavigate();
@@ -22,12 +21,11 @@ function Topbar() {
 
   const tabs = [
     { label: "Dashboard", value: "/app/dashboard", icon: <DashboardIcon /> },
-    { label: "Leads", value: "/app/leads", icon: <FolderSharedIcon /> },
+    { label: "Leads", value: "/app/leads", icon: <PersonSearchIcon /> },
     { label: "Contacts", value: "/app/contacts", icon: <ContactsIcon /> },
     { label: "Deals", value: "/app/deals", icon: <HandshakeIcon /> },
-    { label: "Customers", value: "/app/customers", icon: <RememberMeIcon /> },
-    { label: "Activities", value: "/app/activities", icon: <ViewTimelineIcon /> },
-    // { label: "Messages", value: "/app/messaging", icon: <ChatBubbleIcon /> },
+    { label: "Customers", value: "/app/customers", icon: <PermContactCalendarIcon /> },
+    { label: "Activities", value: "/app/activities", icon: <EventNoteIcon /> },
 
     // ...(isAdmin
     //   ? [{ label: "Reports", value: "/app/reports", icon: <DashboardIcon /> }]

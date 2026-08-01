@@ -18,11 +18,15 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
+  DialogContentText,
   DialogActions,
   Paper,
   IconButton,
   Autocomplete,
+  Avatar,
+  Tooltip,
 } from '@mui/material';
+import { alpha, type Theme } from '@mui/material/styles';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -45,6 +49,12 @@ import TelegramIcon from '@mui/icons-material/Telegram';
 import LinkedInIcon from '@mui/icons-material/LinkedIn';
 import MusicNoteIcon from '@mui/icons-material/MusicNote';
 import LanguageIcon from '@mui/icons-material/Language';
+import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
+import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import NotesIcon from '@mui/icons-material/Notes';
+import ShareIcon from '@mui/icons-material/Share';
+import WorkOutlineIcon from '@mui/icons-material/WorkOutline';
+import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 
 import type { RootState } from '../../../store/store';
 import { fixLeafletIcons } from '../../../utils/fixLeafletIcons';
@@ -71,6 +81,105 @@ const PRIORITY_COLORS: Record<Priority, string> = {
   Low: '#ffffff00',
 }
 
+// ---- purely presentational helpers (no data/logic impact) ----
+const AVATAR_PALETTE = [
+  "#4f5fce",
+  "#0f8f7a",
+  "#c4577a",
+  "#c17d2a",
+  "#7965d1",
+  "#2c8fb0",
+  "#b1544a",
+  "#4a935a",
+];
+
+function stringToAvatarColor(input: string) {
+  let hash = 0;
+  for (let i = 0; i < input.length; i++) hash = input.charCodeAt(i) + ((hash << 5) - hash);
+  return AVATAR_PALETTE[Math.abs(hash) % AVATAR_PALETTE.length];
+}
+
+function getInitials(input: string) {
+  const trimmed = input.trim();
+  if (!trimmed) return "?";
+  const parts = trimmed.split(/\s+/).filter(Boolean);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+function SectionHeader({
+  icon,
+  title,
+  onEdit,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  onEdit?: () => void;
+}) {
+  return (
+    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+        <Avatar
+          sx={{
+            width: 32,
+            height: 32,
+            bgcolor: (theme: Theme) => alpha(theme.palette.primary.main, 0.12),
+            color: 'primary.main',
+          }}
+        >
+          {icon}
+        </Avatar>
+        <Typography variant="h6" fontWeight={700} sx={{ fontSize: 16 }}>
+          {title}
+        </Typography>
+      </Box>
+      {onEdit && (
+        <Tooltip title="Edit">
+          <IconButton size="small" onClick={onEdit} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
+            <EditIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+      )}
+    </Box>
+  );
+}
+
+function InfoRow({ icon, label, value }: { icon: React.ReactNode; label: string; value: React.ReactNode }) {
+  return (
+    <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2, gap: 1.5 }}>
+      <Box
+        sx={{
+          width: 34,
+          height: 34,
+          borderRadius: 2,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          bgcolor: (theme: Theme) => alpha(theme.palette.text.primary, 0.045),
+          color: 'text.secondary',
+          flexShrink: 0,
+        }}
+      >
+        {icon}
+      </Box>
+      <Box sx={{ minWidth: 0 }}>
+        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', lineHeight: 1.3 }}>
+          {label}
+        </Typography>
+        <Typography sx={{ fontSize: 14, fontWeight: 500, wordBreak: 'break-word' }}>
+          {value}
+        </Typography>
+      </Box>
+    </Box>
+  );
+}
+
+const fieldSx = {
+  fontSize: 13,
+  '& .MuiOutlinedInput-root': { borderRadius: 2 },
+};
+// ---------------------------------------------------------------
+
 const SocialLink = ({
     href,
     value,
@@ -79,7 +188,7 @@ const SocialLink = ({
     value: string | null | undefined;
   }) => {
     if (!value) {
-      return <Typography>Not Provided</Typography>;
+      return <Typography sx={{ fontSize: 14, color: 'text.disabled' }}>Not provided</Typography>;
     }
 
     return (
@@ -92,6 +201,8 @@ const SocialLink = ({
           color: "primary.main",
           textDecoration: "none",
           cursor: "pointer",
+          fontSize: 14,
+          fontWeight: 500,
           "&:hover": {
             textDecoration: "underline",
           },
@@ -144,7 +255,7 @@ export default function ContactDetail() {
             dispatch(clearError());
             navigate('/app/contacts')
           }}
-          sx={{ mt: 2 }}
+          sx={{ mt: 2, textTransform: 'none', fontWeight: 600 }}
         >
           Back to contacts
         </Button>
@@ -286,11 +397,24 @@ export default function ContactDetail() {
     }
   }
 
+  const fullName = formatName(contact.first_name, contact.last_name);
 
-  
+  const cancelBtnSx = {
+    textTransform: 'none',
+    fontWeight: 600,
+    borderRadius: 2,
+    minWidth: 90,
+  };
+  const saveBtnSx = {
+    textTransform: 'none',
+    fontWeight: 700,
+    borderRadius: 2,
+    minWidth: 90,
+    boxShadow: '0 1px 4px rgba(0,0,0,0.18)',
+  };
 
   return (
-    <Box sx={{ maxWidth: 800, mx: 'auto' }}>
+    <Box sx={{ maxWidth: 800, mx: 'auto', pb: 4 }}>
 
       {successMessage && (
         <Box sx={{ my: 2, width: '100%' }}>
@@ -315,7 +439,7 @@ export default function ContactDetail() {
             navigate('/app/contacts');
             dispatch(clearError());
           } }
-          sx={{ alignSelf: 'start'}}>
+          sx={{ alignSelf: 'start', textTransform: 'none', fontWeight: 600, borderRadius: 2 }}>
           Contacts
         </Button>
         {(contact.status === 'Customer' && customer) && (
@@ -325,103 +449,133 @@ export default function ContactDetail() {
             navigate(`/app/customers/${customer.id}`);
             dispatch(clearError());
           } }
-          sx={{ alignSelf: 'start'}}>
+          sx={{ alignSelf: 'start', textTransform: 'none', fontWeight: 600, borderRadius: 2 }}>
           Customer Profile
         </Button>
         )}
       </Box>
-      <Paper elevation={1} sx={{ p: 4, borderRadius: 3, mb: 3, mt: 2 }}>
+      <Paper variant="outlined" sx={{ p: 4, borderRadius: 3, mb: 3, mt: 2, borderColor: 'divider' }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1, width: '100%' }}>
           <Box sx={{display: 'flex', width: 100, mr: 2, flexDirection: 'column' }}>
-            <Box sx={{width: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', height:100, border: '1px solid #ccccccd8', borderRadius: 100}}>
-              <PersonIcon sx={{fontSize: '80px', color: '#686868b0'}}/>
-            </Box>
+            <Avatar
+              sx={{
+                width: 100,
+                height: 100,
+                fontSize: 32,
+                fontWeight: 700,
+                bgcolor: stringToAvatarColor(fullName),
+              }}
+            >
+              {getInitials(fullName)}
+            </Avatar>
             <Box sx={{ display: 'flex', justifyContent: 'center'}}>
               <Button 
               title="Add new Deal for this contact"
-              onClick={()=> navigate(`/app/adddeal/${contact.id}`)}
-              sx={{border: '1px solid', borderColor: 'primary.main', fontWeight: 700, p: '2px 8px', mt: 1, fontSize: '10px'}}>
+              startIcon={<AddCircleOutlineIcon sx={{ fontSize: '14px !important' }} />}
+              onClick={()=> navigate(`/app/deals/adddeal/${contact.id}`)}
+              sx={{
+                border: '1px solid',
+                borderColor: 'primary.main',
+                color: 'primary.main',
+                fontWeight: 700,
+                p: '3px 10px',
+                mt: 1,
+                fontSize: '10px',
+                borderRadius: 999,
+                textTransform: 'none',
+              }}>
                 Add deal
               </Button>
             </Box>
           </Box>
           <Box sx={{ flex: 1, overflowWrap: "anywhere", wordBreak: "break-word",}}>
             <Typography variant='h4' fontWeight={700} sx={{display: 'flex', alignItems: 'center'}}>
-              {formatName(contact.first_name, contact.last_name)} {contact.suffix} 
+              {fullName} {contact.suffix} 
               <Box title={`${contact.priority} Priority`} component="span" sx={{ ml: 1, cursor: 'pointer', display: "flex", width: 30, height: 30 }}>
               {priorityIcon(contact.priority)}
             </Box>
             </Typography>
-            <Chip
-              label={contact.status}
-              title="Status"
-              size='small'
-              sx={{
-                px: 2,
-                py: '1px',
-                cursor: 'pointer',
-                mt: 1,
-                border: contact.status === 'Contacted' ? '1px solid #7a7a7a98' : 'none',
-                backgroundColor: STATUS_COLORS[contact.status],
-                color: contact.status === 'Churned' || contact.status === 'Lost' ? 'white' : 'black'
-              }}
-            />
-            <Chip
-              label={contact.source === 'Other' ? 'Not Provided' : contact.source}
-              title="Contact Source"
-              size='small'
-              sx={{
-                px: 2,
-                py: '1px',
-                cursor: 'pointer',
-                mt: 1,
-                mx: 2,
-                border: '1px solid #7a7a7a98',
-                backgroundColor: '#cccccc00',
-              }}
-            />
-            <Chip
-              label={contact.preferred_contact_time}
-              title="Preferred contact time"
-              variant="filled"
-              size='small'
-              sx={{
-                px: 2,
-                cursor: 'pointer',
-                py: '1px',
-                mt: 1,
-                mr: 2,
-                border: '1px solid #7a7a7a98',
-                backgroundColor: '#cccccc00',
-              }}
-            />
-            <Chip
-              label={formatName(contact.owner.first_name, contact.owner.last_name)}
-              title="Contact owner"
-              size='small'
-              sx={{
-                px: 2,
-                cursor: 'pointer',
-                py: '1px',
-                mt: 1,
-                border: `1px solid`,
-                borderColor: 'primary.main',
-                color: 'primary.main',
-                backgroundColor: '#cccccc00',
-              }}
-            />
-            <Typography title="Notes" fontWeight={500} marginTop={2} fontSize={12} sx={{ cursor: 'pointer', }}>
-              {contact.notes}
-            </Typography>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1.25 }}>
+              <Chip
+                label={contact.status}
+                title="Status"
+                size='small'
+                sx={{
+                  px: 1,
+                  fontWeight: 700,
+                  fontSize: 12,
+                  cursor: 'pointer',
+                  border: contact.status === 'Contacted' ? '1px solid #7a7a7a98' : 'none',
+                  backgroundColor: STATUS_COLORS[contact.status],
+                  color: contact.status === 'Churned' || contact.status === 'Lost' ? 'white' : 'black'
+                }}
+              />
+              <Chip
+                label={contact.source === 'Other' ? 'Not Provided' : contact.source}
+                title="Contact Source"
+                size='small'
+                variant="outlined"
+                sx={{
+                  px: 1,
+                  fontSize: 12,
+                  cursor: 'pointer',
+                  borderColor: 'divider',
+                }}
+              />
+              <Chip
+                label={contact.preferred_contact_time}
+                title="Preferred contact time"
+                size='small'
+                variant="outlined"
+                sx={{
+                  px: 1,
+                  fontSize: 12,
+                  cursor: 'pointer',
+                  borderColor: 'divider',
+                }}
+              />
+              <Chip
+                label={formatName(contact.owner.first_name, contact.owner.last_name)}
+                title="Contact owner"
+                size='small'
+                sx={{
+                  px: 1,
+                  fontSize: 12,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  border: `1px solid`,
+                  borderColor: 'primary.main',
+                  color: 'primary.main',
+                  backgroundColor: (theme: Theme) => alpha(theme.palette.primary.main, 0.06),
+                }}
+              />
+            </Box>
+            {contact.notes && (
+              <Typography
+                title="Notes"
+                fontWeight={500}
+                marginTop={2}
+                fontSize={12.5}
+                sx={{
+                  cursor: 'pointer',
+                  color: 'text.secondary',
+                  bgcolor: (theme: Theme) => alpha(theme.palette.text.primary, 0.03),
+                  borderRadius: 2,
+                  p: 1.25,
+                }}
+              >
+                {contact.notes}
+              </Typography>
+            )}
           </Box>
-          <Box sx={{ display: 'flex', width: '14%' }}>
+          <Box sx={{ display: 'flex', width: '14%', justifyContent: 'flex-end' }}>
             {!isEditingBasic && (
               <Button
                 variant='outlined'
                 color='error'
                 startIcon={<DeleteIcon />}
                 onClick={() => setDeleteDialogOpen(true)}
-                sx={{fontSize: '10px', fontWeight: 700,}}
+                sx={{fontSize: '10px', fontWeight: 700, borderRadius: 2, textTransform: 'none'}}
               >
                 Delete
               </Button>
@@ -432,75 +586,26 @@ export default function ContactDetail() {
 
         {!isEditingBasic ? (
           <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+            <SectionHeader icon={<PersonOutlineIcon fontSize="small" />} title="Personal Details" onEdit={handleEditStart} />
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-              <Typography variant='h6' fontWeight={700}>
-                Personal Details
-              </Typography>
-              <IconButton size='small' onClick={handleEditStart}>
-                <EditIcon />
-              </IconButton>
-            </Box>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-              <Box sx={{ display: 'flex', flexDirection: 'column', width: '35%' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <PersonIcon color="action" />
-                  <Box sx={{ ml: 2 }}>
-                    <Typography variant="caption" color="text.secondary">
-                      Full name
-                    </Typography>
-                    <Typography>{formatName(contact.first_name, contact.last_name)} {contact.suffix}</Typography>
-                  </Box>
-                </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <EmailIcon color="action" />
-                  <Box sx={{ ml: 2 }}>
-                    <Typography variant="caption" color="text.secondary">
-                      Email address
-                    </Typography>
-                    <Typography>{contact.email || 'Not Provided'}</Typography>
-                  </Box>
-                </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <PhoneIcon color="action" />
-                  <Box sx={{ ml: 2 }}>
-                    <Typography variant="caption" color="text.secondary">
-                      Phone number
-                    </Typography>
-                    <Typography>{contact.phone || 'Not Provided'}</Typography>
-                  </Box>
-                </Box>
+              <Box sx={{ display: 'flex', flexDirection: 'column', width: '48%' }}>
+                <InfoRow icon={<PersonIcon fontSize="small" />} label="Full name" value={`${fullName} ${contact.suffix ?? ''}`} />
+                <InfoRow icon={<EmailIcon fontSize="small" />} label="Email address" value={contact.email || 'Not Provided'} />
+                <InfoRow icon={<PhoneIcon fontSize="small" />} label="Phone number" value={contact.phone || 'Not Provided'} />
               </Box>
-              <Box sx={{ display: 'flex', flexDirection: 'column', width: '35%' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <Box sx={{ position: "relative", display: "inline-flex" }}>
-                    <FemaleIcon color="action" />
-                    <MaleIcon color="action" sx={{ position: "absolute", top: -5, right: -1, }} />
-                  </Box>
-                  <Box sx={{ ml: 2 }}>
-                    <Typography variant="caption" color="text.secondary">
-                      Gender
-                    </Typography>
-                    <Typography>{contact.gender}</Typography>
-                  </Box>
-                </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <CakeIcon color="action" />
-                  <Box sx={{ ml: 2 }}>
-                    <Typography variant="caption" color="text.secondary">
-                      Date of Birth
-                    </Typography>
-                    <Typography>{!contact.birth_date ? 'Not Provided' : contact.birth_date}</Typography>
-                  </Box>
-                </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <CalendarTodayIcon color="action" />
-                  <Box sx={{ ml: 2 }}>
-                    <Typography variant="caption" color="text.secondary">
-                      Added on
-                    </Typography>
-                    <Typography>{formattedDate(contact.created_at)}</Typography>
-                  </Box>
-                </Box>
+              <Box sx={{ display: 'flex', flexDirection: 'column', width: '48%' }}>
+                <InfoRow
+                  icon={
+                    <Box sx={{ position: "relative", display: "inline-flex" }}>
+                      <FemaleIcon fontSize="small" />
+                      <MaleIcon fontSize="small" sx={{ position: "absolute", top: -5, right: -6, fontSize: 13 }} />
+                    </Box>
+                  }
+                  label="Gender"
+                  value={contact.gender}
+                />
+                <InfoRow icon={<CakeIcon fontSize="small" />} label="Date of Birth" value={!contact.birth_date ? 'Not Provided' : contact.birth_date} />
+                <InfoRow icon={<CalendarTodayIcon fontSize="small" />} label="Added on" value={formattedDate(contact.created_at)} />
               </Box>
             </Box>
           </Box>
@@ -512,13 +617,10 @@ export default function ContactDetail() {
               width: '100%',
               minWidth: 450,
               justifyContent: "center",
-              p: 2,
-              gap: 1,
+              gap: 1.5,
             }}>
-            <Typography variant="h6" fontWeight={700} mt={2}>
-              Personal Details
-            </Typography>
-            <Box sx={{ display: "flex", width: '100%', justifyContent: "space-between", gap: 1 }}>
+            <SectionHeader icon={<PersonOutlineIcon fontSize="small" />} title="Personal Details" />
+            <Box sx={{ display: "flex", width: '100%', justifyContent: "space-between", gap: 1.5 }}>
               <TextField
                 label="First Name"
                 name="first_name"
@@ -526,7 +628,7 @@ export default function ContactDetail() {
                 onChange={handleChange}
                 value={formBasic.first_name || ''}
                 size="small"
-                sx={{ fontSize: 13, width: '50%' }}
+                sx={{ ...fieldSx, width: '50%' }}
               />
               <TextField
                 label="Last Name"
@@ -535,11 +637,11 @@ export default function ContactDetail() {
                 onChange={handleChange}
                 value={formBasic.last_name || ''}
                 size="small"
-                sx={{ fontSize: 13, width: '50%' }}
+                sx={{ ...fieldSx, width: '50%' }}
               />
             </Box>
 
-            <Box sx={{ display: "flex", width: '100%', justifyContent: "space-between", gap: 1 }}>
+            <Box sx={{ display: "flex", width: '100%', justifyContent: "space-between", gap: 1.5 }}>
               <TextField
                 select
                 label="Suffix"
@@ -547,7 +649,7 @@ export default function ContactDetail() {
                 onChange={handleChange}
                 value={formBasic.suffix || ''}
                 size="small"
-                sx={{ fontSize: 13, width: '50%' }}
+                sx={{ ...fieldSx, width: '50%' }}
                 slotProps={{
                   select: {
                     MenuProps: {
@@ -572,7 +674,7 @@ export default function ContactDetail() {
                 onChange={handleChange}
                 value={formBasic.phone || ''}
                 size="small"
-                sx={{ fontSize: 13, width: '50%' }}
+                sx={{ ...fieldSx, width: '50%' }}
               />
             </Box>
 
@@ -583,10 +685,11 @@ export default function ContactDetail() {
               onChange={handleChange}
               value={formBasic.email || ''}
               size="small"
-              sx={{ fontSize: 13 }}
+              fullWidth
+              sx={fieldSx}
             />
 
-            <Box sx={{ display: "flex", width: '100%', justifyContent: "space-between", gap: 1 }}>
+            <Box sx={{ display: "flex", width: '100%', justifyContent: "space-between", gap: 1.5 }}>
               <TextField
                 select
                 label="Gender"
@@ -594,7 +697,7 @@ export default function ContactDetail() {
                 onChange={handleChange}
                 value={formBasic.gender || ''}
                 size="small"
-                sx={{ fontSize: 13, width: '50%' }}
+                sx={{ ...fieldSx, width: '50%' }}
               >
                 {GENDERS.map((gender) => (
                   <MenuItem key={gender} value={gender}>
@@ -612,7 +715,7 @@ export default function ContactDetail() {
                 slotProps={{ inputLabel: { shrink: true } }}
                 size="small"
                 sx={{
-                  fontSize: 13,
+                  ...fieldSx,
                   width: '50%',
                   '& input': {
                     colorScheme: themeMode === 'dark' ? 'dark' : 'light',
@@ -621,10 +724,9 @@ export default function ContactDetail() {
               />
             </Box>
 
-            <Typography variant="h6" fontWeight={700} mt={2}>
-              Additional Details
-            </Typography>
-            <Box sx={{ display: "flex", width: '100%', justifyContent: "space-between", gap: 1 }}>
+            <Divider sx={{ my: 1 }} />
+            <SectionHeader icon={<NotesIcon fontSize="small" />} title="Additional Details" />
+            <Box sx={{ display: "flex", width: '100%', justifyContent: "space-between", gap: 1.5 }}>
               <TextField
                 select
                 label="Source"
@@ -632,7 +734,7 @@ export default function ContactDetail() {
                 value={formBasic.source || ''}
                 onChange={handleChange}
                 size="small"
-                sx={{ fontSize: 13, width: '40%' }}
+                sx={{ ...fieldSx, width: '40%' }}
                 slotProps={{
                   select: {
                     MenuProps: {
@@ -654,7 +756,7 @@ export default function ContactDetail() {
                 onChange={handleChange}
                 value={formBasic.preferred_contact_time || ''}
                 size="small"
-                sx={{ fontSize: 13, width: '30%' }}
+                sx={{ ...fieldSx, width: '30%' }}
               >
                 {PREFERRED_CONTACT_TIMES.map((time) => (
                   <MenuItem key={time} value={time}>
@@ -669,7 +771,7 @@ export default function ContactDetail() {
                 onChange={handleChange}
                 value={formBasic.priority || ''}
                 size="small"
-                sx={{ fontSize: 13, width: '30%' }}
+                sx={{ ...fieldSx, width: '30%' }}
               >
                 {PRIORITIES.map((prio) => (
                   <MenuItem key={prio} value={prio}>
@@ -687,25 +789,29 @@ export default function ContactDetail() {
               size="small"
               multiline
               rows={3}
-              sx={{ fontSize: 13 }}
+              fullWidth
+              sx={fieldSx}
             />
 
-            <Box sx={{ display: 'flex', justifyContent: 'end', gap: 1 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'end', gap: 1, mt: 1 }}>
               <Button
                 onClick={() => {
                   setIsEditingBasic(false)
                   setFormBasic({})
                   dispatch(clearError())
                 }}
-                sx={{ backgroundColor: '#7c7c7cb4', width: '15%', color: 'white', alignSelf:'end' }}
+                variant="outlined"
+                color="inherit"
+                sx={cancelBtnSx}
               >
                 Cancel
               </Button>
               <Button
                 variant="contained"
+                disableElevation
                 onClick={handleSave}
                 disabled={!formBasic.first_name || !formBasic.email || !formBasic.last_name || !formBasic.phone}
-                sx={{ backgroundColor: 'primary.main', width: '15%', alignSelf:'end' }}
+                sx={saveBtnSx}
               >
                 Update
               </Button>
@@ -717,122 +823,67 @@ export default function ContactDetail() {
 
         {!isEditingSocials ? (
           <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-              <Typography variant="h6" fontWeight={700}>
-                Social and Messaging Accounts
-              </Typography>
-              <IconButton size="small" onClick={handleEditSocials}>
-                <EditIcon />
-              </IconButton>
-            </Box>
+            <SectionHeader icon={<ShareIcon fontSize="small" />} title="Social and Messaging Accounts" onEdit={handleEditSocials} />
 
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-              <Box sx={{ display: 'flex', flexDirection: 'column', width: '35%' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <FacebookIcon color="action" />
-                  <Box sx={{ ml: 2 }}>
-                    <Typography variant="caption" color="text.secondary">Facebook</Typography>
-                    <SocialLink
-                      value={contact.facebook}
-                      href={`https://facebook.com/${contact.facebook}`}
-                    />
-                  </Box>
-                </Box>
-
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <XIcon color="action" />
-                  <Box sx={{ ml: 2 }}>
-                    <Typography variant="caption" color="text.secondary">X / Twitter</Typography>
-                    <SocialLink
-                      value={contact.x}
-                      href={`https://x.com/${contact.x}`}
-                    />
-                  </Box>
-                </Box>
-
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <InstagramIcon color="action" />
-                  <Box sx={{ ml: 2 }}>
-                    <Typography variant="caption" color="text.secondary">Instagram</Typography>
-                    <SocialLink
-                      value={contact.instagram}
-                      href={`https://instagram.com/${contact.instagram}`}
-                    />
-                  </Box>
-                </Box>
-
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <LinkedInIcon color="action" />
-                  <Box sx={{ ml: 2 }}>
-                    <Typography variant="caption" color="text.secondary">LinkedIn</Typography>
-                    <SocialLink
-                      value={contact.linkedin}
-                      href={`https://linkedin.com/in/${contact.linkedin}`}
-                    />
-                  </Box>
-                </Box>
+              <Box sx={{ display: 'flex', flexDirection: 'column', width: '48%' }}>
+                <InfoRow
+                  icon={<FacebookIcon fontSize="small" />}
+                  label="Facebook"
+                  value={<SocialLink value={contact.facebook} href={`https://facebook.com/${contact.facebook}`} />}
+                />
+                <InfoRow
+                  icon={<XIcon fontSize="small" />}
+                  label="X / Twitter"
+                  value={<SocialLink value={contact.x} href={`https://x.com/${contact.x}`} />}
+                />
+                <InfoRow
+                  icon={<InstagramIcon fontSize="small" />}
+                  label="Instagram"
+                  value={<SocialLink value={contact.instagram} href={`https://instagram.com/${contact.instagram}`} />}
+                />
+                <InfoRow
+                  icon={<LinkedInIcon fontSize="small" />}
+                  label="LinkedIn"
+                  value={<SocialLink value={contact.linkedin} href={`https://linkedin.com/in/${contact.linkedin}`} />}
+                />
               </Box>
 
-              <Box sx={{ display: 'flex', flexDirection: 'column', width: '35%' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <MusicNoteIcon color="action" />
-                  <Box sx={{ ml: 2 }}>
-                    <Typography variant="caption" color="text.secondary">Tiktok</Typography>
-                    <SocialLink
-                      value={contact.tiktok}
-                      href={`https://tiktok.com/@${contact.tiktok}`}
-                    />
-                  </Box>
-                </Box>
-
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <WhatsAppIcon color="action" />
-                  <Box sx={{ ml: 2 }}>
-                    <Typography variant="caption" color="text.secondary">WhatsApp</Typography>
-                    <SocialLink
-                      value={contact.whatsapp}
-                      href={`https://wa.me/${contact.whatsapp?.replace(/\D/g, "")}`}
-                    />
-                  </Box>
-                </Box>
-
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <PhoneIcon color="action" />
-                  <Box sx={{ ml: 2 }}>
-                    <Typography variant="caption" color="text.secondary">Viber</Typography>
-                    <SocialLink
-                      value={contact.viber}
-                      href={`viber://chat?number=${contact.viber}`}
-                    />
-                  </Box>
-                </Box>
-
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <TelegramIcon color="action" />
-                  <Box sx={{ ml: 2 }}>
-                    <Typography variant="caption" color="text.secondary">Telegram</Typography>
-                    <SocialLink
-                      value={contact.telegram}
-                      href={`https://t.me/${contact.telegram}`}
-                    />
-                  </Box>
-                </Box>
+              <Box sx={{ display: 'flex', flexDirection: 'column', width: '48%' }}>
+                <InfoRow
+                  icon={<MusicNoteIcon fontSize="small" />}
+                  label="Tiktok"
+                  value={<SocialLink value={contact.tiktok} href={`https://tiktok.com/@${contact.tiktok}`} />}
+                />
+                <InfoRow
+                  icon={<WhatsAppIcon fontSize="small" />}
+                  label="WhatsApp"
+                  value={<SocialLink value={contact.whatsapp} href={`https://wa.me/${contact.whatsapp?.replace(/\D/g, "")}`} />}
+                />
+                <InfoRow
+                  icon={<PhoneIcon fontSize="small" />}
+                  label="Viber"
+                  value={<SocialLink value={contact.viber} href={`viber://chat?number=${contact.viber}`} />}
+                />
+                <InfoRow
+                  icon={<TelegramIcon fontSize="small" />}
+                  label="Telegram"
+                  value={<SocialLink value={contact.telegram} href={`https://t.me/${contact.telegram}`} />}
+                />
               </Box>
             </Box>
           </Box>
         ) : (
-          <Box sx={{ display: "flex", flexDirection: 'column', width: '100%', p: 2, gap: 1 }}>
-            <Typography variant="h5" fontWeight={700} mt={2}>
-              Social and Messaging Accounts
-            </Typography>
-            <Box sx={{ display: "flex", width: '100%', justifyContent: "space-between", gap: 1 }}>
+          <Box sx={{ display: "flex", flexDirection: 'column', width: '100%', gap: 1.5 }}>
+            <SectionHeader icon={<ShareIcon fontSize="small" />} title="Social and Messaging Accounts" />
+            <Box sx={{ display: "flex", width: '100%', justifyContent: "space-between", gap: 1.5 }}>
               <TextField
                 label="Facebook"
                 name="facebook"
                 onChange={handleChangeSocials}
                 value={formSocials.facebook || ''}
                 size="small"
-                sx={{ width: '50%' }}
+                sx={{ ...fieldSx, width: '50%' }}
               />
               <TextField
                 label="X / Twitter"
@@ -840,17 +891,17 @@ export default function ContactDetail() {
                 onChange={handleChangeSocials}
                 value={formSocials.x || ''}
                 size="small"
-                sx={{ width: '50%' }}
+                sx={{ ...fieldSx, width: '50%' }}
               />
             </Box>
-            <Box sx={{ display: "flex", width: '100%', justifyContent: "space-between", gap: 1 }}>
+            <Box sx={{ display: "flex", width: '100%', justifyContent: "space-between", gap: 1.5 }}>
               <TextField
                 label="Instagram"
                 name="instagram"
                 onChange={handleChangeSocials}
                 value={formSocials.instagram || ''}
                 size="small"
-                sx={{ width: '50%' }}
+                sx={{ ...fieldSx, width: '50%' }}
               />
               <TextField
                 label="LinkedIn"
@@ -858,17 +909,17 @@ export default function ContactDetail() {
                 onChange={handleChangeSocials}
                 value={formSocials.linkedin || ''}
                 size="small"
-                sx={{ width: '50%' }}
+                sx={{ ...fieldSx, width: '50%' }}
               />
             </Box>
-            <Box sx={{ display: "flex", width: '100%', justifyContent: "space-between", gap: 1 }}>
+            <Box sx={{ display: "flex", width: '100%', justifyContent: "space-between", gap: 1.5 }}>
               <TextField
                 label="Tiktok"
                 name="tiktok"
                 onChange={handleChangeSocials}
                 value={formSocials.tiktok || ''}
                 size="small"
-                sx={{ width: '50%' }}
+                sx={{ ...fieldSx, width: '50%' }}
               />
               <TextField
                 label="WhatsApp"
@@ -876,17 +927,17 @@ export default function ContactDetail() {
                 onChange={handleChangeSocials}
                 value={formSocials.whatsapp || ''}
                 size="small"
-                sx={{ width: '50%' }}
+                sx={{ ...fieldSx, width: '50%' }}
               />
             </Box>
-            <Box sx={{ display: "flex", width: '100%', justifyContent: "space-between", gap: 1 }}>
+            <Box sx={{ display: "flex", width: '100%', justifyContent: "space-between", gap: 1.5 }}>
               <TextField
                 label="Viber"
                 name="viber"
                 onChange={handleChangeSocials}
                 value={formSocials.viber || ''}
                 size="small"
-                sx={{ width: '50%' }}
+                sx={{ ...fieldSx, width: '50%' }}
               />
               <TextField
                 label="Telegram"
@@ -894,25 +945,28 @@ export default function ContactDetail() {
                 onChange={handleChangeSocials}
                 value={formSocials.telegram || ''}
                 size="small"
-                sx={{ width: '50%' }}
+                sx={{ ...fieldSx, width: '50%' }}
               />
             </Box>
 
-            <Box sx={{ display: 'flex', justifyContent: 'end', gap: 1 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'end', gap: 1, mt: 1 }}>
               <Button
                 onClick={() => {
                   setIsEditingSocials(false)
                   setFormSocials({})
                   dispatch(clearError())
                 }}
-                sx={{ backgroundColor: '#7c7c7cb4', width: '10%', color: 'white' }}
+                variant="outlined"
+                color="inherit"
+                sx={cancelBtnSx}
               >
                 Cancel
               </Button>
               <Button
                 variant="contained"
+                disableElevation
                 onClick={handleSaveSocials}
-                sx={{ backgroundColor: 'primary.main', width: '10%' }}
+                sx={saveBtnSx}
               >
                 Update
               </Button>
@@ -925,65 +979,25 @@ export default function ContactDetail() {
         {/* ---------------- Professional Details ---------------- */}
         {!isEditingCareer ? (
           <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-              <Typography variant="h6" fontWeight={700}>
-                Professional Details
-              </Typography>
-              <IconButton size="small" onClick={handleEditCareer}>
-                <EditIcon />
-              </IconButton>
-            </Box>
+            <SectionHeader icon={<WorkOutlineIcon fontSize="small" />} title="Professional Details" onEdit={handleEditCareer} />
 
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-              <Box sx={{ display: 'flex', flexDirection: 'column', width: '35%' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <AccountTreeIcon color="action" />
-                  <Box sx={{ ml: 2 }}>
-                    <Typography variant="caption" color="text.secondary">Industry</Typography>
-                    <Typography>{contact.industry || 'Not Provided'}</Typography>
-                  </Box>
-                </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <BusinessIcon color="action" />
-                  <Box sx={{ ml: 2 }}>
-                    <Typography variant="caption" color="text.secondary">Company</Typography>
-                    <Typography>{contact.company_name || 'Not Provided'}</Typography>
-                  </Box>
-                </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <LanguageIcon color="action" />
-                  <Box sx={{ ml: 2 }}>
-                    <Typography variant="caption" color="text.secondary">Website</Typography>
-                    <Typography>{contact.website || 'Not Provided'}</Typography>
-                  </Box>
-                </Box>
+              <Box sx={{ display: 'flex', flexDirection: 'column', width: '48%' }}>
+                <InfoRow icon={<AccountTreeIcon fontSize="small" />} label="Industry" value={contact.industry || 'Not Provided'} />
+                <InfoRow icon={<BusinessIcon fontSize="small" />} label="Company" value={contact.company_name || 'Not Provided'} />
+                <InfoRow icon={<LanguageIcon fontSize="small" />} label="Website" value={contact.website || 'Not Provided'} />
               </Box>
 
-              <Box sx={{ display: 'flex', flexDirection: 'column', width: '35%' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <AccountTreeIcon color="action" />
-                  <Box sx={{ ml: 2 }}>
-                    <Typography variant="caption" color="text.secondary">Department</Typography>
-                    <Typography>{contact.department || 'Not Provided'}</Typography>
-                  </Box>
-                </Box>
-
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <WorkIcon color="action" />
-                  <Box sx={{ ml: 2 }}>
-                    <Typography variant="caption" color="text.secondary">Position</Typography>
-                    <Typography>{contact.position || 'Not Provided'}</Typography>
-                  </Box>
-                </Box>
+              <Box sx={{ display: 'flex', flexDirection: 'column', width: '48%' }}>
+                <InfoRow icon={<AccountTreeIcon fontSize="small" />} label="Department" value={contact.department || 'Not Provided'} />
+                <InfoRow icon={<WorkIcon fontSize="small" />} label="Position" value={contact.position || 'Not Provided'} />
               </Box>
             </Box>
           </Box>
         ) : (
-          <Box sx={{ display: "flex", flexDirection: 'column', width: '100%', p: 2, gap: 1 }}>
-            <Typography variant="h5" fontWeight={700} mt={2}>
-              Professional Details
-            </Typography>
-            <Box sx={{ display: "flex", width: '100%', justifyContent: "space-between", gap: 1 }}>
+          <Box sx={{ display: "flex", flexDirection: 'column', width: '100%', gap: 1.5 }}>
+            <SectionHeader icon={<WorkOutlineIcon fontSize="small" />} title="Professional Details" />
+            <Box sx={{ display: "flex", width: '100%', justifyContent: "space-between", gap: 1.5 }}>
               <Autocomplete
                 freeSolo
                 sx={{ width: '50%' }}
@@ -1000,6 +1014,7 @@ export default function ContactDetail() {
                     {...params}
                     label="Industry"
                     size="small"
+                    sx={fieldSx}
                   />
                 )}
               />
@@ -1019,18 +1034,19 @@ export default function ContactDetail() {
                     {...params}
                     label="Department"
                     size="small"
+                    sx={fieldSx}
                   />
                 )}
               />
             </Box>
-            <Box sx={{ display: "flex", width: '100%', justifyContent: "space-between", gap: 1 }}>
+            <Box sx={{ display: "flex", width: '100%', justifyContent: "space-between", gap: 1.5 }}>
               <TextField
                 label="Company"
                 name="company_name"
                 onChange={handleChangeCareer}
                 value={formCareer.company_name || ''}
                 size="small"
-                sx={{ width: '50%' }}
+                sx={{ ...fieldSx, width: '50%' }}
               />
               
               <TextField
@@ -1039,7 +1055,7 @@ export default function ContactDetail() {
                 onChange={handleChangeCareer}
                 value={formCareer.position || ''}
                 size="small"
-                sx={{ width: '50%' }}
+                sx={{ ...fieldSx, width: '50%' }}
               />
             </Box>
             <TextField
@@ -1048,24 +1064,28 @@ export default function ContactDetail() {
                 onChange={handleChangeCareer}
                 value={formCareer.website || ''}
                 size="small"
-                sx={{ width: '100%' }}
+                fullWidth
+                sx={fieldSx}
               />
 
-            <Box sx={{ display: 'flex', justifyContent: 'end', gap: 1 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'end', gap: 1, mt: 1 }}>
               <Button
                 onClick={() => {
                   setIsEditingCareer(false)
                   setFormCareer({})
                   dispatch(clearError())
                 }}
-                sx={{ backgroundColor: '#7c7c7cb4', width: '10%', color: 'white' }}
+                variant="outlined"
+                color="inherit"
+                sx={cancelBtnSx}
               >
                 Cancel
               </Button>
               <Button
                 variant="contained"
+                disableElevation
                 onClick={handleSaveCareer}
-                sx={{ backgroundColor: 'primary.main', width: '10%' }}
+                sx={saveBtnSx}
               >
                 Update
               </Button>
@@ -1076,22 +1096,47 @@ export default function ContactDetail() {
       <Dialog
         open={deleteDialogOpen}
         onClose={() => setDeleteDialogOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 3 } }}
       >
-        <DialogTitle>Delete contact?</DialogTitle>
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1.5, fontWeight: 700, pb: 1 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 44,
+              height: 44,
+              borderRadius: '50%',
+              bgcolor: (theme: Theme) => alpha(theme.palette.error.main, 0.1),
+              color: 'error.main',
+              flexShrink: 0,
+            }}
+          >
+            <WarningAmberRoundedIcon />
+          </Box>
+          Delete contact?
+        </DialogTitle>
         <DialogContent>
-          <Typography>
-            Are you sure you want to delete <strong>{contact.first_name} {contact.last_name}</strong>?
-            This action cannot be undone.
-          </Typography>
+          <DialogContentText sx={{ fontSize: '0.9rem' }}>
+            Are you sure you want to delete{' '}
+            <Box component="span" sx={{ fontWeight: 700, color: 'text.primary' }}>
+              {contact.first_name} {contact.last_name}
+            </Box>
+            ? This action cannot be undone.
+          </DialogContentText>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)}>
+        <DialogActions sx={{ px: 3, pb: 2.5 }}>
+          <Button onClick={() => setDeleteDialogOpen(false)} color="inherit" sx={{ textTransform: 'none', fontWeight: 600 }}>
             Cancel
           </Button>
           <Button
             color="error"
             variant="contained"
+            disableElevation
             onClick={handleDeleteConfirm}
+            sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 2 }}
           >
             Delete
           </Button>
@@ -1099,5 +1144,4 @@ export default function ContactDetail() {
       </Dialog>
     </Box>
   );
-}
-
+} 

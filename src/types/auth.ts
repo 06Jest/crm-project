@@ -1,8 +1,8 @@
-import type { Role } from "./profile";
-import type { Profile } from "./profile";
+import type { Roles } from "./global";
+import type { DisplayProfile } from "./profile";
 
 export interface UserState {
-  user: Profile | null;
+  user: DisplayProfile | null;
   isAuthenticated: boolean;
   loading: boolean;
   loaded: boolean;
@@ -26,7 +26,7 @@ export interface SignInDTO {
 
 export interface AccessTokenPayload {
   sub: string;
-  role: Role;
+  role: Roles;
   orgId: string | null;
 }
 

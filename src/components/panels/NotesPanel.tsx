@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, type ReactElement } from "react";
 import {
   Box,
   TextField,
@@ -21,6 +21,7 @@ import {
   DialogActions,
   Button,
   DialogContentText,
+  Chip,
 } from "@mui/material";
 
 import AddIcon from "@mui/icons-material/Add";
@@ -33,6 +34,11 @@ import RefreshIcon from "@mui/icons-material/Refresh";
 import CheckIcon from '@mui/icons-material/Check';
 import PushPinIcon from '@mui/icons-material/PushPin';
 import ExitToAppIcon from '@mui/icons-material/ExitToApp';
+import NotesIcon from '@mui/icons-material/Notes';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import HandshakeIcon from '@mui/icons-material/Handshake';
+import BadgeIcon from '@mui/icons-material/Badge';
+import StickyNote2OutlinedIcon from '@mui/icons-material/StickyNote2Outlined';
 import type { AppDispatch, RootState } from "../../store/store";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -56,6 +62,19 @@ import { Person } from "@mui/icons-material";
 import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
 import { alpha } from '@mui/material/styles';
 import DeleteIcon from '@mui/icons-material/Delete';
+
+type TargetChipColor = "default" | "primary" | "warning" | "success" | "info";
+
+const TARGET_META: Record<
+  NoteTargetType,
+  { label: string; color: TargetChipColor; icon: ReactElement }
+> = {
+  personal: { label: "Personal", color: "default", icon: <NotesIcon sx={{ width: 12, height: 12 }} /> },
+  contact: { label: "Contact", color: "primary", icon: <Person sx={{ width: 12, height: 12 }} /> },
+  lead: { label: "Lead", color: "warning", icon: <TrendingUpIcon sx={{ width: 12, height: 12}} /> },
+  deal: { label: "Deal", color: "success", icon: <HandshakeIcon sx={{ width: 12, height: 12 }} /> },
+  customer: { label: "Customer", color: "info", icon: <BadgeIcon sx={{ width: 12, height: 12 }} /> },
+};
 
 export default function NotesPanel() {
   const dispatch = useDispatch<AppDispatch>();
@@ -390,24 +409,24 @@ const removeNote = async (note: NoteListItem) => {
       {view === "list" && (
         <>
           {error && (
-              <Box sx={{ width: "100%", my: 1 }}>
-                <ErrorAlert message={error} />
-              </Box>
-            )}
-          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-            
+            <Box sx={{ width: "100%", my: 1 }}>
+              <ErrorAlert message={error} />
+            </Box>
+          )}
+
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 1 }}>
             <Tooltip title="Refresh">
               <span>
-                { nL ? (
-                  <IconButton size="small" disabled={nL}>
-                    <CircularProgress size={15} />
-                  </IconButton>
-                ):(
-                  <IconButton size="small" onClick={refresh} disabled={nL}>
-                    <RefreshIcon fontSize="small" />
-                  </IconButton>
-                )}
-                
+                {nLd &&
+                  (nL ? (
+                    <IconButton size="small" disabled={nL}>
+                      <CircularProgress size={15} />
+                    </IconButton>
+                  ) : (
+                    <IconButton size="small" onClick={refresh} disabled={nL}>
+                      <RefreshIcon fontSize="small" />
+                    </IconButton>
+                  ))}
               </span>
             </Tooltip>
             <TextField
@@ -416,15 +435,21 @@ const removeNote = async (note: NoteListItem) => {
               placeholder="Search notes..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              sx={{
+              sx={(theme) => ({
+                bgcolor: alpha(theme.palette.text.primary, 0.04),
+                borderRadius: 2,
+                "& .MuiOutlinedInput-root": { borderRadius: 2 },
                 "& .MuiOutlinedInput-notchedOutline": { border: "none" },
                 "&:hover .MuiOutlinedInput-notchedOutline": { border: "none" },
-                "&.Mui-focused .MuiOutlinedInput-notchedOutline": { border: "none" },
-              }}
+                "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                  border: "1px solid",
+                  borderColor: theme.palette.primary.main,
+                },
+              })}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <SearchIcon fontSize="small" />
+                    <SearchIcon fontSize="small" sx={{ opacity: 0.5 }} />
                   </InputAdornment>
                 ),
               }}
@@ -432,17 +457,45 @@ const removeNote = async (note: NoteListItem) => {
           </Box>
 
           <Box>
-            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: 'center', mb: 1 }}>
-              <Paper title="Add Note" elevation={2} sx={{ borderRadius: 10 }}>
-                <IconButton color="primary" onClick={() => {
-                  resetEditor();
-                  dispatch(clearError())
-                  openNewNote()
-                }}>
-                  <AddIcon fontSize="small" />
-                </IconButton>
-              </Paper>
-              <Box sx={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                mb: 1.5,
+              }}
+            >
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <Tooltip title="New note">
+                  <Paper
+                    elevation={0}
+                    sx={(theme) => ({
+                      borderRadius: "50%",
+                      bgcolor: alpha(theme.palette.primary.main, 0.1),
+                    })}
+                  >
+                    <IconButton
+                      color="primary"
+                      size="small"
+                      onClick={() => {
+                        resetEditor();
+                        dispatch(clearError());
+                        openNewNote();
+                      }}
+                    >
+                      <AddIcon fontSize="small" />
+                    </IconButton>
+                  </Paper>
+                </Tooltip>
+                <Typography
+                  variant="caption"
+                  sx={{ opacity: 0.5, fontWeight: 700, letterSpacing: 0.4 }}
+                >
+                  {visibleNotes.length} {visibleNotes.length === 1 ? "NOTE" : "NOTES"}
+                </Typography>
+              </Box>
+
+              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 0.5 }}>
                 <FormControl size="small">
                   <Select
                     title="Filter visibility"
@@ -452,16 +505,18 @@ const removeNote = async (note: NoteListItem) => {
                         e.target.value as "all" | NoteVisibility
                       )
                     }
-                     sx={{
+                    sx={(theme) => ({
                       width: 80,
-                      '& .MuiInputBase-input': {
-                          py: '3px',
-                          fontSize: 11,
-                          fontWeight: 700
-                        },
-                        "& .MuiOutlinedInput-notchedOutline": { border: "none" },
-                        "&.Mui-focused .MuiOutlinedInput-notchedOutline": { border: "none" },
-                    }}
+                      borderRadius: 2,
+                      bgcolor: alpha(theme.palette.text.primary, 0.04),
+                      "& .MuiInputBase-input": {
+                        py: "3px",
+                        fontSize: 11,
+                        fontWeight: 700,
+                      },
+                      "& .MuiOutlinedInput-notchedOutline": { border: "none" },
+                      "&.Mui-focused .MuiOutlinedInput-notchedOutline": { border: "none" },
+                    })}
                   >
                     <MenuItem sx={{ fontSize: 11 }} value="all">All</MenuItem>
                     <MenuItem sx={{ fontSize: 11 }} value="private">Private</MenuItem>
@@ -471,7 +526,7 @@ const removeNote = async (note: NoteListItem) => {
 
                 <FormControl size="small">
                   <Select
-                    title="Filter visibility"
+                    title="Filter target"
                     value={targetFilter}
                     label="Target"
                     onChange={(e) =>
@@ -479,16 +534,18 @@ const removeNote = async (note: NoteListItem) => {
                         e.target.value as "all" | NoteTargetType
                       )
                     }
-                    sx={{
+                    sx={(theme) => ({
                       width: 100,
-                      '& .MuiInputBase-input': {
-                          py: '3px',
-                          fontSize: 11,
-                          fontWeight: 700
-                        },
-                        "& .MuiOutlinedInput-notchedOutline": { border: "none" },
-                        "&.Mui-focused .MuiOutlinedInput-notchedOutline": { border: "none" },
-                    }}
+                      borderRadius: 2,
+                      bgcolor: alpha(theme.palette.text.primary, 0.04),
+                      "& .MuiInputBase-input": {
+                        py: "3px",
+                        fontSize: 11,
+                        fontWeight: 700,
+                      },
+                      "& .MuiOutlinedInput-notchedOutline": { border: "none" },
+                      "&.Mui-focused .MuiOutlinedInput-notchedOutline": { border: "none" },
+                    })}
                   >
                     <MenuItem sx={{ fontSize: 11 }} value="all">All</MenuItem>
                     <MenuItem sx={{ fontSize: 11 }} value="personal">Personal</MenuItem>
@@ -506,46 +563,85 @@ const removeNote = async (note: NoteListItem) => {
                 <CircularProgress size={22} />
               </Box>
             ) : visibleNotes.length === 0 ? (
-              <Typography variant="body2" sx={{ opacity: 0.5, textAlign: "center", mt: 4 }}>
-                {notes.length === 0 ? "No notes yet" : "No matches found"}
-              </Typography>
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  mt: 6,
+                  opacity: 0.45,
+                }}
+              >
+                <StickyNote2OutlinedIcon sx={{ fontSize: 32, mb: 1 }} />
+                <Typography variant="body2" sx={{ textAlign: "center" }}>
+                  {notes.length === 0 ? "No notes yet — tap + to add one" : "No matches found"}
+                </Typography>
+              </Box>
             ) : (
               <List
-              sx={{ overflowY: 'auto', height: 325}}
-              dense disablePadding>
+                sx={(theme) => ({
+                  overflowY: "auto",
+                  height: 325,
+                  pr: 0.5,
+                  "&::-webkit-scrollbar": { width: 6 },
+                  "&::-webkit-scrollbar-thumb": {
+                    backgroundColor: alpha(theme.palette.text.primary, 0.15),
+                    borderRadius: 3,
+                  },
+                })}
+                dense
+                disablePadding
+              >
                 {visibleNotes.map((note) => {
                   const isPublic =
                     (note as NoteListItem & { visibility?: NoteVisibility }).visibility === "public";
+                  const meta = TARGET_META[note.target_type];
+                  const targetValue = getValue(note.target_type, note.target_id);
+                  const isNavigable = note.target_type === "customer" || note.target_type === "contact";
+
                   return (
                     <ListItem
                       key={note.id}
                       disableGutters
                       onClick={() => openExistingNote(note)}
-                      sx={{
-                        p: 0,
-                        alignItems: "flex-start",
-                        borderBottom: "1px solid",
-                        borderColor: "#63636322",
+                      sx={(theme) => ({
+                        display: "block",
+                        p: 1.25,
+                        mb: 1,
+                        borderRadius: 2,
                         cursor: "pointer",
-                        borderRadius: 1,
-                        "&:hover": { bgcolor: "action.hover" },
-                      }}
+                        bgcolor: note.pinned
+                          ? alpha(theme.palette.warning.main, 0.08)
+                          : "background.paper",
+                        border: "1px solid",
+                        borderColor: note.pinned
+                          ? alpha(theme.palette.warning.main, 0.35)
+                          : theme.palette.divider,
+                        transition:
+                          "border-color 0.15s ease, box-shadow 0.15s ease",
+                        "&:hover": {
+                          borderColor: theme.palette.primary.main,
+                          boxShadow: `0 2px 10px ${alpha(theme.palette.common.black, 0.08)}`,
+                        },
+                      })}
                     >
                       <ListItemText
                         primary={
-                          <Box sx={{ display: "flex", alignItems: "center",justifyContent: 'space-between' , gap: 0.5, mr: 2 }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center'}}>
+                          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 0.5, mb: 0.5 }}>
+                            <Box sx={{ display: "flex", alignItems: "center", minWidth: 0 }}>
                               {isPublic ? (
-                                <PublicIcon sx={{ fontSize: 13, opacity: 0.5 }} />
+                                <PublicIcon sx={{ fontSize: 13, opacity: 0.5, flexShrink: 0 }} />
                               ) : (
-                                <LockIcon sx={{ fontSize: 13, opacity: 0.5 }} />
+                                <LockIcon sx={{ fontSize: 13, opacity: 0.5, flexShrink: 0 }} />
                               )}
-                              
+
                               <Typography
                                 component="span"
                                 sx={{
                                   ml: 1,
                                   fontSize: "0.85rem",
+                                  fontWeight: 600,
                                   overflow: "hidden",
                                   textOverflow: "ellipsis",
                                   display: "-webkit-box",
@@ -556,7 +652,7 @@ const removeNote = async (note: NoteListItem) => {
                                 {formatShortTitle(note.title) } 
                               </Typography>
                             </Box>
-                            <Box sx={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: 42}}>
+                            <Box sx={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: 42, flexShrink: 0}}>
                               <IconButton
                                 title="Pin note"
                                 onClick={async (e) => {
@@ -572,9 +668,9 @@ const removeNote = async (note: NoteListItem) => {
                                 sx={{alignSelf: 'end', p: '2px'}}
                               >
                                 {note.pinned ? (
-                                  <PushPinIcon sx={{color: 'primary.main', fontSize: '15px'}} />
+                                  <PushPinIcon sx={{color: 'warning.main', fontSize: '15px'}} />
                                 ) : (
-                                  <PushPinIcon  sx={{ fontSize: '15px', }}/>
+                                  <PushPinIcon  sx={{ fontSize: '15px', opacity: 0.4 }}/>
                                 )}
                               </IconButton>
                               {note.author_id === userId && (
@@ -592,38 +688,54 @@ const removeNote = async (note: NoteListItem) => {
                           
                         }
                        secondary={
-                          <Box sx={{ display: 'flex', justifyContent: 'space-between'}}>
-                            <Box sx={{display: 'flex'}}>
-                              <Typography variant="caption" fontSize="0.7rem" sx={{ ml: 1 }}>
-                              • {note.target_type === 'personal' ?`${note.target_type.toUpperCase()}` : `${note.target_type.toUpperCase()} : `}
-                            </Typography>
-                            <Box sx={{ alignSelf: 'center', height: 10, width: 10, border: '1px solid #ccc', borderRadius: 10, ml: 1, display: 'flex', justifyContent: 'center', alignItems: 'center'}}>
-                              <Person sx={{ fontSize: '8px'}}/>
-                            </Box>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 0.5 }}>
+                            <Box sx={{display: 'flex', alignItems: 'center', gap: 0.75, minWidth: 0}}>
+                              <Chip
+                                size="small"
+                                icon={meta.icon}
+                                label={meta.label}
+                                variant="outlined"
+                                color={meta.color}
+                                sx={{
+                                  height: 18,
+                                  fontSize: '0.62rem',
+                                  fontWeight: 700,
+                                  '& .MuiChip-icon': { ml: '5px' },
+                                  '& .MuiChip-label': { px: '6px' },
+                                }}
+                              />
+                            {targetValue && (
                             <Typography
-                            title={(note.target_type !== 'customer' && note.target_type !== 'contact') ? 'Note Target':`View full details for ${getValue(note.target_type, note.target_id)}`}
+                            title={isNavigable ? `View full details for ${targetValue}` : 'Note target'}
                             onClick={(e) => {
-                               if (note.target_type !== 'customer' && note.target_type !== 'contact') return
+                               if (!isNavigable) return
                                  e.stopPropagation();
                                  navigate(`/app/${note.target_type}s/${note.target_id}`)
                               }}
-                            variant="caption" fontSize="0.7rem" sx={{ ml: '2px', ":hover": {textDecoration: 'underline', color: 'primary.main'} }}>
-                              {getValue(note.target_type, note.target_id)}
+                            variant="caption" fontSize="0.7rem" sx={{
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                              cursor: isNavigable ? 'pointer' : 'default',
+                              ":hover": isNavigable ? {textDecoration: 'underline', color: 'primary.main'} : {}
+                            }}>
+                              {targetValue}
                             </Typography>
+                            )}
                             </Box>
                             
-                            <Typography variant="caption" fontSize="0.6rem">
+                            <Typography variant="caption" fontSize="0.63rem" sx={{ opacity: 0.6, flexShrink: 0 }}>
                               {new Date(note.updated_at).toLocaleString([], {
                                 month: "short",
                                 day: "numeric",
                                 hour: "2-digit",
                                 minute: "2-digit",
                               })}
-                              {`: ${formatName(note.author.first_name, note.author.last_name)}`}
+                              {` · ${formatName(note.author.first_name, note.author.last_name)}`}
                             </Typography>
                           </Box>
                        }
-                        secondaryTypographyProps={{ fontSize: "0.7rem" }}
+                        secondaryTypographyProps={{ component: "div" }}
                       />
                     </ListItem>
                   );
@@ -643,81 +755,96 @@ const removeNote = async (note: NoteListItem) => {
                 <ErrorAlert message={error} />
               </Box>
             )}
-          <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-            <Box sx={{display: 'flex', justifyContent: 'space-between', width: '100%'}}>
-              <Box sx={{display: 'flex', justifyContent: 'start', alignItems: 'center'}}>
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1.5, gap: 1 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'start', alignItems: 'center', minWidth: 0 }}>
+              <Tooltip title="Back to notes">
                 <IconButton title="Back" size="small" onClick={() => {
                   setView("list")
                   dispatch(clearError())
                 }} disabled={saving}>
                   <ArrowBackIcon fontSize="small" />
                 </IconButton>
-                <Box sx={{ ml: 1,  opacity: 0.6, width: '100%', display: 'flex', flexDirection: 'space-between' }}>
-                  {activeNote ? (
+              </Tooltip>
+              <Box sx={{ ml: 1, display: 'flex', gap: 1, flexWrap: 'wrap', minWidth: 0 }}>
+                {activeNote ? (
                   <>
-                    <Typography sx={{ml: 1, fontSize: '12px', opacity: 0.6,}}>{`${new Date(activeNote.created_at).toLocaleString()}`}</Typography>
-                    <Typography sx={{ml: 1, fontSize: '12px', opacity: 0.6,}}> {`Author: ${formatName(activeNote.author.first_name, activeNote.author.last_name)}`}</Typography>
+                    <Typography sx={(theme) => ({
+                      px: 1, py: 0.25, borderRadius: 1,
+                      bgcolor: alpha(theme.palette.text.primary, 0.05),
+                      fontSize: '0.65rem', fontWeight: 600, whiteSpace: 'nowrap',
+                    })}>{`${new Date(activeNote.created_at).toLocaleString()}`}</Typography>
+                    <Typography sx={(theme) => ({
+                      px: 1, py: 0.25, borderRadius: 1,
+                      bgcolor: alpha(theme.palette.primary.main, 0.08),
+                      color: 'primary.main',
+                      fontSize: '0.65rem', fontWeight: 600, whiteSpace: 'nowrap',
+                    })}>{`${formatName(activeNote.author.first_name, activeNote.author.last_name)}`}</Typography>
                     </>
                   ): (
-                     <Typography sx={{ml: 1,  opacity: 0.6,}}>New Note</Typography>
+                     <Typography sx={{ fontWeight: 700, opacity: 0.55 }}>New Note</Typography>
                   ) }
-                </Box>
               </Box>
-              
+            </Box>
+
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexShrink: 0 }}>
+              {activeNote && canEdit && (
+                <Tooltip title="Delete note">
+                  <IconButton color="error" size="small"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleOpenDelete(activeNote)
+                  }} disabled={saving}>
+                    <DeleteIcon  fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              )}
               { canEdit && (
-              <IconButton title="Save and Exit" size="small"  disabled={!canSave || saving} onClick={saveAndExit} >
-                { !saving ? (
-                  <CheckIcon fontSize="small" />
-                ) : (
-                  <CircularProgress size={14} sx={{ mr: 1, justifySelf: 'self-end' }} />
-                )}
-              </IconButton>
+              <Tooltip title={saving ? "Saving…" : "Save and exit"}>
+                <span>
+                  <IconButton size="small" disabled={!canSave || saving} onClick={saveAndExit}
+                    sx={(theme) => ({
+                      bgcolor: canSave && !saving ? alpha(theme.palette.success.main, 0.12) : 'transparent',
+                      color: canSave && !saving ? 'success.main' : undefined,
+                    })}
+                  >
+                    { !saving ? (
+                      <CheckIcon fontSize="small" />
+                    ) : (
+                      <CircularProgress size={14} />
+                    )}
+                  </IconButton>
+                </span>
+              </Tooltip>
               )} 
             </Box>
-            
-            {activeNote && canEdit && (
-              <IconButton title="Delete note" color="error" sx={{opacity: canEdit ? 1 : 0}} size="small" 
-              onClick={(e) => {
-                e.stopPropagation();
-                handleOpenDelete(activeNote)
-              }} disabled={saving}>
-                <DeleteIcon  fontSize="small" />
-              </IconButton>
-            )}
           </Box>
-          <Box sx={{display: 'flex', justifyContent: 'space-between'}}>
-            
 
+          <Box
+            sx={(theme) => ({
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              flexWrap: 'wrap',
+              p: 0.75,
+              mb: 1.5,
+              borderRadius: 2,
+              bgcolor: alpha(theme.palette.text.primary, 0.03),
+              border: '1px solid',
+              borderColor: theme.palette.divider,
+            })}
+          >
             <FormControl size="small">
               <Select
                 disabled={!canEdit}
                 value={editVisibility}
                 label="Visibility"
                 onChange={(e) => setEditVisibility(e.target.value as "private" | "public")}
-                sx={{
-                  width: 80,
-                  '& .MuiInputBase-input': {
-                      py: '3px',
-                      fontSize: 11,
-                      fontWeight: 700
-                    },
-                    "& .MuiOutlinedInput-notchedOutline": { border: "none" },
-                    "&.Mui-focused .MuiOutlinedInput-notchedOutline": { border: "none" },
-                }}
-              >
-                <MenuItem sx={{ fontSize: 11 }} value="private">Private</MenuItem>
-                <MenuItem sx={{ fontSize: 11 }} value="public">Public</MenuItem>
-              </Select>
-            </FormControl>
-
-            <FormControl size="small" >
-              <Select
-                disabled={!canEdit}
-                value={targetType}
-                onChange={(e) => {
-                  setTargetType(e.target.value as NoteTargetType);
-                  setTargetId("");
-                }}
+                renderValue={(val) => (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    {val === 'private' ? <LockIcon sx={{ fontSize: 13 }} /> : <PublicIcon sx={{ fontSize: 13 }} />}
+                    {val === 'private' ? 'Private' : 'Public'}
+                  </Box>
+                )}
                 sx={{
                   width: 100,
                   '& .MuiInputBase-input': {
@@ -729,16 +856,65 @@ const removeNote = async (note: NoteListItem) => {
                     "&.Mui-focused .MuiOutlinedInput-notchedOutline": { border: "none" },
                 }}
               >
-                <MenuItem sx={{ fontSize: 11 }} value="personal">Personal</MenuItem>
-                <MenuItem sx={{ fontSize: 11 }} value="contact">Contacts</MenuItem>
-                <MenuItem sx={{ fontSize: 11 }} value="lead">Leads</MenuItem>
-                <MenuItem sx={{ fontSize: 11 }} value="deal">Deals</MenuItem>
-                <MenuItem sx={{ fontSize: 11 }} value="customer">Customers</MenuItem>
+                <MenuItem sx={{ fontSize: 11 }} value="private">
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <LockIcon sx={{ fontSize: 13 }} /> Private
+                  </Box>
+                </MenuItem>
+                <MenuItem sx={{ fontSize: 11 }} value="public">
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <PublicIcon sx={{ fontSize: 13 }} /> Public
+                  </Box>
+                </MenuItem>
               </Select>
             </FormControl>
-            <Box sx={{width: 200}}>
-              {targetType !== "personal" && (
-              <FormControl size="small" >
+
+            <Divider orientation="vertical" flexItem sx={{ my: 0.5 }} />
+
+            <FormControl size="small" >
+              <Select
+                disabled={!canEdit}
+                value={targetType}
+                onChange={(e) => {
+                  setTargetType(e.target.value as NoteTargetType);
+                  setTargetId("");
+                }}
+                renderValue={(val) => (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    {TARGET_META[val].icon}
+                    {TARGET_META[val].label}
+                  </Box>
+                )}
+                sx={{
+                  width: 120,
+                  '& .MuiInputBase-input': {
+                      py: '3px',
+                      fontSize: 11,
+                      fontWeight: 700
+                    },
+                    "& .MuiOutlinedInput-notchedOutline": { border: "none" },
+                    "&.Mui-focused .MuiOutlinedInput-notchedOutline": { border: "none" },
+                }}
+              >
+                <MenuItem sx={{ fontSize: 11 }} value="personal">
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>{TARGET_META.personal.icon} Personal</Box>
+                </MenuItem>
+                <MenuItem sx={{ fontSize: 11 }} value="contact">
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>{TARGET_META.contact.icon} Contacts</Box>
+                </MenuItem>
+                <MenuItem sx={{ fontSize: 11 }} value="lead">
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>{TARGET_META.lead.icon} Leads</Box>
+                </MenuItem>
+                <MenuItem sx={{ fontSize: 11 }} value="deal">
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>{TARGET_META.deal.icon} Deals</Box>
+                </MenuItem>
+                <MenuItem sx={{ fontSize: 11 }} value="customer">
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>{TARGET_META.customer.icon} Customers</Box>
+                </MenuItem>
+              </Select>
+            </FormControl>
+            {targetType !== "personal" && (
+              <FormControl size="small" sx={{ flex: 1, minWidth: 160 }}>
                 <TextField
                 disabled={!canEdit}
                 select
@@ -794,60 +970,86 @@ const removeNote = async (note: NoteListItem) => {
             {activeNote &&
               (activeNote.target_type === "customer" ||
                 activeNote.target_type === "contact") && (
-                <IconButton
-                title={`View full details for ${getValue(activeNote.target_type, activeNote.target_id)}`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    navigate(`/app/${activeNote.target_type}s/${activeNote.target_id}`);
-                  }}
-                >
-                  <ExitToAppIcon sx={{ fontSize: 13, opacity: 0.5 }} />
-                </IconButton>
+                <Tooltip title={`View full details for ${getValue(activeNote.target_type, activeNote.target_id)}`}>
+                  <IconButton
+                    size="small"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/app/${activeNote.target_type}s/${activeNote.target_id}`);
+                    }}
+                  >
+                    <ExitToAppIcon sx={{ fontSize: 15, opacity: 0.6 }} />
+                  </IconButton>
+                </Tooltip>
             )}
-            </Box>
           </Box>
-          
-          
-          <TextField
-            disabled={!canEdit}
-            size="small"
-            fullWidth
-            multiline
-            placeholder="Title"
-            value={formatTitle(editTitle)}
-            onChange={(e) => setEditTitle(e.target.value)}
-            sx={{
-              overflowX: 'auto',
-              "& .MuiOutlinedInput-notchedOutline": { border: "none" },
-              "&:hover .MuiOutlinedInput-notchedOutline": { border: "none" },
-              "&.Mui-focused .MuiOutlinedInput-notchedOutline": { border: "none" },
-              '& .MuiInputBase-input': {
-                py: '3px',
-                fontSize: 13,
-                fontWeight: 700,
-                overflowWrap: 'break-word',
 
-              },
-            }}
-        />
-
-          <Divider sx={{ mb: 1 }} />
-
-          <TextField
-            disabled={!canEdit}
-            autoFocus
-            multiline
-            variant="standard"
-            value={editText}
-            onChange={(e) => setEditText(e.target.value)}
-            InputProps={{ disableUnderline: true }}
-            placeholder="Start writing..."
-            sx={{
+          <Paper
+            elevation={0}
+            sx={(theme) => ({
               flex: 1,
-              "& .MuiInputBase-root": { height: "100%", alignItems: "flex-start" },
-              "& textarea": { height: "100% !important", overflowY: "auto !important" },
-            }}
-          />
+              display: 'flex',
+              flexDirection: 'column',
+              minHeight: 0,
+              p: 2,
+              borderRadius: 2,
+              border: '1px solid',
+              borderColor: theme.palette.divider,
+              bgcolor: 'background.paper',
+            })}
+          >
+            <TextField
+              disabled={!canEdit}
+              fullWidth
+              multiline
+              variant="standard"
+              placeholder="Title"
+              value={formatTitle(editTitle)}
+              onChange={(e) => setEditTitle(e.target.value)}
+              InputProps={{ disableUnderline: true }}
+              sx={{
+                '& .MuiInputBase-input': {
+                  fontSize: 19,
+                  fontWeight: 800,
+                  letterSpacing: '-0.01em',
+                  lineHeight: 1.35,
+                  overflowWrap: 'break-word',
+                },
+              }}
+            />
+
+            <Divider sx={{ my: 1.25 }} />
+
+            <TextField
+              disabled={!canEdit}
+              autoFocus
+              multiline
+              variant="standard"
+              value={editText}
+              onChange={(e) => setEditText(e.target.value)}
+              InputProps={{ disableUnderline: true }}
+              placeholder="Start writing..."
+              sx={(theme) => ({
+                flex: 1,
+                minHeight: 0,
+                pl: 1.5,
+                borderLeft: '2px solid',
+                borderColor: alpha(theme.palette.error.main, 0.2),
+                "& .MuiInputBase-root": { height: "100%", alignItems: "flex-start" },
+                "& textarea": {
+                  height: "100% !important",
+                  overflowY: "auto !important",
+                  fontSize: 14,
+                  lineHeight: '26px',
+                  backgroundImage: `repeating-linear-gradient(${alpha(
+                    theme.palette.text.primary,
+                    0.08
+                  )} 0px, ${alpha(theme.palette.text.primary, 0.08)} 1px, transparent 1px, transparent 26px)`,
+                  backgroundPositionY: '7px',
+                },
+              })}
+            />
+          </Paper>
         </Box>
       )}
       <Dialog
