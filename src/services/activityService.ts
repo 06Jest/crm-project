@@ -1,76 +1,124 @@
-import { supabase } from './supabase';
-import { getInsertMeta } from '../utils/getOrgId';
-import type { Activity } from '../types/activity';
+import type {
+  ActivityListItem,
+  ManualCreateActivity,
+  UpdateActivity,
+  ActivityAction,
+  ActivityType,
+} from "../types/activity";
 
-export const fetchActivitiesFromDB = async (): Promise<Activity[]> => {
-  const { data, error } = await supabase
-    .from('activities')
-    .select('*')
-    .order('created_at', { ascending: false });
+import { apiClient } from "./apiClient";
 
-  if (error) throw new Error(error.message);
-  return data as Activity[];
+export const fetchActivitiesAPI = async (): Promise<ActivityListItem[]> => {
+  const result = await apiClient("/api/activities/show-activities", {
+    method: "GET",
+  });
+
+  return result.data as ActivityListItem[];
 };
 
-export const addActivityToDB = async (
-  activity: Omit<Activity, 'id' | 'created_at'>
-): Promise<Activity> => {
-  const { userId, orgId } = await getInsertMeta();
+export const fetchActivityByIDAPI = async (
+  id: string
+): Promise<ActivityListItem> => {
+  const result = await apiClient(
+    `/api/activities/show-activity/${id}`,
+    {
+      method: "GET",
+    }
+  );
 
-  const { data, error } = await supabase
-    .from('activities')
-    .insert([{
-      ...activity,
-      user_id: userId,
-      org_id: orgId,
-      logged_by: userId,
-    }])
-    .select()
-    .single();
-
-  if (error) throw new Error(error.message);
-  return data as Activity;
+  return result.data as ActivityListItem;
 };
 
-export const updateActivityInDB = async (
-  activity: Activity
-): Promise<Activity> => {
-  const { data, error } = await supabase
-    .from('activities')
-    .update({
-      type: activity.type,
-      subject: activity.subject,
-      body: activity.body,
-      contact_name: activity.contact_name,
-      direction: activity.direction,
-      duration: activity.duration,
-      completed: activity.completed,
-    })
-    .eq('id', activity.id)
-    .select()
-    .single();
+export const fetchLeadActivitiesAPI = async (
+  leadId: string
+): Promise<ActivityListItem[]> => {
+  const result = await apiClient(
+    `/api/activities/show-lead-activities/${leadId}`,
+    {
+      method: "GET",
+    }
+  );
 
-  if (error) throw new Error(error.message);
-  return data as Activity;
+  return result.data as ActivityListItem[];
 };
 
-export const deleteActivityFromDB = async (id: string): Promise<string> => {
-  const { error } = await supabase.from('activities').delete().eq('id', id);
-  if (error) throw new Error(error.message);
-  return id;
+export const fetchContactActivitiesAPI = async (
+  contactId: string
+): Promise<ActivityListItem[]> => {
+  const result = await apiClient(
+    `/api/activities/show-contact-activities/${contactId}`,
+    {
+      method: "GET",
+    }
+  );
+
+  return result.data as ActivityListItem[];
 };
 
-export const toggleActivityCompleteInDB = async (
+export const fetchCustomerActivitiesAPI = async (
+  customerId: string
+): Promise<ActivityListItem[]> => {
+  const result = await apiClient(
+    `/api/activities/show-customer-activities/${customerId}`,
+    {
+      method: "GET",
+    }
+  );
+
+  return result.data as ActivityListItem[];
+};
+
+export const fetchActivitiesByActionAPI = async (
+  action: ActivityAction
+): Promise<ActivityListItem[]> => {
+  const result = await apiClient(
+    `/api/activities/show-activities-action/${action}`,
+    {
+      method: "GET",
+    }
+  );
+
+  return result.data as ActivityListItem[];
+};
+
+export const fetchActivitiesByTypeAPI = async (
+  type: ActivityType
+): Promise<ActivityListItem[]> => {
+  const result = await apiClient(
+    `/api/activities/show-activities-type/${type}`,
+    {
+      method: "GET",
+    }
+  );
+
+  return result.data as ActivityListItem[];
+};
+
+export const addManualActivityAPI = async (
+  activity: ManualCreateActivity
+): Promise<ActivityListItem> => {
+  const result = await apiClient(
+    "/api/activities/add-manual-activity",
+    {
+      method: "POST",
+      body: JSON.stringify(activity),
+    }
+  );
+
+  return result.data as ActivityListItem;
+};
+
+export const updateActivityAPI = async (
   id: string,
-  completed: boolean
-): Promise<Activity> => {
-  const { data, error } = await supabase
-    .from('activities')
-    .update({ completed })
-    .eq('id', id)
-    .select()
-    .single();
-  
-  if (error) throw new Error(error.message);
-  return data as Activity;
-}
+  activity: UpdateActivity
+): Promise<ActivityListItem> => {
+  const result = await apiClient(
+    `/api/activities/update-activity/${id}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(activity),
+    }
+  );
+
+  return result.data as ActivityListItem;
+};

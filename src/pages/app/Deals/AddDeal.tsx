@@ -17,12 +17,13 @@ import { fetchContactsLists } from "../../../store/contactsSlice";
 import {  type DealStage } from '../../../types/deal';
 import { addDeal, clearError } from "../../../store/dealsSlice";
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import HandshakeIcon from '@mui/icons-material/Handshake';
 import type { Contact } from "../../../types/contact";
 import ErrorAlert from "../../../components/Error";
 import { useAuth } from "../../../hooks/useAuth";
 
 
-export default function AddContact() {
+export default function AddDeal() {
   const { items: contacts, loaded, loading, error} = useSelector((state:RootState) => state.contacts);
   const { loading:  loadingDeals,error: errorDeals} = useSelector((state:RootState) => state.deals);
   const { user, loading: userLoading } = useAuth();
@@ -103,24 +104,29 @@ export default function AddContact() {
         minHeight: 700,
         width: '80%',
         maxWidth: 1400,
+        pt: 2,
       }}
     >
-        <Box sx={{
-          display: "flex",
-          flexDirection: 'column',
-          width: '50%',
-          minWidth: 450,
-          justifyContent: "center",
-          p: 2,
-          gap: 1,
-        }}>
+        <Box
+          component={Paper}
+          variant="outlined"
+          sx={{
+            display: "flex",
+            flexDirection: 'column',
+            width: '50%',
+            minWidth: 450,
+            justifyContent: "center",
+            p: 3,
+            gap: 2,
+            borderRadius: 3,
+          }}>
           <Button 
             startIcon={<ArrowBackIcon/>}
             onClick={() => {
               dispatch(clearError())
               navigate('/app/deals')
             }}
-            sx={{ alignSelf: 'start', ml: '-40px'}}>
+            sx={{ alignSelf: 'start', ml: '-8px', textTransform: 'none', fontWeight: 600, color: 'text.secondary' }}>
             Back
           </Button>
            <Box sx={{width: '100%'}}>
@@ -130,15 +136,34 @@ export default function AddContact() {
                 />
               )}
             </Box>
-          <Typography variant="h5" fontWeight={700}>
-          Add Deal
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, mb: 0.5 }}>
+            <Box sx={(theme) => ({
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 40,
+              height: 40,
+              borderRadius: 2,
+              bgcolor: theme.palette.mode === 'dark' ? '#2a2a2a' : '#eef1f6',
+              color: 'primary.main',
+            })}>
+              <HandshakeIcon />
+            </Box>
+            <Box>
+              <Typography variant="h5" fontWeight={800} letterSpacing={-0.3} lineHeight={1.2}>
+                Add Deal
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                Log a new opportunity and attach it to a contact
+              </Typography>
+            </Box>
+          </Box>
           
           <Box sx={{
             display: "flex",
             width: '100%',
             justifyContent: "space-between",
-            gap: 1,
+            gap: 1.5,
           }}>        
             <TextField
               select
@@ -148,9 +173,10 @@ export default function AddContact() {
               value={selectedContact?.first_name}
               onChange={handleChange}
               size="small"
+              fullWidth
               sx={{
                 fontSize: 13,
-                width: '50%'
+                '& .MuiOutlinedInput-root': { borderRadius: 2 },
               }}
             >
               {contacts.map((contact) => {
@@ -168,9 +194,10 @@ export default function AddContact() {
                 name="value"
                 onChange={handleChange}
                 size="small"
+                fullWidth
                 sx={{
                   fontSize: 13,
-                  width: '50%'
+                  '& .MuiOutlinedInput-root': { borderRadius: 2 },
                 }}
               />
             
@@ -179,7 +206,7 @@ export default function AddContact() {
             display: "flex",
             width: '100%',
             justifyContent: "space-between",
-            gap: 1,
+            gap: 1.5,
           }}>
             <TextField
               required
@@ -189,9 +216,10 @@ export default function AddContact() {
               size="small"
               multiline
               rows={3}
+              fullWidth
               sx={{
                 fontSize: 13,
-                width: '50%'
+                '& .MuiOutlinedInput-root': { borderRadius: 2 },
               }}
             />
             <TextField
@@ -201,26 +229,33 @@ export default function AddContact() {
               size="small"
               multiline
               rows={3}
+              fullWidth
               sx={{
                 fontSize: 13,
-                width: '50%'
+                '& .MuiOutlinedInput-root': { borderRadius: 2 },
               }}
             />
           </Box>
           
-          <Paper>
-            <Button
-              variant="contained"
-              fullWidth
-              disabled={!form.contact_id || !form.title || !form.stage || !form.value}
-              onClick={handleSubmit}
-              sx={{
-                backgroundColor: 'primary.main'
-              }}
-            >
-              Add Deal
-            </Button>
-          </Paper>
+          <Button
+            variant="contained"
+            disableElevation
+            fullWidth
+            disabled={!form.contact_id || !form.title || !form.stage || !form.value}
+            onClick={handleSubmit}
+            startIcon={<HandshakeIcon />}
+            sx={{
+              backgroundColor: 'primary.main',
+              textTransform: 'none',
+              fontWeight: 700,
+              fontSize: 15,
+              py: 1.1,
+              borderRadius: 2,
+              boxShadow: '0 1px 2px rgba(0,0,0,0.12)',
+            }}
+          >
+            Add Deal
+          </Button>
           
       </Box >  
     </Box>

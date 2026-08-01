@@ -1,3 +1,5 @@
+
+
 import  { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import {
   Box,
@@ -36,6 +38,8 @@ import {
   Timer as TimerIcon,
   Close as CloseIcon,
   Flag as FlagIcon,
+  Notes as NotesIcon,
+  Phone as PhoneIcon,
 } from '@mui/icons-material';
 import type { CallFilters, CallListItem, CallOutcome, CallPriority, CallStatus, CallType, CreateCall, CreateCallInput } from '../../types/call';
 import type { AppDispatch, RootState } from '../../store/store';
@@ -47,7 +51,9 @@ import ClearAllIcon from '@mui/icons-material/ClearAll';
 import AddCallIcon from '@mui/icons-material/AddCall';
 import ErrorAlert from '../Error';
 import { formatName, formatShortTitle} from '../../utils/formatText';
-import { fetchMembersIDNames } from '../../store/ProfileSlice';
+import { fetchMembersIDNames } from '../../store/profileSlice';
+import { alpha } from '@mui/material/styles';
+import type { DisplayProfile } from '../../types/profile';
 
 
 
@@ -257,25 +263,25 @@ export default function CallsPanel() {
     switch (filters.status) {
       case "scheduled":
         return {
-          icon: <ScheduleIcon sx={{ fontSize: 48, color: "#ccc", mb: 1 }} />,
+          icon: <ScheduleIcon sx={{ fontSize: 48, color: "text.disabled", mb: 1 }} />,
           text: "No scheduled calls",
         };
 
       case "completed":
         return {
-          icon: <CheckCircleIcon sx={{ fontSize: 48, color: "#ccc", mb: 1 }} />,
+          icon: <CheckCircleIcon sx={{ fontSize: 48, color: "text.disabled", mb: 1 }} />,
           text: "No completed calls",
         };
 
       case "active":
         return {
-          icon: <CallIcon sx={{ fontSize: 48, color: "#ccc", mb: 1 }} />,
+          icon: <CallIcon sx={{ fontSize: 48, color: "text.disabled", mb: 1 }} />,
           text: "No active calls",
         };
 
       default:
         return {
-          icon: <CallIcon sx={{ fontSize: 48, color: "#ccc", mb: 1 }} />,
+          icon: <CallIcon sx={{ fontSize: 48, color: "text.disabled", mb: 1 }} />,
           text: "No calls found",
         };
     }
@@ -412,6 +418,8 @@ export default function CallsPanel() {
     callStatus === 'dialing' ? 'Dialing…' : callStatus === 'ringing' ? 'Ringing…' : formatDuration(elapsed);
 
   const contactName = getName(activeCall);
+  const isConnecting = callStatus === 'dialing' || callStatus === 'ringing';
+  const ringColor = getStatusColor(callStatus);
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -428,18 +436,35 @@ export default function CallsPanel() {
           boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
         }}
       >
-        <Avatar
-          sx={{
-            width: 40,
-            height: 40,
-            fontSize: '1rem',
-            fontWeight: 700,
-            border: '2px solid rgba(255,255,255,0.5)',
-            bgcolor: 'rgba(255,255,255,0.15)',
-          }}
-        >
-          {contactName.charAt(0).toUpperCase()}
-        </Avatar>
+        <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {isConnecting && (
+            <Box
+              sx={{
+                position: 'absolute',
+                width: 40,
+                height: 40,
+                borderRadius: '50%',
+                '@keyframes callRing': {
+                  '0%': { boxShadow: `0 0 0 0 ${alpha(ringColor, 0.55)}` },
+                  '100%': { boxShadow: `0 0 0 14px ${alpha(ringColor, 0)}` },
+                },
+                animation: 'callRing 1.4s ease-out infinite',
+              }}
+            />
+          )}
+          <Avatar
+            sx={{
+              width: 40,
+              height: 40,
+              fontSize: '1rem',
+              fontWeight: 700,
+              border: '2px solid rgba(255,255,255,0.5)',
+              bgcolor: 'rgba(255,255,255,0.15)',
+            }}
+          >
+            {contactName.charAt(0).toUpperCase()}
+          </Avatar>
+        </Box>
 
         <Box sx={{ flex: 1, minWidth: 0 }}>
           <Typography variant="subtitle2" fontWeight={700} noWrap>
@@ -528,8 +553,8 @@ export default function CallsPanel() {
               borderColor: 'divider'
             }}
           >
-            <Typography variant="overline" color="text.secondary" sx={{ letterSpacing: 0.5 }}>
-              Subject
+            <Typography variant="overline" color="text.secondary" sx={{ letterSpacing: 0.5, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <PhoneIcon sx={{ fontSize: 13 }} /> Subject
             </Typography>
             <Typography variant="body2" fontWeight={600}>
               {formatShortTitle(activeCall.subject)}
@@ -567,8 +592,8 @@ export default function CallsPanel() {
             p: 1.2,
           }}
         >
-          <Typography variant="overline" color="text.secondary" sx={{ letterSpacing: 0.5, mb: 0.5 }}>
-            Notes
+          <Typography variant="overline" color="text.secondary" sx={{ letterSpacing: 0.5, mb: 0.5, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <NotesIcon sx={{ fontSize: 13 }} /> Notes
           </Typography>
           <TextField
             placeholder="Jot down details while you talk…"
@@ -594,7 +619,8 @@ export default function CallsPanel() {
     <Box sx={{ display: 'flex', flexDirection: 'column', height: 470, overflowY: 'auto' }}>
       <Box>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
-          <Typography variant="h6" fontWeight={700} sx={{ display: 'flex', alignItems: 'center', gap: 1, mr: 2  }}>
+          <Typography variant="h6" fontWeight={700} sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mr: 2  }}>
+            <PhoneIcon sx={{ fontSize: 20, color: 'primary.main' }} />
             Calls
           </Typography>
           <TextField
@@ -606,7 +632,7 @@ export default function CallsPanel() {
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
-                  <SearchIcon />
+                  <SearchIcon sx={{ opacity: 0.5 }} fontSize="small" />
                 </InputAdornment>
               ),
               endAdornment: searchQuery && (
@@ -617,25 +643,38 @@ export default function CallsPanel() {
                 </InputAdornment>
               ),
             }}
-            sx={{
+            sx={(theme) => ({
               '& .MuiOutlinedInput-root': {
                 fontSize: '0.90rem',
+                borderRadius: 2,
+                bgcolor: alpha(theme.palette.text.primary, 0.04),
               },
-            }}
+              '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
+              '&:hover .MuiOutlinedInput-notchedOutline': { border: 'none' },
+              '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                border: '1px solid',
+                borderColor: theme.palette.primary.main,
+              },
+            })}
           />
-          <IconButton
-            onClick={() => setOpenCreateDialog(true)}
-            sx={{
-              background: 'primary.main',
-              p: '5px'
-            }}
-          >
-            <AddCallIcon  sx={{fontSize: '1.5rem'}}/>
-          </IconButton>
+          <Tooltip title="New call">
+            <IconButton
+              onClick={() => setOpenCreateDialog(true)}
+              sx={(theme) => ({
+                bgcolor: 'primary.main',
+                color: '#fff',
+                borderRadius: 2,
+                p: '7px',
+                '&:hover': { bgcolor: theme.palette.primary.dark },
+              })}
+            >
+              <AddCallIcon sx={{ fontSize: '1.4rem' }} />
+            </IconButton>
+          </Tooltip>
         </Box>
       </Box>
 
-      <Box sx={{ p: 0.8, display: 'flex', gap: 1, overflowX: 'auto', pt: 2, borderBottom: '1px solid #e0e0e0' }}>
+      <Box sx={{ p: 0.8, display: 'flex', alignItems: 'center', gap: 1, overflowX: 'auto', pt: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
          <FormControl size="small">
             <InputLabel sx={{ fontSize: "0.85rem", mt: "-5px" }}>
               Status
@@ -650,24 +689,37 @@ export default function CallsPanel() {
                   status: (e.target.value as CallStatus) || undefined,
                 })
               }
-              sx={{
-                width: 120,
+              sx={(theme) => ({
+                width: 130,
+                borderRadius: 2,
+                bgcolor: alpha(theme.palette.text.primary, 0.03),
                 "& .MuiInputBase-input": {
                   py: "3px",
                   fontSize: 11,
                   fontWeight: 700,
+                  display: 'flex',
+                  alignItems: 'center',
                 },
-              }}
+              })}
             >
               <MenuItem value="">All ({calls.length})</MenuItem>
               <MenuItem value="scheduled">
-                Scheduled ({calls.filter(c => c.status === "scheduled").length})
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: getStatusColor('scheduled'), flexShrink: 0 }} />
+                  Scheduled ({calls.filter(c => c.status === "scheduled").length})
+                </Box>
               </MenuItem>
               <MenuItem value="completed">
-                Completed ({calls.filter(c => c.status === "completed").length})
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: getStatusColor('completed'), flexShrink: 0 }} />
+                  Completed ({calls.filter(c => c.status === "completed").length})
+                </Box>
               </MenuItem>
               <MenuItem value="active">
-                Active ({calls.filter(c => c.status === "active").length})
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: getStatusColor('active'), flexShrink: 0 }} />
+                  Active ({calls.filter(c => c.status === "active").length})
+                </Box>
               </MenuItem>
             </Select>
           </FormControl>
@@ -676,10 +728,12 @@ export default function CallsPanel() {
           <Select
             value={filters.type || ''}
             onChange={(e) => setFilters({ ...filters, type: (e.target.value as CallType) || undefined })}
-            sx={{
+            sx={(theme) => ({
               width: 120,
+              borderRadius: 2,
+              bgcolor: alpha(theme.palette.text.primary, 0.03),
               "& .MuiInputBase-input": { py: "3px", fontSize: 11, fontWeight: 700 },
-            }}
+            })}
           >
             <MenuItem value="">All Types</MenuItem>
             <MenuItem value="sales">Sales</MenuItem>
@@ -691,30 +745,49 @@ export default function CallsPanel() {
           </Select>
         </FormControl>
 
-        <FormControl size="small" sx={{ minWidth: 120 }}>
+        <FormControl size="small" sx={{ minWidth: 100 }}>
           <InputLabel sx={{fontSize: '0.85rem', mt: '-5px'}}>Priority</InputLabel>
           <Select
             value={filters.priority || ''}
             onChange={(e) => setFilters({ ...filters, priority: (e.target.value as CallPriority) || undefined })}
-            sx={{
-              width: 120,
+            sx={(theme) => ({
+              width: 100,
+              borderRadius: 2,
+              bgcolor: alpha(theme.palette.text.primary, 0.03),
               "& .MuiInputBase-input": { py: "3px", fontSize: 11, fontWeight: 700 },
-            }}
+            })}
             
           >
             <MenuItem value="">All Priorities</MenuItem>
-            <MenuItem value="high">High</MenuItem>
-            <MenuItem value="medium">Medium</MenuItem>
-            <MenuItem value="low">Low</MenuItem>
+            <MenuItem value="high">
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: 'error.main', flexShrink: 0 }} />
+                High
+              </Box>
+            </MenuItem>
+            <MenuItem value="medium">
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: 'warning.main', flexShrink: 0 }} />
+                Medium
+              </Box>
+            </MenuItem>
+            <MenuItem value="low">
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: 'grey.400', flexShrink: 0 }} />
+                Low
+              </Box>
+            </MenuItem>
           </Select>
         </FormControl>
 
-        <IconButton
-          sx={{p: "2px"}}
-          onClick={() => setFilters({})}
-        >
-          <ClearAllIcon sx={{fontSize: '1.5rem'}}/>
-        </IconButton>
+        <Tooltip title="Clear filters">
+          <IconButton
+            sx={{p: "6px"}}
+            onClick={() => setFilters({})}
+          >
+            <ClearAllIcon sx={{fontSize: '1.35rem', opacity: 0.6}}/>
+          </IconButton>
+        </Tooltip>
       </Box>
       {error && (
         <Box sx={{ width: "100%", my: 1 }}>
@@ -743,15 +816,21 @@ export default function CallsPanel() {
             </Typography>
           </Box>
         ) : (
-          <Stack spacing={1} >
+          <Stack spacing={1} sx={{ pt: 1 }}>
             {visibleCalls.map((call) => (
               <Card
                 key={call.id}
+                elevation={0}
                 sx={{
                   cursor: 'pointer',
-                  transition: 'all 0.3s ease',
+                  borderRadius: 2,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  borderLeft: '4px solid',
+                  borderLeftColor: getStatusColor(call.status),
+                  transition: 'box-shadow 0.2s ease, transform 0.2s ease',
                   '&:hover': {
-                    boxShadow: '0 8px 10px rgba(0,0,0,0.12)',
+                    boxShadow: '0 6px 14px rgba(0,0,0,0.10)',
                     transform: 'translateY(-2px)',
                   },
                 }}
@@ -763,7 +842,7 @@ export default function CallsPanel() {
               >
                 <CardContent sx={{ p: 1, "&:last-child": {pb: 1,}}}>
                   <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
-                    <Avatar>
+                    <Avatar sx={{ border: '2px solid', borderColor: getStatusColor(call.status) }}>
                       {(call.contact?.first_name || call.lead?.first_name || '?').charAt(0)}
                     </Avatar>
 
@@ -775,6 +854,7 @@ export default function CallsPanel() {
                         <Chip
                           label={call.type}
                           size="small"
+                          variant="outlined"
                           sx={{
                             height: 18,
                             fontSize: '0.6rem',
@@ -861,7 +941,7 @@ export default function CallsPanel() {
                       </Box>
                     </Box>
 
-                    <Box sx={{ display: 'flex', gap: 1 }}>
+                    <Box sx={{ display: 'flex', gap: 0.75 }}>
                       {call.status !== 'completed' && call.status !== 'active' && (
                         <Tooltip title="Call">
                           <IconButton
@@ -870,7 +950,11 @@ export default function CallsPanel() {
                               e.stopPropagation();
                               handleStartCall(call);
                             }}
-                            sx={{ color: '#4caf50' }}
+                            sx={(theme) => ({
+                              color: '#4caf50',
+                              bgcolor: alpha(theme.palette.success.main, 0.1),
+                              '&:hover': { bgcolor: alpha(theme.palette.success.main, 0.2) },
+                            })}
                           >
                             <CallIcon fontSize="small" />
                           </IconButton>
@@ -885,6 +969,10 @@ export default function CallsPanel() {
                               e.stopPropagation();
                               handleEndCall(call);
                             }}
+                            sx={(theme) => ({
+                              bgcolor: alpha(theme.palette.error.main, 0.1),
+                              '&:hover': { bgcolor: alpha(theme.palette.error.main, 0.2) },
+                            })}
                           >
                             <CallEndIcon fontSize="small" />
                           </IconButton>
@@ -946,10 +1034,13 @@ export default function CallsPanel() {
             )}
 
             <Box
-              sx={{
+              sx={(theme) => ({
                 p: 1.5,
                 borderRadius: 2,
-              }}
+                border: '1px solid',
+                borderColor: theme.palette.divider,
+                bgcolor: alpha(theme.palette.text.primary, 0.015),
+              })}
             >
               <Typography
                 variant="overline"
@@ -973,7 +1064,7 @@ export default function CallsPanel() {
                         })
                       }
                     >
-                      {members.map((member) => (
+                      {members.map((member: DisplayProfile) => (
                         <MenuItem key={member.id} value={member.id}>
                           {member.display_name}
                         </MenuItem>
@@ -1051,10 +1142,13 @@ export default function CallsPanel() {
               </Stack>
             </Box>
             <Box
-              sx={{
+              sx={(theme) => ({
                 p: 1.5,
                 borderRadius: 2,
-              }}
+                border: '1px solid',
+                borderColor: theme.palette.divider,
+                bgcolor: alpha(theme.palette.text.primary, 0.015),
+              })}
             >
               <Typography
                 variant="overline"
@@ -1123,10 +1217,13 @@ export default function CallsPanel() {
             </Box>
 
             <Box
-              sx={{
+              sx={(theme) => ({
                 p: 1.5,
                 borderRadius: 2,
-              }}
+                border: '1px solid',
+                borderColor: theme.palette.divider,
+                bgcolor: alpha(theme.palette.text.primary, 0.015),
+              })}
             >
               <Typography
                 variant="overline"
@@ -1360,12 +1457,14 @@ export default function CallsPanel() {
                 <Box
                   sx={{
                     p: 1.5,
-                    height: 150,
+                    minHeight: 100,
                     borderRadius: 2,
+                    border: '1px solid',
+                    borderColor: 'divider',
                   }}
                 >
-                  <Typography variant="overline" color="text.secondary" sx={{ letterSpacing: 0.5 }}>
-                    Notes
+                  <Typography variant="overline" color="text.secondary" sx={{ letterSpacing: 0.5, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <NotesIcon sx={{ fontSize: 13 }} /> Notes
                   </Typography>
                   <Typography variant="body2" sx={{ mt: 0.5, whiteSpace: 'pre-wrap' }}>
                     {selectedCall.notes}

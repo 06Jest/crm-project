@@ -1,998 +1,965 @@
-import { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
-import type { AppDispatch, RootState } from '../../../store/store';
-// import { fetchActivities } from '../../../store/activitiesSlice';
-// import { useAI } from '../../../hooks/useAI';
-// import AIInsightCard from '../../../components/AIInsightCard';
-// import { aiApi } from '../../../services/backendApi';
 
 import {
-  Box, Typography, Grid, Card, CardContent,
-  CircularProgress, Alert, Chip, Avatar,
-  List, ListItem, ListItemAvatar, ListItemText,
-  Divider, Button, ToggleButton, ToggleButtonGroup,
-  Tabs, Tab, Stack,
+  Alert,
+  Avatar,
+  Box,
+  Button,
+  Chip,
+  Divider,
+  Grid,
+  IconButton,
+  LinearProgress,
+  List,
+  ListItem,
+  ListItemAvatar,
+  ListItemText,
+  Paper,
+  Skeleton,
+  Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  ToggleButton,
+  ToggleButtonGroup,
+  Tooltip,
+  Typography,
+  useTheme,
 } from '@mui/material';
-import PeopleIcon from '@mui/icons-material/People';
-import TrendingUpIcon from '@mui/icons-material/TrendingUp';
-import TrendingDownIcon from '@mui/icons-material/TrendingDown';
-import TrendingFlatIcon from '@mui/icons-material/TrendingFlat';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import FiberNewIcon from '@mui/icons-material/FiberNew';
-import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
-import BusinessIcon from '@mui/icons-material/Business';
-// import PhoneIcon from '@mui/icons-material/Phone';
-// import EmailIcon from '@mui/icons-material/Email';
-// import EventIcon from '@mui/icons-material/Event';
-// import NoteIcon from '@mui/icons-material/Note';
-// import SmsIcon from '@mui/icons-material/Sms';
-import WarningIcon from '@mui/icons-material/Warning';
-import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
-import PersonAddAlt1Icon from '@mui/icons-material/PersonAddAlt1';
-import HandshakeIcon from '@mui/icons-material/Handshake';
-import AddTaskIcon from '@mui/icons-material/AddTask';
-import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
-import ScheduleIcon from '@mui/icons-material/Schedule';
-// import AcUnitIcon from '@mui/icons-material/AcUnit';
-import EventBusyIcon from '@mui/icons-material/EventBusy';
 
-import { Bar, Line } from 'react-chartjs-2';
-// import { Doughnut } from 'react-chartjs-2';
-import type { TooltipItem } from 'chart.js';
-import { formatCurrency } from '../../../utils/dateFilters';
-import { CHART_COLORS, CHART_COLORS_ALPHA } from '../../../utils/chartColors';
-import { fetchContactsLists } from '../../../store/contactsSlice';
-import { fetchLeadsLists } from '../../../store/leadsSlice';
-import { fetchDealsLists } from '../../../store/dealsSlice';
-import { fetchCustomersLists } from '../../../store/customersSlice';
-import { DEAL_STAGES } from '../../../types/deal';
-import { formatName } from '../../../utils/formatText';
+import PersonAddAltOutlinedIcon from '@mui/icons-material/PersonAddAltOutlined';
+import PeopleAltOutlinedIcon from '@mui/icons-material/PeopleAltOutlined';
+import SellOutlinedIcon from '@mui/icons-material/SellOutlined';
+import GroupsOutlinedIcon from '@mui/icons-material/GroupsOutlined';
+import AttachMoneyOutlinedIcon from '@mui/icons-material/AttachMoneyOutlined';
+import TaskAltOutlinedIcon from '@mui/icons-material/TaskAltOutlined';
+import PhoneOutlinedIcon from '@mui/icons-material/PhoneOutlined';
+import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
+import SmsOutlinedIcon from '@mui/icons-material/SmsOutlined';
+import RefreshOutlinedIcon from '@mui/icons-material/RefreshOutlined';
+import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
+import TrendingUpOutlinedIcon from '@mui/icons-material/TrendingUpOutlined';
+import TrendingDownOutlinedIcon from '@mui/icons-material/TrendingDownOutlined';
+import EmojiEventsOutlinedIcon from '@mui/icons-material/EmojiEventsOutlined';
+import CalendarTodayOutlinedIcon from '@mui/icons-material/CalendarTodayOutlined';
+import InboxOutlinedIcon from '@mui/icons-material/InboxOutlined';
+
+import { LineChart } from '@mui/x-charts/LineChart';
+import { BarChart } from '@mui/x-charts/BarChart';
+
+import type { RootState, AppDispatch } from '../../../store/store';
+import {
+  fetchDashboardOverview,
+  fetchLeadMetrics,
+  fetchDealMetrics,
+  fetchCustomerMetrics,
+  fetchActivityMetrics,
+  fetchDashboardTrends,
+  fetchRecentDashboardActivities,
+  fetchUserPerformanceMetrics,
+  clearError,
+} from '../../../store/dashboardSlice';
+import type { ActivityItem, ActivityType, TrendInterval } from '../../../types/dashboard';
+import { useAuth } from '../../../hooks/useAuth';
+import type { ProfileIDName } from '../../../types/profile';
+import { fetchMembersIDNames } from '../../../store/profileSlice';
 
 
-
-// ---------- static config ----------
-
-// const ACTIVITY_ICONS: Record<string, React.ReactNode> = {
-//   call: <PhoneIcon fontSize="small" />,
-//   email: <EmailIcon fontSize="small" />,
-//   meeting: <EventIcon fontSize="small" />,
-//   note: <NoteIcon fontSize="small" />,
-//   sms: <SmsIcon fontSize="small" />,
-// };
-
-// const ACTIVITY_COLORS: Record<string, string> = {
-//   call: CHART_COLORS.blue,
-//   email: CHART_COLORS.purple,
-//   meeting: CHART_COLORS.orange,
-//   note: CHART_COLORS.green,
-//   sms: CHART_COLORS.teal,
-// };
-
-const STAGE_COLORS: Record<string, string> = {
-  Prospecting: CHART_COLORS.blue,
-  Proposal: CHART_COLORS.orange,
-  Negotiation: CHART_COLORS.purple,
-  'Closed Won': CHART_COLORS.green,
-  'Closed Lost': CHART_COLORS.red,
+const formatCompactNumber = (value: number): string => {
+  if (!Number.isFinite(value)) return '0';
+  if (Math.abs(value) >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
+  if (Math.abs(value) >= 1_000) return `${(value / 1_000).toFixed(1)}K`;
+  return value.toLocaleString('en-US');
 };
 
-type RangeKey = 'week' | 'month' | 'quarter' | 'year';
-
-const RANGE_DAYS: Record<RangeKey, number> = {
-  week: 7,
-  month: 30,
-  quarter: 90,
-  year: 365,
+const formatCurrency = (value: number): string => {
+  if (!Number.isFinite(value)) return 'Php0';
+  if (Math.abs(value) >= 1_000_000) return `Php${(value / 1_000_000).toFixed(1)}M`;
+  if (Math.abs(value) >= 1_000) return `Php${(value / 1_000).toFixed(1)}K`;
+  return `Php${value.toLocaleString('en-US')}`;
 };
 
-const RANGE_LABELS: Record<RangeKey, string> = {
-  week: 'This week',
-  month: 'This month',
-  quarter: 'This quarter',
-  year: 'This year',
+const formatPercent = (value: number): string => `${value.toFixed(1)}%`;
+
+const formatRelativeTime = (iso: string): string => {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return '—';
+  const diffMs = Date.now() - date.getTime();
+  const diffMin = Math.floor(diffMs / 60000);
+  if (diffMin < 1) return 'Just now';
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffHr = Math.floor(diffMin / 60);
+  if (diffHr < 24) return `${diffHr}h ago`;
+  const diffDay = Math.floor(diffHr / 24);
+  if (diffDay < 7) return `${diffDay}d ago`;
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 };
 
-// ---------- small reusable pieces ----------
+const getInitials = (label: string): string => {
+  const parts = label.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '?';
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+};
 
-function TrendChip({ current, previous }: { current: number; previous: number }) {
-  if (previous === 0 && current === 0) return null;
 
-  const diff = current - previous;
-  const pct = previous === 0 ? 100 : Math.round((diff / previous) * 100);
-  const isFlat = diff === 0;
-  const isUp = diff > 0;
-  
-  const color = isFlat ? 'text.secondary' : isUp ? 'success.main' : 'error.main';
-  const Icon = isFlat ? TrendingFlatIcon : isUp ? TrendingUpIcon : TrendingDownIcon;
+const formatUserLabel = (
+  key: string,
+  profiles: ProfileIDName[]
+): string => {
+  if (!key || key === 'Unassigned') return 'Unassigned';
 
-  return (
-    <Stack direction="row" alignItems="center" spacing={0.3} sx={{ color, mt: 0.5 }}>
-      <Icon sx={{ fontSize: 14 }} />
-      <Typography variant="caption" fontWeight={700}>
-        {isFlat ? 'No change' : `${isUp ? '+' : ''}${pct}%`}
-      </Typography>
-      <Typography variant="caption" color="text.secondary">
-        vs prior period
-      </Typography>
-    </Stack>
-  );
-}
+  const user = profiles.find((p) => p.id === key);
 
-function StatCard({
-  title, value, icon, color, subtitle, trend, onClick,
-}: {
+  return user?.display_name ?? 'Unknown';
+};
+
+const getDaypart = (): string => {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'morning';
+  if (hour < 18) return 'afternoon';
+  return 'evening';
+};
+
+const toSeries = (
+  record: Record<string, number> | undefined
+): { date: string; value: number }[] => {
+  if (!record) return [];
+  return Object.entries(record)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([date, value]) => ({ date, value }));
+};
+
+const computeDelta = (series: { date: string; value: number }[]): number | null => {
+  if (series.length < 2) return null;
+  const last = series[series.length - 1].value;
+  const prior = series[series.length - 2].value;
+  if (prior === 0) return null;
+  return ((last - prior) / prior) * 100;
+};
+
+type ChipTone = 'success' | 'warning' | 'error' | 'info' | 'default';
+
+const SUCCESS_KEYWORDS = ['won', 'active', 'completed', 'sent', 'converted', 'closed'];
+const WARNING_KEYWORDS = ['pending', 'open', 'in progress', 'proposal', 'negotiation'];
+const ERROR_KEYWORDS = ['lost', 'churned', 'overdue', 'failed'];
+
+const statusTone = (status: string | null | undefined): ChipTone => {
+  const value = (status ?? '').toLowerCase();
+  if (SUCCESS_KEYWORDS.some((k) => value.includes(k))) return 'success';
+  if (ERROR_KEYWORDS.some((k) => value.includes(k))) return 'error';
+  if (WARNING_KEYWORDS.some((k) => value.includes(k))) return 'warning';
+  if (value) return 'info';
+  return 'default';
+};
+
+const ACTIVITY_ICONS: Record<ActivityType, React.ElementType> = {
+  lead: PersonAddAltOutlinedIcon,
+  deal: SellOutlinedIcon,
+  customer: GroupsOutlinedIcon,
+  email: EmailOutlinedIcon,
+  sms: SmsOutlinedIcon,
+  call: PhoneOutlinedIcon,
+  task: TaskAltOutlinedIcon,
+};
+
+const EmptyState: React.FC<{ message: string }> = ({ message }) => (
+  <Stack alignItems="center" justifyContent="center" spacing={1} sx={{ py: 6, color: 'text.disabled' }}>
+    <InboxOutlinedIcon sx={{ fontSize: 28 }} />
+    <Typography variant="body2" color="text.secondary">
+      {message}
+    </Typography>
+  </Stack>
+);
+
+interface SectionHeadingProps {
   title: string;
-  value: string | number;
-  icon: React.ReactNode;
-  color: string;
   subtitle?: string;
-  trend?: { current: number; previous: number };
-  onClick?: () => void;
-}) {
-  return (
-    <Card
-      elevation={0}
-      sx={{
-        border: 1,
-        borderColor: 'divider',
-        borderRadius: 3,
-        height: '100%',
-        cursor: onClick ? 'pointer' : 'default',
-        transition: 'box-shadow 0.2s, transform 0.2s',
-        '&:hover': onClick ? { boxShadow: 3, transform: 'translateY(-2px)' } : {},
-      }}
-      onClick={onClick}
-    >
-      <CardContent>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <Box sx={{ minWidth: 0 }}>
-            <Typography variant="body2" color="text.secondary" gutterBottom noWrap>
-              {title}
-            </Typography>
-            <Typography variant="h4" fontWeight={800} noWrap>
-              {value}
-            </Typography>
-            {subtitle && (
-              <Typography variant="caption" color="text.secondary">
-                {subtitle}
-              </Typography>
-            )}
-            {trend && <TrendChip current={trend.current} previous={trend.previous} />}
-          </Box>
-          <Box
-            sx={{
-              bgcolor: color,
-              borderRadius: '50%',
-              width: 44,
-              height: 44,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'white',
-              flexShrink: 0,
-            }}
-          >
-            {icon}
-          </Box>
-        </Box>
-      </CardContent>
-    </Card>
-  );
+  action?: React.ReactNode;
 }
 
-function SectionTitle({
-  title, action, onAction, icon,
-}: {
-  title: string;
-  action?: string;
-  onAction?: () => void;
-  icon?: React.ReactNode;
-}) {
-  return (
-    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-      <Stack direction="row" alignItems="center" spacing={1}>
-        {icon}
-        <Typography variant="h6" fontWeight={700}>{title}</Typography>
-      </Stack>
-      {action && onAction && (
-        <Button size="small" onClick={onAction}>{action}</Button>
+const SectionHeading: React.FC<SectionHeadingProps> = ({ title, subtitle, action }) => (
+  <Stack
+    direction="row"
+    alignItems="flex-end"
+    justifyContent="space-between"
+    flexWrap="wrap"
+    rowGap={1}
+    sx={{ mb: 2 }}
+  >
+    <Box>
+      <Typography variant="h6" fontWeight={700}>
+        {title}
+      </Typography>
+      {subtitle && (
+        <Typography variant="body2" color="text.secondary">
+          {subtitle}
+        </Typography>
       )}
     </Box>
-  );
+    {action}
+  </Stack>
+);
+
+interface KpiCardProps {
+  label: string;
+  value: string;
+  icon: React.ElementType;
+  loading: boolean;
+  delta?: number | null;
+  tooltip?: string;
 }
 
-function QuickActionButton({
-  label, icon, onClick,
-}: {
-  label: string;
-  icon: React.ReactNode;
-  onClick: () => void;
-}) {
-  return (
-    <Button
+const KpiCard: React.FC<KpiCardProps> = ({ label, value, icon: Icon, loading, delta, tooltip }) => {
+  const theme = useTheme();
+
+  const content = (
+    <Paper
       variant="outlined"
-      size="small"
-      startIcon={icon}
-      onClick={onClick}
       sx={{
+        p: 2.5,
         borderRadius: 2,
-        textTransform: 'none',
-        whiteSpace: 'nowrap',
         borderColor: 'divider',
-        color: 'text.primary',
-        '&:hover': { borderColor: 'primary.main', bgcolor: 'action.hover' },
+        height: '100%',
+        transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
+        '&:hover': {
+          borderColor: theme.palette.grey[400],
+          boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+        },
       }}
     >
-      {label}
-    </Button>
-  );
-}
-
-export default function Dashboard() {
-  const dispatch = useDispatch<AppDispatch>();
-  const navigate = useNavigate();
-
-  const { items: contacts, loading: cL, error: cE, loaded: cLd } = useSelector((s: RootState) => s.contacts);
-  const { items: leads, loading: lL, loaded:lLd } = useSelector((s: RootState) => s.leads);
-  const { items: deals, loading: dL, loaded: dLd } = useSelector((s: RootState) => s.deals);
-  // const { items: activities, loading: aL } = useSelector((s: RootState) => s.activities);
-  const { items: customers, loading: cuL, loaded: cuLd } = useSelector((s: RootState) => s.customers);
-  // const { unreadCounts } = useSelector((s: RootState) => s.messaging);
-
-  const [range, setRange] = useState<RangeKey>('month');
-  const [attentionTab, setAttentionTab] = useState(0);
-
-  const needsLoading = !cLd || !lLd || !dLd || !cuLd;
-
-  useEffect(() => {
-  if (!needsLoading) return;
-
-  const loadData = async () => {
-    const requests = [];
-
-    if (!cLd) requests.push(dispatch(fetchContactsLists()).unwrap());
-    if (!lLd) requests.push(dispatch(fetchLeadsLists()).unwrap());
-    if (!dLd) requests.push(dispatch(fetchDealsLists()).unwrap());
-    if (!cuLd) requests.push(dispatch(fetchCustomersLists()).unwrap());
-
-    await Promise.all(requests);
-  };
-
-  loadData();
-}, [
-  dispatch,
-  cLd,
-  lLd,
-  dLd,
-  cuLd,
-  needsLoading
-]);
-
-  const isLoading = cL || lL || dL || cuL;
-
-  // const totalUnread = Object.values(unreadCounts).reduce((a, b) => a + b, 0);
-
-  // ---------- period boundaries ----------
-    const { periodStart, prevStart } = useMemo(() => {
-    const days = RANGE_DAYS[range];
-    const now = new Date();
-
-    const periodStart = new Date(now.getTime() - days * 86400000);
-    const prevStart = new Date(now.getTime() - days * 2 * 86400000);
-
-    return { periodStart, prevStart };
-  }, [range]);
-
-  const inRange = (dateStr?: string, from?: Date, to?: Date) => {
-    if (!dateStr) return false;
-    const d = new Date(dateStr);
-    if (from && d < from) return false;
-    if (to && d >= to) return false;
-    return true;
-  };
-
-  // ---------- deals ----------
-  const wonDeals = useMemo(() => deals.filter((d) => d.stage === 'Closed Won'), [deals]);
-  const lostDeals = useMemo(() => deals.filter((d) => d.stage === 'Closed Lost'), [deals]);
-  const openDeals = useMemo(
-    () => deals.filter((d) => d.stage !== 'Closed Won' && d.stage !== 'Closed Lost'),
-    [deals]
-  );
-
-  const openPipelineValue = useMemo(
-    () => openDeals.reduce((s, d) => s + d.value, 0),
-    [openDeals]
-  );
-
-  const winRate = useMemo(() => {
-    const decided = wonDeals.length + lostDeals.length;
-    if (decided === 0) return 0;
-    return Math.round((wonDeals.length / decided) * 100);
-  }, [wonDeals, lostDeals]);
-
-  const avgDealSize = useMemo(() => {
-    if (wonDeals.length === 0) return 0;
-    return wonDeals.reduce((s, d) => s + d.value, 0) / wonDeals.length;
-  }, [wonDeals]);
-
-  const wonRevenueCurrent = useMemo(
-    () => wonDeals.filter((d) => inRange(d.created_at, periodStart)).reduce((s, d) => s + d.value, 0),
-    [wonDeals, periodStart]
-  );
-  const wonRevenuePrevious = useMemo(
-    () => wonDeals.filter((d) => inRange(d.created_at, prevStart, periodStart)).reduce((s, d) => s + d.value, 0),
-    [wonDeals, prevStart, periodStart]
-  );
-
-  // ---------- leads ----------
-  const activeLeads = leads.filter((l) => l.status !== 'Closed').length;
-  const closedLeads = leads.filter((l) => l.status === 'Closed').length;
-
-  const leadsCurrentCount = useMemo(
-    () => leads.filter((l) => inRange(l.created_at, periodStart)).length,
-    [leads, periodStart]
-  );
-  const leadsPreviousCount = useMemo(
-    () => leads.filter((l) => inRange(l.created_at, prevStart, periodStart)).length,
-    [leads, prevStart, periodStart]
-  );
-
-  // const leadStatusCounts = useMemo(() => ({
-  //   New: leads.filter((l) => l.status === 'New').length,
-  //   Contacted: leads.filter((l) => l.status === 'Contacted').length,
-  //   Qualified: leads.filter((l) => l.status === 'Qualified').length,
-  //   Closed: leads.filter((l) => l.status === 'Closed').length,
-  // }), [leads]);
-
-  // ---------- contacts ----------
-  const contactsCurrentCount = useMemo(
-    () => contacts.filter((c) => inRange(c.created_at, periodStart)).length,
-    [contacts, periodStart]
-  );
-  const contactsPreviousCount = useMemo(
-    () => contacts.filter((c) => inRange(c.created_at, prevStart, periodStart)).length,
-    [contacts, prevStart, periodStart]
-  );
-
-  const coldContacts = contacts.filter((c) => c.status === 'Lost');
-
-  // ---------- activities ----------
-  // const activityTypeCounts = useMemo(() => ({
-  //   call: activities.filter((a) => a.type === 'call').length,
-  //   email: activities.filter((a) => a.type === 'email').length,
-  //   meeting: activities.filter((a) => a.type === 'meeting').length,
-  //   note: activities.filter((a) => a.type === 'note').length,
-  //   sms: activities.filter((a) => a.type === 'sms').length,
-  // }), [activities]);
-
-  // const activitiesCurrentCount = useMemo(
-  //   () => activities.filter((a) => inRange(a.created_at, periodStart)).length,
-  //   [activities, periodStart]
-  // );
-  // const activitiesPreviousCount = useMemo(
-  //   () => activities.filter((a) => inRange(a.created_at, prevStart, periodStart)).length,
-  //   [activities, prevStart, periodStart]
-  // );
-
-  // const recentActivities = useMemo(
-  //   () => [...activities]
-  //     .sort((a, b) => new Date(b.created_at || '').getTime() - new Date(a.created_at || '').getTime())
-  //     .slice(0, 8),
-  //   [activities]
-  // );
-
-  // ---------- pipeline by stage (value) ----------
-  const dealStageValues = useMemo(() => {
-    const map: Record<string, number> = {};
-    DEAL_STAGES.forEach((s) => { map[s] = 0; });
-    deals.forEach((d) => { if (d.stage in map) map[d.stage] += d.value; });
-    return map;
-  }, [deals]);
-
-  const dealStageCounts = useMemo(() => {
-    const map: Record<string, number> = {};
-    DEAL_STAGES.forEach((s) => { map[s] = 0; });
-    deals.forEach((d) => { if (d.stage in map) map[d.stage] += 1; });
-    return map;
-  }, [deals]);
-
-  const revenueByMonth = useMemo(() => {
-    const months: Record<string, number> = {};
-    for (let i = 5; i >= 0; i--) {
-      const d = new Date();
-      d.setMonth(d.getMonth() - i);
-      const key = d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-      months[key] = 0;
-    }
-    wonDeals.forEach((deal) => {
-      if (!deal.created_at) return;
-      const key = new Date(deal.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-      if (key in months) months[key] += deal.value;
-    });
-    return months;
-  }, [wonDeals]);
-
-  // ---------- needs attention ----------
-  // const coldContacts = useMemo(() => {
-  //   const thirtyDaysAgo = new Date();
-  //   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-  //   return contacts.filter((contact) => {
-  //     const lastActivity = activities
-  //       .filter((a) => a.contact_name === contact.name)
-  //       .sort((a, b) => new Date(b.created_at || '').getTime() - new Date(a.created_at || '').getTime())[0];
-
-  //     if (!lastActivity) return true;
-  //     return new Date(lastActivity.created_at || '') < thirtyDaysAgo;
-  //   }).slice(0, 8);
-  // }, [contacts, activities]);
-
-  const overdueDeals = useMemo(() => {
-    const today = new Date();
-    return deals
-      .filter((d) => {
-        if (d.stage === 'Closed Won' || d.stage === 'Closed Lost') return false;
-        if (!d.close_date) return false;
-        return new Date(d.close_date) < today;
-      })
-      .sort((a, b) => new Date(a.close_date!).getTime() - new Date(b.close_date!).getTime())
-      .slice(0, 8);
-  }, [deals]);
-
-  const dealsThisWeek = useMemo(() => {
-    const today = new Date();
-    const nextWeek = new Date();
-    nextWeek.setDate(today.getDate() + 7);
-
-    return deals
-      .filter((d) => {
-        if (!d.close_date) return false;
-        if (d.stage === 'Closed Won' || d.stage === 'Closed Lost') return false;
-        const closeDate = new Date(d.close_date);
-        return closeDate >= today && closeDate <= nextWeek;
-      })
-      .slice(0, 8);
-  }, [deals]);
-
-  const recentContacts = contacts.slice(0, 5);
-
-  const baseOptions = {
-    responsive: true,
-    maintainAspectRatio: true,
-    plugins: {
-      legend: { display: false },
-    },
-    scales: {
-      y: {
-        beginAtZero: true,
-        ticks: {
-          precision: 0,
-        },
-        grid: {
-          color: 'rgba(128,128,128,0.1)',
-        },
-      },
-      x: {
-        grid: {
-          display: false,
-        },
-      },
-    },
-};
-
-  // const {
-  //   result: aiSummary,
-  //   loading: aiLoading,
-  //   error: aiError,
-  //   generate: generateSummary,
-  //   clear: clearSummary,
-  // } = useAI(aiApi.getDashboardSummary);
-
-  // const handleGenerateSummary = useCallback(() => {
-  //   generateSummary({
-  //     totalContacts: contacts.length,
-  //     totalLeads: leads.length,
-  //     totalDeals: deals.length,
-  //     wonRevenue: wonRevenueCurrent,
-  //     winRate,
-  //     recentActivities: activitiesCurrentCount,
-  //     coldContacts: coldContacts.length,
-  //     overdueDeals: overdueDeals.length,
-  //     topCustomer: customers[0]?.name,
-  //   });
-  // }, [contacts, leads, deals, wonRevenueCurrent, winRate, activitiesCurrentCount, coldContacts, overdueDeals, customers, generateSummary]);
-
-  if (isLoading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}>
-        <CircularProgress />
-      </Box>
-    );
-  }
-
-  return (
-    <Box>
-      {cE && <Alert severity="error" sx={{ mb: 2 }}>{cE}</Alert>}
-
-      {/* header row: title + range filter */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
-        <Typography variant="h5" fontWeight={700}>
-          Dashboard
+      <Stack direction="row" alignItems="flex-start" justifyContent="space-between" sx={{ mb: 1.5 }}>
+        <Typography variant="body2" color="text.secondary" fontWeight={500}>
+          {label}
         </Typography>
-        <ToggleButtonGroup
-          value={range}
-          exclusive
-          size="small"
-          onChange={(_, val) => val && setRange(val)}
+        <Box
+          sx={{
+            width: 32,
+            height: 32,
+            borderRadius: 1.5,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'text.secondary',
+          }}
         >
-          <ToggleButton value="week">Week</ToggleButton>
-          <ToggleButton value="month">Month</ToggleButton>
-          <ToggleButton value="quarter">Quarter</ToggleButton>
-          <ToggleButton value="year">Year</ToggleButton>
-        </ToggleButtonGroup>
-      </Box>
-
-      {/* quick actions */}
-      <Stack direction="row" spacing={1} sx={{ mb: 3, overflowX: 'auto', pb: 0.5 }}>
-        <QuickActionButton label="New Contact" icon={<PersonAddAlt1Icon fontSize="small" />} onClick={() => navigate('/app/contacts')} />
-        <QuickActionButton label="New Lead" icon={<FiberNewIcon fontSize="small" />} onClick={() => navigate('/app/leads')} />
-        <QuickActionButton label="New Deal" icon={<HandshakeIcon fontSize="small" />} onClick={() => navigate('/app/deals')} />
-        <QuickActionButton label="Log Activity" icon={<AddTaskIcon fontSize="small" />} onClick={() => navigate('/app/activities')} />
+          <Icon sx={{ fontSize: 18 }} />
+        </Box>
       </Stack>
 
-      {/* <Box sx={{ mb: 3 }}>
-        <AIInsightCard
-          title="Daily CRM Summary"
-          result={aiSummary}
-          loading={aiLoading}
-          error={aiError}
-          onGenerate={handleGenerateSummary}
-          onClear={clearSummary}
-          buttonLabel="✨ Generate AI summary"
-        />
-      </Box> */}
+      {loading ? (
+        <Skeleton variant="text" width="60%" height={36} />
+      ) : (
+        <Typography variant="h5" fontWeight={700} sx={{ letterSpacing: '-0.02em' }}>
+          {value}
+        </Typography>
+      )}
 
-      {/* KPI row */}
-      <Grid container spacing={2} sx={{ mb: 4 }}>
-        <Grid size={{ xs: 6, sm: 4, md: 3 }}>
-          <StatCard
-            title="Total contacts"
-            value={contacts.length}
-            icon={<PeopleIcon />}
-            color={CHART_COLORS.blue}
-            subtitle={RANGE_LABELS[range]}
-            trend={{ current: contactsCurrentCount, previous: contactsPreviousCount }}
-            onClick={() => navigate('/app/contacts')}
-          />
-        </Grid>
-        <Grid size={{ xs: 6, sm: 4, md: 3 }}>
-          <StatCard
-            title="Active leads"
-            value={activeLeads}
-            icon={<TrendingUpIcon />}
-            color={CHART_COLORS.purple}
-            subtitle={`${closedLeads} closed all-time`}
-            trend={{ current: leadsCurrentCount, previous: leadsPreviousCount }}
-            onClick={() => navigate('/app/leads')}
-          />
-        </Grid>
-        <Grid size={{ xs: 6, sm: 4, md: 3 }}>
-          <StatCard
-            title="Win rate"
-            value={`${winRate}%`}
-            icon={<EmojiEventsIcon />}
-            color={CHART_COLORS.amber}
-            subtitle={`${wonDeals.length} won · ${lostDeals.length} lost`}
-            onClick={() => navigate('/app/deals')}
-          />
-        </Grid>
-        <Grid size={{ xs: 6, sm: 4, md: 3 }}>
-          <StatCard
-            title="Open pipeline"
-            value={formatCurrency(openPipelineValue)}
-            icon={<AttachMoneyIcon />}
-            color={CHART_COLORS.teal}
-            subtitle={`${openDeals.length} active deals`}
-            onClick={() => navigate('/app/deals')}
-          />
-        </Grid>
-        <Grid size={{ xs: 6, sm: 4, md: 3 }}>
-          <StatCard
-            title={`Won · ${RANGE_LABELS[range]}`}
-            value={formatCurrency(wonRevenueCurrent)}
-            icon={<CheckCircleIcon />}
-            color={CHART_COLORS.green}
-            trend={{ current: wonRevenueCurrent, previous: wonRevenuePrevious }}
-            onClick={() => navigate('/app/deals')}
-          />
-        </Grid>
-        <Grid size={{ xs: 6, sm: 4, md: 3 }}>
-          <StatCard
-            title="Avg deal size"
-            value={formatCurrency(avgDealSize)}
-            icon={<HandshakeIcon />}
-            color={CHART_COLORS.purple}
-            subtitle="Based on won deals"
-          />
-        </Grid>
-        <Grid size={{ xs: 6, sm: 4, md: 3 }}>
-          <StatCard
-            title="Customers"
-            value={customers.length}
-            icon={<BusinessIcon />}
-            color={CHART_COLORS.orange}
-            onClick={() => navigate('/app/customers')}
-          />
-        </Grid>
-        {/* <Grid size={{ xs: 6, sm: 4, md: 3 }}>
-          <StatCard
-            title="Unread messages"
-            value={totalUnread}
-            icon={<SmsIcon />}
-            color={totalUnread > 0 ? CHART_COLORS.red : CHART_COLORS.blue}
-            subtitle="From team members"
-            onClick={() => navigate('/app/messages')}
-          />
-        </Grid> */}
-      </Grid>
+      {!loading && delta !== null && delta !== undefined && (
+        <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mt: 0.75 }}>
+          {delta >= 0 ? (
+            <TrendingUpOutlinedIcon sx={{ fontSize: 14 }} color="success" />
+          ) : (
+            <TrendingDownOutlinedIcon sx={{ fontSize: 14 }} color="error" />
+          )}
+          <Typography variant="caption" fontWeight={600} color={delta >= 0 ? 'success.main' : 'error.main'}>
+            {Math.abs(delta).toFixed(1)}%
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            vs prior period
+          </Typography>
+        </Stack>
+      )}
+    </Paper>
+  );
 
-      {/* charts row */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid size={{ xs: 12, md: 5 }}>
-          <Card elevation={0} sx={{ border: 1, borderColor: 'divider', borderRadius: 3, p: 1 }}>
-            <CardContent>
-              <Typography variant="h6" fontWeight={700} gutterBottom>
-                Pipeline by stage
-              </Typography>
-              <Box sx={{ height: 220 }}>
-                <Bar
-                  data={{
-                    labels:[...DEAL_STAGES],
-                    datasets: [{
-                      label: 'Value',
-                      data: DEAL_STAGES.map((s) => dealStageValues[s]),
-                      backgroundColor: DEAL_STAGES.map((s) => STAGE_COLORS[s]),
-                      borderRadius: 6,
-                      borderSkipped: false,
-                    }],
-                  }}
-                  options={{
-                    ...baseOptions,
-                    scales: {
-                      ...baseOptions.scales,
-                      y: {
-                        ...baseOptions.scales.y,
-                        ticks: {
-                          callback: (val) => formatCurrency(Number(val)),
-                        },
-                      },
-                    },
-                    plugins: {
-                      legend: { display: false },
-                      tooltip: {
-                        callbacks: {
-                          label: (ctx: TooltipItem<'bar'>) => {
-                            const stage = DEAL_STAGES[ctx.dataIndex];
-                            return ` ${formatCurrency(ctx.parsed.y as number)} · ${dealStageCounts[stage]} deal(s)`;
-                          },
-                        },
-                      },
-                    },
-                  }}
+  return tooltip ? (
+    <Tooltip title={tooltip} arrow placement="top">
+      {content}
+    </Tooltip>
+  ) : (
+    content
+  );
+};
+
+interface ChartPanelProps {
+  title: string;
+  loading: boolean;
+  isEmpty: boolean;
+  children: React.ReactNode;
+}
+
+const ChartPanel: React.FC<ChartPanelProps> = ({ title, loading, isEmpty, children }) => (
+  <Paper variant="outlined" sx={{ p: 3, borderRadius: 2, borderColor: 'divider', height: '100%' }}>
+    <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
+      {title}
+    </Typography>
+    {loading ? (
+      <Skeleton variant="rounded" height={240} />
+    ) : isEmpty ? (
+      <EmptyState message="No data for this period yet." />
+    ) : (
+      children
+    )}
+  </Paper>
+);
+
+interface MetricBarProps {
+  label: string;
+  value: number;
+  display: string;
+  loading: boolean;
+}
+
+const MetricBar: React.FC<MetricBarProps> = ({ label, value, display, loading }) => (
+  <Box>
+    <Stack direction="row" justifyContent="space-between" sx={{ mb: 0.75 }}>
+      <Typography variant="body2" color="text.secondary">
+        {label}
+      </Typography>
+      {loading ? (
+        <Skeleton width={40} />
+      ) : (
+        <Typography variant="body2" fontWeight={600}>
+          {display}
+        </Typography>
+      )}
+    </Stack>
+    <LinearProgress
+      variant="determinate"
+      value={Math.min(100, Math.max(0, value))}
+      sx={{
+        height: 6,
+        borderRadius: 3,
+        '& .MuiLinearProgress-bar': { borderRadius: 3 },
+      }}
+    />
+  </Box>
+);
+
+interface ActivityListCardProps {
+  title: string;
+  items: ActivityItem[];
+  loading: boolean;
+}
+
+const ActivityListCard: React.FC<ActivityListCardProps> = ({ title, items, loading }) => (
+  <Paper variant="outlined" sx={{ borderRadius: 2, borderColor: 'divider', height: '100%' }}>
+    <Box sx={{ p: 3, pb: 1 }}>
+      <Typography variant="subtitle1" fontWeight={600}>
+        {title}
+      </Typography>
+    </Box>
+    {loading ? (
+      <Box sx={{ px: 3, pb: 3 }}>
+        <Stack spacing={1.5}>
+          {[0, 1, 2, 3].map((i) => (
+            <Skeleton key={i} variant="rounded" height={44} />
+          ))}
+        </Stack>
+      </Box>
+    ) : items.length === 0 ? (
+      <Box sx={{ pb: 3 }}>
+        <EmptyState message="Nothing here yet." />
+      </Box>
+    ) : (
+      <List disablePadding sx={{ pb: 1 }}>
+        {items.map((item, idx) => {
+          const Icon = ACTIVITY_ICONS[item.type] ?? InboxOutlinedIcon;
+          const tone = statusTone(item.description);
+          return (
+            <React.Fragment key={item.id}>
+              <ListItem sx={{ px: 3, py: 1.25, gap: 1 }}>
+                <ListItemAvatar sx={{ minWidth: 40 }}>
+                  <Box
+                    sx={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: 1.5,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: 'text.secondary',
+                    }}
+                  >
+                    <Icon sx={{ fontSize: 16 }} />
+                  </Box>
+                </ListItemAvatar>
+                <ListItemText
+                  primary={
+                    <Typography variant="body2" fontWeight={500} noWrap>
+                      {item.title}
+                    </Typography>
+                  }
+                  secondary={formatRelativeTime(item.createdAt)}
+                  secondaryTypographyProps={{ variant: 'caption', color: 'text.secondary' }}
                 />
-              </Box>
-              <Stack direction="row" spacing={1} sx={{ mt: 1, flexWrap: 'wrap', gap: 0.5 }}>
-                {DEAL_STAGES.map((s) => (
+                {item.description && (
                   <Chip
-                    key={s}
-                    label={`${s}: ${dealStageCounts[s]}`}
+                    label={item.description}
                     size="small"
-                    sx={{ bgcolor: STAGE_COLORS[s], color: 'white', fontSize: 10 }}
+                    color={tone === 'default' ? undefined : tone}
+                    variant="outlined"
+                    sx={{ height: 22, fontSize: 11, textTransform: 'capitalize', flexShrink: 0 }}
                   />
-                ))}
-              </Stack>
-            </CardContent>
-          </Card>
-        </Grid>
+                )}
+              </ListItem>
+              {idx < items.length - 1 && <Divider component="li" sx={{ mx: 3 }} />}
+            </React.Fragment>
+          );
+        })}
+      </List>
+    )}
+  </Paper>
+);
 
-        <Grid size={{ xs: 12, md: 4 }}>
-          <Card elevation={0} sx={{ border: 1, borderColor: 'divider', borderRadius: 3, p: 1 }}>
-            <CardContent>
-              <Typography variant="h6" fontWeight={700} gutterBottom>
-                Revenue (6 months)
-              </Typography>
-              <Box sx={{ height: 220 }}>
-                <Line
-                  data={{
-                    labels: Object.keys(revenueByMonth),
-                    datasets: [{
-                      label: 'Revenue',
-                      data: Object.values(revenueByMonth),
-                      borderColor: CHART_COLORS.green,
-                      backgroundColor: CHART_COLORS_ALPHA.green,
-                      tension: 0.3,
-                      fill: true,
-                      pointRadius: 4,
-                    }],
-                  }}
-                  options={{
-                    ...baseOptions,
-                    plugins: {
-                      ...baseOptions.plugins,
-                      tooltip: {
-                        callbacks: {
-                          label: (ctx: TooltipItem<'line'>) => ` ${formatCurrency(ctx.parsed.y as number)}`,
-                        },
-                      },
-                    },
-                  }}
-                />
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
 
-        <Grid size={{ xs: 12, md: 3 }}>
-          <Card elevation={0} sx={{ border: 1, borderColor: 'divider', borderRadius: 3, p: 1 }}>
-            <CardContent>
-              <Typography variant="h6" fontWeight={700} gutterBottom>
-                Activity mix
-              </Typography>
-              {/* <Box sx={{ maxWidth: 200, mx: 'auto' }}>
-                <Doughnut
-                  data={{
-                    labels: ['Call', 'Email', 'Meeting', 'Note', 'SMS'],
-                    datasets: [{
-                      data: Object.values(activityTypeCounts),
-                      backgroundColor: Object.values(ACTIVITY_COLORS),
-                      borderWidth: 0,
-                      hoverOffset: 8,
-                    }],
-                  }}
-                  options={{
-                    responsive: true,
-                    plugins: {
-                      legend: {
-                        position: 'bottom' as const,
-                        labels: { padding: 10, usePointStyle: true, font: { size: 10 } },
-                      },
-                    },
-                    cutout: '60%',
-                  }}
-                />
-              </Box> */}
-              {/* <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center', mt: 1 }}>
-                {activitiesCurrentCount} logged {RANGE_LABELS[range].toLowerCase()}
-              </Typography> */}
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
 
-      {/* needs attention + recent activities */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid size={{ xs: 12, md: 5 }}>
-          <Card elevation={0} sx={{ border: 1, borderColor: 'divider', borderRadius: 3 }}>
-            <CardContent>
-              <SectionTitle title="Needs attention" icon={<WarningIcon sx={{ color: 'warning.main' }} fontSize="small" />} />
+const Dashboard = () => {
+  const { user } = useAuth();
+  const theme = useTheme();
+  const dispatch = useDispatch<AppDispatch>();
 
-              <Tabs
-                value={attentionTab}
-                onChange={(_, v) => setAttentionTab(v)}
-                variant="fullWidth"
-                sx={{ mb: 1, minHeight: 36, '& .MuiTab-root': { minHeight: 36, fontSize: 12, textTransform: 'none' } }}
-              >
-                <Tab label={`Overdue (${overdueDeals.length})`} icon={<EventBusyIcon fontSize="small" />} iconPosition="start" />
-                {/* <Tab label={`Cold (${coldContacts.length})`} icon={<AcUnitIcon fontSize="small" />} iconPosition="start" /> */}
-                <Tab label={`Closing soon (${dealsThisWeek.length})`} icon={<ScheduleIcon fontSize="small" />} iconPosition="start" />
-              </Tabs>
+   const userName =
+    user?.display_name ||
+    `${user?.first_name ?? ''} ${user?.last_name ?? ''}`.trim() ||
+    'there';
 
-              {attentionTab === 0 && (
-                overdueDeals.length === 0 ? (
-                  <EmptyState text="No overdue deals. Nice." />
-                ) : (
-                  <List disablePadding>
-                    {overdueDeals.map((deal, i) => (
-                      <Box key={deal.id}>
-                        <ListItem
-                          disablePadding
-                          sx={{ py: 1, cursor: 'pointer', borderRadius: 1, '&:hover': { bgcolor: 'action.hover' } }}
-                          onClick={() => navigate('/app/deals')}
-                        >
-                          <ListItemAvatar>
-                            <Avatar sx={{ bgcolor: CHART_COLORS.red, width: 36, height: 36 }}>
-                              <EventBusyIcon sx={{ fontSize: 18 }} />
-                            </Avatar>
-                          </ListItemAvatar>
-                          <ListItemText
-                            primary={<Typography variant="body2" fontWeight={600} noWrap>{deal.title}</Typography>}
-                            secondary={
-                              <Typography variant="caption" color="error.main">
-                                Was due {new Date(deal.close_date!).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                              </Typography>
-                            }
-                          />
-                          <Typography variant="body2" fontWeight={700}>{formatCurrency(deal.value)}</Typography>
-                        </ListItem>
-                        {i < overdueDeals.length - 1 && <Divider />}
-                      </Box>
-                    ))}
-                  </List>
-                )
-              )}
+  const orgName = user?.org?.name ?? 'your organization';
 
-              {attentionTab === 1 && (
-                coldContacts.length === 0 ? (
-                  <EmptyState text="All contacts are warm. Great work." />
-                ) : (
-                  <List disablePadding>
-                    {coldContacts.map((contact, i) => (
-                      <Box key={contact.id}>
-                        <ListItem
-                          disablePadding
-                          sx={{ py: 1, cursor: 'pointer', borderRadius: 1, '&:hover': { bgcolor: 'action.hover' } }}
-                          onClick={() => navigate(`/app/contacts/${contact.id}`)}
-                        >
-                          <ListItemAvatar>
-                            <Avatar sx={{ bgcolor: 'warning.main', width: 36, height: 36, fontSize: 14 }}>
-                              {formatName(contact.first_name, contact.last_name)} {contact.suffix}
-                            </Avatar>
-                          </ListItemAvatar>
-                          <ListItemText
-                            primary={<Typography variant="body2" fontWeight={600}>{formatName(contact.first_name, contact.last_name)} {contact.suffix}</Typography>}
-                            secondary={<Typography variant="caption" color="text.secondary">{contact.email}</Typography>}
-                          />
-                        </ListItem>
-                        {i < coldContacts.length - 1 && <Divider />}
-                      </Box>
-                    ))}
-                  </List>
-                )
-              )}
+  const {
+    overview,
+    leadMetrics,
+    dealMetrics,
+    customerMetrics,
+    activityMetrics,
+    trends,
+    recentActivities,
+    userPerformance,
+    loading,
+    error,
+  } = useSelector((state: RootState) => state.dashboard);
 
-              {attentionTab === 2 && (
-                dealsThisWeek.length === 0 ? (
-                  <EmptyState text="No deals closing in the next 7 days." />
-                ) : (
-                  <List disablePadding>
-                    {dealsThisWeek.map((deal, i) => (
-                      <Box key={deal.id}>
-                        <ListItem
-                          disablePadding
-                          sx={{ py: 1, cursor: 'pointer', borderRadius: 1, '&:hover': { bgcolor: 'action.hover' } }}
-                          onClick={() => navigate('/app/deals')}
-                        >
-                          <ListItemAvatar>
-                            <Avatar sx={{ bgcolor: CHART_COLORS.teal, width: 36, height: 36 }}>
-                              <CalendarTodayIcon sx={{ fontSize: 18 }} />
-                            </Avatar>
-                          </ListItemAvatar>
-                          <ListItemText
-                            primary={<Typography variant="body2" fontWeight={600} noWrap>{deal.title}</Typography>}
-                            secondary={
-                              <Typography variant="caption" color="text.secondary">
-                                Closes {new Date(deal.close_date!).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                              </Typography>
-                            }
-                          />
-                          <Typography variant="body2" fontWeight={700} color="success.main">
-                            {formatCurrency(deal.value)}
-                          </Typography>
-                        </ListItem>
-                        {i < dealsThisWeek.length - 1 && <Divider />}
-                      </Box>
-                    ))}
-                  </List>
-                )
-              )}
-            </CardContent>
-          </Card>
-        </Grid>
+  const [trendInterval, setTrendInterval] = useState<TrendInterval>('day');
 
-        <Grid size={{ xs: 12, md: 7 }}>
-          <Card elevation={0} sx={{ border: 1, borderColor: 'divider', borderRadius: 3 }}>
+  const loadAll = useCallback(() => {
+    dispatch(fetchDashboardOverview());
+    dispatch(fetchLeadMetrics());
+    dispatch(fetchDealMetrics());
+    dispatch(fetchCustomerMetrics());
+    dispatch(fetchActivityMetrics());
+    dispatch(fetchDashboardTrends({ interval: trendInterval, daysBack: 30 }));
+    dispatch(fetchRecentDashboardActivities(12));
+    dispatch(fetchUserPerformanceMetrics());
+    
+  }, [dispatch, trendInterval]);
 
-            meow meow
-            {/* <CardContent>
-              <SectionTitle title="Recent activities" action="View all" onAction={() => navigate('/app/activities')} />
-              {recentActivities.length === 0 ? (
-                <EmptyState text="No activities yet. Log your first one!" />
-              ) : (
-                <List disablePadding>
-                  {recentActivities.map((activity, i) => (
-                    <Box key={activity.id}>
-                      <ListItem disablePadding sx={{ py: 1 }}>
-                        <ListItemAvatar>
-                          <Avatar sx={{ width: 36, height: 36, bgcolor: ACTIVITY_COLORS[activity.type] || CHART_COLORS.blue }}>
-                            {ACTIVITY_ICONS[activity.type]}
-                          </Avatar>
-                        </ListItemAvatar>
-                        <ListItemText
-                          primary={<Typography variant="body2" fontWeight={600} noWrap>{activity.subject}</Typography>}
-                          secondary={
-                            <Typography variant="caption" color="text.secondary">
-                              {activity.contact_name && `${activity.contact_name} · `}
-                              {activity.created_at
-                                ? new Date(activity.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-                                : '—'}
-                            </Typography>
-                          }
-                        />
-                        <Chip
-                          label={activity.type}
-                          size="small"
-                          sx={{ bgcolor: ACTIVITY_COLORS[activity.type], color: 'white', fontSize: 10, height: 20 }}
-                        />
-                      </ListItem>
-                      {i < recentActivities.length - 1 && <Divider />}
-                    </Box>
-                  ))}
-                </List>
-              )}
-            </CardContent> */}
-          </Card>
-        </Grid>
-      </Grid>
+  const { items: profiles, loaded, loading: pL} = useSelector((state:RootState) => state.profile);
 
-      {/* recent contacts */}
-      <Grid container spacing={3}>
-        <Grid size={{ xs: 12 }}>
-          <Card elevation={0} sx={{ border: 1, borderColor: 'divider', borderRadius: 3 }}>
-            <CardContent>
-              <SectionTitle title="Recent contacts" action="View all" onAction={() => navigate('/app/contacts')} />
-              {recentContacts.length === 0 ? (
-                <EmptyState text="No contacts yet. Add your first one!" />
-              ) : (
-                <Grid container spacing={1}>
-                  {recentContacts.map((contact) => (
-                    <Grid key={contact.id} size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
-                      <Box
-                        onClick={() => navigate(`/app/contacts/${contact.id}`)}
-                        sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 1,
-                          p: 1,
-                          borderRadius: 2,
-                          cursor: 'pointer',
-                          border: 1,
-                          borderColor: 'divider',
-                          '&:hover': { bgcolor: 'action.hover' },
-                        }}
-                      >
-                        <Avatar sx={{ bgcolor: CHART_COLORS.blue, width: 36, height: 36, fontSize: 14 }}>
-                          {formatName(contact.first_name, contact.last_name)} {contact.suffix}
-                        </Avatar>
-                        <Box sx={{ minWidth: 0, flex: 1 }}>
-                          <Typography variant="body2" fontWeight={600} noWrap>{formatName(contact.first_name, contact.last_name)} {contact.suffix}</Typography>
-                          <Typography variant="caption" color="text.secondary" noWrap sx={{ display: 'block' }}>
-                            {contact.email}
-                          </Typography>
-                        </Box>
-                        <Chip
-                          label={contact.status}
-                          size="small"
-                          color={contact.status === 'Customer' ? 'success' : contact.status === 'Lost' ? 'warning' : 'info'}
-                        />
-                      </Box>
-                    </Grid>
-                  ))}
-                </Grid>
-              )}
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
-    </Box>
+  const loadProfiles = useCallback(() => {
+    if (!loaded && !pL) {
+      dispatch(fetchMembersIDNames());
+    }
+  }, [dispatch, loaded, pL]);
+
+  useEffect(() => {
+    loadAll();
+  }, [loadAll]);
+
+  useEffect(() => {
+    loadProfiles();
+  }, [loadProfiles]);
+
+  const handleIntervalChange = (_event: React.MouseEvent<HTMLElement>, next: TrendInterval | null) => {
+    if (!next) return;
+    setTrendInterval(next);
+    dispatch(fetchDashboardTrends({ interval: next, daysBack: 30 }));
+  };
+
+  const handleExport = useCallback(() => {
+    if (!overview) return;
+    const rows: string[][] = [
+      ['Metric', 'Value'],
+      ['Total Leads', String(overview.totalLeads)],
+      ['Contacts', String(overview.totalContacts)],
+      ['Deals', String(overview.totalDeals)],
+      ['Customers', String(overview.totalCustomers)],
+      ['Revenue', String(dealMetrics?.totalRevenue ?? 0)],
+      ['Open Tasks', String(activityMetrics?.tasksPending ?? 0)],
+      ['Calls', String(overview.totalCalls)],
+      ['Emails', String(overview.totalEmails)],
+    ];
+    const csv = rows.map((r) => r.join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `dashboard-summary-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }, [overview, dealMetrics, activityMetrics]);
+
+  const today = useMemo(
+    () =>
+      new Date().toLocaleDateString('en-US', {
+        weekday: 'long',
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+      }),
+    []
   );
-}
 
-function EmptyState({ text }: { text: string }) {
+  const revenueSeries = useMemo(() => toSeries(trends?.revenueOverTime), [trends]);
+  const leadSeries = useMemo(() => toSeries(trends?.leadsCreated), [trends]);
+  const customerSeries = useMemo(() => toSeries(trends?.customerGrowth), [trends]);
+  const dealStageData = useMemo(
+    () => Object.entries(dealMetrics?.dealsByStage ?? {}).map(([stage, count]) => ({ stage, count })),
+    [dealMetrics]
+  );
+
+  const revenueDelta = useMemo(() => computeDelta(revenueSeries), [revenueSeries]);
+  const leadDelta = useMemo(() => computeDelta(leadSeries), [leadSeries]);
+  const customerDelta = useMemo(() => computeDelta(customerSeries), [customerSeries]);
+
+  const recentTasks = useMemo(() => recentActivities.filter((a) => a.type === 'task').slice(0, 6), [
+    recentActivities,
+  ]);
+  const recentDeals = useMemo(() => recentActivities.filter((a) => a.type === 'deal').slice(0, 6), [
+    recentActivities,
+  ]);
+
+  const leaderboard = useMemo(() => {
+    if (!userPerformance) return [];
+
+    const keys = new Set<string>([
+      ...Object.keys(userPerformance.leadsPerUser),
+      ...Object.keys(userPerformance.dealsClosedPerUser),
+      ...Object.keys(userPerformance.tasksCompletedPerUser),
+      ...Object.keys(userPerformance.callsCompletedPerUser),
+    ]);
+
+    return Array.from(keys)
+      .map((key) => ({
+        key,
+        label: formatUserLabel(key, profiles),
+        leads: userPerformance.leadsPerUser[key] ?? 0,
+        dealsClosed: userPerformance.dealsClosedPerUser[key] ?? 0,
+        tasksCompleted: userPerformance.tasksCompletedPerUser[key] ?? 0,
+        callsCompleted: userPerformance.callsCompletedPerUser[key] ?? 0,
+      }))
+      .sort((a, b) => b.dealsClosed - a.dealsClosed || b.leads - a.leads);
+
+  }, [userPerformance, profiles]);
+
+  const topPerformer = leaderboard[0];
+
+  const kpis: KpiCardProps[] = [
+    {
+      label: 'Total Leads',
+      value: overview ? formatCompactNumber(overview.totalLeads) : '—',
+      icon: PersonAddAltOutlinedIcon,
+      loading: loading.overview,
+      delta: leadDelta,
+    },
+    {
+      label: 'Contacts',
+      value: overview ? formatCompactNumber(overview.totalContacts) : '—',
+      icon: PeopleAltOutlinedIcon,
+      loading: loading.overview,
+    },
+    {
+      label: 'Deals',
+      value: overview ? formatCompactNumber(overview.totalDeals) : '—',
+      icon: SellOutlinedIcon,
+      loading: loading.overview,
+      tooltip: dealMetrics
+        ? `${dealMetrics.openDeals} open · ${dealMetrics.wonDeals} won · ${dealMetrics.lostDeals} lost`
+        : undefined,
+    },
+    {
+      label: 'Customers',
+      value: overview ? formatCompactNumber(overview.totalCustomers) : '—',
+      icon: GroupsOutlinedIcon,
+      loading: loading.overview,
+      delta: customerDelta,
+      tooltip: customerMetrics
+        ? `${customerMetrics.activeCustomers} active · ${customerMetrics.churnedCustomers} churned`
+        : undefined,
+    },
+    {
+      label: 'Revenue',
+      value: dealMetrics ? formatCurrency(dealMetrics.totalRevenue) : '—',
+      icon: AttachMoneyOutlinedIcon,
+      loading: loading.deals,
+      delta: revenueDelta,
+    },
+    {
+      label: 'Open Tasks',
+      value: activityMetrics ? formatCompactNumber(activityMetrics.tasksPending) : '—',
+      icon: TaskAltOutlinedIcon,
+      loading: loading.activity,
+      tooltip: activityMetrics ? `${activityMetrics.tasksOverdue} overdue` : undefined,
+    },
+    {
+      label: 'Calls',
+      value: overview ? formatCompactNumber(overview.totalCalls) : '—',
+      icon: PhoneOutlinedIcon,
+      loading: loading.overview,
+    },
+    {
+      label: 'Emails',
+      value: overview ? formatCompactNumber(overview.totalEmails) : '—',
+      icon: EmailOutlinedIcon,
+      loading: loading.overview,
+    },
+  ];
+
+  console.log("trends", trends);
+console.log("revenueOverTime", trends?.revenueOverTime);
+
   return (
-    <Box sx={{ textAlign: 'center', py: 3 }}>
-      <CheckCircleIcon sx={{ fontSize: 36, color: 'success.main', mb: 1 }} />
-      <Typography variant="body2" color="text.secondary">{text}</Typography>
+    <Box sx={{ bgcolor: 'background.default', minHeight: '100%', px: { xs: 2, sm: 3, md: 4 }, py: { xs: 3, md: 4 },pt: 0, }}>
+      {error && (
+        <Alert severity="error" onClose={() => dispatch(clearError())} sx={{ mb: 3, borderRadius: 2 }}>
+          {error}
+        </Alert>
+      )}
+
+      <Stack
+        direction={{ xs: 'column', sm: 'row' }}
+        alignItems={{ xs: 'flex-start', sm: 'center' }}
+        justifyContent="space-between"
+        spacing={2}
+        sx={{ mb: 4 }}
+      >
+        <Box>
+          <Typography variant="h5" fontWeight={700} sx={{ letterSpacing: '-0.02em' }}>
+            Good {getDaypart()}, {userName}
+          </Typography>
+          <Stack direction="row" alignItems="center" spacing={0.75} sx={{ mt: 0.5 }}>
+            <CalendarTodayOutlinedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+            <Typography variant="body2" color="text.secondary">
+              {today} · {orgName}
+            </Typography>
+          </Stack>
+        </Box>
+
+        <Stack direction="row" spacing={1.5}>
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={<FileDownloadOutlinedIcon />}
+            onClick={handleExport}
+            disabled={!overview}
+            sx={{ borderColor: 'divider', color: 'text.primary' }}
+          >
+            Export
+          </Button>
+          <Tooltip title="Refresh dashboard data">
+            <IconButton
+              size="small"
+              onClick={loadAll}
+              aria-label="Refresh dashboard data"
+              sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1.5 }}
+            >
+              <RefreshOutlinedIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </Stack>
+      </Stack>
+
+      <Grid container spacing={2.5} sx={{ mb: 5 }}>
+        {kpis.map((kpi) => (
+          <Grid
+            size={{ xs: 12, sm: 6, md: 3 }}
+            key={kpi.label}
+          >
+            <KpiCard {...kpi} />
+          </Grid>
+        ))}
+      </Grid>
+
+      <SectionHeading
+        title="Analytics"
+        subtitle="Trends across your pipeline over time"
+        action={
+          <ToggleButtonGroup
+            size="small"
+            exclusive
+            value={trendInterval}
+            onChange={handleIntervalChange}
+            aria-label="Trend interval"
+            sx={{
+              '& .MuiToggleButton-root': {
+                textTransform: 'none',
+                px: 1.75,
+                py: 0.5,
+                borderColor: 'divider',
+              },
+            }}
+          >
+            <ToggleButton value="day">Day</ToggleButton>
+            <ToggleButton value="week">Week</ToggleButton>
+            <ToggleButton value="month">Month</ToggleButton>
+          </ToggleButtonGroup>
+        }
+      />
+
+      <Grid container spacing={2.5} sx={{ mb: 5 }}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <ChartPanel title="Revenue Trend" loading={loading.trends} isEmpty={revenueSeries.length === 0}>
+            <LineChart
+              dataset={revenueSeries}
+              xAxis={[{ dataKey: 'date', scaleType: 'point', tickLabelStyle: { fontSize: 11 } }]}
+              series={[
+                {
+                  dataKey: 'value',
+                  color: theme.palette.primary.main,
+                  showMark: false,
+                  curve: 'monotoneX',
+                  valueFormatter: (v) => formatCurrency(Number(v ?? 0)),
+                },
+              ]}
+              height={260}
+              margin={{ left: 56, right: 16, top: 16, bottom: 32 }}
+              grid={{ horizontal: true }}
+              slotProps={{
+                legend: {
+                  sx: {
+                    display: "none",
+                  },
+                },
+              }}
+            />
+          </ChartPanel>
+        </Grid>
+
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <ChartPanel title="Lead Growth" loading={loading.trends} isEmpty={leadSeries.length === 0}>
+            <LineChart
+              dataset={leadSeries}
+              xAxis={[{ dataKey: 'date', scaleType: 'point', tickLabelStyle: { fontSize: 11 } }]}
+              series={[
+                {
+                  dataKey: 'value',
+                  color: theme.palette.grey[700],
+                  showMark: false,
+                  curve: 'monotoneX',
+                  area: true,
+                },
+              ]}
+              height={260}
+              margin={{ left: 40, right: 16, top: 16, bottom: 32 }}
+              grid={{ horizontal: true }}
+              slotProps={{
+                legend: {
+                  sx: {
+                    display: "none",
+                  },
+                },
+              }}
+              sx={{ '& .MuiAreaElement-root': { fillOpacity: 0.08 } }}
+            />
+          </ChartPanel>
+        </Grid>
+
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <ChartPanel title="Deal Pipeline" loading={loading.deals} isEmpty={dealStageData.length === 0}>
+            <BarChart
+              dataset={dealStageData}
+              xAxis={[{ dataKey: 'stage', scaleType: 'band', tickLabelStyle: { fontSize: 11 } }]}
+              series={[{ dataKey: 'count', color: theme.palette.primary.main }]}
+              height={260}
+              margin={{ left: 40, right: 16, top: 16, bottom: 32 }}
+              grid={{ horizontal: true }}
+              slotProps={{
+                legend: {
+                  sx: {
+                    display: "none",
+                  },
+                },
+              }}
+              borderRadius={4}
+            />
+          </ChartPanel>
+        </Grid>
+
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <ChartPanel title="Customer Growth" loading={loading.trends} isEmpty={customerSeries.length === 0}>
+            <LineChart
+              dataset={customerSeries}
+              xAxis={[{ dataKey: 'date', scaleType: 'point', tickLabelStyle: { fontSize: 11 } }]}
+              series={[
+                {
+                  dataKey: 'value',
+                  color: theme.palette.info.main,
+                  showMark: false,
+                  curve: 'monotoneX',
+                },
+              ]}
+              height={260}
+              margin={{ left: 40, right: 16, top: 16, bottom: 32 }}
+              grid={{ horizontal: true }}
+              slotProps={{
+                legend: {
+                  sx: {
+                    display: "none",
+                  },
+                },
+              }}
+            />
+          </ChartPanel>
+        </Grid>
+      </Grid>
+
+      <SectionHeading title="Activity" subtitle="What's happening across your organization" />
+      <Grid container spacing={2.5} sx={{ mb: 5 }}>
+        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <ActivityListCard
+            title="Recent Activities"
+            items={recentActivities.slice(0, 6)}
+            loading={loading.recentActivities}
+          />
+        </Grid>
+        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <ActivityListCard title="Recent Tasks" items={recentTasks} loading={loading.recentActivities} />
+        </Grid>
+        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <ActivityListCard title="Recent Deals" items={recentDeals} loading={loading.recentActivities} />
+        </Grid>
+      </Grid>
+
+      <SectionHeading title="Performance" subtitle="Team output and conversion health" />
+      <Grid container spacing={2.5}>
+        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Paper variant="outlined" sx={{ borderRadius: 2, borderColor: 'divider', overflow: 'hidden' }}>
+            <Box sx={{ p: 3, pb: 1.5 }}>
+              <Typography variant="subtitle1" fontWeight={600}>
+                Team Leaderboard
+              </Typography>
+            </Box>
+            {loading.performance ? (
+              <Box sx={{ px: 3, pb: 3 }}>
+                <Skeleton variant="rounded" height={220} />
+              </Box>
+            ) : leaderboard.length === 0 ? (
+              <Box sx={{ px: 3, pb: 4 }}>
+                <EmptyState message="No performance data yet." />
+              </Box>
+            ) : (
+              <TableContainer sx={{ maxHeight: 340 }}>
+                <Table stickyHeader size="small">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Rep</TableCell>
+                      <TableCell align="right">Leads</TableCell>
+                      <TableCell align="right">Deals Closed</TableCell>
+                      <TableCell align="right">Tasks Done</TableCell>
+                      <TableCell align="right">Calls</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {leaderboard.map((row) => (
+                      <TableRow key={row.key} hover>
+                        <TableCell>
+                          <Stack direction="row" alignItems="center" spacing={1.25}>
+                            <Avatar
+                              sx={{ width: 28, height: 28, fontSize: 12, bgcolor: 'grey.200', color: 'text.primary' }}
+                            >
+                              {getInitials(row.label)}
+                            </Avatar>
+                            <Typography variant="body2" fontWeight={500}>
+                              {row.label}
+                            </Typography>
+                          </Stack>
+                        </TableCell>
+                        <TableCell align="right">{row.leads}</TableCell>
+                        <TableCell align="right">
+                          <Typography variant="body2" fontWeight={600}>
+                            {row.dealsClosed}
+                          </Typography>
+                        </TableCell>
+                        <TableCell align="right">{row.tasksCompleted}</TableCell>
+                        <TableCell align="right">{row.callsCompleted}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            )}
+          </Paper>
+        </Grid>
+
+        <Grid size={{ xs: 12, sm: 8, md: 5 }}>
+          <Stack spacing={2.5}>
+            <Paper variant="outlined" sx={{ p: 3, borderRadius: 2, borderColor: 'divider' }}>
+              <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
+                Top Performer
+              </Typography>
+              {loading.performance ? (
+                <Skeleton variant="rounded" height={72} />
+              ) : topPerformer ? (
+                <Stack direction="row" alignItems="center" spacing={2}>
+                  <Avatar sx={{ width: 44, height: 44, bgcolor: 'primary.main', color: 'primary.contrastText' }}>
+                    {getInitials(topPerformer.label)}
+                  </Avatar>
+                  <Box sx={{ flex: 1 }}>
+                    <Typography variant="body1" fontWeight={600}>
+                      {topPerformer.label}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {topPerformer.dealsClosed} deals closed
+                    </Typography>
+                  </Box>
+                  <EmojiEventsOutlinedIcon sx={{ color: 'warning.main', fontSize: 26 }} />
+                </Stack>
+              ) : (
+                <EmptyState message="No leaderboard data yet." />
+              )}
+            </Paper>
+
+            <Paper variant="outlined" sx={{ p: 3, borderRadius: 2, borderColor: 'divider' }}>
+              <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
+                Conversion Metrics
+              </Typography>
+              <Stack spacing={2.5}>
+                <MetricBar
+                  label="Lead Conversion"
+                  value={leadMetrics?.conversionRate ?? 0}
+                  display={leadMetrics ? formatPercent(leadMetrics.conversionRate) : '—'}
+                  loading={loading.leads}
+                />
+                <MetricBar
+                  label="Deal Win Rate"
+                  value={dealMetrics?.winRate ?? 0}
+                  display={dealMetrics ? formatPercent(dealMetrics.winRate) : '—'}
+                  loading={loading.deals}
+                />
+                <Divider />
+                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                  <Typography variant="body2" color="text.secondary">
+                    Average Deal Size
+                  </Typography>
+                  {loading.deals ? (
+                    <Skeleton width={60} />
+                  ) : (
+                    <Typography variant="body2" fontWeight={600}>
+                      {dealMetrics ? formatCurrency(dealMetrics.averageDealSize) : '—'}
+                    </Typography>
+                  )}
+                </Stack>
+              </Stack>
+            </Paper>
+          </Stack>
+        </Grid>
+      </Grid>
     </Box>
   );
-}
+};
+
+export default Dashboard;

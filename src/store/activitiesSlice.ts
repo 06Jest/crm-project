@@ -1,145 +1,335 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import type { Activity } from '../types/activity';
-import {
-  fetchActivitiesFromDB,
-  addActivityToDB,
-  updateActivityInDB,
-  deleteActivityFromDB,
-  toggleActivityCompleteInDB,
-} from '../services/activityService';
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 
-interface ActivitiesState {
-  items: Activity[];
-  loading: boolean;
-  error: string | null;
-}
+import type {
+  ActivitiesState,
+  ManualCreateActivity,
+  UpdateActivity,
+  ActivityAction,
+  ActivityType,
+} from "../types/activity";
+
+import {
+  fetchActivitiesAPI,
+  fetchActivityByIDAPI,
+  fetchLeadActivitiesAPI,
+  fetchContactActivitiesAPI,
+  fetchCustomerActivitiesAPI,
+  fetchActivitiesByActionAPI,
+  fetchActivitiesByTypeAPI,
+  addManualActivityAPI,
+  updateActivityAPI,
+} from "../services/activityService";
 
 const initialState: ActivitiesState = {
   items: [],
   loading: false,
+  loaded: false,
   error: null,
 };
 
 export const fetchActivities = createAsyncThunk(
-  'activities/fetchAll',
-  async (_, { rejectWithValue }) => {
+  "activities/show-activities",
+  async (_, thunkAPI) => {
     try {
-      return await fetchActivitiesFromDB();
-    } catch (err: unknown) {
-      if (err instanceof Error) return rejectWithValue (err.message);;
-      return rejectWithValue('Something went wrong');
+      return await fetchActivitiesAPI();
+    } catch (err) {
+      if (err instanceof Error) {
+        return thunkAPI.rejectWithValue(err.message);
+      }
+
+      return thunkAPI.rejectWithValue(
+        "Failed to fetch activities"
+      );
     }
   }
 );
 
-export const addActivity = createAsyncThunk(
-  'activities/add',
+export const fetchActivityByID = createAsyncThunk(
+  "activities/show-activity",
+  async (id: string, thunkAPI) => {
+    try {
+      return await fetchActivityByIDAPI(id);
+    } catch (err) {
+      if (err instanceof Error) {
+        return thunkAPI.rejectWithValue(err.message);
+      }
+
+      return thunkAPI.rejectWithValue(
+        "Failed to fetch activity"
+      );
+    }
+  }
+);
+
+export const fetchLeadActivities = createAsyncThunk(
+  "activities/show-lead-activities",
+  async (leadId: string, thunkAPI) => {
+    try {
+      return await fetchLeadActivitiesAPI(leadId);
+    } catch (err) {
+      if (err instanceof Error) {
+        return thunkAPI.rejectWithValue(err.message);
+      }
+
+      return thunkAPI.rejectWithValue(
+        "Failed to fetch activities"
+      );
+    }
+  }
+);
+
+export const fetchContactActivities = createAsyncThunk(
+  "activities/show-contact-activities",
+  async (contactId: string, thunkAPI) => {
+    try {
+      return await fetchContactActivitiesAPI(contactId);
+    } catch (err) {
+      if (err instanceof Error) {
+        return thunkAPI.rejectWithValue(err.message);
+      }
+
+      return thunkAPI.rejectWithValue(
+        "Failed to fetch activities"
+      );
+    }
+  }
+);
+
+export const fetchCustomerActivities = createAsyncThunk(
+  "activities/show-customer-activities",
+  async (customerId: string, thunkAPI) => {
+    try {
+      return await fetchCustomerActivitiesAPI(customerId);
+    } catch (err) {
+      if (err instanceof Error) {
+        return thunkAPI.rejectWithValue(err.message);
+      }
+
+      return thunkAPI.rejectWithValue(
+        "Failed to fetch activities"
+      );
+    }
+  }
+);
+
+export const fetchActivitiesByAction = createAsyncThunk(
+  "activities/show-activities-action",
+  async (action: ActivityAction, thunkAPI) => {
+    try {
+      return await fetchActivitiesByActionAPI(action);
+    } catch (err) {
+      if (err instanceof Error) {
+        return thunkAPI.rejectWithValue(err.message);
+      }
+
+      return thunkAPI.rejectWithValue(
+        "Failed to fetch activities"
+      );
+    }
+  }
+);
+
+export const fetchActivitiesByType = createAsyncThunk(
+  "activities/show-activities-type",
+  async (type: ActivityType, thunkAPI) => {
+    try {
+      return await fetchActivitiesByTypeAPI(type);
+    } catch (err) {
+      if (err instanceof Error) {
+        return thunkAPI.rejectWithValue(err.message);
+      }
+
+      return thunkAPI.rejectWithValue(
+        "Failed to fetch activities"
+      );
+    }
+  }
+);
+
+export const addManualActivity = createAsyncThunk(
+  "activities/add-manual-activity",
   async (
-    activity: Omit<Activity, 'id' | 'created_at'>,
-    { rejectWithValue }
+    activity: ManualCreateActivity,
+    thunkAPI
   ) => {
     try {
-      return await addActivityToDB(activity);
-    } catch (err: unknown) {
-      if (err instanceof Error) return rejectWithValue(err.message);
-      return rejectWithValue('Something went wrong');
+      return await addManualActivityAPI(activity);
+    } catch (err) {
+      if (err instanceof Error) {
+        return thunkAPI.rejectWithValue(err.message);
+      }
+
+      return thunkAPI.rejectWithValue(
+        "Something went wrong"
+      );
     }
   }
 );
 
 export const updateActivity = createAsyncThunk(
-  'activities/update',
-  async (activity: Activity, { rejectWithValue }) => {
-    try {
-      return await updateActivityInDB(activity);
-    } catch (err: unknown) {
-      if (err instanceof Error) return rejectWithValue(err.message);
-      return rejectWithValue('Something went wrong');
-    }
-  }
-);
-
-export const deleteActivity = createAsyncThunk(
-  'activities/delete',
-  async (id: string, { rejectWithValue }) => {
-    try {
-      return await deleteActivityFromDB(id);
-    } catch (err: unknown) {
-      if (err instanceof Error) return rejectWithValue(err.message);
-      return rejectWithValue('Something went wrong');
-    }
-  }
-);
-
-export const toggleActivityComplete = createAsyncThunk(
-  'activities/toggleComplete',
+  "activities/update-activity",
   async (
-    { id, completed }: { id: string; completed: boolean },
-    { rejectWithValue }
+    {
+      id,
+      activity,
+    }: {
+      id: string;
+      activity: UpdateActivity;
+    },
+    thunkAPI
   ) => {
     try {
-      return await toggleActivityCompleteInDB(id, completed);
-    } catch (err: unknown) {
-      if (err instanceof Error) return rejectWithValue(err.message);
-      return rejectWithValue('Something went wrong');
+      return await updateActivityAPI(
+        id,
+        activity
+      );
+    } catch (err) {
+      if (err instanceof Error) {
+        return thunkAPI.rejectWithValue(err.message);
+      }
+
+      return thunkAPI.rejectWithValue(
+        "Something went wrong"
+      );
     }
   }
 );
 
 const activitiesSlice = createSlice({
-  name: 'activities',
+  name: "activities",
+
   initialState,
-  reducers: {},
+
+  reducers: {
+    clearError(state) {
+      state.error = null;
+    },
+  },
+
   extraReducers: (builder) => {
-
-
     builder.addCase(fetchActivities.pending, (state) => {
       state.loading = true;
       state.error = null;
     });
+
     builder.addCase(fetchActivities.fulfilled, (state, action) => {
       state.loading = false;
+      state.loaded = true;
       state.items = action.payload;
     });
+
     builder.addCase(fetchActivities.rejected, (state, action) => {
       state.loading = false;
       state.error = action.payload as string;
     });
 
-
-    builder.addCase(addActivity.fulfilled, (state, action) => {
-      state.items.unshift(action.payload);
+    builder.addCase(addManualActivity.pending, (state) => {
+      state.loading = true;
+      state.error = null;
     });
-    builder.addCase(addActivity.rejected, (state, action) => {
-      state.error = action.payload as string;
+
+    builder.addCase(addManualActivity.fulfilled, (state, action) => {
+      state.items.unshift(action.payload);
+      state.loading = false;
     });
 
     builder.addCase(updateActivity.fulfilled, (state, action) => {
-      const index = state.items.findIndex(
-        (a) => a.id === action.payload.id
-      );
-      if (index !== -1) state.items[index] = action.payload;
+      const index =
+        state.items.findIndex(
+          a => a.id === action.payload.id
+        );
+
+      if (index !== -1) {
+        state.items[index] = action.payload;
+      }
+
+      state.loading = false;
     });
+
+    builder.addCase(fetchActivityByID.fulfilled, (state, action) => {
+      const index =
+        state.items.findIndex(
+          a => a.id === action.payload.id
+        );
+
+      if (index !== -1) {
+        state.items[index] = action.payload;
+      } else {
+        state.items.unshift(action.payload);
+      }
+
+      state.loading = false;
+    });
+
+    builder.addCase(fetchLeadActivities.fulfilled, (state, action) => {
+      state.items = action.payload;
+      state.loading = false;
+    });
+
+    builder.addCase(fetchContactActivities.fulfilled, (state, action) => {
+      state.items = action.payload;
+      state.loading = false;
+    });
+
+    builder.addCase(fetchCustomerActivities.fulfilled, (state, action) => {
+      state.items = action.payload;
+      state.loading = false;
+    });
+
+    builder.addCase(fetchActivitiesByAction.fulfilled, (state, action) => {
+      state.items = action.payload;
+      state.loading = false;
+    });
+
+    builder.addCase(fetchActivitiesByType.fulfilled, (state, action) => {
+      state.items = action.payload;
+      state.loading = false;
+    });
+
+    builder.addCase(addManualActivity.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.payload as string;
+    });
+
     builder.addCase(updateActivity.rejected, (state, action) => {
+      state.loading = false;
       state.error = action.payload as string;
     });
 
-
-    builder.addCase(deleteActivity.fulfilled, (state, action) => {
-      state.items = state.items.filter((a) => a.id !== action.payload);
-    });
-    builder.addCase(deleteActivity.rejected, (state, action) => {
+    builder.addCase(fetchActivityByID.rejected, (state, action) => {
+      state.loading = false;
       state.error = action.payload as string;
     });
 
-   
-    builder.addCase(toggleActivityComplete.fulfilled, (state, action) => {
-      const index = state.items.findIndex(
-        (a) => a.id === action.payload.id
-      );
-      if (index !== -1) state.items[index] = action.payload;
+    builder.addCase(fetchLeadActivities.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.payload as string;
+    });
+
+    builder.addCase(fetchContactActivities.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.payload as string;
+    });
+
+    builder.addCase(fetchCustomerActivities.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.payload as string;
+    });
+
+    builder.addCase(fetchActivitiesByAction.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.payload as string;
+    });
+
+    builder.addCase(fetchActivitiesByType.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.payload as string;
     });
   },
 });
+
+export const {
+  clearError,
+} = activitiesSlice.actions;
 
 export default activitiesSlice.reducer;

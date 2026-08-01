@@ -16,6 +16,8 @@ import { fetchContactsLists } from "../../../store/contactsSlice";
 import {  type DealStage } from '../../../types/deal';
 import { addDeal, clearError } from "../../../store/dealsSlice";
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import HandshakeIcon from '@mui/icons-material/Handshake';
+import PersonIcon from '@mui/icons-material/Person';
 import ErrorAlert from "../../../components/Error";
 import { useAuth } from "../../../hooks/useAuth";
 import { formatName } from "../../../utils/formatText";
@@ -96,24 +98,29 @@ export default function AddDealByID() {
         minHeight: 700,
         width: '80%',
         maxWidth: 1400,
+        pt: 2,
       }}
     >
-        <Box sx={{
-          display: "flex",
-          flexDirection: 'column',
-          width: '50%',
-          minWidth: 450,
-          justifyContent: "center",
-          p: 2,
-          gap: 1,
-        }}>
+        <Box
+          component={Paper}
+          variant="outlined"
+          sx={{
+            display: "flex",
+            flexDirection: 'column',
+            width: '50%',
+            minWidth: 450,
+            justifyContent: "center",
+            p: 3,
+            gap: 2,
+            borderRadius: 3,
+          }}>
           <Button 
             startIcon={<ArrowBackIcon/>}
             onClick={() => {
               dispatch(clearError())
               navigate(`/app/contacts/${id}`)
             }}
-            sx={{ alignSelf: 'start', ml: '-40px'}}>
+            sx={{ alignSelf: 'start', ml: '-8px', textTransform: 'none', fontWeight: 600, color: 'text.secondary' }}>
             Back
           </Button>
           <Box sx={{width: '100%'}}>
@@ -123,15 +130,55 @@ export default function AddDealByID() {
               />
             )}
           </Box>
-          <Typography variant="h5" fontWeight={700}>
-          Add Deal
-          </Typography>
-          
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, mb: 0.5 }}>
+            <Box sx={(theme) => ({
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 40,
+              height: 40,
+              borderRadius: 2,
+              bgcolor: theme.palette.mode === 'dark' ? '#2a2a2a' : '#eef1f6',
+              color: 'primary.main',
+            })}>
+              <HandshakeIcon />
+            </Box>
+            <Box>
+              <Typography variant="h5" fontWeight={800} letterSpacing={-0.3} lineHeight={1.2}>
+                Add Deal
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                Create a new opportunity for this contact
+              </Typography>
+            </Box>
+          </Box>
+
+          <Box sx={(theme) => ({
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            py: 1,
+            px: 1.5,
+            borderRadius: 2,
+            bgcolor: theme.palette.mode === 'dark' ? '#242424' : '#f4f5f7',
+            border: `1px solid ${theme.palette.mode === 'dark' ? '#3a3a3a' : '#e3e3e3'}`,
+          })}>
+            <PersonIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
+            <Box>
+              <Typography variant="caption" color="text.secondary" display="block" lineHeight={1.2}>
+                Contact
+              </Typography>
+              <Typography variant="body2" fontWeight={700}>
+                {formatName(contact?.first_name, contact?.last_name)}
+              </Typography>
+            </Box>
+          </Box>
+
           <Box sx={{
             display: "flex",
             width: '100%',
             justifyContent: "space-between",
-            gap: 1,
+            gap: 1.5,
           }}>        
             <TextField
               disabled
@@ -140,7 +187,8 @@ export default function AddDealByID() {
               size="small"
               sx={{
                 fontSize: 13,
-                width: '50%'
+                width: '50%',
+                display: 'none',
               }}
             />
             <TextField
@@ -149,9 +197,10 @@ export default function AddDealByID() {
                 name="value"
                 onChange={handleChange}
                 size="small"
+                fullWidth
                 sx={{
                   fontSize: 13,
-                  width: '50%'
+                  '& .MuiOutlinedInput-root': { borderRadius: 2 },
                 }}
               />
             
@@ -160,7 +209,7 @@ export default function AddDealByID() {
             display: "flex",
             width: '100%',
             justifyContent: "space-between",
-            gap: 1,
+            gap: 1.5,
           }}>
             <TextField
               required
@@ -170,9 +219,10 @@ export default function AddDealByID() {
               size="small"
               multiline
               rows={3}
+              fullWidth
               sx={{
                 fontSize: 13,
-                width: '50%'
+                '& .MuiOutlinedInput-root': { borderRadius: 2 },
               }}
             />
             <TextField
@@ -182,26 +232,33 @@ export default function AddDealByID() {
               size="small"
               multiline
               rows={3}
+              fullWidth
               sx={{
                 fontSize: 13,
-                width: '50%'
+                '& .MuiOutlinedInput-root': { borderRadius: 2 },
               }}
             />
           </Box>
           
-          <Paper>
-            <Button
-              variant="contained"
-              fullWidth
-              disabled={ !form.title || !form.stage || !form.value}
-              onClick={handleSubmit}
-              sx={{
-                backgroundColor: 'primary.main'
-              }}
-            >
-              Add Deal
-            </Button>
-          </Paper>
+          <Button
+            variant="contained"
+            disableElevation
+            fullWidth
+            disabled={ !form.title || !form.stage || !form.value}
+            onClick={handleSubmit}
+            startIcon={<HandshakeIcon />}
+            sx={{
+              backgroundColor: 'primary.main',
+              textTransform: 'none',
+              fontWeight: 700,
+              fontSize: 15,
+              py: 1.1,
+              borderRadius: 2,
+              boxShadow: '0 1px 2px rgba(0,0,0,0.12)',
+            }}
+          >
+            Add Deal
+          </Button>
           
       </Box >  
     </Box>

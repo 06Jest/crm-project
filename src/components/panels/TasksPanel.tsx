@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import type { ElementType, ReactNode } from "react";
 import {
   Box,
   TextField,
@@ -20,7 +21,11 @@ import {
   DialogContent,
   DialogActions,
   Button,
+  Chip,
+  Avatar,
+  Stack,
 } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 
 import AddIcon from "@mui/icons-material/Add";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
@@ -36,6 +41,18 @@ import EventIcon from "@mui/icons-material/Event";
 import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import BlockIcon from "@mui/icons-material/Block";
+import HourglassBottomIcon from "@mui/icons-material/HourglassBottom";
+import TaskAltIcon from "@mui/icons-material/TaskAlt";
+import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
+import CallIcon from "@mui/icons-material/Call";
+import SmsIcon from "@mui/icons-material/Sms";
+import EmailIcon from "@mui/icons-material/Email";
+import GroupsIcon from "@mui/icons-material/Groups";
+import PersonIcon from "@mui/icons-material/Person";
+import ContactsIcon from "@mui/icons-material/Contacts";
+import TrendingUpIcon from "@mui/icons-material/TrendingUp";
+import HandshakeIcon from "@mui/icons-material/Handshake";
+import GroupIcon from "@mui/icons-material/Group";
 
 import type { AppDispatch, RootState } from "../../store/store";
 import { useDispatch, useSelector } from "react-redux";
@@ -63,7 +80,7 @@ import { fetchCustomersLists } from "../../store/customersSlice";
 import { formatName, formatShortTitle, formatTitle } from "../../utils/formatText";
 import { useAuth } from "../../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
-import { fetchMembersIDNames } from "../../store/ProfileSlice";
+import { fetchMembersIDNames } from "../../store/profileSlice";
 
 const PRIORITY_COLOR: Record<TaskPriority, string> = {
   low: "#9e9e9e",
@@ -71,6 +88,80 @@ const PRIORITY_COLOR: Record<TaskPriority, string> = {
   high: "#ed6c02",
   urgent: "#d32f2f",
 };
+
+const STATUS_META: Record<
+  TaskStatus,
+  { label: string; color: "default" | "info" | "warning" | "success"; icon: ElementType }
+> = {
+  todo: { label: "To do", color: "default", icon: RadioButtonUncheckedIcon },
+  in_progress: { label: "In progress", color: "info", icon: HourglassBottomIcon },
+  completed: { label: "Completed", color: "success", icon: CheckCircleIcon },
+  cancelled: { label: "Cancelled", color: "default", icon: BlockIcon },
+};
+
+const TASK_TYPE_META: Record<TaskType, { label: string; icon: ElementType }> = {
+  other: { label: "Other", icon: MoreHorizIcon },
+  call: { label: "Call", icon: CallIcon },
+  sms: { label: "SMS", icon: SmsIcon },
+  email: { label: "Email", icon: EmailIcon },
+  meeting: { label: "Meeting", icon: GroupsIcon },
+};
+
+const TARGET_META: Record<TaskTargetType, { label: string; icon: ElementType }> = {
+  personal: { label: "Personal", icon: PersonIcon },
+  contact: { label: "Contact", icon: ContactsIcon },
+  lead: { label: "Lead", icon: TrendingUpIcon },
+  deal: { label: "Deal", icon: HandshakeIcon },
+  customer: { label: "Customer", icon: GroupIcon },
+};
+
+const pillFieldSx = {
+  width: "100%",
+  bgcolor: "action.hover",
+  borderRadius: 1.5,
+  "& .MuiInputBase-input": { py: "7px", fontSize: 12, fontWeight: 600 },
+  "& .MuiOutlinedInput-notchedOutline": { border: "none" },
+  "&.Mui-focused .MuiOutlinedInput-notchedOutline": { border: "none" },
+} as const;
+
+const filterPillSx = (minWidth: number) => ({
+  minWidth,
+  bgcolor: "action.hover",
+  borderRadius: 5,
+  "& .MuiInputBase-input": {
+    py: "4px",
+    fontSize: 11,
+    fontWeight: 700,
+    display: "flex",
+    alignItems: "center",
+    gap: "4px",
+  },
+  "& .MuiOutlinedInput-notchedOutline": { border: "none" },
+  "&.Mui-focused .MuiOutlinedInput-notchedOutline": { border: "none" },
+  "&:hover": { bgcolor: "action.selected" },
+});
+
+const menuItemSx = { fontSize: 11 } as const;
+const chipSx = { height: 20, fontSize: 10, fontWeight: 700, "& .MuiChip-label": { px: 0.75 } } as const;
+
+function FieldLabel({ children }: { children: ReactNode }) {
+  return (
+    <Typography
+      variant="caption"
+      sx={{
+        display: "block",
+        fontSize: 10,
+        fontWeight: 700,
+        letterSpacing: "0.04em",
+        textTransform: "uppercase",
+        opacity: 0.5,
+        mb: 0.4,
+      }}
+    >
+      {children}
+    </Typography>
+  );
+}
 
 export default function TasksPanel() {
   const dispatch = useDispatch<AppDispatch>();
@@ -446,176 +537,189 @@ export default function TasksPanel() {
   return (
     <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
       {view === "list" && (
-        <>
+        <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
           {error && (
-            <Box sx={{ width: "100%", my: 1 }}>
+            <Box sx={{ width: "100%", mb: 1 }}>
               <ErrorAlert message={error} />
             </Box>
           )}
-          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-            <Tooltip title="Refresh">
-              <span>
-                {tL ? (
-                  <IconButton size="small" disabled={tL}>
-                    <CircularProgress size={15} />
+
+          {/* Header */}
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1 }}>
+            <Stack direction="row" alignItems="center" spacing={1}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                Tasks
+              </Typography>
+              {tLd && (
+                <Chip
+                  size="small"
+                  label={visibleTasks.length}
+                  sx={{ height: 20, fontSize: 11, fontWeight: 700, bgcolor: "action.selected" }}
+                />
+              )}
+            </Stack>
+
+            <Stack direction="row" alignItems="center" spacing={0.5}>
+              <Tooltip title="Refresh">
+                <span>
+                  {tLd &&
+                    (tL ? (
+                      <IconButton size="small" disabled>
+                        <CircularProgress size={15} />
+                      </IconButton>
+                    ) : (
+                      <IconButton size="small" onClick={refresh}>
+                        <RefreshIcon fontSize="small" />
+                      </IconButton>
+                    ))}
+                </span>
+              </Tooltip>
+
+              <Tooltip title="Add task">
+                <Paper elevation={0} sx={{ borderRadius: 5, bgcolor: "transparent" }}>
+                  <IconButton
+                    color="primary"
+                    size="small"
+                    onClick={() => {
+                      dispatch(clearError());
+                      openNewTask();
+                    }}
+                    sx={{
+                      bgcolor: "primary.main",
+                      color: "primary.contrastText",
+                      "&:hover": { bgcolor: "primary.dark" },
+                    }}
+                  >
+                    <AddIcon fontSize="small" />
                   </IconButton>
-                ) : (
-                  <IconButton size="small" onClick={refresh} disabled={tL}>
-                    <RefreshIcon fontSize="small" />
-                  </IconButton>
-                )}
-              </span>
-            </Tooltip>
-            <TextField
-              size="small"
-              fullWidth
-              placeholder="Search tasks..."
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              sx={{
-                "& .MuiOutlinedInput-notchedOutline": { border: "none" },
-                "&:hover .MuiOutlinedInput-notchedOutline": { border: "none" },
-                "&.Mui-focused .MuiOutlinedInput-notchedOutline": { border: "none" },
-              }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon fontSize="small" />
-                  </InputAdornment>
-                ),
-              }}
-            />
+                </Paper>
+              </Tooltip>
+            </Stack>
           </Box>
 
-          <Box>
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                mb: 1,
-              }}
-            >
-              <Paper title="Add Task" elevation={2} sx={{ borderRadius: 10 }}>
-                <IconButton
-                  color="primary"
-                  onClick={() => {
-                    dispatch(clearError());
-                    openNewTask();
-                  }}
-                >
-                  <AddIcon fontSize="small" />
-                </IconButton>
-              </Paper>
-              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 0.5 }}>
-                <FormControl size="small">
-                  <Select
-                    title="Filter task type"
-                    value={taskTypeFilter}
-                    onChange={(e) =>
-                      setTaskTypeFilter(e.target.value as "all" | TaskType)
-                    }
-                    sx={{
-                      width: 90,
-                      textTransform: 'capitalize',
-                      "& .MuiInputBase-input": { py: "3px", fontSize: 11, fontWeight: 700 },
-                      "& .MuiOutlinedInput-notchedOutline": { border: "none" },
-                      "&.Mui-focused .MuiOutlinedInput-notchedOutline": { border: "none" },
-                    }}
-                  >
-                    <MenuItem sx={{ fontSize: 11, textTransform: 'capitalize' }} value="all">All</MenuItem>
-                    <MenuItem sx={{ fontSize: 11, textTransform: 'capitalize'}} value="other">other</MenuItem>
-                    <MenuItem sx={{ fontSize: 11, textTransform: 'capitalize' }} value="call">call</MenuItem>
-                    <MenuItem sx={{ fontSize: 11, textTransform: 'capitalize' }} value="sms">sms</MenuItem>
-                    <MenuItem sx={{ fontSize: 11, textTransform: 'capitalize' }} value="email">email</MenuItem>
-                    <MenuItem sx={{ fontSize: 11, textTransform: 'capitalize' }} value="meeting">meeting</MenuItem>
-                  </Select>
-                </FormControl>
-                <FormControl size="small">
-                  <Select
-                    title="Filter status"
-                    value={statusFilter}
-                    onChange={(e) =>
-                      setStatusFilter(e.target.value as "all" | TaskStatus)
-                    }
-                    sx={{
-                      width: 100,
-                      "& .MuiInputBase-input": { py: "3px", fontSize: 11, fontWeight: 700 },
-                      "& .MuiOutlinedInput-notchedOutline": { border: "none" },
-                      "&.Mui-focused .MuiOutlinedInput-notchedOutline": { border: "none" },
-                    }}
-                  >
-                    <MenuItem sx={{ fontSize: 11 }} value="all">All</MenuItem>
-                    <MenuItem sx={{ fontSize: 11 }} value="todo">To Do</MenuItem>
-                    <MenuItem sx={{ fontSize: 11 }} value="in_progress">In Progress</MenuItem>
-                    <MenuItem sx={{ fontSize: 11 }} value="completed">Completed</MenuItem>
-                    <MenuItem sx={{ fontSize: 11 }} value="cancelled">Cancelled</MenuItem>
-                  </Select>
-                </FormControl>
+          {/* Search */}
+          <TextField
+            size="small"
+            fullWidth
+            placeholder="Search tasks..."
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon fontSize="small" sx={{ opacity: 0.5 }} />
+                </InputAdornment>
+              ),
+            }}
+            sx={{
+              mb: 1,
+              "& .MuiOutlinedInput-root": {
+                borderRadius: 3,
+                bgcolor: "action.hover",
+                "& fieldset": { border: "none" },
+              },
+            }}
+          />
 
-                <FormControl size="small">
-                  <Select
-                    title="Filter priority"
-                    value={priorityFilter}
-                    onChange={(e) =>
-                      setPriorityFilter(e.target.value as "all" | TaskPriority)
-                    }
-                    sx={{
-                      width: 90,
-                      "& .MuiInputBase-input": { py: "3px", fontSize: 11, fontWeight: 700 },
-                      "& .MuiOutlinedInput-notchedOutline": { border: "none" },
-                      "&.Mui-focused .MuiOutlinedInput-notchedOutline": { border: "none" },
-                    }}
-                  >
-                    <MenuItem sx={{ fontSize: 11 }} value="all">All</MenuItem>
-                    <MenuItem sx={{ fontSize: 11 }} value="low">Low</MenuItem>
-                    <MenuItem sx={{ fontSize: 11 }} value="medium">Medium</MenuItem>
-                    <MenuItem sx={{ fontSize: 11 }} value="high">High</MenuItem>
-                    <MenuItem sx={{ fontSize: 11 }} value="urgent">Urgent</MenuItem>
-                  </Select>
-                </FormControl>
+          {/* Filters */}
+          <Stack
+            direction="row"
+            spacing={0.75}
+            sx={{
+              overflowX: "auto",
+              pb: 1,
+              mb: 0.5,
+              "&::-webkit-scrollbar": { height: 4 },
+            }}
+          >
+            <FormControl size="small">
+              <Select
+                title="Filter task type"
+                value={taskTypeFilter}
+                onChange={(e) => setTaskTypeFilter(e.target.value as "all" | TaskType)}
+                sx={filterPillSx(96)}
+              >
+                <MenuItem sx={menuItemSx} value="all">All types</MenuItem>
+                <MenuItem sx={menuItemSx} value="other">Other</MenuItem>
+                <MenuItem sx={menuItemSx} value="call">Call</MenuItem>
+                <MenuItem sx={menuItemSx} value="sms">SMS</MenuItem>
+                <MenuItem sx={menuItemSx} value="email">Email</MenuItem>
+                <MenuItem sx={menuItemSx} value="meeting">Meeting</MenuItem>
+              </Select>
+            </FormControl>
 
-                <FormControl size="small">
-                  <Select
-                    title="Filter target"
-                    value={targetFilter}
-                    onChange={(e) =>
-                      setTargetFilter(e.target.value as "all" | TaskTargetType)
-                    }
-                    sx={{
-                      width: 100,
-                      "& .MuiInputBase-input": { py: "3px", fontSize: 11, fontWeight: 700 },
-                      "& .MuiOutlinedInput-notchedOutline": { border: "none" },
-                      "&.Mui-focused .MuiOutlinedInput-notchedOutline": { border: "none" },
-                    }}
-                  >
-                    <MenuItem sx={{ fontSize: 11 }} value="all">All</MenuItem>
-                    <MenuItem sx={{ fontSize: 11 }} value="personal">Personal</MenuItem>
-                    <MenuItem sx={{ fontSize: 11 }} value="contact">Contacts</MenuItem>
-                    <MenuItem sx={{ fontSize: 11 }} value="lead">Leads</MenuItem>
-                    <MenuItem sx={{ fontSize: 11 }} value="deal">Deals</MenuItem>
-                    <MenuItem sx={{ fontSize: 11 }} value="customer">Customers</MenuItem>
-                  </Select>
-                </FormControl>
-              </Box>
-            </Box>
-          </Box>
+            <FormControl size="small">
+              <Select
+                title="Filter status"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as "all" | TaskStatus)}
+                sx={filterPillSx(104)}
+              >
+                <MenuItem sx={menuItemSx} value="all">All statuses</MenuItem>
+                <MenuItem sx={menuItemSx} value="todo">To Do</MenuItem>
+                <MenuItem sx={menuItemSx} value="in_progress">In Progress</MenuItem>
+                <MenuItem sx={menuItemSx} value="completed">Completed</MenuItem>
+                <MenuItem sx={menuItemSx} value="cancelled">Cancelled</MenuItem>
+              </Select>
+            </FormControl>
+
+            <FormControl size="small">
+              <Select
+                title="Filter priority"
+                value={priorityFilter}
+                onChange={(e) => setPriorityFilter(e.target.value as "all" | TaskPriority)}
+                sx={filterPillSx(96)}
+              >
+                <MenuItem sx={menuItemSx} value="all">All priorities</MenuItem>
+                <MenuItem sx={menuItemSx} value="low">Low</MenuItem>
+                <MenuItem sx={menuItemSx} value="medium">Medium</MenuItem>
+                <MenuItem sx={menuItemSx} value="high">High</MenuItem>
+                <MenuItem sx={menuItemSx} value="urgent">Urgent</MenuItem>
+              </Select>
+            </FormControl>
+
+            <FormControl size="small">
+              <Select
+                title="Filter target"
+                value={targetFilter}
+                onChange={(e) => setTargetFilter(e.target.value as "all" | TaskTargetType)}
+                sx={filterPillSx(104)}
+              >
+                <MenuItem sx={menuItemSx} value="all">All targets</MenuItem>
+                <MenuItem sx={menuItemSx} value="personal">Personal</MenuItem>
+                <MenuItem sx={menuItemSx} value="contact">Contacts</MenuItem>
+                <MenuItem sx={menuItemSx} value="lead">Leads</MenuItem>
+                <MenuItem sx={menuItemSx} value="deal">Deals</MenuItem>
+                <MenuItem sx={menuItemSx} value="customer">Customers</MenuItem>
+              </Select>
+            </FormControl>
+          </Stack>
 
           {tL && !tLd ? (
             <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
               <CircularProgress size={22} />
             </Box>
           ) : visibleTasks.length === 0 ? (
-            <Typography variant="body2" sx={{ opacity: 0.5, textAlign: "center", mt: 4 }}>
-              {tasks.length === 0 ? "No tasks yet" : "No matches found"}
-            </Typography>
+            <Box sx={{ textAlign: "center", mt: 5, opacity: 0.6 }}>
+              <TaskAltIcon sx={{ fontSize: 30, opacity: 0.35, mb: 0.5 }} />
+              <Typography variant="body2">
+                {tasks.length === 0 ? "No tasks yet" : "No matches found"}
+              </Typography>
+              {tasks.length === 0 && (
+                <Typography variant="caption" sx={{ opacity: 0.7 }}>
+                  Create a task to get started
+                </Typography>
+              )}
+            </Box>
           ) : (
-            <List sx={{ overflowY: "auto", height: 350 }} dense disablePadding>
+            <List sx={{ overflowY: "auto", height: 350, px: 0 }} dense disablePadding>
               {visibleTasks.map((task) => {
                 const isPublic = task.visibility === "public";
                 const isDone = task.status === "completed";
                 const isCancelled = task.status === "cancelled";
                 const overdue = isOverdue(task);
+                const StatusIcon = STATUS_META[task.status].icon;
+                const initials = `${task.assignee.first_name?.[0] ?? ""}${task.assignee.last_name?.[0] ?? ""}`.toUpperCase();
 
                 return (
                   <ListItem
@@ -623,310 +727,372 @@ export default function TasksPanel() {
                     disableGutters
                     onClick={() => openExistingTask(task)}
                     sx={{
-                      p: 0,
+                      p: 1.1,
+                      mb: 0.75,
                       alignItems: "flex-start",
-                      borderBottom: "1px solid",
-                      borderColor: "#63636322",
                       cursor: "pointer",
-                      borderRadius: 1,
-                      opacity: isCancelled ? 0.5 : 1,
-                      "&:hover": { bgcolor: "action.hover" },
+                      borderRadius: 2,
+                      border: "1px solid",
+                      borderColor: "divider",
+                      borderLeft: "3px solid",
+                      borderLeftColor: PRIORITY_COLOR[task.priority],
+                      opacity: isCancelled ? 0.55 : 1,
+                      transition: "box-shadow .15s ease, background-color .15s ease",
+                      "&:hover": { bgcolor: "action.hover", boxShadow: 1 },
+                      "&:hover .task-delete-btn": { opacity: 1 },
                     }}
                   >
                     <ListItemText
+                      disableTypography
                       primary={
-                        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 0.5, mr: 2 }}>
-                          <Box sx={{ display: "flex", alignItems: "center", minWidth: 0 }}>
-                            <IconButton
-                              title={"Mark as done?"}
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                if (isDone) return canComplete === false;
-                                setOpenDone(true);
-                                setSelectedTaskDone(task)
-                              } }
-                              disabled={!canComplete}
-                              sx={{ p: "2px" }}
-                            >
-                              {isDone ? (
-                                <CheckCircleIcon sx={{ fontSize: 15, color: "success.main" }} />
-                              ) : isCancelled ? (
-                                <BlockIcon sx={{ fontSize: 15, opacity: 0.5 }} />
-                              ) : (
-                                <RadioButtonUncheckedIcon sx={{ fontSize: 15, opacity: 0.5 }} />
-                              )}
-                            </IconButton>
-
-                            {isPublic ? (
-                              <PublicIcon sx={{ fontSize: 13, opacity: 0.5 }} />
+                        <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1 }}>
+                          <IconButton
+                            title={"Mark as done?"}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              if (isDone) return canComplete === false;
+                              setOpenDone(true);
+                              setSelectedTaskDone(task)
+                            } }
+                            disabled={!canComplete}
+                            size="small"
+                            sx={{ p: "2px", mt: "1px" }}
+                          >
+                            {isDone ? (
+                              <CheckCircleIcon sx={{ fontSize: 18, color: "success.main" }} />
+                            ) : isCancelled ? (
+                              <BlockIcon sx={{ fontSize: 18, opacity: 0.5 }} />
                             ) : (
-                              <LockIcon sx={{ fontSize: 13, opacity: 0.5 }} />
+                              <RadioButtonUncheckedIcon sx={{ fontSize: 18, opacity: 0.45 }} />
                             )}
+                          </IconButton>
 
-                            <Typography
-                              component="span"
-                              sx={{
-                                ml: 1,
-                                fontSize: "0.85rem",
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                display: "-webkit-box",
-                                WebkitLineClamp: 2,
-                                WebkitBoxOrient: "vertical",
-                                textDecoration: isDone ? "line-through" : "none",
+                          <Box sx={{ flex: 1, minWidth: 0 }}>
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, flexWrap: "wrap" }}>
+                              <Typography
+                                component="span"
+                                sx={{
+                                  fontSize: "0.85rem",
+                                  fontWeight: 600,
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                  display: "-webkit-box",
+                                  WebkitLineClamp: 2,
+                                  WebkitBoxOrient: "vertical",
+                                  textDecoration: isDone ? "line-through" : "none",
+                                  opacity: isDone ? 0.6 : 1,
+                                }}
+                              >
+                                {formatShortTitle(task.title)}
+                              </Typography>
+
+                              <Tooltip title={isPublic ? "Public" : "Private"}>
+                                {isPublic ? (
+                                  <PublicIcon sx={{ fontSize: 13, opacity: 0.4 }} />
+                                ) : (
+                                  <LockIcon sx={{ fontSize: 13, opacity: 0.4 }} />
+                                )}
+                              </Tooltip>
+
+                              {(task.target_type === "customer" || task.target_type === "contact") && (
+                                <IconButton
+                                  title={`View full details for ${getValue(task.target_type, task.target_id)}`}
+                                  size="small"
+                                  sx={{ p: "2px" }}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate(`/app/${task.target_type}s/${task.target_id}`);
+                                  }}
+                                >
+                                  <ExitToAppIcon sx={{ fontSize: 13, opacity: 0.45 }} />
+                                </IconButton>
+                              )}
+                            </Box>
+
+                            <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 0.6, mt: 0.5 }}>
+                              <Chip
+                                size="small"
+                                icon={<StatusIcon style={{ fontSize: 14 }} />}
+                                label={STATUS_META[task.status].label}
+                                color={STATUS_META[task.status].color === "default" ? undefined : STATUS_META[task.status].color}
+                                variant={STATUS_META[task.status].color === "default" ? "outlined" : "filled"}
+                                sx={chipSx}
+                              />
+
+                              <Tooltip title={`Priority: ${task.priority}`}>
+                                <Chip
+                                  size="small"
+                                  icon={<FlagIcon style={{ fontSize: 13, color: PRIORITY_COLOR[task.priority] }} />}
+                                  label={task.priority}
+                                  variant="outlined"
+                                  sx={{
+                                    ...chipSx,
+                                    textTransform: "capitalize",
+                                    borderColor: alpha(PRIORITY_COLOR[task.priority], 0.4),
+                                  }}
+                                />
+                              </Tooltip>
+
+                              {task.due_date && (
+                                <Chip
+                                  size="small"
+                                  icon={<EventIcon style={{ fontSize: 13 }} />}
+                                  label={new Date(task.due_date).toLocaleDateString([], { month: "short", day: "numeric" })}
+                                  variant="outlined"
+                                  color={overdue ? "error" : undefined}
+                                  sx={{ ...chipSx, fontWeight: overdue ? 700 : 500 }}
+                                />
+                              )}
+                            </Box>
+                          </Box>
+
+                          {task.author_id === userId && (
+                            <IconButton
+                              className="task-delete-btn"
+                              size="small"
+                              sx={{ p: "3px", opacity: 0, transition: "opacity .15s ease", flexShrink: 0 }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleOpenDelete(task);
                               }}
                             >
-                              {formatShortTitle(task.title)}
-                            </Typography>
-
-                            {(task.target_type === "customer" || task.target_type === "contact") && (
-                              <IconButton
-                                title={`View full details for ${getValue(task.target_type, task.target_id)}`}
-                                sx={{ p: "3px", ml: "2px", mb: "-5px" }}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  navigate(`/app/${task.target_type}s/${task.target_id}`);
-                                }}
-                              >
-                                <ExitToAppIcon sx={{ fontSize: 13, opacity: 0.5 }} />
-                              </IconButton>
-                            )}
-                          </Box>
-
-                          <Box sx={{ display: "flex", alignItems: "center", gap: "2px" }}>
-                            <Tooltip title={`Priority: ${task.priority}`}>
-                              <FlagIcon sx={{ fontSize: 14, color: PRIORITY_COLOR[task.priority] }} />
-                            </Tooltip>
-                            {task.author_id === userId && (
-                              <IconButton
-                                sx={{ p: "2px" }}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleOpenDelete(task);
-                                }}
-                              >
-                                <DeleteOutlineIcon sx={{ fontSize: "15px" }} />
-                              </IconButton>
-                            )}
-                          </Box>
+                              <DeleteOutlineIcon sx={{ fontSize: "16px" }} />
+                            </IconButton>
+                          )}
                         </Box>
                       }
                       secondary={
-                        <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                          <Box sx={{ display: "flex" }}>
-                            <Typography variant="caption" fontSize="0.7rem" sx={{ ml: 1 }}>
-                              TASK FOR: 
-                            </Typography>
-                            <Typography variant="caption" fontSize="0.7rem" sx={{ ml: 1 }}>
+                        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 0.75, pl: 3.5 }}>
+                          <Stack direction="row" alignItems="center" spacing={0.6}>
+                            <Avatar sx={{ width: 16, height: 16, fontSize: 9, fontWeight: 700, bgcolor: "primary.main", color: "common.white" }}>
+                              {initials}
+                            </Avatar>
+                            <Typography variant="caption" fontSize="0.68rem" sx={{ opacity: 0.75 }}>
                               {formatName(task.assignee.first_name, task.assignee.last_name)}
                             </Typography>
-                          </Box>
+                          </Stack>
 
-                          <Box sx={{ display: "flex", alignItems: "center", gap: "3px" }}>
-                            {task.due_date && (
-                              <>
-                                <EventIcon sx={{ fontSize: 11, opacity: 0.5, color: overdue ? "error.main" : "inherit" }} />
-                                <Typography
-                                  variant="caption"
-                                  fontSize="0.65rem"
-                                  sx={{ color: overdue ? "error.main" : "inherit", fontWeight: overdue ? 700 : 400 }}
-                                >
-                                  {new Date(task.due_date).toLocaleDateString([], { month: "short", day: "numeric" })}
-                                </Typography>
-                              </>
-                            )}
-                            <Typography variant="caption" fontSize="0.6rem" sx={{ ml: 1 }}>
-                              {formatName(task.author.first_name, task.author.last_name)}
-                            </Typography>
-                          </Box>
+                          <Typography variant="caption" fontSize="0.62rem" sx={{ opacity: 0.45 }}>
+                            {formatName(task.author.first_name, task.author.last_name)}
+                          </Typography>
                         </Box>
                       }
-                      secondaryTypographyProps={{ fontSize: "0.7rem" }}
                     />
                   </ListItem>
                 );
               })}
             </List>
           )}
-          
-        </>
+        </Box>
       )}
 
       {view === "editor" && (
         <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
           {error && (
-            <Box sx={{ width: "100%", my: 1 }}>
+            <Box sx={{ width: "100%", mb: 1 }}>
               <ErrorAlert message={error} />
             </Box>
           )}
-          <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-            <Box sx={{ display: "flex", justifyContent: "space-between", width: "100%" }}>
-              <Box sx={{ display: "flex", justifyContent: "start", alignItems: "center" }}>
-                <IconButton
-                  title="Back"
-                  size="small"
-                  onClick={() => {
-                    setView("list");
-                    dispatch(clearError());
-                  }}
-                  disabled={saving}
-                >
-                  <ArrowBackIcon fontSize="small" />
-                </IconButton>
-                <Box sx={{ ml: 1, opacity: 0.6, width: "100%", display: "flex", flexDirection: "space-between" }}>
-                  {activeTask ? (
-                    <>
-                      <Typography sx={{ ml: 1, fontSize: "12px", opacity: 0.6 }}>
-                        {new Date(activeTask.created_at).toLocaleString()}
-                      </Typography>
-                      <Typography sx={{ ml: 1, fontSize: "12px", opacity: 0.6 }}>
-                        {`Author: ${formatName(activeTask.author.first_name, activeTask.author.last_name)}`}
-                      </Typography>
-                    </>
-                  ) : (
-                    <Typography sx={{ ml: 1, opacity: 0.6 }}>New Task</Typography>
-                  )}
-                </Box>
-              </Box>
 
-              {canEdit && (
-                <IconButton
-                  title="Save and Exit"
-                  size="small"
-                  disabled={!canSave || saving}
-                  onClick={saveAndExit}
-                >
-                  {!saving ? (
-                    <CheckIcon fontSize="small" />
-                  ) : (
-                    <CircularProgress size={14} sx={{ mr: 1, justifySelf: "self-end" }} />
-                  )}
-                </IconButton>
-              )}
-            </Box>
-
-            {activeTask && activeTask.author_id === userId && (
+          <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", mb: 1 }}>
+            <Stack direction="row" alignItems="center" spacing={0.5}>
               <IconButton
+                title="Back"
                 size="small"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleOpenDelete(activeTask);
+                onClick={() => {
+                  setView("list");
+                  dispatch(clearError());
                 }}
                 disabled={saving}
               >
-                <DeleteOutlineIcon fontSize="small" />
+                <ArrowBackIcon fontSize="small" />
               </IconButton>
-            )}
+
+              <Box sx={{ ml: 0.5 }}>
+                {activeTask ? (
+                  <Stack direction="row" spacing={1} alignItems="center" sx={{ flexWrap: "wrap" }}>
+                    <Typography sx={{ fontSize: 11, opacity: 0.55 }}>
+                      {new Date(activeTask.created_at).toLocaleString()}
+                    </Typography>
+                    <Typography sx={{ fontSize: 11, opacity: 0.55 }}>
+                      {`· ${formatName(activeTask.author.first_name, activeTask.author.last_name)}`}
+                    </Typography>
+                  </Stack>
+                ) : (
+                  <Typography sx={{ fontSize: 13, fontWeight: 700, opacity: 0.7 }}>New Task</Typography>
+                )}
+              </Box>
+            </Stack>
+
+            <Stack direction="row" alignItems="center" spacing={0.5}>
+              {activeTask && activeTask.author_id === userId && (
+                <IconButton
+                  size="small"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleOpenDelete(activeTask);
+                  }}
+                  disabled={saving}
+                >
+                  <DeleteOutlineIcon fontSize="small" />
+                </IconButton>
+              )}
+
+              {canEdit && (
+                <Tooltip title="Save changes">
+                  <span>
+                    <IconButton
+                      size="small"
+                      disabled={!canSave || saving}
+                      onClick={saveAndExit}
+                      sx={{
+                        bgcolor: canSave && !saving ? "primary.main" : "action.disabledBackground",
+                        color: canSave && !saving ? "primary.contrastText" : "text.disabled",
+                        "&:hover": { bgcolor: "primary.dark" },
+                      }}
+                    >
+                      {!saving ? (
+                        <CheckIcon fontSize="small" />
+                      ) : (
+                        <CircularProgress size={14} sx={{ color: "inherit" }} />
+                      )}
+                    </IconButton>
+                  </span>
+                </Tooltip>
+              )}
+            </Stack>
           </Box>
 
-          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5, justifyContent: "space-between", mx: 1 }}>
-            <FormControl size="small">
-              <Select
-                disabled={!canEdit}
-                value={assignedTo}
-                onChange={(e) => setAssignedTo(e.target.value)}
-                sx={{
-                  width: 150,
-                  "& .MuiInputBase-input": {
-                    py: "3px",
-                    fontSize: 11,
-                    fontWeight: 700,
-                  },
-                  "& .MuiOutlinedInput-notchedOutline": {
-                    border: "none",
-                  },
-                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                    border: "none",
-                  },
-                }}
-              >
-                {members.map((member) => (
-                  <MenuItem sx={{ fontSize: 11}} key={member.id} value={member.id}>
-                    {member.id === userId ? 'Self' : `${member.display_name}`}
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: 1,
+              mx: 1,
+              mb: 1,
+            }}
+          >
+            <Box>
+              <FieldLabel>Assigned to</FieldLabel>
+              <FormControl size="small" fullWidth>
+                <Select
+                  disabled={!canEdit}
+                  value={assignedTo}
+                  onChange={(e) => setAssignedTo(e.target.value)}
+                  sx={pillFieldSx}
+                >
+                  {members.map((member) => (
+                    <MenuItem sx={{ fontSize: 11 }} key={member.id} value={member.id}>
+                      {member.id === userId ? 'Self' : `${member.display_name}`}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Box>
+
+            <Box>
+              <FieldLabel>Visibility</FieldLabel>
+              <FormControl size="small" fullWidth>
+                <Select
+                  disabled={!canEdit}
+                  value={editVisibility}
+                  onChange={(e) => setEditVisibility(e.target.value as TaskVisibility)}
+                  renderValue={(val) => (
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.6 }}>
+                      {val === "public" ? (
+                        <PublicIcon sx={{ fontSize: 14, opacity: 0.6 }} />
+                      ) : (
+                        <LockIcon sx={{ fontSize: 14, opacity: 0.6 }} />
+                      )}
+                      <span>{val === "public" ? "Public" : "Private"}</span>
+                    </Box>
+                  )}
+                  sx={pillFieldSx}
+                >
+                  <MenuItem sx={{ fontSize: 11 }} value="private">
+                    <LockIcon sx={{ fontSize: 14, mr: 1, opacity: 0.6 }} /> Private
                   </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            <FormControl size="small">
-              <Select
+                  <MenuItem sx={{ fontSize: 11 }} value="public">
+                    <PublicIcon sx={{ fontSize: 14, mr: 1, opacity: 0.6 }} /> Public
+                  </MenuItem>
+                </Select>
+              </FormControl>
+            </Box>
+
+            <Box>
+              <FieldLabel>Priority</FieldLabel>
+              <FormControl size="small" fullWidth>
+                <Select
+                  disabled={!canEdit}
+                  value={editPriority}
+                  onChange={(e) => setEditPriority(e.target.value as TaskPriority)}
+                  renderValue={(val) => (
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.6, textTransform: "capitalize" }}>
+                      <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: PRIORITY_COLOR[val] }} />
+                      {val}
+                    </Box>
+                  )}
+                  sx={pillFieldSx}
+                >
+                  <MenuItem sx={{ fontSize: 11 }} value="low">Low</MenuItem>
+                  <MenuItem sx={{ fontSize: 11 }} value="medium">Medium</MenuItem>
+                  <MenuItem sx={{ fontSize: 11 }} value="high">High</MenuItem>
+                  <MenuItem sx={{ fontSize: 11 }} value="urgent">Urgent</MenuItem>
+                </Select>
+              </FormControl>
+            </Box>
+
+            <Box>
+              <FieldLabel>Due date</FieldLabel>
+              <TextField
                 disabled={!canEdit}
-                value={editVisibility}
-                onChange={(e) => setEditVisibility(e.target.value as TaskVisibility)}
-                sx={{
-                  width: 150,
-                  "& .MuiInputBase-input": { py: "3px", fontSize: 11, fontWeight: 700 },
-                  "& .MuiOutlinedInput-notchedOutline": { border: "none" },
-                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": { border: "none" },
+                size="small"
+                fullWidth
+                type="date"
+                value={editDueDate}
+                onChange={(e) => setEditDueDate(e.target.value)}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <EventIcon sx={{ fontSize: 14, opacity: 0.5 }} />
+                    </InputAdornment>
+                  ),
                 }}
-              >
-                <MenuItem sx={{ fontSize: 11 }} value="private">Private</MenuItem>
-                <MenuItem sx={{ fontSize: 11 }} value="public">Public</MenuItem>
-              </Select>
-            </FormControl> 
-          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5, justifyContent: "space-between", width: '100%' }}>
-            <FormControl size="small">
-              <Select
-                disabled={!canEdit}
-                value={editPriority}
-                onChange={(e) => setEditPriority(e.target.value as TaskPriority)}
-                sx={{
-                  width: 150,
-                  "& .MuiInputBase-input": { py: "3px", fontSize: 11, fontWeight: 700 },
-                  "& .MuiOutlinedInput-notchedOutline": { border: "none" },
-                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": { border: "none" },
-                }}
-              >
-                <MenuItem sx={{ fontSize: 11 }} value="low">Low</MenuItem>
-                <MenuItem sx={{ fontSize: 11 }} value="medium">Medium</MenuItem>
-                <MenuItem sx={{ fontSize: 11 }} value="high">High</MenuItem>
-                <MenuItem sx={{ fontSize: 11 }} value="urgent">Urgent</MenuItem>
-              </Select>
-            </FormControl>
-            <TextField
-              disabled={!canEdit}
-              size="small"
-              type="date"
-              value={editDueDate}
-              onChange={(e) => setEditDueDate(e.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <EventIcon sx={{ fontSize: 14, opacity: 0.5 }} />
-                  </InputAdornment>
-                ),
-              }}
-              sx={{
-                width: 150,
-                "& .MuiInputBase-input": { py: "3px", pl: 0, fontSize: 11, fontWeight: 700 },
-                "& .MuiOutlinedInput-notchedOutline": { border: "none" },
-                "&:hover .MuiOutlinedInput-notchedOutline": { border: "none" },
-                "&.Mui-focused .MuiOutlinedInput-notchedOutline": { border: "none" },
-              }}
-            />  
-          </Box>
-          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5, justifyContent: "space-between", width: '100%' }}>
-            <FormControl size="small">
+                sx={pillFieldSx}
+              />
+            </Box>
+
+            <Box>
+              <FieldLabel>Type</FieldLabel>
+              <FormControl size="small" fullWidth>
                 <Select
                   disabled={!canEdit}
                   value={taskType}
                   onChange={(e) => setTaskType(e.target.value as TaskType)}
-                  sx={{
-                    width: 150,
-                    textTransform: 'capitalize',
-                    "& .MuiInputBase-input": { py: "3px", fontSize: 11, fontWeight: 700 },
-                    "& .MuiOutlinedInput-notchedOutline": { border: "none" },
-                    "&.Mui-focused .MuiOutlinedInput-notchedOutline": { border: "none" },
+                  renderValue={(val) => {
+                    const Meta = TASK_TYPE_META[val].icon;
+                    return (
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 0.6 }}>
+                        <Meta style={{ fontSize: 14, opacity: 0.6 }} />
+                        {TASK_TYPE_META[val].label}
+                      </Box>
+                    );
                   }}
+                  sx={pillFieldSx}
                 >
-                  <MenuItem sx={{ fontSize: 11, textTransform: 'capitalize'}} value="other">other</MenuItem>
-                  <MenuItem sx={{ fontSize: 11, textTransform: 'capitalize' }} value="call">call</MenuItem>
-                  <MenuItem sx={{ fontSize: 11, textTransform: 'capitalize' }} value="sms">sms</MenuItem>
-                  <MenuItem sx={{ fontSize: 11, textTransform: 'capitalize' }} value="email">email</MenuItem>
-                  <MenuItem sx={{ fontSize: 11, textTransform: 'capitalize' }} value="meeting">meeting</MenuItem>
+                  {(Object.keys(TASK_TYPE_META) as TaskType[]).map((key) => (
+                    <MenuItem sx={{ fontSize: 11 }} key={key} value={key}>
+                      {TASK_TYPE_META[key].label}
+                    </MenuItem>
+                  ))}
                 </Select>
               </FormControl>
-              {activeTask && canComplete && (
-                <FormControl size="small">
+            </Box>
+
+            {activeTask && canComplete && (
+              <Box>
+                <FieldLabel>Status</FieldLabel>
+                <FormControl size="small" fullWidth>
                   <Select
                     value={editStatus}
                     onChange={async (e) => {
@@ -938,12 +1104,16 @@ export default function TasksPanel() {
                         ).unwrap().catch(() => {});
                       }
                     }}
-                    sx={{
-                      width: 150,
-                      "& .MuiInputBase-input": { py: "3px", fontSize: 11, fontWeight: 700 },
-                      "& .MuiOutlinedInput-notchedOutline": { border: "none" },
-                      "&.Mui-focused .MuiOutlinedInput-notchedOutline": { border: "none" },
+                    renderValue={(val) => {
+                      const Meta = STATUS_META[val].icon;
+                      return (
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.6 }}>
+                          <Meta style={{ fontSize: 14, opacity: 0.6 }} />
+                          {STATUS_META[val].label}
+                        </Box>
+                      );
                     }}
+                    sx={pillFieldSx}
                   >
                     <MenuItem sx={{ fontSize: 11 }} value="todo">To Do</MenuItem>
                     <MenuItem sx={{ fontSize: 11 }} value="in_progress">In Progress</MenuItem>
@@ -951,53 +1121,55 @@ export default function TasksPanel() {
                     <MenuItem sx={{ fontSize: 11 }} value="cancelled">Cancelled</MenuItem>
                   </Select>
                 </FormControl>
-              )}
+              </Box>
+            )}
           </Box>
-        </Box>
 
-          <Box sx={{ display: "flex", justifyContent: "space-between", mt: 0.5, mx: 1 }}>
-            <FormControl size="small">
-              <Select
-                disabled={!canEdit}
-                value={targetType}
-                onChange={(e) => {
-                  setTargetType(e.target.value as TaskTargetType);
-                  setTargetId("");
-                }}
-                sx={{
-                  width: 150,
-                  "& .MuiInputBase-input": { py: "3px", fontSize: 11, fontWeight: 700 },
-                  "& .MuiOutlinedInput-notchedOutline": { border: "none" },
-                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": { border: "none" },
-                }}
-              >
-                <MenuItem sx={{ fontSize: 11 }} value="personal">Personal</MenuItem>
-                <MenuItem sx={{ fontSize: 11 }} value="contact">Contacts</MenuItem>
-                <MenuItem sx={{ fontSize: 11 }} value="lead">Leads</MenuItem>
-                <MenuItem sx={{ fontSize: 11 }} value="deal">Deals</MenuItem>
-                <MenuItem sx={{ fontSize: 11 }} value="customer">Customers</MenuItem>
-              </Select>
-            </FormControl>
+          <Box sx={{ mx: 1, mb: 1 }}>
+            <FieldLabel>Related to</FieldLabel>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+              <FormControl size="small" sx={{ width: 140, flexShrink: 0 }}>
+                <Select
+                  disabled={!canEdit}
+                  value={targetType}
+                  onChange={(e) => {
+                    setTargetType(e.target.value as TaskTargetType);
+                    setTargetId("");
+                  }}
+                  renderValue={(val) => {
+                    const Meta = TARGET_META[val].icon;
+                    return (
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 0.6 }}>
+                        <Meta style={{ fontSize: 14, opacity: 0.6 }} />
+                        {TARGET_META[val].label}
+                      </Box>
+                    );
+                  }}
+                  sx={pillFieldSx}
+                >
+                  {(Object.keys(TARGET_META) as TaskTargetType[]).map((key) => (
+                    <MenuItem sx={{ fontSize: 11 }} key={key} value={key}>
+                      {TARGET_META[key].label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
 
-            <Box sx={{ width: 180, display: 'flex', justifyContent: 'end' }}>
               {targetType !== "personal" && (
-                <FormControl size="small">
+                <FormControl size="small" fullWidth>
                   <TextField
                     disabled={!canEdit}
                     select
                     fullWidth
+                    size="small"
                     value={targetId}
                     onChange={(e) => setTargetId(e.target.value)}
-                    sx={{
-                      "& .MuiInputBase-input": { py: "3px", fontSize: 11, fontWeight: 700 },
-                      "& .MuiOutlinedInput-notchedOutline": { border: "none" },
-                      "&.Mui-focused .MuiOutlinedInput-notchedOutline": { border: "none" },
-                    }}
+                    sx={pillFieldSx}
                     SelectProps={{
                       displayEmpty: true,
                       renderValue: (selected) => {
                         if (!selected) {
-                          return <span style={{ color: "#999" }}>Choose a target from {targetType}</span>;
+                          return <span style={{ opacity: 0.5 }}>Choose a target from {targetType}</span>;
                         }
                         const item = items.find((i) => i.id === selected);
                         return item?.label ?? "";
@@ -1018,9 +1190,11 @@ export default function TasksPanel() {
                   </TextField>
                 </FormControl>
               )}
+
               {activeTask && (activeTask.target_type === "customer" || activeTask.target_type === "contact") && (
                 <IconButton
                   title={`View full details for ${getValue(activeTask.target_type, activeTask.target_id)}`}
+                  size="small"
                   onClick={(e) => {
                     e.stopPropagation();
                     navigate(`/app/${activeTask.target_type}s/${activeTask.target_id}`);
@@ -1041,14 +1215,14 @@ export default function TasksPanel() {
             value={formatTitle(editTitle)}
             onChange={(e) => setEditTitle(e.target.value)}
             sx={{
-              mt: 1,
+              mt: 0.5,
               overflowX: "auto",
               "& .MuiOutlinedInput-notchedOutline": { border: "none" },
               "&:hover .MuiOutlinedInput-notchedOutline": { border: "none" },
               "&.Mui-focused .MuiOutlinedInput-notchedOutline": { border: "none" },
               "& .MuiInputBase-input": {
                 py: "3px",
-                fontSize: 13,
+                fontSize: 16,
                 fontWeight: 700,
                 overflowWrap: "break-word",
               },
@@ -1075,18 +1249,44 @@ export default function TasksPanel() {
         </Box>
       )}
 
-      <Dialog open={openDelete} onClose={() => setOpenDelete(false)}>
-        <DialogTitle>Confirm Delete</DialogTitle>
+      <Dialog
+        open={openDelete}
+        onClose={() => setOpenDelete(false)}
+        PaperProps={{ sx: { borderRadius: 3, minWidth: 320 } }}
+      >
+        <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
+          <Box
+            sx={{
+              width: 36,
+              height: 36,
+              borderRadius: "50%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              bgcolor: (theme) => alpha(theme.palette.error.main, 0.12),
+            }}
+          >
+            <DeleteOutlineIcon sx={{ color: "error.main", fontSize: 20 }} />
+          </Box>
+          Delete task
+        </DialogTitle>
 
         <DialogContent>
-          Are you sure you want to delete this Task ({selectedTask?.title})?
+          <Typography variant="body2" sx={{ opacity: 0.8 }}>
+            Are you sure you want to delete "{selectedTask?.title}"? This can't be undone.
+          </Typography>
         </DialogContent>
 
-        <DialogActions>
-          <Button onClick={() => setOpenDelete(false)}>Cancel</Button>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setOpenDelete(false)} sx={{ textTransform: "none" }}>
+            Cancel
+          </Button>
 
           <Button
+            variant="contained"
+            disableElevation
             color="error"
+            sx={{ textTransform: "none" }}
             onClick={() => {
               if (!selectedTask) return;
               removeTask(selectedTask);
@@ -1097,25 +1297,52 @@ export default function TasksPanel() {
           </Button>
         </DialogActions>
       </Dialog>
-      <Dialog open={openDone} onClose={() => setOpenDone(false)}>
-        <DialogTitle>Confirm Delete</DialogTitle>
+
+      <Dialog
+        open={openDone}
+        onClose={() => setOpenDone(false)}
+        PaperProps={{ sx: { borderRadius: 3, minWidth: 320 } }}
+      >
+        <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
+          <Box
+            sx={{
+              width: 36,
+              height: 36,
+              borderRadius: "50%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              bgcolor: (theme) => alpha(theme.palette.success.main, 0.12),
+            }}
+          >
+            <CheckCircleIcon sx={{ color: "success.main", fontSize: 20 }} />
+          </Box>
+          Mark as done
+        </DialogTitle>
 
         <DialogContent>
-          Are you sure you want to Mark this Task({selectedTaskDone?.title}) as done?
+          <Typography variant="body2" sx={{ opacity: 0.8 }}>
+            Mark "{selectedTaskDone?.title}" as done?
+          </Typography>
         </DialogContent>
 
-        <DialogActions>
-          <Button onClick={() => setOpenDone(false)}>Cancel</Button>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setOpenDone(false)} sx={{ textTransform: "none" }}>
+            Cancel
+          </Button>
 
           <Button
-            color="error"
+            variant="contained"
+            disableElevation
+            color="success"
+            sx={{ textTransform: "none" }}
             onClick={() => {
               if (!selectedTaskDone) return;
               toggleComplete(selectedTaskDone);
               setOpenDone(false);
             }}
           >
-            Yes
+            Yes, mark done
           </Button>
         </DialogActions>
       </Dialog>

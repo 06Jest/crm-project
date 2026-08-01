@@ -67,6 +67,16 @@ import { formatName, formatTitle } from '../../../utils/formatText';
     Low: '#ffffff00',
   }
 
+// Purely presentational — one accent color per pipeline stage, used for
+// column headers, chips and the drag-over state. Does not touch any data.
+const STAGE_COLORS: Record<DealStage, string> = {
+  Prospecting: '#3b82f6',
+  Proposal: '#8b5cf6',
+  Negotiation: '#e08a1f',
+  'Closed Won': '#1f9d55',
+  'Closed Lost': '#d9424b',
+};
+
 type DealForm = Partial<UpdateDeal>;
 
 export default function Deals() {
@@ -298,39 +308,59 @@ export default function Deals() {
   
 
   return (
-    <Box >
+    <Box sx={{ pb: 2 }}>
       
       <Box sx={{
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        mb: 1,
         width: '84vw',
         justifySelf: 'center'
       }}>
-        <Typography variant="h5" fontWeight={700}>
-          Deals
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+          <Box sx={(theme) => ({
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 40,
+            height: 40,
+            borderRadius: 2,
+            bgcolor: theme.palette.mode === 'dark' ? '#2a2a2a' : '#eef1f6',
+            color: 'primary.main',
+          })}>
+            <HandshakeIcon />
+          </Box>
+          <Box>
+            <Typography variant="h5" fontWeight={800} letterSpacing={-0.3} lineHeight={1.2}>
+              Deals
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              {deals.length} {deals.length === 1 ? 'deal' : 'deals'} across your pipeline
+            </Typography>
+          </Box>
+        </Box>
         {(error  || invalid) && (
           <ErrorAlert
             message={(error  || invalid) ?? "An unknown error occurred."}
           />
         )}
-        <IconButton
+        <Button
           title="Add Deal"
-          onClick={() => navigate(`/app/adddeal`)}
+          onClick={() => navigate(`/app/deals/adddeal`)}
+          variant="contained"
+          disableElevation
+          startIcon={<AddIcon sx={{ fontSize: '16px !important' }} />}
           sx={{
-          fontSize: 12,
-          py: 1,
-          px: 2,
-          pl: 1,  
-          border: '1px solid #bbbbbb88',
-          borderRadius: 2,
-          fontWeight: 700
-        }}>
-          <AddIcon sx={{fontSize: '14px', fontWeight: 700, marginRight: "-5px"}}/>
-          <HandshakeIcon/>
-        </IconButton>
+            fontSize: 13,
+            py: 0.9,
+            px: 2,
+            borderRadius: 2,
+            fontWeight: 700,
+            textTransform: 'none',
+            boxShadow: '0 1px 2px rgba(0,0,0,0.12)',
+          }}>
+          New Deal
+        </Button>
       </Box>
       <Box 
         sx={{
@@ -343,47 +373,68 @@ export default function Deals() {
           justifySelf: 'center'
           }}>
         <DragDropContext onDragEnd={handleDragEnd}>
-          <Box sx={{display: 'flex', gap: 1, pb: 2, overflow: 'auto',  width: '100%' }}>
+          <Box sx={{display: 'flex', gap: 1.5, pb: 2, overflow: 'auto',  width: '100%' }}>
             {DEAL_STAGES.map((stage) => {
 
               const stageDeals = getDealsByStage(stage);
               const stageValue = getStageValue(stage);
+              const stageColor = STAGE_COLORS[stage];
 
               return (
-                <Box key={stage} sx={{ minWidth: 300, flex: 1 }}> 
+                <Box
+                  key={stage}
+                  sx={(theme) => ({
+                    minWidth: 300,
+                    flex: 1,
+                    borderRadius: 3,
+                    overflow: 'hidden',
+                    border: `1px solid ${theme.palette.mode === 'dark' ? '#3a3a3a' : '#e3e3e3'}`,
+                    bgcolor: 'background.paper',
+                  })}
+                >
                   <Box
                    sx={(theme) => ({
-                    py: 1,
+                    py: 1.25,
+                    borderTop: `3px solid ${stageColor}`,
                     borderRadius: '3px 3px 0 0 ',
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
                     width:'100%',
                     bgcolor: theme.palette.mode === 'dark'
-                      ? '#3a3a3a'
-                      : '#d6d4d4d3',
+                      ? '#2c2c2c'
+                      : `${stageColor}14`,
                   })}
                   >
                     <Box sx={{display: 'flex', px: 2, alignItems: 'center',
-                       width: '100%', justifyContent: 'space-between'}}>
-                      <Typography fontWeight={700} variant="h6">
+                       width: '100%', justifyContent: 'space-between', gap: 1}}>
+                      <Typography fontWeight={700} variant="subtitle1" noWrap>
                         {stage}
                       </Typography>
                       <Typography
                         title={`Total possible value if won`}
-                        variant="body2" sx={{ opacity: 0.85, cursor:'pointer' }}>
+                        variant="body2"
+                        fontWeight={600}
+                        sx={{ opacity: 0.85, cursor:'pointer', whiteSpace: 'nowrap' }}>
                         {formatCurrency(stageValue)}
                       </Typography>
                       <Chip
                       title={`${stage} Deals count`}
                       label={stageDeals.length}
                       size="small"
-                      sx={{cursor: 'pointer'}}
+                      sx={{
+                        cursor: 'pointer',
+                        fontWeight: 700,
+                        bgcolor: stageColor,
+                        color: '#fff',
+                        minWidth: 28,
+                      }}
                       />
                     </Box>
-                    <Box sx={{px: 3, width: '100%'}}>
+                    <Box sx={{px: 2, width: '100%'}}>
                       <TextField 
                         size="small"
+                        placeholder="Search this stage..."
                         value={search[stage]}
                         onChange={(e) =>
                           setSearch((prev) => ({
@@ -395,7 +446,7 @@ export default function Deals() {
                           input: {
                             endAdornment: (
                               <InputAdornment sx={{paddingRight: '1px'}} position="end">
-                                <SearchIcon sx={{ borderRadius: 10, p: 0.3, color: '#383838'}} fontSize="small" />
+                                <SearchIcon sx={{ borderRadius: 10, p: 0.3, color: '#7a7a7a'}} fontSize="small" />
                               </InputAdornment>
                             ),
                           },
@@ -407,16 +458,24 @@ export default function Deals() {
                           backgroundColor: '#ffffff',
                           color: '#383838',
                           '& .MuiOutlinedInput-notchedOutline': {
-                            border: 'none',
+                            border: '1px solid #e2e2e2',
+                          },
+                          '&:hover .MuiOutlinedInput-notchedOutline': {
+                            borderColor: stageColor,
+                          },
+                          '& .Mui-focused .MuiOutlinedInput-notchedOutline': {
+                            borderColor: stageColor,
                           },
                           '& .MuiOutlinedInput-root': {
+                            borderRadius: 3,
                             paddingRight: '4px !important',
                           },
                           '& .MuiInputBase-input': {
-                            py: '2px',
-                            paddingLeft: '15px',
+                            py: '6px',
+                            paddingLeft: '12px',
                             paddingRight: 0,
-                            color: 'black'
+                            color: 'black',
+                            fontSize: 13,
                           },
                         }}>
                           <SearchIcon/>
@@ -431,7 +490,7 @@ export default function Deals() {
                       sx={{
                         minHeight: 300,
                         bgcolor: snapshot.isDraggingOver
-                          ? 'action.hover'
+                          ? `${stageColor}12`
                           : 'background.paper',
                         overflowY: 'auto',
                         borderRadius: '0 0 8px 8px',
@@ -440,6 +499,19 @@ export default function Deals() {
                         height: 850,
                       }}
                     >
+                      {getDealsByStage(stage).length === 0 && (
+                        <Box sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          height: '100%',
+                          opacity: 0.5,
+                        }}>
+                          <Typography variant="body2" color="text.secondary">
+                            No deals here yet
+                          </Typography>
+                        </Box>
+                      )}
                       {getDealsByStage(stage).map((deal, index) => {
                         const contact = contacts.find((c) => c.id === deal.contact_id)
                         if (!contact) return;
@@ -456,40 +528,55 @@ export default function Deals() {
                               ref={provided.innerRef}
                               {...provided.draggableProps}
                               {...provided.dragHandleProps}
-                              sx={{
+                              sx={(theme) => ({
                                 mb: 1,
-                                boxShadow: snapshot.isDragging ? 6 : 1,
+                                borderRadius: 2.5,
+                                border: `1px solid ${theme.palette.mode === 'dark' ? '#3a3a3a' : '#eaeaea'}`,
+                                borderLeft: `3px solid ${stageColor}`,
+                                boxShadow: snapshot.isDragging
+                                  ? '0 8px 20px rgba(0,0,0,0.18)'
+                                  : '0 1px 2px rgba(0,0,0,0.06)',
                                 cursor: 'grab',
-                                opacity: snapshot.isDragging ? 0.85 : 1,
-                                transition: 'box-shadow 0.2s ease',
-                              }}
+                                opacity: snapshot.isDragging ? 0.9 : 1,
+                                transition: 'box-shadow 0.2s ease, transform 0.15s ease',
+                                '&:hover': {
+                                  boxShadow: '0 4px 12px rgba(0,0,0,0.10)',
+                                },
+                              })}
                             >
-                              <CardContent sx={{ p: 1, '&:last-child': { pb: 1 }, display: 'flex' }}>
+                              <CardContent sx={{ p: 1.25, '&:last-child': { pb: 1.25 }, display: 'flex' }}>
                                 <Box sx={{display: 'flex', width: '100%'}}>
                                   <Box sx={{display: 'flex', flexDirection: 'column', width: '18%'}}>
                                     <Box 
                                       onMouseEnter={(e) => handleMouseEnter(e, deal)}
                                        onClick={()=> navigate(`/app/contacts/${contact.id}`)}
                                       onMouseLeave={handleMouseLeave}
-                                      sx={{
+                                      sx={(theme) => ({
                                         width: 42,
                                         height: 42,
                                         cursor: 'pointer',
-                                        border: '1px solid #a3a3a3', 
-                                        borderRadius: 100}}>
-                                      <PersonIcon sx={{width: '100%', height: '90%', opacity: 0.7}}/>
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        border: `1px solid ${stageColor}55`,
+                                        bgcolor: theme.palette.mode === 'dark' ? '#2c2c2c' : `${stageColor}0d`,
+                                        borderRadius: 100,
+                                        transition: 'border-color 0.15s ease',
+                                        '&:hover': { borderColor: stageColor },
+                                      })}>
+                                      <PersonIcon sx={{width: '62%', height: '62%', opacity: 0.75}}/>
                                     </Box>
                                   </Box>
                                   
                                   <Box sx={{display: 'flex', flexDirection: 'column', flex: 1}} >
                                     <Box sx={{display: 'flex', width: '100%'}}>
                                       <Box sx={{display: 'flex', width: '90%', flexDirection: 'column'}}>
-                                        <Typography sx={{cursor: 'pointer', fontSize: '16px'}} title="Deal Title" fontWeight={600}>
+                                        <Typography sx={{cursor: 'pointer', fontSize: '15px'}} title="Deal Title" fontWeight={700}>
                                         {(deal.title.length > 25
                                           ? `${deal.title.slice(0, 25)}...`
                                           : formatTitle(deal.title).toUpperCase())}
                                         </Typography>
-                                        <Typography sx={{cursor: 'pointer'}} title="Contact name" variant="body2">
+                                        <Typography sx={{cursor: 'pointer'}} title="Contact name" variant="body2" color="text.secondary">
                                           {formatName(contact.first_name, contact.last_name)} {contact.suffix}
                                         </Typography>
                                       </Box>
@@ -508,7 +595,8 @@ export default function Deals() {
                                           sx={{
                                             height: 25,
                                             width: 25,
-                                            mr: '5px'
+                                            mr: '5px',
+                                            '&:hover': { bgcolor: `${stageColor}1f` },
                                           }}
                                           size="small"
                                           onClick={() => handleOpenEdit(deal)}
@@ -554,6 +642,7 @@ export default function Deals() {
                                         color: 'primary.main',
                                         borderRadius: 10,
                                         fontSize: 10,
+                                        fontWeight: 600,
                                         cursor: 'pointer'
                                       }}
                                       >{formatName(deal.owner.first_name, deal.owner.last_name)}</Typography>
@@ -561,45 +650,45 @@ export default function Deals() {
                                     <Box sx={{
                                       display: 'flex',
                                       justifyContent: 'space-between',
-                                      mt: '3px',
+                                      alignItems: 'center',
+                                      mt: '6px',
                                     }}>
                                       <Box sx={{
                                         display: 'flex',
-                                        gap: 1,
+                                        gap: 0.25,
                                       }}>
-                                        <IconButton sx={{p: '1px 5px'}}>
+                                        <IconButton sx={{p: '4px', '&:hover': { bgcolor: `${stageColor}1f` }}}>
                                           <EmailIcon
                                             titleAccess="Email lead"
                                             onClick={() => setOpenSnackbar(true)}
-                                            sx={{cursor: 'pointer', color: 'primary.main', fontSize: 18}}
+                                            sx={{cursor: 'pointer', color: 'primary.main', fontSize: 17}}
                                           />
                                         </IconButton>
-                                        <IconButton sx={{p: '1px 5px'}}>
+                                        <IconButton sx={{p: '4px', '&:hover': { bgcolor: `${stageColor}1f` }}}>
                                           <CallIcon
                                             onClick={() => setOpenSnackbar(true)}
                                             titleAccess="Call lead"
-                                            sx={{cursor: 'pointer', color: 'primary.main', fontSize: 18}}
+                                            sx={{cursor: 'pointer', color: 'primary.main', fontSize: 17}}
                                           />
                                         </IconButton>
-                                        <IconButton sx={{p: '1px 5px'}}>
+                                        <IconButton sx={{p: '4px', '&:hover': { bgcolor: `${stageColor}1f` }}}>
                                           <SmsIcon
                                             onClick={() => setOpenSnackbar(true)}
                                             titleAccess="Message lead"
-                                            sx={{cursor: 'pointer', color: 'primary.main', fontSize: 18}}
+                                            sx={{cursor: 'pointer', color: 'primary.main', fontSize: 17}}
                                           />
                                         </IconButton>
                                       </Box>
                                       <Box 
-                                        boxShadow={4}
                                         sx={{
                                           backgroundColor: 'primary.main', 
                                           color: '#FFFFFF', 
-                                          p: '0 10px', 
-                                          borderRadius: 1,
+                                          p: '3px 10px', 
+                                          borderRadius: 1.5,
                                           display: 'flex', 
                                           cursor: 'pointer',
                                           alignItems: 'center'}}>
-                                          <Typography variant='body2' title="Deal Value" fontWeight={700}>
+                                          <Typography variant='body2' title="Deal Value" fontWeight={700} fontSize={13}>
                                             {formatCurrency(deal.value)}
                                           </Typography>
                                       </Box>
@@ -608,6 +697,7 @@ export default function Deals() {
                                         <IconButton
                                           size="small"
                                           color="error"
+                                          sx={{ '&:hover': { bgcolor: 'error.main', color: '#fff' } }}
                                           onClick={() => handleOpenDelete(deal)}
                                         >
                                           <DeleteIcon titleAccess="Delete lead" fontSize="small" />
@@ -642,6 +732,7 @@ export default function Deals() {
             width: '100%',
             maxWidth: '500px', // Custom width
             height: '300px',   // Custom height
+            borderRadius: 3,
           }
         }}
         open={isEditing}
@@ -667,6 +758,7 @@ export default function Deals() {
                     size="small"
                     sx={{
                       width: '72%',
+                      '& .MuiOutlinedInput-root': { borderRadius: 2 },
                     }}
                     slotProps={{
                       inputLabel: {
@@ -683,6 +775,7 @@ export default function Deals() {
                     size="small"
                     sx={{
                       width: '25%',
+                      '& .MuiOutlinedInput-root': { borderRadius: 2 },
                     }}
                     slotProps={{
                       inputLabel: {
@@ -702,33 +795,42 @@ export default function Deals() {
                     multiline
                     fullWidth
                     rows={3}
+                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
                     slotProps={{ inputLabel: { shrink: true } }}
                   />   
                 </Box>
               </Box>
             </DialogContent>
-            <DialogActions sx={{mx: '15px', display: 'flex', justifyContent: 'space-between'}}>
-              <Button onClick={() => {
+            <DialogActions sx={{mx: '15px', mb: '10px', display: 'flex', justifyContent: 'space-between'}}>
+              <Button
+                onClick={() => {
                 dispatch(clearError())
                 setIsEditing(false)}
-              }>
+              }
+                sx={{ textTransform: 'none', fontWeight: 600 }}
+              >
                 Cancel
               </Button>
               <Button 
                 variant="contained"
+                disableElevation
                 onClick={() => setConfirmEdit(true)}
+                sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 2, px: 2.5 }}
                 >
                 Submit
               </Button>
             </DialogActions>
           </Box>
       </Dialog>
-      <Dialog sx={{position: "absolute"}} open={confirmClose} 
+      <Dialog
+        sx={{position: "absolute"}}
+        PaperProps={{ sx: { borderRadius: 3 } }}
+        open={confirmClose} 
         onClose={() => {
           setConfirmClose(false);
         }}>
         <DialogTitle sx={{fontWeight: 700}}>
-          CONFIRMATION TO CLOSE
+          Confirm stage change
         </DialogTitle>  
 
         <DialogContent
@@ -742,31 +844,39 @@ export default function Deals() {
           >
             Are you sure you want to update this deal to {dragResult?.destination?.droppableId}?
           </DialogContent>
-          <DialogActions>
-            <Button onClick={() => {
+          <DialogActions sx={{ pb: 2, px: 3 }}>
+            <Button
+              onClick={() => {
               setConfirmClose(false)
-            }}>
+            }}
+              sx={{ textTransform: 'none', fontWeight: 600 }}
+            >
               Cancel
             </Button>
             <Button 
               color="warning"
               variant="contained"
+              disableElevation
               onClick={() => {
                 setConfirmClose(false)
                 handleClose();
               }}
+              sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 2 }}
             >
               Yes
             </Button>
         </DialogActions>
       </Dialog>
-      <Dialog sx={{position: "absolute"}} open={confirmEdit} 
+      <Dialog
+        sx={{position: "absolute"}}
+        PaperProps={{ sx: { borderRadius: 3 } }}
+        open={confirmEdit} 
         onClose={() => {
           setConfirmEdit(false);
           setIsEditing(false);
         }}>
         <DialogTitle sx={{fontWeight: 700}}>
-          CONFIRMATION
+          Confirm edit
         </DialogTitle>  
 
         <DialogContent
@@ -780,40 +890,47 @@ export default function Deals() {
           >
             Are you sure you want to edit this deal?
           </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setConfirmEdit(false)}>
+          <DialogActions sx={{ pb: 2, px: 3 }}>
+            <Button onClick={() => setConfirmEdit(false)} sx={{ textTransform: 'none', fontWeight: 600 }}>
               Cancel
             </Button>
             <Button 
               color="warning"
               variant="contained"
+              disableElevation
               onClick={() => {
                 setConfirmEdit(false)
                 setIsEditing(false)
                 handleEdit();
               }}
+              sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 2 }}
             >
               Yes
             </Button>
         </DialogActions>
       </Dialog>
       <Dialog
+        PaperProps={{ sx: { borderRadius: 3 } }}
         open={deleteOpen}
         onClose={() => setDeleteOpen(false)}
       >
-        <DialogTitle>Delete deal?</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 700 }}>Delete deal?</DialogTitle>
         <DialogContent>
           <Typography>
             Are you sure you want to delete{' '}
             <strong>{selectedDeal?.title}</strong>? This cannot be undone.
           </Typography>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteOpen(false)}>Cancel</Button>
+        <DialogActions sx={{ pb: 2, px: 3 }}>
+          <Button onClick={() => setDeleteOpen(false)} sx={{ textTransform: 'none', fontWeight: 600 }}>
+            Cancel
+          </Button>
           <Button
             color="error"
             variant="contained"
+            disableElevation
             onClick={handleDeleteConfirm}
+            sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 2 }}
           >
             Delete
           </Button>
@@ -829,6 +946,7 @@ export default function Deals() {
           vertical: 'bottom',
           horizontal: 'left',
         }}
+        slotProps={{ paper: { sx: { borderRadius: 3, overflow: 'hidden' } } }}
       >
         <Box
           display={'flex'} sx={{justifyContent: 'flex-end'}}>
@@ -839,6 +957,7 @@ export default function Deals() {
           </IconButton>
         </Box>
         <Card
+          elevation={0}
           sx={{ p: 2, pt: 0, width: 350,
             whiteSpace: 'normal',
             overflowWrap: 'break-word',
@@ -851,13 +970,17 @@ export default function Deals() {
             justifyContent: 'center',
             height: 75
           }}>
-            <Box sx={{
+            <Box sx={(theme) => ({
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
               height: '100%',
               width: 75,
               border: '1px solid #ccc',
+              bgcolor: theme.palette.mode === 'dark' ? '#2c2c2c' : '#f4f5f7',
               borderRadius: 50,
-            }}>
-              <PersonIcon sx={{width: '100%', height: '90%', opacity: 0.8}}/>
+            })}>
+              <PersonIcon sx={{width: '55%', height: '55%', opacity: 0.8}}/>
             </Box>
           </Box>
           <Box sx={{
@@ -890,12 +1013,12 @@ export default function Deals() {
               ) : null}
               </Typography>
               {showDetails?.email && (
-              <Typography variant="body2">
+              <Typography variant="body2" color="text.secondary">
                 Email: {showDetails?.email}
               </Typography>
               )}
               {showDetails?.phone && (
-              <Typography variant="body2">
+              <Typography variant="body2" color="text.secondary">
                 Phone: { showDetails?.phone}
               </Typography>
               )}
@@ -905,12 +1028,12 @@ export default function Deals() {
               flexDirection: 'column'
             }}>
               {showDetails?.gender !== 'Prefer not to say' &&(
-              <Typography variant="body2">
+              <Typography variant="body2" color="text.secondary">
                 {showDetails?.gender}
               </Typography>
               )}
               {showDetails?.birth_date && (
-              <Typography variant="body2">
+              <Typography variant="body2" color="text.secondary">
                 Age: {!showDetails?.birth_date
                 ? '0'
                 : calculateAge(showDetails.birth_date)}
@@ -936,10 +1059,10 @@ export default function Deals() {
           <Typography marginBottom={1} variant="body1" fontWeight={700}>
             {hoveredDeal?.title.toUpperCase()}
           </Typography>
-          <Typography marginBottom={1} variant="body1" fontWeight={700}>
+          <Typography marginBottom={1} variant="body1" fontWeight={700} color="primary.main">
             {formatCurrency(Number(hoveredDeal?.value))}
           </Typography>
-          <Typography variant="body2">
+          <Typography variant="body2" color="text.secondary">
             {hoveredDeal?.notes}
           </Typography>
         </Card>

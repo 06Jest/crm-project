@@ -5,9 +5,9 @@ to do before application:
 *1 day	  email
 *2 day	  chat (4 days)
 *1 days	tasks
-1 day	  sms
-1 day	  calls 
-1 days	activities
+*1 day	  sms
+*1 day	  calls 
+*1 days	activities
 1 days	leaderboard
 1 day	  dashboard
 2 days	settings(admin privilege)
@@ -66,271 +66,604 @@ Customers
 - map for customer address if provided
 - 
 
-# CRM Improvement Checklist
 
-## UI & Design
-- [ ] Reduce excessive borders throughout the application.
-- [ ] Increase whitespace and padding between components.
-- [ ] Improve typography hierarchy (titles, subtitles, descriptions).
-- [ ] Standardize font sizes across all pages.
-- [ ] Standardize border radius for all components.
-- [ ] Improve color consistency for status badges.
-- [ ] Add subtle shadows to cards and dialogs.
-- [ ] Improve card layout and alignment.
-- [ ] Improve icon spacing and alignment.
-- [ ] Use generated avatar initials when no profile image exists.
-- [ ] Add hover effects to cards.
-- [ ] Add hover effects to table rows.
-- [ ] Add hover effects to buttons and icons.
-- [ ] Improve spacing inside tables.
-- [ ] Add alternating row backgrounds (optional).
-- [ ] Improve mobile responsiveness.
-- [ ] Optimize layout for ultrawide monitors.
-- [ ] Create a complete design system.
+## CRM Dashboard
 
-## Tables
-- [ ] Sticky table headers.
-- [ ] Resizable columns.
-- [ ] Sort by every important column.
-- [ ] Advanced filtering.
-- [ ] Saved filters.
-- [ ] Bulk actions.
-- [ ] Select all rows.
-- [ ] Export selected rows.
-- [ ] Better pagination controls.
-- [ ] Rows per page selector.
-- [ ] Display total record count.
+## 1. KPI Cards
 
-## Search
-- [ ] Better search placeholders.
-- [ ] Global search across all modules.
-- [ ] Search history.
-- [ ] Recent searches.
-- [ ] Search by multiple fields.
-- [ ] Highlight matched keywords.
+- Total Leads
+- New Leads Today
+- New Leads This Week
+- New Leads This Month
 
-## Empty States
-- [ ] Friendly empty state illustrations/icons.
-- [ ] Empty state descriptions.
-- [ ] Empty state action buttons.
-- [ ] Loading skeletons.
-- [ ] Better loading indicators.
-- [ ] Better error pages.
+- Total Contacts
+- New Contacts Today
+- New Contacts This Week
+- New Contacts This Month
 
-## User Experience
-- [ ] Entire cards clickable.
-- [ ] Keyboard shortcuts.
-- [ ] Command palette (Ctrl + K).
-- [ ] Right-click context menus.
-- [ ] Optimistic UI updates.
-- [ ] Undo delete.
-- [ ] Better confirmation dialogs.
-- [ ] Toast notifications.
-- [ ] Smooth animations.
-- [ ] Smooth drag-and-drop animations.
-- [ ] Auto-save drafts.
-- [ ] Unsaved changes warning.
+- Total Deals
+- Open Deals
+- Won Deals
+- Lost Deals
+- Total Pipeline Value
+- Average Deal Value
 
-## Dashboard
-- [ ] Revenue summary.
-- [ ] Monthly sales.
-- [ ] Leads by source.
-- [ ] Conversion funnel.
-- [ ] Recent activities.
-- [ ] Upcoming tasks.
-- [ ] Upcoming meetings.
-- [ ] Performance charts.
-- [ ] Top performing agents.
-- [ ] Sales goals.
-- [ ] Daily KPI widgets.
-- [ ] Custom dashboard widgets.
+- Total Customers
+- New Customers Today
+- New Customers This Month
+
+- Tasks Due Today
+- Tasks Completed Today
+- Overdue Tasks
+
+- Emails Sent Today
+- Calls Made Today
+- SMS Sent Today
+
+- Activities Today
+
+---
+
+# 2. My Work Today
+
+## Tasks
+
+- Due Today
+- Upcoming
+- Overdue
+- Recently Completed
+
+## Calls
+
+- Scheduled Calls
+- Active Calls
+- Missed Calls
+
+## Meetings
+
+- Today's Meetings
+- Upcoming Meetings
+
+## Follow-ups
+
+- Due Today
+- Overdue
+
+---
+
+# 3. Pipeline Summary
+
+Lead
+
+↓
+
+Contact
+
+↓
+
+Deal
+
+↓
+
+Customer
+
+Show
+
+- Count
+- Percentage
+- Conversion
+
+---
+
+# 4. Deals Snapshot
+
+Display
+
+- Recently Created Deals
+- High Value Deals
+- Closing Soon
+- Overdue Deals
+
+Each card
+
+- Deal Name
+- Customer
+- Stage
+- Value
+- Owner
+- Expected Close Date
+
+---
+
+# 5. Recent Leads
+
+Display
+
+- Name
+- Company
+- Source
+- Owner
+- Created Time
+- Priority
+
+---
+
+# 6. Recent Contacts
+
+Display
+
+- Name
+- Company
+- Position
+- Phone
+- Email
+
+---
+
+# 7. Recent Customers
+
+Display
+
+- Name
+- Company
+- Joined Date
+- Assigned Agent
+
+---
+
+# 8. Tasks
+
+Show
+
+- Due Today
+- Upcoming
+- Overdue
+- Completed Today
+
+Each task
+
+- Title
+- Priority
+- Due Date
+- Assigned To
+
+---
+
+# 9. Recent Activities
+
+Timeline
+
+Display
+
+- Created Lead
+- Updated Contact
+- Added Note
+- Sent Email
+- Sent SMS
+- Completed Call
+- Created Customer
+- Created Deal
+- Completed Task
+
+Include
+
+- Icon
+- User
+- Time
+- Target
+
+---
+
+# 10. Communications
+
+## Emails
+
+Display
+
+- Sent Today
+- Failed
+- Queued
+
+Recent Emails
+
+- Subject
+- Recipient
+- Status
+- Sent Time
+
+---
+
+## Calls
+
+Display
+
+- Completed
+- Scheduled
+- Missed
+- Cancelled
+
+Recent Calls
+
+- Contact
+- Duration
+- Outcome
+
+---
+
+## SMS
+
+Display
+
+- Sent
+- Failed
+- Queued
+
+Recent SMS
+
+- Recipient
+- Preview
+- Status
+
+---
+
+# 11. Upcoming Schedule
+
+Display
+
+Today's
+
+- Calls
+- Meetings
+- Tasks
+- Follow-ups
+
+Include
+
+- Time
+- Title
+- Assigned To
+
+---
+
+# 12. Notifications
+
+Display
+
+- Overdue Tasks
+- Failed Emails
+- Failed SMS
+- Missed Calls
+- Deals Closing Soon
+- High Priority Leads
+- High Priority Customers
+
+---
+
+# 13. Quick Actions
+
+Buttons
+
+- New Lead
+- New Contact
+- New Deal
+- New Customer
+- New Task
+- New Email
+- New SMS
+- New Call
+- Log Activity
+
+---
+
+# 14. Search
+
+Global Search
+
+Search
+
+- Leads
+- Contacts
+- Deals
+- Customers
+- Tasks
+- Activities
+
+---
+
+# 15. Mini Charts
 
 ## Leads
-- [ ] Lead scoring.
-- [ ] Lead priority.
-- [ ] Lead source analytics.
-- [ ] Duplicate detection.
-- [ ] Merge duplicate leads.
-- [ ] Lead assignment rules.
-- [ ] Lead timeline.
-- [ ] Follow-up reminders.
-- [ ] Notes.
-- [ ] Attachments.
-- [ ] Lead tags.
 
-## Contacts
-- [ ] Contact timeline.
-- [ ] Contact tags.
-- [ ] Favorite contacts.
-- [ ] Relationship history.
-- [ ] Custom fields.
-- [ ] Contact notes.
-- [ ] Contact activities.
-- [ ] Communication history.
-- [ ] Multiple addresses.
-- [ ] Multiple phone numbers.
+- Today
+- This Week
+- This Month
+
+---
 
 ## Deals
-- [ ] Pipeline customization.
-- [ ] Custom deal stages.
-- [ ] Probability percentage.
-- [ ] Expected closing date.
-- [ ] Lost reason.
-- [ ] Deal history.
-- [ ] Revenue forecasting.
-- [ ] Deal attachments.
-- [ ] Deal notes.
-- [ ] Deal reminders.
+
+- Created
+- Won
+- Lost
+
+---
 
 ## Customers
-- [ ] Customer health score.
-- [ ] Customer lifetime value.
-- [ ] Open invoices.
-- [ ] Customer timeline.
-- [ ] Customer support history.
-- [ ] Customer segmentation.
-- [ ] Customer satisfaction score.
-- [ ] Renewal reminders.
 
-## Activities
-- [ ] Calls.
-- [ ] Emails.
-- [ ] Meetings.
-- [ ] Tasks.
-- [ ] Notes.
-- [ ] Activity timeline.
-- [ ] Activity calendar.
-- [ ] Activity reminders.
-- [ ] Recurring activities.
+- Added This Month
 
-## Team Management
-- [ ] Team dashboard.
-- [ ] Leaderboards.
-- [ ] Performance metrics.
-- [ ] Sales targets.
-- [ ] Team announcements.
-- [ ] Team calendar.
-- [ ] Team activity feed.
+---
 
-## Communication
-- [ ] Internal chat.
-- [ ] Email integration.
-- [ ] SMS integration.
-- [ ] Call history.
-- [ ] Email templates.
-- [ ] Email tracking.
-- [ ] Meeting scheduler.
-- [ ] Calendar synchronization.
-- [ ] Notifications center.
+## Emails
 
-## AI Features
-- [ ] AI email generation.
-- [ ] AI follow-up suggestions.
-- [ ] AI lead summaries.
-- [ ] AI customer summaries.
-- [ ] AI deal analysis.
-- [ ] AI sentiment analysis.
-- [ ] AI meeting summaries.
-- [ ] AI task recommendations.
+- Sent
+- Failed
 
-## Reporting & Analytics
-- [ ] Revenue reports.
-- [ ] Conversion reports.
-- [ ] Agent performance reports.
-- [ ] Pipeline reports.
-- [ ] Customer reports.
-- [ ] Lead source reports.
-- [ ] Activity reports.
-- [ ] Export reports to PDF.
-- [ ] Export reports to Excel.
-- [ ] Scheduled reports.
+---
 
-## Organization
-- [ ] Multi-tenant branding.
-- [ ] Company logo.
-- [ ] Custom company colors.
-- [ ] Organization settings.
-- [ ] Timezone settings.
-- [ ] Currency settings.
-- [ ] Language settings.
+## Calls
 
-## Permissions
-- [ ] Role management.
-- [ ] Permission management.
-- [ ] Custom roles.
-- [ ] Page permissions.
-- [ ] Field-level permissions.
-- [ ] Audit logs.
+- Completed
+- Missed
 
-## Billing (SaaS)
-- [ ] Subscription plans.
-- [ ] Trial management.
-- [ ] Billing history.
-- [ ] Invoice generation.
-- [ ] Payment methods.
-- [ ] Usage limits.
-- [ ] Feature restrictions.
-- [ ] Upgrade/Downgrade plans.
+---
 
-## Data Management
-- [ ] CSV import.
-- [ ] CSV export.
-- [ ] Excel import.
-- [ ] Excel export.
-- [ ] Backup.
-- [ ] Restore.
-- [ ] Duplicate detection.
-- [ ] Merge records.
-- [ ] Archive records.
-- [ ] Soft delete.
+## SMS
 
-## Performance
-- [ ] Lazy loading.
-- [ ] Code splitting.
-- [ ] Virtualized tables.
-- [ ] Image optimization.
-- [ ] Query optimization.
-- [ ] API caching.
-- [ ] TanStack Query integration.
-- [ ] Background synchronization.
-- [ ] Debounced search.
+- Sent
+- Failed
 
-## Security
-- [ ] Two-factor authentication.
-- [ ] Login history.
-- [ ] Session management.
-- [ ] Device management.
-- [ ] Password strength indicator.
-- [ ] Rate limiting.
-- [ ] Audit logs.
-- [ ] Activity logs.
+---
 
-## Developer Experience
-- [ ] Reusable component library.
-- [ ] Theme system.
-- [ ] Design tokens.
-- [ ] Consistent spacing system.
-- [ ] Consistent typography system.
-- [ ] Consistent color palette.
-- [ ] Form validation improvements.
-- [ ] Better error handling.
-- [ ] Unit tests.
-- [ ] Integration tests.
-- [ ] End-to-end tests.
-- [ ] API documentation.
-- [ ] User documentation.
+# 16. Priority Lists
 
-## Nice-to-Have
-- [ ] Dark mode improvements.
-- [ ] Keyboard navigation.
-- [ ] Accessibility (ARIA).
-- [ ] Drag-and-drop everywhere.
-- [ ] Favorite records.
-- [ ] Recently viewed records.
-- [ ] Pinned records.
-- [ ] Quick actions menu.
-- [ ] Command palette.
-- [ ] Browser notifications.
-- [ ] Progressive Web App (PWA).
-- [ ] Offline support.
+## High Priority Leads
 
+Display
+
+- Name
+- Company
+- Owner
+
+---
+
+## High Priority Deals
+
+Display
+
+- Deal
+- Value
+- Stage
+
+---
+
+## High Priority Tasks
+
+Display
+
+- Title
+- Due Date
+
+---
+
+# 17. Recently Viewed
+
+Display
+
+- Leads
+- Contacts
+- Deals
+- Customers
+
+---
+
+# 18. Assigned To Me
+
+Display
+
+- Leads
+- Contacts
+- Deals
+- Customers
+- Tasks
+
+---
+
+# 19. Communication Feed
+
+Mixed timeline
+
+- Email Sent
+- SMS Sent
+- Call Completed
+
+---
+
+# 20. Productivity
+
+Display
+
+- Activities Completed Today
+- Calls Completed Today
+- Emails Sent Today
+- SMS Sent Today
+- Tasks Completed Today
+
+---
+
+# 21. System Status
+
+Display
+
+- Failed Emails
+- Failed SMS
+- Active Calls
+- Scheduled Calls
+- Pending Tasks
+
+---
+
+# 22. Empty State
+
+When no data
+
+- "No Tasks Today"
+- "No Upcoming Calls"
+- "No New Leads"
+
+---
+
+# 23. Dashboard Filters
+
+- Today
+- Yesterday
+- This Week
+- Last Week
+- This Month
+- Last Month
+- This Quarter
+- This Year
+- Custom Range
+
+---
+
+# 24. Analytics (Admin Only)
+
+## Lead Analytics
+
+- Total Leads
+- New Leads
+- Leads by Source
+- Lead Growth
+- Lead Conversion Rate
+
+---
+
+## Contact Analytics
+
+- Total Contacts
+- New Contacts
+- Contacts Growth
+
+---
+
+## Deal Analytics
+
+- Open Deals
+- Won Deals
+- Lost Deals
+- Pipeline Value
+- Won Revenue
+- Lost Revenue
+- Average Deal Value
+- Deal Stage Distribution
+- Average Sales Cycle
+
+---
+
+## Customer Analytics
+
+- New Customers
+- Active Customers
+- Customer Growth
+- Customer Retention
+- Customer Churn
+
+---
+
+## Activity Analytics
+
+- Activities Per Day
+- Activities Per User
+- Activity Breakdown
+
+---
+
+## Email Analytics
+
+- Emails Sent
+- Delivery Rate
+- Failure Rate
+- Open Rate (if tracked)
+- Click Rate (if tracked)
+
+---
+
+## Call Analytics
+
+- Calls Completed
+- Average Call Duration
+- Call Outcomes
+- Missed Calls
+- Cancelled Calls
+
+---
+
+## SMS Analytics
+
+- SMS Sent
+- Delivery Rate
+- Failure Rate
+
+---
+
+## Task Analytics
+
+- Completed Tasks
+- Overdue Tasks
+- Completion Rate
+
+---
+
+## Agent Performance
+
+- Leads Created
+- Contacts Created
+- Deals Created
+- Customers Created
+- Calls Made
+- Emails Sent
+- SMS Sent
+- Tasks Completed
+- Activities Logged
+
+---
+
+## Leaderboards
+
+- Top Sales Agent
+- Top Activity Logger
+- Most Deals Won
+- Highest Revenue
+- Most Customers Added
+
+---
+
+## Revenue
+
+- Monthly Revenue
+- Quarterly Revenue
+- Yearly Revenue
+- Revenue Growth
+- Revenue by Agent
+
+---
+
+## Reports
+
+- Export CSV
+- Export Excel
+- Export PDF
+
+---
+
+## Custom Filters
+
+- Date Range
+- Agent
+- Team
+- Source
+- Deal Stage
+- Customer
+- Status
+```

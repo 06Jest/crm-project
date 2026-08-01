@@ -15,7 +15,11 @@ import {
   MenuItem,
   FormControl,
   Select,
+  Avatar,
+  Chip,
+  Paper,
 } from "@mui/material";
+import { alpha, type SxProps, type Theme } from "@mui/material/styles";
 
 import AddIcon from "@mui/icons-material/Add";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
@@ -29,6 +33,8 @@ import ScheduleIcon from "@mui/icons-material/Schedule";
 import MarkEmailReadIcon from "@mui/icons-material/MarkEmailRead";
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 import AllInboxIcon from "@mui/icons-material/AllInbox";
+// import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
+// import SubjectIcon from "@mui/icons-material/Subject";
 import FormatBoldIcon from "@mui/icons-material/FormatBold";
 import FormatItalicIcon from "@mui/icons-material/FormatItalic";
 import FormatUnderlinedIcon from "@mui/icons-material/FormatUnderlined";
@@ -99,35 +105,58 @@ const SIDEBAR_ITEMS: {
 ];
 
 
-const FontSize = TextStyle.extend({
-  addAttributes() {
-    return {
-      ...this.parent?.(),
-      fontSize: {
-        default: null,
-        parseHTML: (element: HTMLElement) => element.style.fontSize || null,
-        renderHTML: (attributes: { fontSize?: string | null }) => {
-          if (!attributes.fontSize) return {};
-          return { style: `font-size: ${attributes.fontSize}` };
-        },
-      },
-    };
-  },
-});
-
-const FONT_FAMILIES = [
-  { label: "Default", value: "" },
-  { label: "Arial", value: "Arial, sans-serif" },
-  { label: "Times New Roman", value: "'Times New Roman', serif" },
-  { label: "Roboto", value: "Roboto, sans-serif" },
+const AVATAR_PALETTE = [
+  "#4f5fce",
+  "#0f8f7a",
+  "#c4577a",
+  "#c17d2a",
+  "#7965d1",
+  "#2c8fb0",
+  "#b1544a",
+  "#4a935a",
 ];
 
-const FONT_SIZES = ["", "10px", "12px", "14px", "16px", "18px", "20px", "24px", "28px", "32px", "36px", "48px"];
+function getInitials(input: string) {
+  const trimmed = input.trim();
+  if (!trimmed) return "?";
+  const namePart = trimmed.includes("@") ? trimmed.split("@")[0] : trimmed;
+  const parts = namePart.split(/[\s._-]+/).filter(Boolean);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
 
-const HEADING_LEVELS = [1, 2, 3, 4, 5, 6] as const;
+function stringToAvatarColor(input: string) {
+  let hash = 0;
+  for (let i = 0; i < input.length; i++) hash = input.charCodeAt(i) + ((hash << 5) - hash);
+  return AVATAR_PALETTE[Math.abs(hash) % AVATAR_PALETTE.length];
+}
 
-function StatusIcon({ status }: { status: EmailStatus }) {
-  const sx = { fontSize: 13, opacity: 0.8, color: STATUS_META[status].color };
+  
+function statusThemeColor(theme: Theme, status: EmailStatus) {
+  switch (status) {
+    case "queued":
+      return theme.palette.warning.main;
+    case "sent":
+      return theme.palette.success.main;
+    case "failed":
+      return theme.palette.error.main;
+    default:
+      return theme.palette.text.secondary;
+  }
+}
+
+const statusChipSx = (status: EmailStatus): SxProps<Theme> => ({
+  height: 22,
+  fontSize: 11,
+  fontWeight: 700,
+  color: (theme) => statusThemeColor(theme, status),
+  bgcolor: (theme) => alpha(statusThemeColor(theme, status), 0.12),
+  border: "1px solid",
+  borderColor: (theme) => alpha(statusThemeColor(theme, status), 0.25),
+});
+
+function StatusIcon({ status, size = 13 }: { status: EmailStatus; size?: number }) {
+  const sx = { fontSize: size, opacity: 0.9, color: STATUS_META[status].color };
   switch (status) {
     case "queued":
       return <ScheduleIcon sx={sx} />;
@@ -144,9 +173,12 @@ function EditorToolbar({ editor }: { editor: Editor | null }) {
   if (!editor) return null;
 
   const btnSx = (active: boolean) => ({
-    p: "4px",
+    p: "5px",
+    borderRadius: 1.5,
     color: active ? "primary.main" : "text.primary",
-    opacity: active ? 1 : 0.6,
+    bgcolor: active ? (theme: Theme) => alpha(theme.palette.primary.main, 0.12) : "transparent",
+    opacity: active ? 1 : 0.65,
+    "&:hover": { opacity: 1, bgcolor: active ? undefined : "action.hover" },
   });
 
   const selectSx = {
@@ -160,9 +192,9 @@ function EditorToolbar({ editor }: { editor: Editor | null }) {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    width: 26,
-    height: 26,
-    borderRadius: "4px",
+    width: 28,
+    height: 28,
+    borderRadius: "6px",
     cursor: "pointer",
     opacity: 0.75,
     "&:hover": { opacity: 1, bgcolor: "action.hover" },
@@ -197,7 +229,19 @@ function EditorToolbar({ editor }: { editor: Editor | null }) {
   const currentHighlight = (editor.getAttributes("highlight").color as string) || "#ffff00";
 
   return (
-    <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 0.25, py: 0.25 }}>
+    <Paper
+      variant="outlined"
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        flexWrap: "wrap",
+        gap: 0.25,
+        p: 0.5,
+        borderRadius: 2.5,
+        bgcolor: "action.hover",
+        borderColor: "divider",
+      }}
+    >
       <TextField
         select
         size="small"
@@ -207,7 +251,7 @@ function EditorToolbar({ editor }: { editor: Editor | null }) {
           if (!value) editor.chain().focus().unsetFontFamily().run();
           else editor.chain().focus().setFontFamily(value).run();
         }}
-        sx={{ width: 80, ...selectSx }}
+        sx={{ width: 84, bgcolor: "background.paper", borderRadius: 1.5, ...selectSx }}
       >
         {FONT_FAMILIES.map((f) => (
           <MenuItem key={f.label} value={f.value} sx={{ fontSize: 12 }}>
@@ -224,7 +268,7 @@ function EditorToolbar({ editor }: { editor: Editor | null }) {
           const value = e.target.value;
           editor.chain().focus().setMark("textStyle", { fontSize: value || null }).run();
         }}
-        sx={{ width: 65, ...selectSx }}
+        sx={{ width: 68, bgcolor: "background.paper", borderRadius: 1.5, ...selectSx }}
       >
         {FONT_SIZES.map((size) => (
           <MenuItem key={size || "default"} value={size} sx={{ fontSize: 12 }}>
@@ -233,7 +277,7 @@ function EditorToolbar({ editor }: { editor: Editor | null }) {
         ))}
       </TextField>
 
-      <Divider orientation="vertical" flexItem sx={{ mx: 0.5, my: "4px" }} />
+      <Divider orientation="vertical" flexItem sx={{ mx: 0.5, my: "6px" }} />
 
       <IconButton
         size="small"
@@ -287,7 +331,7 @@ function EditorToolbar({ editor }: { editor: Editor | null }) {
         </IconButton>
       </Tooltip>
 
-      <Divider orientation="vertical" flexItem sx={{ mx: 0.5, my: "4px" }} />
+      <Divider orientation="vertical" flexItem sx={{ mx: 0.5, my: "6px" }} />
 
       <Tooltip title="Text color">
         <Box component="label" sx={swatchSx}>
@@ -323,9 +367,9 @@ function EditorToolbar({ editor }: { editor: Editor | null }) {
         </Box>
       </Tooltip>
 
-      <Divider orientation="vertical" flexItem sx={{ mx: 0.5, my: "4px" }} />
+      <Divider orientation="vertical" flexItem sx={{ mx: 0.5, my: "6px" }} />
 
-      <FormControl size="small" sx={{ minWidth: 40 }}>
+      <FormControl size="small" sx={{ minWidth: 44 }}>
         <Select
           displayEmpty
           value={
@@ -347,6 +391,8 @@ function EditorToolbar({ editor }: { editor: Editor | null }) {
           }}
           sx={{
             fontSize: 12,
+            bgcolor: "background.paper",
+            borderRadius: 1.5,
             "& .MuiOutlinedInput-notchedOutline": { border: "none" },
             "&.Mui-focused .MuiOutlinedInput-notchedOutline": { border: "none" },
           }}
@@ -359,7 +405,7 @@ function EditorToolbar({ editor }: { editor: Editor | null }) {
         </Select>
       </FormControl>
 
-      <Divider orientation="vertical" flexItem sx={{ mx: 0.5, my: "4px" }} />
+      <Divider orientation="vertical" flexItem sx={{ mx: 0.5, my: "6px" }} />
 
       <IconButton
         size="small"
@@ -379,7 +425,7 @@ function EditorToolbar({ editor }: { editor: Editor | null }) {
         <LinkIcon fontSize="small" />
       </IconButton>
 
-      <Divider orientation="vertical" flexItem sx={{ mx: 0.5, my: "4px" }} />
+      <Divider orientation="vertical" flexItem sx={{ mx: 0.5, my: "6px" }} />
 
       <IconButton
         size="small"
@@ -410,7 +456,7 @@ function EditorToolbar({ editor }: { editor: Editor | null }) {
         <FormatAlignJustifyIcon fontSize="small" />
       </IconButton>
 
-      <Divider orientation="vertical" flexItem sx={{ mx: 0.5, my: "4px" }} />
+      <Divider orientation="vertical" flexItem sx={{ mx: 0.5, my: "6px" }} />
 
       <IconButton
         size="small"
@@ -428,9 +474,36 @@ function EditorToolbar({ editor }: { editor: Editor | null }) {
       >
         <RedoIcon fontSize="small" />
       </IconButton>
-    </Box>
+    </Paper>
   );
 }
+
+const FontSize = TextStyle.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      fontSize: {
+        default: null,
+        parseHTML: (element: HTMLElement) => element.style.fontSize || null,
+        renderHTML: (attributes: { fontSize?: string | null }) => {
+          if (!attributes.fontSize) return {};
+          return { style: `font-size: ${attributes.fontSize}` };
+        },
+      },
+    };
+  },
+});
+
+const FONT_FAMILIES = [
+  { label: "Default", value: "" },
+  { label: "Arial", value: "Arial, sans-serif" },
+  { label: "Times New Roman", value: "'Times New Roman', serif" },
+  { label: "Roboto", value: "Roboto, sans-serif" },
+];
+
+const FONT_SIZES = ["", "10px", "12px", "14px", "16px", "18px", "20px", "24px", "28px", "32px", "36px", "48px"];
+
+const HEADING_LEVELS = [1, 2, 3, 4, 5, 6] as const;
 
 export default function EmailPanel() {
   const dispatch = useDispatch<AppDispatch>();
@@ -836,13 +909,13 @@ export default function EmailPanel() {
     <Box sx={{ display: "flex", height: "100%", minHeight: 0 }}>
       <Box
         sx={{
-          width: 130,
+          width: 150,
           flexShrink: 0,
           display: "flex",
           flexDirection: "column",
           borderRight: "1px solid",
-          borderColor: "#63636322",
-          pr: 1,
+          borderColor: "divider",
+          pr: 1.5,
           pt: 0.5,
         }}
       >
@@ -857,19 +930,20 @@ export default function EmailPanel() {
             openNewEmail();
           }}
           sx={{
-            borderRadius: 6,
+            borderRadius: 3,
             textTransform: "none",
-            fontWeight: 600,
-            fontSize: 12,
-            py: 0.8,
-            mb: 1,
-            boxShadow: 1,
+            fontWeight: 700,
+            fontSize: 13,
+            py: 1,
+            mb: 1.5,
+            boxShadow: "0 1px 4px rgba(0,0,0,0.18)",
+            "&:hover": { boxShadow: "0 2px 8px rgba(0,0,0,0.24)" },
           }}
         >
           Compose
         </Button>
 
-        <List dense disablePadding sx={{ display: "flex", flexDirection: "column", gap: 0.25 }}>
+        <List dense disablePadding sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
           {SIDEBAR_ITEMS.map(({ key, label, icon }) => {
             const active = statusFilter === key;
             return (
@@ -884,15 +958,16 @@ export default function EmailPanel() {
                 sx={{
                   cursor: "pointer",
                   px: 1.25,
-                  py: 0.6,
-                  borderRadius: "0 16px 16px 0",
-                  bgcolor: active ? "action.selected" : "transparent",
+                  py: 0.7,
+                  borderRadius: 999,
+                  bgcolor: active ? (theme) => alpha(theme.palette.primary.main, 0.12) : "transparent",
                   color: active ? "primary.main" : "text.primary",
-                  "&:hover": { bgcolor: active ? "action.selected" : "action.hover" },
+                  transition: "background-color 0.15s ease",
+                  "&:hover": { bgcolor: active ? (theme: Theme) => alpha(theme.palette.primary.main, 0.16) : "action.hover" },
                 }}
               >
                 <Box sx={{ display: "flex", alignItems: "center", width: "100%", gap: 1.25 }}>
-                  <Box sx={{ display: "flex", opacity: active ? 1 : 0.7 }}>{icon}</Box>
+                  <Box sx={{ display: "flex", opacity: active ? 1 : 0.65 }}>{icon}</Box>
                   <Typography
                     sx={{
                       flex: 1,
@@ -903,17 +978,18 @@ export default function EmailPanel() {
                     {label}
                   </Typography>
                   {statusCounts[key] > 0 && (
-                    <Typography
+                    <Chip
+                      label={statusCounts[key]}
+                      size="small"
                       sx={{
-                        fontSize: 11,
-                        fontWeight: active ? 700 : 500,
-                        opacity: 0.6,
-                        minWidth: 16,
-                        textAlign: "right",
+                        height: 18,
+                        fontSize: 10,
+                        fontWeight: 700,
+                        bgcolor: active ? "primary.main" : "action.selected",
+                        color: active ? "primary.contrastText" : "text.secondary",
+                        "& .MuiChip-label": { px: "6px" },
                       }}
-                    >
-                      {statusCounts[key]}
-                    </Typography>
+                    />
                   )}
                 </Box>
               </ListItem>
@@ -922,7 +998,7 @@ export default function EmailPanel() {
         </List>
       </Box>
 
-      <Box sx={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", pl: 1.5 }}>
+      <Box sx={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", pl: 2 }}>
         {view === "list" && (
           <>
             {error && (
@@ -930,57 +1006,73 @@ export default function EmailPanel() {
                 <ErrorAlert message={error} />
               </Box>
             )}
-            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Paper
+                variant="outlined"
+                sx={{
+                  flex: 1,
+                  display: "flex",
+                  alignItems: "center",
+                  px: 1.5,
+                  borderRadius: 999,
+                  borderColor: "divider",
+                  bgcolor: "action.hover",
+                }}
+              >
+                <SearchIcon fontSize="small" sx={{ opacity: 0.5, mr: 1 }} />
+                <TextField
+                  variant="standard"
+                  size="small"
+                  fullWidth
+                  placeholder="Search emails..."
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  InputProps={{ disableUnderline: true }}
+                  sx={{ "& .MuiInputBase-input": { py: 0.9, fontSize: 13 } }}
+                />
+              </Paper>
               <Tooltip title="Refresh">
                 <span>
-                  <IconButton size="small" onClick={refresh} disabled={eL}>
+                  <IconButton
+                    size="small"
+                    onClick={refresh}
+                    disabled={eL}
+                    sx={{ border: "1px solid", borderColor: "divider", borderRadius: 2 }}
+                  >
                     <RefreshIcon fontSize="small" />
                   </IconButton>
                 </span>
               </Tooltip>
-              <TextField
-                size="small"
-                fullWidth
-                placeholder="Search emails..."
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                sx={{
-                  bgcolor: "action.hover",
-                  borderRadius: 6,
-                  "& .MuiOutlinedInput-root": { borderRadius: 6 },
-                  "& .MuiOutlinedInput-notchedOutline": { border: "none" },
-                  "&:hover .MuiOutlinedInput-notchedOutline": { border: "none" },
-                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": { border: "none" },
-                }}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchIcon fontSize="small" />
-                    </InputAdornment>
-                  ),
-                }}
-              />
             </Box>
 
             <Box>
-              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 1, mb: 0.5 }}>
-                <Typography sx={{ fontSize: 12, fontWeight: 700, opacity: 0.6, textTransform: "uppercase", pl: 0.5 }}>
+              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 1.5, mb: 0.75 }}>
+                <Typography sx={{ fontSize: 12, fontWeight: 700, opacity: 0.6, textTransform: "uppercase", letterSpacing: 0.4, pl: 0.5 }}>
                   {SIDEBAR_ITEMS.find((s) => s.key === statusFilter)?.label ?? "All Mail"}
                 </Typography>
+                <Typography sx={{ fontSize: 11.5, opacity: 0.5, pr: 0.5 }}>
+                  {visibleEmails.length} {visibleEmails.length === 1 ? "email" : "emails"}
+                </Typography>
               </Box>
+              <Divider sx={{ mb: 0.5 }} />
 
               {eL && !eLd ? (
                 <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
                   <CircularProgress size={22} />
                 </Box>
               ) : visibleEmails.length === 0 ? (
-                <Typography variant="body2" sx={{ opacity: 0.5, textAlign: "center", mt: 4 }}>
-                  {emails.length === 0 ? "No emails yet" : "No matches found"}
-                </Typography>
+                <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", mt: 6, opacity: 0.45 }}>
+                  <AllInboxIcon sx={{ fontSize: 38, mb: 1 }} />
+                  <Typography variant="body2">
+                    {emails.length === 0 ? "No emails yet" : "No matches found"}
+                  </Typography>
+                </Box>
               ) : (
                 <List sx={{ overflowY: "auto", height: 325 }} dense disablePadding>
                   {visibleEmails.map((email) => {
                     const owner = ownerOf(email);
+                    const ownerName = owner.type ? getValue(owner.type, owner.id) : "";
+                    const displayName = ownerName || email.recipient_email;
 
                     return (
                       <ListItem
@@ -988,55 +1080,60 @@ export default function EmailPanel() {
                         disableGutters
                         onClick={() => handleOpenEmail(email)}
                         sx={{
-                          p: 0,
+                          p: 1,
+                          mb: 0.5,
+                          gap: 1.25,
                           alignItems: "flex-start",
-                          borderBottom: "1px solid",
-                          borderColor: "#63636322",
+                          borderRadius: 2,
                           cursor: "pointer",
-                          borderRadius: 1,
+                          transition: "background-color 0.15s ease",
                           "&:hover": { bgcolor: "action.hover" },
+                          "&:hover .email-row-delete": { opacity: 1 },
                         }}
                       >
+                        <Box sx={{ position: "relative", flexShrink: 0, mt: 0.25 }}>
+                          <Avatar
+                            sx={{
+                              width: 34,
+                              height: 34,
+                              fontSize: 12.5,
+                              fontWeight: 700,
+                              bgcolor: stringToAvatarColor(displayName),
+                            }}
+                          >
+                            {getInitials(displayName)}
+                          </Avatar>
+                          <Box
+                            sx={{
+                              position: "absolute",
+                              bottom: -2,
+                              right: -2,
+                              width: 16,
+                              height: 16,
+                              borderRadius: "50%",
+                              bgcolor: "background.paper",
+                              border: "1px solid",
+                              borderColor: "divider",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                            }}
+                          >
+                            <StatusIcon status={email.status} size={10} />
+                          </Box>
+                        </Box>
+
                         <ListItemText
+                          sx={{ my: 0 }}
                           primary={
-                            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 0.5 }}>
-                              <Box sx={{ display: "flex", alignItems: "center" }}>
-                                <StatusIcon status={email.status} />
-                                <Typography
-                                  component="span"
-                                  sx={{
-                                    ml: 1,
-                                    fontSize: "0.85rem",
-                                    overflow: "hidden",
-                                    textOverflow: "ellipsis",
-                                    display: "-webkit-box",
-                                    WebkitLineClamp: 2,
-                                    WebkitBoxOrient: "vertical",
-                                  }}
-                                >
-                                  {email.subject || "(No subject)"}
-                                </Typography>
-                              </Box>
-                              <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", mr: 1 }}>
-                                <IconButton sx={{ p: "2px" }} onClick={(e) => removeEmail(email, e)}>
-                                  <DeleteOutlineIcon sx={{ fontSize: "15px" }} />
-                                </IconButton>
-                              </Box>
-                            </Box>
-                          }
-                          secondary={
-                            <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                              <Box sx={{ display: "flex" }}>
-                                <Typography variant="caption" fontSize="0.7rem" sx={{ ml: 1 }}>
-                                  {email.recipient_email}
-                                </Typography>
-                                {owner.type && getValue(owner.type, owner.id) && (
-                                  <Typography variant="caption" fontSize="0.7rem" sx={{ ml: 1, opacity: 0.7 }}>
-                                    • {getValue(owner.type, owner.id)}
-                                  </Typography>
-                                )}
-                              </Box>
-                              <Typography variant="caption" fontSize="0.7rem" sx={{ color: STATUS_META[email.status].color }}>
+                            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1 }}>
+                              <Typography
+                                noWrap
+                                sx={{ fontSize: 13.5, fontWeight: 600, flex: 1, minWidth: 0 }}
+                              >
+                                {displayName}
+                              </Typography>
+                              <Typography variant="caption" sx={{ fontSize: 11, color: "text.secondary", flexShrink: 0 }}>
                                 {new Date(email.updated_at).toLocaleString([], {
                                   month: "short",
                                   day: "numeric",
@@ -1046,7 +1143,39 @@ export default function EmailPanel() {
                               </Typography>
                             </Box>
                           }
-                          secondaryTypographyProps={{ fontSize: "0.7rem" }}
+                          secondary={
+                            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1, mt: "2px" }}>
+                              <Typography
+                                noWrap
+                                sx={{ fontSize: 12.5, color: "text.secondary", flex: 1, minWidth: 0 }}
+                              >
+                                <Box component="span" sx={{ color: "text.primary", fontWeight: email.status === "draft" ? 500 : 600 }}>
+                                  {email.subject || "(No subject)"}
+                                </Box>
+                                {email.preview_text ? ` — ${email.preview_text}` : ""}
+                              </Typography>
+
+                              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, flexShrink: 0 }}>
+                                <Chip
+                                  label={STATUS_META[email.status].label}
+                                  size="small"
+                                  sx={statusChipSx(email.status)}
+                                />
+                                <IconButton
+                                  className="email-row-delete"
+                                  sx={{
+                                    p: "3px",
+                                    opacity: 0,
+                                    transition: "opacity 0.15s ease",
+                                    "&:hover": { color: "error.main" },
+                                  }}
+                                  onClick={(e) => removeEmail(email, e)}
+                                >
+                                  <DeleteOutlineIcon sx={{ fontSize: "15px" }} />
+                                </IconButton>
+                              </Box>
+                            </Box>
+                          }
                         />
                       </ListItem>
                     );
@@ -1065,42 +1194,85 @@ export default function EmailPanel() {
                 <ErrorAlert message={error} />
               </Box>
             )}
-            <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-              <Box sx={{ display: "flex", justifyContent: "space-between", width: "100%" }}>
-                <Box sx={{ display: "flex", justifyContent: "start" }}>
-                  <IconButton
-                    title="Back"
-                    size="small"
-                    onClick={async () => {
-                      await leaveEditor();
-                      dispatch(clearError());
-                    }}
-                    disabled={saving}
-                  >
-                    <ArrowBackIcon fontSize="small" />
-                  </IconButton>
-                  <Typography sx={{ ml: 1, opacity: 0.6 }}>
-                    {activeEmail
-                      ? `${STATUS_META[activeEmail.status].label} • ${new Date(activeEmail.created_at).toLocaleString()}`
-                      : "New Email"}
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                mb: 1.5,
+                pb: 1.25,
+                borderBottom: "1px solid",
+                borderColor: "divider",
+              }}
+            >
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1, minWidth: 0 }}>
+                <IconButton
+                  title="Back"
+                  size="small"
+                  onClick={async () => {
+                    await leaveEditor();
+                    dispatch(clearError());
+                  }}
+                  disabled={saving}
+                  sx={{ border: "1px solid", borderColor: "divider", borderRadius: 2 }}
+                >
+                  <ArrowBackIcon fontSize="small" />
+                </IconButton>
+                <Box sx={{ minWidth: 0 }}>
+                  <Typography noWrap sx={{ fontSize: 14, fontWeight: 700 }}>
+                    {activeEmail ? activeEmail.subject || "(No subject)" : "New Message"}
                   </Typography>
-                </Box>
-
-                <Box sx={{ display: "flex", alignItems: "center" }}>
-                  {saving && <CircularProgress size={14} sx={{ mr: 1 }} />}
-
-                  {isDraft && (
-                    <IconButton title="Save Draft" size="small" disabled={!canSave || saving} onClick={saveAndExit}>
-                      <CheckIcon fontSize="small" />
-                    </IconButton>
-                  )}
-
                   {activeEmail && (
-                    <IconButton size="small" onClick={(e) => removeEmail(activeEmail, e)} disabled={saving}>
+                    <Typography sx={{ fontSize: 11, color: "text.secondary" }}>
+                      {new Date(activeEmail.created_at).toLocaleString()}
+                    </Typography>
+                  )}
+                </Box>
+                {activeEmail && (
+                  <Chip
+                    icon={<StatusIcon status={activeEmail.status} size={12} />}
+                    label={STATUS_META[activeEmail.status].label}
+                    size="small"
+                    sx={{
+                      ...statusChipSx(activeEmail.status),
+                      height: 22,
+                      fontSize: 11,
+                    }}
+                  />
+                )}
+              </Box>
+
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, flexShrink: 0 }}>
+                {saving && <CircularProgress size={14} sx={{ mr: 1 }} />}
+
+                {isDraft && (
+                  <Tooltip title="Save draft">
+                    <span>
+                      <IconButton
+                        title="Save Draft"
+                        size="small"
+                        disabled={!canSave || saving}
+                        onClick={saveAndExit}
+                        sx={{ border: "1px solid", borderColor: "divider", borderRadius: 2 }}
+                      >
+                        <CheckIcon fontSize="small" />
+                      </IconButton>
+                    </span>
+                  </Tooltip>
+                )}
+
+                {activeEmail && (
+                  <Tooltip title="Delete">
+                    <IconButton
+                      size="small"
+                      onClick={(e) => removeEmail(activeEmail, e)}
+                      disabled={saving}
+                      sx={{ border: "1px solid", borderColor: "divider", borderRadius: 2, "&:hover": { color: "error.main" } }}
+                    >
                       <DeleteOutlineIcon fontSize="small" />
                     </IconButton>
-                  )}
-                </Box>
+                  </Tooltip>
+                )}
               </Box>
             </Box>
 
@@ -1111,9 +1283,20 @@ export default function EmailPanel() {
             )}
 
             {isDraft && (
-              <>
-                <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                  <Box sx={{ width: 100 }}>
+              <Paper
+                variant="outlined"
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  flex: 1,
+                  minHeight: 0,
+                  borderRadius: 3,
+                  borderColor: "divider",
+                  overflow: "hidden",
+                }}
+              >
+                <Box sx={{ display: "flex", justifyContent: "space-between", px: 1.5, pt: 1.25, gap: 1 }}>
+                  <Box sx={{ width: 110 }}>
                     <TextField
                       select
                       size="small"
@@ -1127,7 +1310,9 @@ export default function EmailPanel() {
                       SelectProps={{ native: false }}
                       sx={{
                         cursor: "pointer",
-                        "& .MuiInputBase-input": { py: "3px", fontSize: 11, fontWeight: 700 },
+                        bgcolor: "action.hover",
+                        borderRadius: 2,
+                        "& .MuiInputBase-input": { py: "5px", fontSize: 11, fontWeight: 700 },
                         "& .MuiOutlinedInput-notchedOutline": { border: "none" },
                         "&.Mui-focused .MuiOutlinedInput-notchedOutline": { border: "none" },
                       }}
@@ -1138,7 +1323,7 @@ export default function EmailPanel() {
                     </TextField>
                   </Box>
 
-                  <Box sx={{ width: 220 }}>
+                  <Box sx={{ width: 230 }}>
                     <TextField
                       select
                       size="small"
@@ -1156,7 +1341,9 @@ export default function EmailPanel() {
                         }
                       }}
                       sx={{
-                        "& .MuiInputBase-input": { py: "3px", fontSize: 11, fontWeight: 700 },
+                        bgcolor: "action.hover",
+                        borderRadius: 2,
+                        "& .MuiInputBase-input": { py: "5px", fontSize: 11, fontWeight: 700 },
                         "& .MuiOutlinedInput-notchedOutline": { border: "none" },
                         "&.Mui-focused .MuiOutlinedInput-notchedOutline": { border: "none" },
                       }}
@@ -1188,18 +1375,28 @@ export default function EmailPanel() {
                 <TextField
                   size="small"
                   fullWidth
-                  placeholder="To (recipient email)"
+                  placeholder="recipient@email.com"
                   value={editRecipient}
                   onChange={(e) => {
                     setEditRecipient(e.target.value);
                     setRecipientAutoFilled(false);
                   }}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Typography sx={{ fontSize: 12, color: "text.secondary", fontWeight: 700, width: 34 }}>
+                          To
+                        </Typography>
+                      </InputAdornment>
+                    ),
+                  }}
                   sx={{
-                    mt: 1,
+                    mt: 1.25,
+                    px: 1.5,
                     "& .MuiOutlinedInput-notchedOutline": { border: "none" },
                     "&:hover .MuiOutlinedInput-notchedOutline": { border: "none" },
                     "&.Mui-focused .MuiOutlinedInput-notchedOutline": { border: "none" },
-                    "& .MuiInputBase-input": { py: "3px", fontSize: 13 },
+                    "& .MuiInputBase-input": { py: "6px", fontSize: 13 },
                   }}
                 />
 
@@ -1211,24 +1408,38 @@ export default function EmailPanel() {
                   placeholder="Subject"
                   value={editSubject}
                   onChange={(e) => setEditSubject(e.target.value)}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Typography sx={{ fontSize: 12, color: "text.secondary", fontWeight: 700, width: 34 }}>
+                          Subj
+                        </Typography>
+                      </InputAdornment>
+                    ),
+                  }}
                   sx={{
+                    px: 1.5,
                     "& .MuiOutlinedInput-notchedOutline": { border: "none" },
                     "&:hover .MuiOutlinedInput-notchedOutline": { border: "none" },
                     "&.Mui-focused .MuiOutlinedInput-notchedOutline": { border: "none" },
-                    "& .MuiInputBase-input": { py: "3px", fontSize: 13, fontWeight: 700 },
+                    "& .MuiInputBase-input": { py: "6px", fontSize: 13, fontWeight: 700 },
                   }}
                 />
 
                 <Divider />
 
-                <EditorToolbar editor={editor} />
+                <Box sx={{ px: 1.25, py: 1 }}>
+                  <EditorToolbar editor={editor} />
+                </Box>
 
-                <Divider sx={{ mb: 1 }} />
+                <Divider />
 
                 <Box
                   sx={{
                     flex: 1,
                     overflowY: "auto",
+                    px: 2,
+                    py: 1.5,
                     "& .ProseMirror": {
                       outline: "none",
                       minHeight: "100%",
@@ -1263,49 +1474,85 @@ export default function EmailPanel() {
                   <EditorContent editor={editor} />
                 </Box>
 
-                <Box sx={{ display: "flex", justifyContent: "flex-end", pt: 1 }}>
+                <Divider />
+
+                <Box sx={{ display: "flex", justifyContent: "flex-end", alignItems: "center", px: 1.5, py: 1.25 }}>
                   <Button
                     size="small"
                     variant="contained"
+                    disableElevation
                     startIcon={<SendIcon fontSize="small" />}
                     disabled={!canSave || saving}
                     onClick={handleSend}
+                    sx={{
+                      borderRadius: 999,
+                      textTransform: "none",
+                      fontWeight: 700,
+                      px: 2.5,
+                      boxShadow: "0 1px 4px rgba(0,0,0,0.18)",
+                    }}
                   >
                     Send
                   </Button>
                 </Box>
-              </>
+              </Paper>
             )}
 
             {!isDraft && activeEmail && (
               <Box sx={{ flex: 1, overflowY: "auto", display: "flex", justifyContent: "center", py: 2 }}>
-                <Box
+                <Paper
+                  variant="outlined"
                   sx={{
                     width: "100%",
-                    maxWidth: 520,
-                    bgcolor: "background.paper",
-                    border: "1px solid",
-                    borderColor: "#63636322",
-                    borderRadius: 2,
-                    boxShadow: 1,
+                    maxWidth: 540,
+                    borderColor: "divider",
+                    borderRadius: 3,
                     overflow: "hidden",
                   }}
                 >
                   <Box sx={{ px: 3, pt: 3, pb: 2 }}>
-                    <Typography sx={{ fontWeight: 700, fontSize: 16, mb: 1 }}>
-                      {activeEmail.subject || "(No subject)"}
-                    </Typography>
-                    <Typography variant="caption" sx={{ display: "block", opacity: 0.7 }}>
-                      From: {activeEmail.sender_name} &lt;{activeEmail.sender_email}&gt;
-                    </Typography>
-                    <Typography variant="caption" sx={{ display: "block", opacity: 0.7 }}>
-                      To: {activeEmail.recipient_email}
-                    </Typography>
-                    {activeEmail.sent_at && (
-                      <Typography variant="caption" sx={{ display: "block", opacity: 0.5, mt: 0.5 }}>
-                        {new Date(activeEmail.sent_at).toLocaleString()}
+                    <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 1, mb: 1.5 }}>
+                      <Typography sx={{ fontWeight: 700, fontSize: 17, lineHeight: 1.3 }}>
+                        {activeEmail.subject || "(No subject)"}
                       </Typography>
-                    )}
+                      <Chip
+                        icon={<StatusIcon status={activeEmail.status} size={12} />}
+                        label={STATUS_META[activeEmail.status].label}
+                        size="small"
+                        sx={{
+                          ...statusChipSx(activeEmail.status),
+                          height: 22,
+                          fontSize: 11,
+                        }}
+                      />
+                    </Box>
+
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
+                      <Avatar
+                        sx={{
+                          width: 36,
+                          height: 36,
+                          fontSize: 13,
+                          fontWeight: 700,
+                          bgcolor: stringToAvatarColor(activeEmail.sender_email),
+                        }}
+                      >
+                        {getInitials(activeEmail.sender_name || activeEmail.sender_email)}
+                      </Avatar>
+                      <Box sx={{ minWidth: 0 }}>
+                        <Typography variant="caption" sx={{ display: "block", fontWeight: 600 }}>
+                          {activeEmail.sender_name} <Box component="span" sx={{ fontWeight: 400, opacity: 0.6 }}>&lt;{activeEmail.sender_email}&gt;</Box>
+                        </Typography>
+                        <Typography variant="caption" sx={{ display: "block", opacity: 0.7 }}>
+                          to {activeEmail.recipient_email}
+                        </Typography>
+                        {activeEmail.sent_at && (
+                          <Typography variant="caption" sx={{ display: "block", opacity: 0.5, mt: 0.25 }}>
+                            {new Date(activeEmail.sent_at).toLocaleString()}
+                          </Typography>
+                        )}
+                      </Box>
+                    </Box>
                   </Box>
 
                   <Divider />
@@ -1330,7 +1577,7 @@ export default function EmailPanel() {
                     }}
                     dangerouslySetInnerHTML={{ __html: activeEmail.body_html || "" }}
                   />
-                </Box>
+                </Paper>
               </Box>
             )}
           </Box>

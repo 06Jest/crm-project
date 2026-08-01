@@ -35,14 +35,10 @@ export interface Profile {
   last_login?: string;
 }
 
-export interface DisplayProfile {
-  display_name: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  employee_id?: string;
-  position?: string;
-  avatar_url?: string;
+export interface DisplayProfile extends Profile{
+  org: {
+    name: string;
+  };
 }
 
 export interface ProfileIDName {

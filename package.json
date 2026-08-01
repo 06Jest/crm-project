@@ -16,6 +16,7 @@
     "@hello-pangea/dnd": "^18.0.1",
     "@mui/icons-material": "^7.3.9",
     "@mui/material": "^7.3.9",
+    "@mui/x-charts": "^9.10.1",
     "@mui/x-data-grid": "^9.3.0",
     "@react-email/components": "^1.0.12",
     "@reduxjs/toolkit": "^2.11.2",
