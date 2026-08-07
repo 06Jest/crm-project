@@ -645,7 +645,7 @@ export default function Deals() {
                                         fontWeight: 600,
                                         cursor: 'pointer'
                                       }}
-                                      >{formatName(deal.owner.first_name, deal.owner.last_name)}</Typography>
+                                      >{formatName(deal.owner.profile.first_name, deal.owner.profile.last_name)}</Typography>
                                     </Box>
                                     <Box sx={{
                                       display: 'flex',

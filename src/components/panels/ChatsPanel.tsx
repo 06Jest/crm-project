@@ -73,16 +73,15 @@ import { fetchCustomersLists } from "../../store/customersSlice";
 import { formatName, formatShortTitle, formatTitle } from "../../utils/formatText";
 import { useAuth } from "../../hooks/useAuth";
 import ErrorAlert from "../Error";
-import type { ProfileIDName } from "../../types/profile";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../services/supabase";
-import { fetchMembersIDNames } from "../../store/profileSlice";
+import { fetchOrgMembers } from "../../store/organizationMemberSlice";
+import type { DisplayOrganizationMember } from "../../types/organization.member";
 
 
 type EntitySelectOption = { id: string; label: string };
 type EntityChoice = ChatTargetType | "none";
 
-// ---- purely presentational helpers (no data/logic impact) ----
 const AVATAR_PALETTE = [
   "#4f5fce",
   "#0f8f7a",
@@ -120,14 +119,14 @@ function relativeTime(dateStr: string) {
   if (diffDay < 7) return `${diffDay}d`;
   return date.toLocaleDateString([], { month: "short", day: "numeric" });
 }
-// ---------------------------------------------------------------
+
 
 export default function ChatPanel() {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const { user, isAgent} = useAuth();
   const userId = user?.id;
-
+  
   const {
     items: conversations,
     loading: convLoading,
@@ -147,7 +146,7 @@ export default function ChatPanel() {
   const { items: leads, loaded: lLd } = useSelector((s: RootState) => s.leads);
   const { items: deals, loaded: dLd } = useSelector((s: RootState) => s.deals);
   const { items: customers, loaded: cuLd } = useSelector((s: RootState) => s.customers);
-  const { items: profiles, loaded: pLd } = useSelector((s: RootState) => s.profile);
+  const { items: members, loaded: pLd } = useSelector((s: RootState) => s.orgmembers);
 
   const [view, setView] = useState<"list" | "chat">("list");
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -156,7 +155,7 @@ export default function ChatPanel() {
   const [entityId, setEntityId] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingText, setEditingText] = useState("");
-  const [selectedProfile, setSelectedProfile] = useState<ProfileIDName | null>(null);
+  const [selectedProfile, setSelectedProfile] = useState<DisplayOrganizationMember | null>(null);
   const [searchText, setSearchText] = useState("");
   const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null);
     const [selectedMessage, setSelectedMessage] = useState<MessageListItem | null>();
@@ -211,13 +210,15 @@ useEffect(() => {
   useEffect(() => {
     if (!needsEntityLists) return;
 
+    
+
     const loadData = async () => {
       const requests = [];
       if (!cLd) requests.push(dispatch(fetchContactsLists()).unwrap());
       if (!lLd) requests.push(dispatch(fetchLeadsLists()).unwrap());
       if (!dLd) requests.push(dispatch(fetchDealsLists()).unwrap());
       if (!cuLd) requests.push(dispatch(fetchCustomersLists()).unwrap());
-      if (!pLd) requests.push(dispatch(fetchMembersIDNames()).unwrap());
+      if (!pLd) requests.push(dispatch(fetchOrgMembers()).unwrap());
       try {
         await Promise.all(requests);
       } catch {
@@ -249,7 +250,9 @@ useEffect(() => {
     if (conversation.type === "announcement") return "Announcements";
     if (conversation.type === "organization") return "Organization";
 
-    return conversation.other_participant ? conversation.other_participant.display_name :
+    return conversation.other_participant ? 
+    `${conversation.other_participant.fist_name} 
+    ${conversation.other_participant.last_name}` :
      "DM";
   };
 
@@ -261,7 +264,7 @@ useEffect(() => {
   const isUnread = useCallback(
     (conversation: ConversationListItem) => {
       if (!conversation.last_message) return false;
-      if (conversation.last_message.sender_id === userId) return false;
+      if (conversation.last_message.sender.id === userId) return false;
 
       if (!conversation.my_last_read_at) return true;
 
@@ -294,6 +297,12 @@ useEffect(() => {
   }),
   [conversations]
 );
+
+useEffect(() => {
+  console.log("CONVERSATIONS:", conversations);
+  console.log("ANNOUNCEMENTS:", grouped.announcements);
+  console.log("ORGANIZATION:", grouped.organization);
+}, [conversations, grouped]);
 
   const contactsMap = useMemo(
     () => new Map(contacts.map(c => [c.id, c])),
@@ -617,23 +626,21 @@ useEffect(() => {
     <Box sx={{ display: "flex", flexDirection: "column", height: "100%", width: "100%" }}>
       {view === "list" && (
         <>
-          <Typography sx={{ fontWeight: 700, fontSize: "1.15rem", px: 1, pb: 1.25 }}>
-            Chats
-          </Typography>
-
           <Autocomplete
             value={selectedProfile}
             inputValue={searchText}
             size="small"
-            options={[...profiles]
-            .filter((p) => p.id !== userId)
+            options={[...members]
+            .filter((p) => p.profile.id !== userId)
             .sort((a, b) =>
-              a.display_name.localeCompare(b.display_name)
+              formatName(a.profile.first_name, a.profile.last_name).localeCompare(formatName(b.profile.first_name, b.profile.last_name))
             )}
             isOptionEqualToValue={(option, value) => option.id === value.id}
             clearOnBlur
             openOnFocus
-            getOptionLabel={(option) => option.display_name}
+            getOptionLabel={(option) =>
+                `${formatName(option.profile.first_name, option.profile.last_name)}`
+              }
             onChange={(_, profile) => {
               setSelectedProfile(null);
               setSearchText("");
@@ -644,13 +651,13 @@ useEffect(() => {
             renderOption={(props, option) => (
                 <Box component="li" {...props}>
                     <Avatar
-                        src={option.avatar_url ?? undefined}
-                        sx={{ mr: 1, width: 32, height: 32, bgcolor: stringToAvatarColor(option.display_name), fontSize: 12 }}
+                        src={option.profile.avatar_url ?? undefined}
+                        sx={{ mr: 1, width: 32, height: 32, bgcolor: stringToAvatarColor(option.profile.first_name), fontSize: 12 }}
                     >
-                        {!option.avatar_url && getInitials(option.display_name)}
+                        {!option.profile.avatar_url && getInitials(formatName(option.profile.first_name, option.profile.last_name))}
                     </Avatar>
 
-                    {formatTitle(option.display_name)}
+                    {formatName(option.profile.first_name, option.profile.last_name)}
                 </Box>
             )}
             
@@ -778,7 +785,7 @@ useEffect(() => {
           <Box sx={{ flex: 1, overflowY: "auto", bgcolor: (theme) => alpha(theme.palette.text.primary, 0.015), px: 0.5 }}>
             <Box
               sx={{
-                height: 350,
+                height: 330,
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
@@ -829,7 +836,7 @@ useEffect(() => {
               </Typography>
             ) : (
               messages.map((message) => {
-                const isOwn = message.sender_id === userId;
+                const isOwn = message.sender.profile.id === userId;
                 const isEditing = editingId === message.id;
 
                 return (
@@ -897,7 +904,7 @@ useEffect(() => {
                       <Box sx={{display: 'flex', justifySelf: isOwn ?'end' : 'start', alignItems: 'flex-end'}}>
                         {!isOwn && (
                           <Avatar
-                            title={formatName(message.sender.first_name, message.sender.last_name)}
+                            title={formatName(message.sender.profile.first_name, message.sender.profile.last_name)}
                             sx={{
                               cursor: 'pointer',
                               height: 28,
@@ -905,11 +912,11 @@ useEffect(() => {
                               mr: 0.75,
                               fontSize: 11,
                               fontWeight: 700,
-                              bgcolor: stringToAvatarColor(formatName(message.sender.first_name, message.sender.last_name)),
+                              bgcolor: stringToAvatarColor(formatName(message.sender.profile.first_name, message.sender.profile.last_name)),
                               flexShrink: 0,
                             }}
                           >
-                            {getInitials(formatName(message.sender.first_name, message.sender.last_name))}
+                            {getInitials(formatName(message.sender.profile.first_name, message.sender.profile.last_name))}
                           </Avatar>
                         )}
                         <Paper

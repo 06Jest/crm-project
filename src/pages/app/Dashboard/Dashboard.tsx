@@ -65,8 +65,8 @@ import {
 } from '../../../store/dashboardSlice';
 import type { ActivityItem, ActivityType, TrendInterval } from '../../../types/dashboard';
 import { useAuth } from '../../../hooks/useAuth';
-import type { ProfileIDName } from '../../../types/profile';
-import { fetchMembersIDNames } from '../../../store/profileSlice';
+import { fetchOrgMembers } from '../../../store/organizationMemberSlice';
+import type { DisplayOrganizationMember } from '../../../types/organization.member';
 
 
 const formatCompactNumber = (value: number): string => {
@@ -109,13 +109,20 @@ const getInitials = (label: string): string => {
 
 const formatUserLabel = (
   key: string,
-  profiles: ProfileIDName[]
+  members: DisplayOrganizationMember[]
 ): string => {
-  if (!key || key === 'Unassigned') return 'Unassigned';
 
-  const user = profiles.find((p) => p.id === key);
+  if (!key || key === "Unassigned") {
+    return "Unassigned";
+  }
 
-  return user?.display_name ?? 'Unknown';
+  const profile = members.find(
+    (member) => member.profile.id === key
+  )?.profile;
+
+  return profile
+    ? `${profile.first_name} ${profile.last_name}`
+    : "Unknown";
 };
 
 const getDaypart = (): string => {
@@ -429,8 +436,9 @@ const Dashboard = () => {
     `${user?.first_name ?? ''} ${user?.last_name ?? ''}`.trim() ||
     'there';
 
-  const orgName = user?.org?.name ?? 'your organization';
+  const membership = user?.membership?.[0];
 
+  const orgName = membership?.org?.name ?? "your organization";
   const {
     overview,
     leadMetrics,
@@ -458,11 +466,11 @@ const Dashboard = () => {
     
   }, [dispatch, trendInterval]);
 
-  const { items: profiles, loaded, loading: pL} = useSelector((state:RootState) => state.profile);
+  const { items: members, loaded, loading: pL} = useSelector((state:RootState) => state.orgmembers);
 
   const loadProfiles = useCallback(() => {
     if (!loaded && !pL) {
-      dispatch(fetchMembersIDNames());
+      dispatch(fetchOrgMembers());
     }
   }, [dispatch, loaded, pL]);
 
@@ -546,7 +554,7 @@ const Dashboard = () => {
     return Array.from(keys)
       .map((key) => ({
         key,
-        label: formatUserLabel(key, profiles),
+        label: formatUserLabel(key, members),
         leads: userPerformance.leadsPerUser[key] ?? 0,
         dealsClosed: userPerformance.dealsClosedPerUser[key] ?? 0,
         tasksCompleted: userPerformance.tasksCompletedPerUser[key] ?? 0,
@@ -554,7 +562,7 @@ const Dashboard = () => {
       }))
       .sort((a, b) => b.dealsClosed - a.dealsClosed || b.leads - a.leads);
 
-  }, [userPerformance, profiles]);
+  }, [userPerformance, members]);
 
   const topPerformer = leaderboard[0];
 
@@ -618,9 +626,6 @@ const Dashboard = () => {
       loading: loading.overview,
     },
   ];
-
-  console.log("trends", trends);
-console.log("revenueOverTime", trends?.revenueOverTime);
 
   return (
     <Box sx={{ bgcolor: 'background.default', minHeight: '100%', px: { xs: 2, sm: 3, md: 4 }, py: { xs: 3, md: 4 },pt: 0, }}>
@@ -894,9 +899,7 @@ console.log("revenueOverTime", trends?.revenueOverTime);
             )}
           </Paper>
         </Grid>
-
-        <Grid size={{ xs: 12, sm: 8, md: 5 }}>
-          <Stack spacing={2.5}>
+        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
             <Paper variant="outlined" sx={{ p: 3, borderRadius: 2, borderColor: 'divider' }}>
               <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
                 Top Performer
@@ -922,7 +925,8 @@ console.log("revenueOverTime", trends?.revenueOverTime);
                 <EmptyState message="No leaderboard data yet." />
               )}
             </Paper>
-
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
             <Paper variant="outlined" sx={{ p: 3, borderRadius: 2, borderColor: 'divider' }}>
               <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
                 Conversion Metrics
@@ -955,8 +959,7 @@ console.log("revenueOverTime", trends?.revenueOverTime);
                 </Stack>
               </Stack>
             </Paper>
-          </Stack>
-        </Grid>
+          </Grid>
       </Grid>
     </Box>
   );

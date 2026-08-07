@@ -101,14 +101,20 @@ export interface UpdateTask {
 export interface TaskListItem extends Task {
   author: {
     id: string;
-    first_name: string;
-    last_name: string;
+    profile: {
+      first_name: string,
+      last_name: string,
+      avatar_url: string | null,
+    }
   };
 
   assignee: {
     id: string;
-    first_name: string;
-    last_name: string;
+    profile: {
+      first_name: string,
+      last_name: string,
+      avatar_url: string | null,
+    }
   };
 }
 

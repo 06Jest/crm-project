@@ -10,16 +10,8 @@ export const signUpAPI = async (dto: SignUpDTO) => {
 };
 
 
-export const adminSignInAPI = async (dto: SignInDTO) => {
-  return apiClient("/api/auth/admin-signin", {
-    method: "POST",
-    body: JSON.stringify(dto),
-  });
-};
-
-
-export const agentSignInAPI = async (dto: SignInDTO) => {
-  return apiClient("/api/auth/agent-signin", {
+export const signInAPI = async (dto: SignInDTO) => {
+  return apiClient("/api/auth/signin", {
     method: "POST",
     body: JSON.stringify(dto),
   });
@@ -43,7 +35,7 @@ export const refreshAPI = async () => {
 export const changePasswordAPI = async (
   dto: ChangePasswordDTO
 ) => {
-  return apiClient("/api/auth/change-password", {
+  return apiClient("/api/auth/me/change-password", {
     method: "PATCH",
     body: JSON.stringify(dto),
   });

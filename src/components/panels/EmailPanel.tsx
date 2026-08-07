@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, type ReactNode } from "react";
+import { useState, useMemo, useEffect, type ReactNode, useRef } from "react";
 import {
   Box,
   TextField,
@@ -557,11 +557,15 @@ export default function EmailPanel() {
       setEditBodyText(editor.getText());
     },
   });
+  const loadedEmail = useRef(false);
 
   useEffect(() => {
     if (!editor || view !== "editor") return;
 
     editor.commands.setContent(activeEmail?.body_html ?? "");
+
+    loadedEmail.current = true;
+
     editor.setEditable(activeEmail?.status === "draft" || !activeEmail);
 
     setEditBodyHtml(activeEmail?.body_html ?? "");
@@ -592,9 +596,7 @@ export default function EmailPanel() {
   useEffect(() => {
     if (view !== "editor") return;
 
-    const timer = setTimeout(() => {
-      autoSaveDraft();
-    }, 3000); 
+    const timer = setTimeout(autoSaveDraft, 3000);
 
     return () => clearTimeout(timer);
   }, [
@@ -603,10 +605,10 @@ export default function EmailPanel() {
     editBodyText,
     editBodyHtml,
     ownerId,
-    view,
   ]);
 
   const resetEditorState = () => {
+    setActiveId(null);
     setEditRecipient("");
     setEditSubject("");
     setEditBodyHtml("");
@@ -621,9 +623,14 @@ export default function EmailPanel() {
     setActiveId(null);
     setEditRecipient("");
     setEditSubject("");
+    setEditBodyHtml("");
+    setEditBodyText("");
     setOwnerType("lead");
     setOwnerId("");
     setRecipientAutoFilled(false);
+
+    editor?.commands.setContent("");
+
     setView("editor");
   };
 
@@ -737,9 +744,12 @@ export default function EmailPanel() {
     openExistingEmail(email);
   };
 
+  const isSending = useRef(false);
+  const isSavingDraft = useRef(false);
+
   const handleSend = async () => {
     if (!canSave) return;
-
+    isSending.current = true;
     setSaving(true);
     try {
       let id = activeId;
@@ -760,6 +770,7 @@ export default function EmailPanel() {
       // error in state
     } finally {
       setSaving(false);
+      isSending.current = false;
     }
   };
 
@@ -880,29 +891,39 @@ export default function EmailPanel() {
   };
 
   const autoSaveDraft = async () => {
-      if (view !== "editor") return;
+    if (!loadedEmail.current) return;
+    if (view !== "editor") return;
+    if (isSending.current) return;
+    const hasContent =
+      editRecipient.trim() ||
+      editSubject.trim() ||
+      editBodyText.trim();
 
-      const hasContent =
-          editRecipient.trim() ||
-          editSubject.trim() ||
-          editBodyText.trim();
+    if (!hasContent) return;
 
-      if (!hasContent) return;
+    if (isSavingDraft.current) return;
 
+    isSavingDraft.current = true;
+
+    try {
       if (activeId) {
-          await dispatch(
-              updateEmailDraft({
-                  id: activeId,
-                  email: buildUpdatePayload(),
-              })
-          ).unwrap();
-      } else {
-          const created = await dispatch(
-              addEmailDraft(buildComposePayload())
-          ).unwrap();
+        await dispatch(
+          updateEmailDraft({
+            id: activeId,
+            email: buildUpdatePayload(),
+          })
+        ).unwrap();
 
-          setActiveId(created.id);
+      } else {
+        const created = await dispatch(
+          addEmailDraft(buildComposePayload())
+        ).unwrap();
+
+        setActiveId(created.id);
       }
+    } finally {
+      isSavingDraft.current = false;
+    }
   };
 
   return (

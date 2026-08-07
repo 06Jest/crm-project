@@ -1,49 +1,41 @@
-to do before application:
+to do before job seek:
 
 *1 days	customers(3 days)
 *1 day	  notes
 *1 day	  email
 *2 day	  chat (4 days)
-*1 days	tasks
+*1 days	  tasks
 *1 day	  sms
 *1 day	  calls 
-*1 days	activities
-1 days	leaderboard
-1 day	  dashboard
-2 days	settings(admin privilege)
+*1 days   activities
+*1 day	  dashboard
+2 days	  settings(admin privilege)
+2 days	  responsiveness
+4 days	  test-polish
+1 day  deploy-documentation-Preparation-Loom Video - READme.md
 
 (Too Good to be true)
 2 days	analytics
 3 day	  ai
-2 days	responsive
-4 days	test-polish(
-error handling,
-success handling,
-loading handling,
-UI,
-agent registration,
-verification cycle,
-etc..)
 
-(Must)
-1 day  deploy-documentation-Preparation-Loom Video - READme.md
+
 
 
 
 to do during application:
 
-2 days  Dedicated Agent Registration
-2 days	Display ids(org/members/all data)
 2 days	lazy loading
 7 days	super admin
 2 days 	companies
 2 days	archive
+2 days  Notifications
 2 days  chat feature enhancement(typing, isOnline, file insert)
 2 days  email templates(react email)
 3 days  websocket
 1 day   multi national support(currency, phone number)
 2 days  addresses
 2 days	tutorials
+1 day   leaderboard
 2 day   data placeholders(auto generated but optional)	
 4 days	caching redis
 3 days  data display id (rpc/ postgre functions)

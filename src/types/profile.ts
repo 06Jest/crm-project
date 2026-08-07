@@ -1,7 +1,8 @@
 import type { Roles } from "./global";
+import type { OrganizationType } from "./organization";
 
 export interface ProfileState {
-  items: ProfileIDName[];
+  profile: DisplayProfile | null;
   loading: boolean;
   loaded: boolean;
   error: string | null;
@@ -24,10 +25,8 @@ export interface Profile {
   last_name: string;
   email: string;
   phone?: string;
-  role: Roles;
-  org_id: string;
-  employee_id?: string;  
-  position?: string; 
+  onboarding_completed: boolean;
+  job_title?: string; 
   status: ProfileStatus;
   avatar_url?: string;  
   created_at?: string;
@@ -35,23 +34,39 @@ export interface Profile {
   last_login?: string;
 }
 
-export interface DisplayProfile extends Profile{
-  org: {
-    name: string;
-  };
+export interface DisplayProfile {
+    id: string;
+    avatar_url?: string;
+    first_name: string;
+    last_name: string;
+    display_name?: string;
+    email: string;
+    display_id?: string;
+    position?: string;
+    status: ProfileStatus;
+    created_at: string;
+    onboarding_completed: boolean;
+    last_login?: string;
+    job_title?: string;
+    membership?: {
+    id: string;
+    display_id: string;
+    role: Roles;
+    status: string;
+    created_at: string;
+    org?: {
+        id: string;
+        display_id: string;
+        name: string;
+        logo_url?: string;
+        type: OrganizationType;
+    };
+  }[];
 }
 
 export interface ProfileIDName {
   id: string;
   display_name: string;
-  avatar_url?: string;  
-}
-
-export interface ChatProfile {
-  id: string;
-  display_name: string;
-  avatar_url: string | null;
-  is_online?: boolean;
 }
 
 export interface AddProfileDTO {
@@ -61,17 +76,19 @@ export interface AddProfileDTO {
   last_name: string;
   display_name?: string;
   phone?: string;
-  position?: string;
-  org_id: string;
+  job_title?: string;
 }
 
-export interface AddAdminProfileDTO {
+export type CreateInitialProfileDTO = {
   id: string;
   email: string;
+};
+
+export interface CompleteProfileDTO {
   first_name: string;
   last_name: string;
-  display_name: string;
-  org_id: string;
+  avatar_url?: string | null;
+  job_title?: string;
 }
 
 export interface UpdateProfileDTO {
@@ -79,5 +96,10 @@ export interface UpdateProfileDTO {
   last_name?: string;
   display_name?: string;
   phone?: string;
-  position?: string;
+  job_title?: string;
+}
+
+export interface PasswordChangeValues {
+    currentPassword: string;
+    newPassword: string;
 }

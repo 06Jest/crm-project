@@ -522,7 +522,7 @@ export default function SmsPanel() {
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 0.5, mt: 0.25 }}>
                   <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                    {formatName(msg.sender.first_name, msg.sender.last_name)} ·{' '}
+                    {formatName(msg.sender.profile.first_name, msg.sender.profile.last_name)} ·{' '}
                     {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </Typography>
                   <Chip

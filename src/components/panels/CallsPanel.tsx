@@ -51,9 +51,8 @@ import ClearAllIcon from '@mui/icons-material/ClearAll';
 import AddCallIcon from '@mui/icons-material/AddCall';
 import ErrorAlert from '../Error';
 import { formatName, formatShortTitle} from '../../utils/formatText';
-import { fetchMembersIDNames } from '../../store/profileSlice';
 import { alpha } from '@mui/material/styles';
-import type { DisplayProfile } from '../../types/profile';
+import { fetchOrgMembers } from '../../store/organizationMemberSlice';
 
 
 
@@ -140,7 +139,7 @@ export default function CallsPanel() {
   const {
   items: members,
   loaded: mLd,
-} = useSelector((state: RootState) => state.profile);
+} = useSelector((state: RootState) => state.orgmembers);
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const dialTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -151,7 +150,7 @@ export default function CallsPanel() {
           if (!caLd) await dispatch(fetchCalls()).unwrap();
           if (!cLd) await dispatch(fetchContactsLists()).unwrap();
           if (!lLd) await dispatch(fetchLeadsLists()).unwrap();
-          if (!mLd) await dispatch(fetchMembersIDNames()).unwrap();
+          if (!mLd) await dispatch(fetchOrgMembers()).unwrap();
         } catch {
           // Error handled by Redux state
         } 
@@ -223,10 +222,10 @@ export default function CallsPanel() {
           call.type,
           call.priority,
           call.notes,
-          call.assigned_user.first_name,
-          call.assigned_user.last_name,
-          call.creator.first_name,
-          call.creator.last_name,
+          call.assigned_user.profile.first_name,
+          call.assigned_user.profile.last_name,
+          call.creator.profile.first_name,
+          call.creator.profile.last_name,
           call.lead?.first_name,
           call.lead?.last_name,
           call.contact?.first_name,
@@ -618,11 +617,7 @@ export default function CallsPanel() {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: 470, overflowY: 'auto' }}>
       <Box>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
-          <Typography variant="h6" fontWeight={700} sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mr: 2  }}>
-            <PhoneIcon sx={{ fontSize: 20, color: 'primary.main' }} />
-            Calls
-          </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}> 
           <TextField
             fullWidth
             size="small"
@@ -877,8 +872,8 @@ export default function CallsPanel() {
                         {" • "}
                         Assigned to{" "}
                         {formatName(
-                          call.assigned_user.first_name,
-                          call.assigned_user.last_name
+                          call.assigned_user.profile.first_name,
+                          call.assigned_user.profile.last_name
                         )}
                       </Typography>
 
@@ -1064,9 +1059,9 @@ export default function CallsPanel() {
                         })
                       }
                     >
-                      {members.map((member: DisplayProfile) => (
+                      {members.map((member) => (
                         <MenuItem key={member.id} value={member.id}>
-                          {member.display_name}
+                          {member.profile.first_name} {member.profile.last_name}
                         </MenuItem>
                       ))}
                     </Select>
@@ -1433,7 +1428,7 @@ export default function CallsPanel() {
                       Assigned To
                     </Typography>
                     <Typography variant="body2" fontWeight={600}>
-                      {formatName(selectedCall.assigned_user.first_name, selectedCall.assigned_user.last_name)}
+                      {formatName(selectedCall.assigned_user.profile.first_name, selectedCall.assigned_user.profile.last_name)}
                     </Typography>
                   </Box>
                   {(selectedCall.contact || selectedCall.lead) && (
@@ -1486,7 +1481,7 @@ export default function CallsPanel() {
                     Created By
                   </Typography>
                   <Typography variant="body2">
-                    {formatName(selectedCall.creator.first_name, selectedCall.creator.last_name)}
+                    {formatName(selectedCall.creator.profile.first_name, selectedCall.creator.profile.last_name)}
                   </Typography>
                 </Box>
                 <Box sx={{ textAlign: 'right' }}>

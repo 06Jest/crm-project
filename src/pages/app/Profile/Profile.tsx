@@ -1,472 +1,704 @@
-import { useState, useRef, useEffect } from 'react';
-import { useSelector } from 'react-redux';
-import type {  RootState } from '../../../store/store';
-import { useAuth } from '../../../hooks/useAuth';
+
+
+import React, { useMemo, useRef, useState, useEffect } from "react";
 import {
-  fetchMyProfileFromDB,
-  updateProfileInDB,
-  updatePasswordInAuth,
-  updateNameInAuth,
-} from '../../../services/profileService';
-import {
-  uploadImageToCloudinary,
-  validateImageFile,
-} from '../../../utils/uploadImage';
-import type { Profile } from '../../../types/profile';
-import type { Contact } from '../../../types/contact';
-import type { Lead } from '../../../types/lead';
-import type { Deal } from '../../../types/deal';
-import type { Activity } from '../../../types/activity';
+  Box,
+  Paper,
+  Stack,
+  Divider,
+  Typography,
+  Button,
+  TextField,
+  Chip,
+  Avatar,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  IconButton,
+  InputAdornment,
+  Snackbar,
+  Alert,
+  createTheme,
+  ThemeProvider,
+  CircularProgress,
+} from "@mui/material";
+import CloudUploadOutlinedIcon from "@mui/icons-material/CloudUploadOutlined";
+import PhotoCameraOutlinedIcon from "@mui/icons-material/PhotoCameraOutlined";
+import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
+import VisibilityOffOutlinedIcon from "@mui/icons-material/VisibilityOffOutlined";
+import type { PasswordChangeValues, ProfileFormValues, ProfileStatus } from "../../../types/profile";
+import type { AppDispatch, RootState } from "../../../store/store";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchProfile, updateProfile } from "../../../store/profileSlice";
+import ErrorAlert from "../../../components/Error";
 
-import {
-  Box, Typography, Paper, Avatar, Button,
-  TextField, Divider, Chip, Alert, Grid,
-  CircularProgress, IconButton, Card,
-  CardContent,
-} from '@mui/material';
-import EditIcon from '@mui/icons-material/Edit';
-import SaveIcon from '@mui/icons-material/Save';
-import CancelIcon from '@mui/icons-material/Cancel';
-import CameraAltIcon from '@mui/icons-material/CameraAlt';
-import BadgeIcon from '@mui/icons-material/Badge';
-import EmailIcon from '@mui/icons-material/Email';
-import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
-import LockIcon from '@mui/icons-material/Lock';
+export interface ProfilePageProps {
+  saving?: boolean;
+  onAvatarUpload?: (file: File) => void;
+  onAvatarRemove?: () => void;
+  onChangePassword?: (
+    values: PasswordChangeValues
+  ) => void;
+}
 
-export default function Profile () {
-  const { user } = useAuth();
 
-  const contacts = useSelector((s: RootState) => s.contacts.items);
-  const leads = useSelector((s: RootState) => s.leads.items);
-  const deals = useSelector((s: RootState) => s.deals.items);
-  const activities = useSelector((s: RootState) => s.activities.items);
+const theme = createTheme({
+  palette: {
+    mode: "light",
+    background: { default: "#FAFBFC", paper: "#FFFFFF" },
+    primary: { main: "#AD7450'", dark: "#775038" },
+    text: { primary: "#101828", secondary: "#667085" },
+    divider: "#E4E7EC",
+  },
+  shape: { borderRadius: 8 },
+  typography: {
+    fontFamily:
+      '"Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+    h5: { fontWeight: 600, letterSpacing: -0.2 },
+    subtitle1: { fontWeight: 600 },
+  },
+  components: {
+    MuiButton: {
+      defaultProps: { disableElevation: true },
+      styleOverrides: { root: { textTransform: "none", fontWeight: 600, borderRadius: 8 } },
+    },
+    MuiPaper: { styleOverrides: { root: { backgroundImage: "none" } } },
+    MuiTextField: {
+      defaultProps: { size: "small" },
+    },
+  },
+});
 
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [uploadingAvatar, setUploadingAvatar] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+const STATUS_STYLES: Record<ProfileStatus, { bg: string; color: string; label: string }> = {
+  active: { bg: "#ECFDF3", color: "#067647", label: "Active member" },
+  pending: { bg: "#FFFAEB", color: "#B54708", label: "Pending" },
+  inactive: { bg: "#F2F4F7", color: "#475467", label: "Inactive" },
+  banned: { bg: "#FEF3F2", color: "#B42318", label: "Banned" },
+  deleted: { bg: "#F2F4F7", color: "#475467", label: "Deleted" },
+};
 
-  const [isEditingName, setIsEditingName] = useState(false);
-  const [nameForm, setNameForm] = useState('');
 
-  const [isChangingPassword, setIsChangingPassword] = useState(false);
-  const [passwordForm, setPasswordForm] = useState({
-    newPassword: '',
-    confirmPassword: '',
+function getInitials(firstName: string, lastName: string): string {
+  return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+}
+
+function capitalize(value: string): string {
+  if (!value) return value;
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
+function formatMemberSince(isoDate: string): string {
+  return new Intl.DateTimeFormat("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  }).format(new Date(isoDate));
+}
+
+function formatTimestamp(isoDate?: string): string {
+  if (!isoDate) return "Never";
+  const date = new Date(isoDate);
+  const now = new Date();
+  const time = new Intl.DateTimeFormat("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(date);
+  const isToday = date.toDateString() === now.toDateString();
+  if (isToday) return `Today • ${time}`;
+  const day = new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(date);
+  return `${day} • ${time}`;
+}
+
+
+interface FormFieldProps {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+}
+
+function FormField({ label, value, onChange, placeholder }: FormFieldProps) {
+  return (
+    <Box sx={{ minWidth: 0 }}>
+      <Typography
+        component="label"
+        variant="body2"
+        sx={{ display: "block", mb: 0.75, fontWeight: 500, color: "text.primary" }}
+      >
+        {label}
+      </Typography>
+      <TextField
+        fullWidth
+        value={value}
+        placeholder={placeholder}
+        onChange={(e) => onChange(e.target.value)}
+      />
+    </Box>
+  );
+}
+
+interface InfoRowProps {
+  label: string;
+  value: string;
+  trailing?: React.ReactNode;
+}
+
+function InfoRow({ label, value, trailing }: InfoRowProps) {
+  return (
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: { xs: "column", sm: "row" },
+        sm: { alignItems: "center" },
+        alignItems: { xs: "flex-start", sm: "center" },
+        justifyContent: "space-between",
+        gap: 1,
+        py: 1.25,
+      }}
+    >
+      <Typography variant="body2" color="text.secondary" sx={{ minWidth: 180 }}>
+        {label}
+      </Typography>
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flex: 1, justifyContent: { xs: "flex-start", sm: "flex-end" } }}>
+        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+          {value}
+        </Typography>
+        {trailing}
+      </Box>
+    </Box>
+  );
+}
+
+function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <Paper
+      variant="outlined"
+      sx={{ p: { xs: 3, md: 4 }, borderRadius: 2, borderColor: "divider" }}
+    >
+      <Typography variant="subtitle1" sx={{ mb: 3 }}>
+        {title}
+      </Typography>
+      {children}
+    </Paper>
+  );
+}
+
+
+export default function ProfilePage({
+  saving = false,
+  onAvatarUpload,
+  onAvatarRemove,
+  onChangePassword,
+}: ProfilePageProps) {
+  const [form, setForm] = useState<ProfileFormValues>({
+    first_name: "",
+    last_name: "",
+    display_name: "",
+    job_title: "",
   });
-
-  const [avatarPreview, setAvatarPreview] = useState<string | null> (null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const dispatch = useDispatch<AppDispatch>();
+  const {profile, loading, loaded,  error } = useSelector((state: RootState) => state.profile);
+ const [avatarUrl, setAvatarUrl] =
+    useState<string>();
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [passwordOpen, setPasswordOpen] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
-    if (!user) return;
-    fetchMyProfileFromDB(user.id)
-    .then((p) => {
-      setProfile(p);
-      setNameForm(p?.name || user.user_metadata?.name || '');
-    })
-    .catch(() => setError('Could not load profile'))
-    .finally(() => setLoading(false));
-  }, [user]);
+    if (!profile) return;
+
+    setForm({
+        first_name: profile.first_name,
+        last_name: profile.last_name,
+        display_name: profile.display_name ?? "",
+        job_title: profile.job_title ?? "",
+    });
+
+    setAvatarUrl(profile.avatar_url);
+
+  }, [profile]);  
+
+  useEffect(() => {
+
+    if (!loaded && !loading) {
+        dispatch(fetchProfile());
+    }
+
+  }, [dispatch, loaded, loading]);
 
 
-  const myContacts = contacts.filter(
-    (c) => (c as Contact).created_by === user?.id || 
-          (c as Contact).assigned_to === user?.id
-  ).length;
+  const baseline = useMemo(
+    () => ({
+      first_name: profile?.first_name ?? "",
+      last_name: profile?.last_name ?? "",
+      display_name: profile?.display_name ?? "",
+      job_title: profile?.job_title ?? "",
+    }),
+    [profile]
+  );
 
-  const myLeads = leads.filter(
-    (l) => (l as Lead).assigned_to === user?.id
-  ).length;
+  const isDirty =
+    form.first_name !== baseline.first_name ||
+    form.last_name !== baseline.last_name ||
+    form.display_name !== baseline.display_name ||
+    form.job_title !== baseline.job_title;
 
-  const myDeals = deals.filter(
-    (d) => (d as Deal).owned_by === user?.id
-  ).length;
+  useEffect(() => {
+    return () => {
+      if (avatarUrl && avatarFile) {
+        URL.revokeObjectURL(avatarUrl);
+      }
+    };
+    // dsdsds
+  }, [avatarUrl, avatarFile]);
 
-  const myActivities = activities.filter(
-    (a) => (a as Activity).logged_by === user?.id
-  ).length;
+  if (loading && !profile) {
+    return <CircularProgress />;
+  }
 
+  if (!profile) {
+    return null;
+  }
 
-  const memberSince = user?.created_at 
-    ? new Date(user.created_at).toLocaleDateString('en-PH', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    }) : '-';
+  const fullName = `${form.first_name} ${form.last_name}`.trim();
+  const initials = getInitials(form.first_name || "?", form.last_name || "?");
+  const statusStyle = STATUS_STYLES[profile.status ?? 'pending'];
 
-  
-  const handleAvatarClick = () => {
-    fileInputRef.current?.click();;
-  };
-
-  const handleFileChange = async (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
+  const handleAvatarSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if(!file || !user) return;
+    if (!file) return;
+    const nextUrl = URL.createObjectURL(file);
+    setAvatarUrl(nextUrl);
+    setAvatarFile(file);
+    onAvatarUpload?.(file);
+    e.target.value = "";
+  };
 
-    const validationError = validateImageFile(file);
-    if(validationError) {
-      setError(validationError);
-      return;
-    }
+  const handleAvatarRemove = () => {
+    setAvatarUrl(undefined);
+    setAvatarFile(null);
+    onAvatarRemove?.();
+  };
 
-    const localPreview = URL.createObjectURL(file);
-    setAvatarPreview(localPreview);
-
+  const handleSave = async () => {
     try {
-      setUploadingAvatar(true);
-      setError('');
+        setIsSaving(true);
 
-      const cloudinaryUrl = await uploadImageToCloudinary(file);
+        await dispatch(
+            updateProfile({
+                first_name: form.first_name,
+                last_name: form.last_name,
+                display_name: form.display_name,
+                job_title: form.job_title,
+            })
+        ).unwrap();
 
-      const updated = await updateProfileInDB(user.id, {
-        avatar_url: cloudinaryUrl,
-      });
-      setProfile(updated);
-      setAvatarPreview(null);
-      setSuccess('Avatar updated successfully');
-      setTimeout(() => setSuccess(''), 3000);
-    } catch {
-      setError('Failed to upload avatar.. Please try again.')
-      setAvatarPreview(null);
+        setToast("Profile updated.");
     } finally {
-      setUploadingAvatar(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-      URL.revokeObjectURL(localPreview);
+        setIsSaving(false);
     }
   };
 
-  const handleSaveName = async () => {
-    if (!user || !nameForm.trim()) return;
-    setSaving(true);
-    setError('');
-    try {
-      await Promise.all([
-        updateProfileInDB(user.id, { name: nameForm.trim() }),
-        updateNameInAuth(nameForm.trim()),
-      ]);
-      setProfile((prev) =>
-        prev ? { ...prev, name: nameForm.trim() }: prev
-      );
-      setIsEditingName(false);
-      setSuccess('Name updated successfully');
-      setTimeout(() => setSuccess(''), 3000);
-    } catch {
-      setError('Failed to update name. Please try again.');
-    } finally {
-      setSaving(false);
-    }
-  };
+  const saveDisabled =
+    !isDirty ||
+    isSaving ||
+    loading;
 
-  const handleChangePassword = async () => {
-    if(!passwordForm.newPassword || !passwordForm.confirmPassword) {
-      setError('Please fill in both password fields');
-      return;
-    }
-    if (passwordForm.newPassword.length < 6) {
-      setError('Please must be at least 6 characters');
-      return;
-    }
-    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      setError('Password do not match');
-      return;
-    }
-
-    setSaving(true);
-    setError('');
-    try {
-      await updatePasswordInAuth(passwordForm.newPassword);
-      setIsChangingPassword(false);
-      setPasswordForm({ newPassword: '', confirmPassword: ''});
-      setSuccess('Password changed successfully');
-      setTimeout(() => setSuccess(''), 3000);
-    } catch {
-      setError('Failed to change password, Please try again.');
-    } finally {
-      setSaving(false)
-    }
-  };
-
-  const roleBadge = {
-    super_admin: { label: 'Super Admin', color: 'error' as const },
-    admin: { label: 'Admin', color: 'primary' as const },
-    agent: { label: 'Agent', color: 'default' as const },
-  }[profile?.role || 'agent'];
-
-  if (loading) {
+  if (loading && !profile) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}>
-        <CircularProgress />
-      </Box>
+        <Box
+            sx={{
+                display: "flex",
+                justifyContent: "center",
+                mt: 8,
+            }}
+        >
+            <CircularProgress />
+        </Box>
     );
   }
 
-  const displayName =
-    profile?.name ||
-    user?.user_metadata?.name ||
-    user?.email?.split('@')[0] ||
-    'User';
-
-  const avatarSrc = avatarPreview || profile?.avatar_url || undefined;
+  if (!profile) {
+      return null;
+  }
 
   return (
-    <Box sx={{ maxWidth: 800, mx: 'auto' }}>
-      <Typography variant="h5" fontWeight={700} sx={{ mb: 3 }}>
-        My Profile
-      </Typography>
-
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>
-          {error}
-        </Alert>
-      )}
-      {success && (
-        <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess('')}>
-          {success}
-        </Alert>
-      )}
-
-      <Paper elevation={1} sx={{ p: 4, borderRadius: 3, mb: 3 }}>
-        <Box sx={{ display: 'flex', gap: 3, alignItems: 'flex-start', flexWrap: 'wrap' }}>
-
-          <Box sx={{ position: 'relative', flexShrink: 0 }}>
-            <Avatar
-              src={avatarSrc}
-              sx={{ width: 96, height: 96, fontSize: 36, bgcolor: 'primary.main' }}
-            >
-              {displayName[0]?.toUpperCase()}
-            </Avatar>
-
-            <IconButton
-              onClick={handleAvatarClick}
-              disabled={uploadingAvatar}
-              sx={{
-                position: 'absolute',
-                bottom: 0,
-                right: 0,
-                bgcolor: 'background.paper',
-                border: 2,
-                borderColor: 'divider',
-                width: 32,
-                height: 32,
-                '&:hover': { bgcolor: 'action.hover' },
-              }}
-            >
-              {uploadingAvatar
-                ? <CircularProgress size={14} />
-                : <CameraAltIcon sx={{ fontSize: 16 }} />
-              }
-            </IconButton>
-
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/jpeg,image/png,image/webp,image/gif"
-              style={{ display: 'none' }}
-              onChange={handleFileChange}
-            />
-          </Box>
-
-          <Box sx={{ flex: 1, minWidth: 200 }}>
-            {!isEditingName ? (
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                <Typography variant="h5" fontWeight={700}>
-                  {displayName}
-                </Typography>
-                <IconButton
-                  size="small"
-                  onClick={() => {
-                    setNameForm(displayName);
-                    setIsEditingName(true);
-                  }}
-                >
-                  <EditIcon fontSize="small" />
-                </IconButton>
-              </Box>
-            ) : (
-              <Box sx={{ display: 'flex', gap: 1, mb: 1, alignItems: 'center' }}>
-                <TextField
-                  value={nameForm}
-                  onChange={(e) => setNameForm(e.target.value)}
-                  size="small"
-                  label="Display name"
-                  sx={{ maxWidth: 260 }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleSaveName();
-                    if (e.key === 'Escape') setIsEditingName(false);
-                  }}
-                  autoFocus
-                />
-                <IconButton
-                  size="small"
-                  color="primary"
-                  onClick={handleSaveName}
-                  disabled={saving}
-                >
-                  <SaveIcon fontSize="small" />
-                </IconButton>
-                <IconButton
-                  size="small"
-                  onClick={() => setIsEditingName(false)}
-                >
-                  <CancelIcon fontSize="small" />
-                </IconButton>
-              </Box>
-            )}
-
-            <Chip
-              label={roleBadge.label}
-              color={roleBadge.color}
-              size="small"
-              sx={{ mb: 1.5 }}
-            />
-
-            {profile?.employee_id && (
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <BadgeIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
-                <Typography variant="body2" color="text.secondary">
-                  Employee ID:{' '}
-                  <Typography component="span" variant="body2" fontWeight={700}>
-                    {profile.employee_id}
-                  </Typography>
-                </Typography>
-              </Box>
-            )}
-          </Box>
-        </Box>
-
-        <Divider sx={{ my: 3 }} />
-
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <EmailIcon color="action" />
-            <Box>
-              <Typography variant="caption" color="text.secondary">
-                Email address
-              </Typography>
-              <Typography>{user?.email}</Typography>
+    <ThemeProvider theme={theme}>
+      <Box sx={{ bgcolor: "background.default", minHeight: "100%", py: { xs: 3, md: 5 } }}>
+        <Box sx={{ maxWidth: 880, mx: "auto", px: { xs: 2, md: 3 } }}>
+          {error && (
+            <Box sx={{ px: 2, pb: 1 }}>
+              <ErrorAlert
+                message={error}
+              />
             </Box>
-          </Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <CalendarTodayIcon color="action" />
-            <Box>
-              <Typography variant="caption" color="text.secondary">
-                Member since
-              </Typography>
-              <Typography>{memberSince}</Typography>
-            </Box>
-          </Box>
-        </Box>
-      </Paper>
-
-      <Paper elevation={1} sx={{ p: 3, borderRadius: 3, mb: 3 }}>
-        <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>
-          My activity
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          Records you have created or been assigned to.
-          Full attribution data available after Milestone 4.
-        </Typography>
-        <Grid container spacing={2}>
-          {[
-            { label: 'Contacts', value: myContacts, color: 'primary.main' },
-            { label: 'Leads', value: myLeads, color: 'secondary.main' },
-            { label: 'Deals', value: myDeals, color: 'success.main' },
-            { label: 'Activities', value: myActivities, color: 'warning.main' },
-          ].map((stat) => (
-            <Grid sx={{ xs: 6,  sm: 3 }}  key={stat.label}>
-              <Card elevation={0} sx={{ border: 1, borderColor: 'divider', borderRadius: 2, textAlign: 'center', p: 1 }}>
-                <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
-                  <Typography variant="h4" fontWeight={800} color={stat.color}>
-                    {stat.value}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {stat.label}
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
-      </Paper>
-
-      <Paper elevation={1} sx={{ p: 3, borderRadius: 3 }}>
-        <Box sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          mb: isChangingPassword ? 2 : 0,
-        }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <LockIcon color="action" />
-            <Box>
-              <Typography variant="h6" fontWeight={700}>
-                Password
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Change your account password
-              </Typography>
-            </Box>
-          </Box>
-          {!isChangingPassword && (
-            <Button
-              variant="outlined"
-              size="small"
-              onClick={() => setIsChangingPassword(true)}
-            >
-              Change password
-            </Button>
           )}
-        </Box>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              pb: 2.5,
+            }}
+          >
+            <Box>
+              <Typography variant="h5">Profile</Typography>
+              {isDirty && (
+                <Typography variant="caption" color="text.secondary">
+                  Unsaved changes
+                </Typography>
+              )}
+            </Box>
+            <Button
+              variant="contained"
+              onClick={handleSave}
+              disabled={saveDisabled}
+            >
+              {isSaving || saving ? "Saving…" : "Save changes"}
+            </Button>
+          </Box>
+          <Divider sx={{ mb: 4 }} />
 
-        {isChangingPassword && (
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <TextField
-              label="New password"
-              type="password"
-              value={passwordForm.newPassword}
-              onChange={(e) =>
-                setPasswordForm({ ...passwordForm, newPassword: e.target.value })
-              }
-              fullWidth
-              helperText="Minimum 6 characters"
-              autoComplete="new-password"
-            />
-            <TextField
-              label="Confirm new password"
-              type="password"
-              value={passwordForm.confirmPassword}
-              onChange={(e) =>
-                setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })
-              }
-              fullWidth
-              autoComplete="new-password"
-            />
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              <Button
-                variant="contained"
-                onClick={handleChangePassword}
-                disabled={saving}
-              >
-                {saving ? <CircularProgress size={20} color="inherit" /> : 'Save password'}
-              </Button>
-              <Button
-                onClick={() => {
-                  setIsChangingPassword(false);
-                  setPasswordForm({ newPassword: '', confirmPassword: '' });
-                  setError('');
+          <Stack spacing={3}>
+            {/* Profile overview */}
+            <Paper variant="outlined" sx={{ p: { xs: 3, md: 4 }, borderRadius: 2, borderColor: "divider" }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: { xs: "column", md: "row" },
+                  gap: { xs: 3, md: 4 },
                 }}
               >
-                Cancel
-              </Button>
-            </Box>
+                {/* Avatar column */}
+                <Box
+                  sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: 1.25,
+                    minWidth: { md: 168 },
+                  }}
+                >
+                  <Box
+                    component="label"
+                    sx={{
+                      position: "relative",
+                      width: 96,
+                      height: 96,
+                      borderRadius: "50%",
+                      cursor: "pointer",
+                      display: "block",
+                      "&:hover .avatar-overlay": { opacity: 1 },
+                    }}
+                  >
+                    <Avatar
+                      src={avatarUrl}
+                      sx={{
+                        width: 96,
+                        height: 96,
+                        fontSize: 28,
+                        fontWeight: 600,
+                        bgcolor: "primary.main",
+                      }}
+                    >
+                      {initials}
+                    </Avatar>
+                    <Box
+                      className="avatar-overlay"
+                      sx={{
+                        position: "absolute",
+                        inset: 0,
+                        borderRadius: "50%",
+                        bgcolor: "rgba(16,24,40,0.55)",
+                        color: "#fff",
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        opacity: 0,
+                        transition: "opacity 150ms ease",
+                      }}
+                    >
+                      <PhotoCameraOutlinedIcon fontSize="small" />
+                    </Box>
+                    <input
+                      ref={fileInputRef}
+                      hidden
+                      type="file"
+                      accept="image/*"
+                      onChange={handleAvatarSelect}
+                    />
+                  </Box>
+
+                  <Stack spacing={0.5} sx={{ width: "100%", alignItems: "center" }}>
+                    <Button
+                      size="small"
+                      component="label"
+                      startIcon={<CloudUploadOutlinedIcon fontSize="small" />}
+                      sx={{ px: 1.5 }}
+                    >
+                      Upload avatar
+                      <input hidden type="file" accept="image/*" onChange={handleAvatarSelect} />
+                    </Button>
+                    <Button
+                      size="small"
+                      color="error"
+                      onClick={handleAvatarRemove}
+                      disabled={!avatarUrl}
+                      sx={{ px: 1.5 }}
+                    >
+                      Remove avatar
+                    </Button>
+                  </Stack>
+                </Box>
+
+                <Divider orientation="vertical" flexItem sx={{ display: { xs: "none", md: "block" } }} />
+                <Divider sx={{ display: { xs: "block", md: "none" } }} />
+
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                    {fullName || "—"}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
+                    {form.job_title || "No title set"}
+                  </Typography>
+
+                  <Box
+                    sx={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 0.75,
+                      mt: 1.5,
+                      px: 1.25,
+                      py: 0.5,
+                      borderRadius: 999,
+                      bgcolor: statusStyle.bg,
+                    }}
+                  >
+                    <Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: statusStyle.color }} />
+                    <Typography variant="caption" sx={{ fontWeight: 600, color: statusStyle.color }}>
+                      {statusStyle.label}
+                    </Typography>
+                  </Box>
+
+                  <Typography variant="body2" sx={{ mt: 2 }}>
+                    {profile.email}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Member since {formatMemberSince(profile.created_at)}
+                  </Typography>
+                </Box>
+              </Box>
+            </Paper>
+
+
+            <SectionCard title="Personal information">
+              <Box
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+                  gap: 3,
+                }}
+              >
+                <FormField
+                  label="First name"
+                  value={form.first_name}
+                  onChange={(v) => setForm((f) => ({ ...f, first_name: v }))}
+                />
+                <FormField
+                  label="Last name"
+                  value={form.last_name}
+                  onChange={(v) => setForm((f) => ({ ...f, last_name: v }))}
+                />
+                <FormField
+                  label="Display name"
+                  value={form.display_name}
+                  placeholder="How your name appears to teammates"
+                  onChange={(v) => setForm((f) => ({ ...f, display_name: v }))}
+                />
+                <FormField
+                  label="Position"
+                  value={form.job_title}
+                  placeholder="e.g. Sales Manager"
+                  onChange={(v) => setForm((f) => ({ ...f, job_title: v }))}
+                />
+              </Box>
+
+              {profile.display_id && (
+                <>
+                  <Divider sx={{ my: 2.5 }} />
+                  <InfoRow
+                    label="Employee ID"
+                    value={profile.display_id}
+                    trailing={<Chip label="Read only" size="small" variant="outlined" />}
+                  />
+                </>
+              )}
+            </SectionCard>
+
+            <SectionCard title="Workspace">
+              <Stack divider={<Divider />}>
+                <InfoRow label="Workspace" value={profile.org.name} />
+                <InfoRow label="Organization type" value={capitalize(profile.org.type)} />
+                <InfoRow
+                      label="Role"
+                      value={capitalize(profile.membership.role)}
+                  />
+
+                  <InfoRow
+                      label="Status"
+                      value={capitalize(profile.status)}
+                  />
+                <InfoRow label="Organization code" value={profile.org.display_id} />
+              </Stack>
+            </SectionCard>
+
+            <SectionCard title="Account">
+              <Stack divider={<Divider />}>
+                <InfoRow
+                  label="Email address"
+                  value={profile.email}
+                  trailing={<Chip label="Read only" size="small" variant="outlined" />}
+                />
+                <InfoRow
+                  label="Password"
+                  value="••••••••••"
+                  trailing={
+                    <Button
+                      size="small"
+                      endIcon={<ChevronRightIcon fontSize="small" />}
+                      onClick={() => setPasswordOpen(true)}
+                    >
+                      Change password
+                    </Button>
+                  }
+                />
+                <InfoRow label="Last login" value={formatTimestamp(profile.last_login)} />
+                <InfoRow label="Account created" value={formatMemberSince(profile.created_at)} />
+              </Stack>
+            </SectionCard>
+          </Stack>
+        </Box>
+      </Box>
+
+      <ChangePasswordDialog
+        open={passwordOpen}
+        onClose={() => setPasswordOpen(false)}
+        onSubmit={(values) => {
+          onChangePassword?.(values);
+          setPasswordOpen(false);
+          setToast("Password updated successfully.");
+        }}
+      />
+
+      <Snackbar
+        open={!!toast}
+        autoHideDuration={3500}
+        onClose={() => setToast(null)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert severity="success" variant="filled" onClose={() => setToast(null)}>
+          {toast}
+        </Alert>
+      </Snackbar>
+    </ThemeProvider>
+  );
+}
+
+
+interface ChangePasswordDialogProps {
+  open: boolean;
+  onClose: () => void;
+  onSubmit: (values: PasswordChangeValues) => void;
+}
+
+function ChangePasswordDialog({ open, onClose, onSubmit }: ChangePasswordDialogProps) {
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPasswords, setShowPasswords] = useState(false);
+
+  const resetAndClose = () => {
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
+    setShowPasswords(false);
+    onClose();
+  };
+
+  const newPasswordValid = newPassword.length >= 8;
+  const passwordsMatch = newPassword === confirmPassword && confirmPassword.length > 0;
+  const canSubmit = currentPassword.length > 0 && newPasswordValid && passwordsMatch;
+
+  const fieldType = showPasswords ? "text" : "password";
+
+  return (
+    <Dialog open={open} onClose={resetAndClose} maxWidth="xs" fullWidth>
+      <DialogTitle sx={{ fontWeight: 600 }}>Change password</DialogTitle>
+      <DialogContent>
+        <Stack spacing={2.5} sx={{ mt: 0.5 }}>
+          <FormField
+            label="Current password"
+            value={currentPassword}
+            onChange={setCurrentPassword}
+          />
+          <Box>
+            <Typography variant="body2" sx={{ display: "block", mb: 0.75, fontWeight: 500 }}>
+              New password
+            </Typography>
+            <TextField
+              fullWidth
+              type={fieldType}
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              helperText="Must be at least 8 characters"
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      size="small"
+                      onClick={() => setShowPasswords((s) => !s)}
+                      edge="end"
+                      aria-label={showPasswords ? "Hide passwords" : "Show passwords"}
+                    >
+                      {showPasswords ? (
+                        <VisibilityOffOutlinedIcon fontSize="small" />
+                      ) : (
+                        <VisibilityOutlinedIcon fontSize="small" />
+                      )}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+            />
           </Box>
-        )}
-      </Paper>
-    </Box>
+          <FormField
+            label="Confirm new password"
+            value={confirmPassword}
+            onChange={setConfirmPassword}
+          />
+        </Stack>
+      </DialogContent>
+      <DialogActions sx={{ px: 3, pb: 3 }}>
+        <Button onClick={resetAndClose} color="inherit">
+          Cancel
+        </Button>
+        <Button
+          variant="contained"
+          disabled={!canSubmit}
+          onClick={() => onSubmit({ currentPassword, newPassword })}
+        >
+          Update password
+        </Button>
+      </DialogActions>
+    </Dialog>
   );
 }

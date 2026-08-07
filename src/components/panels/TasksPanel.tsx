@@ -80,7 +80,7 @@ import { fetchCustomersLists } from "../../store/customersSlice";
 import { formatName, formatShortTitle, formatTitle } from "../../utils/formatText";
 import { useAuth } from "../../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
-import { fetchMembersIDNames } from "../../store/profileSlice";
+import { fetchOrgMembers } from "../../store/organizationMemberSlice";
 
 const PRIORITY_COLOR: Record<TaskPriority, string> = {
   low: "#9e9e9e",
@@ -174,7 +174,7 @@ export default function TasksPanel() {
   const {
     items: members,
     loaded: mLd,
-  } = useSelector((state: RootState) => state.profile);
+  } = useSelector((state: RootState) => state.orgmembers);
 
   const { items: contacts, loaded: cLd } = useSelector((s: RootState) => s.contacts);
   const { items: leads, loaded: lLd } = useSelector((s: RootState) => s.leads);
@@ -230,7 +230,7 @@ export default function TasksPanel() {
         if (!dLd) await dispatch(fetchDealsLists()).unwrap();
         if (!cuLd) await dispatch(fetchCustomersLists()).unwrap();
         if (!mLd) {
-          await dispatch(fetchMembersIDNames()).unwrap();
+          await dispatch(fetchOrgMembers()).unwrap();
         }
       } catch {
         // Error handled by Redux state
@@ -719,7 +719,7 @@ export default function TasksPanel() {
                 const isCancelled = task.status === "cancelled";
                 const overdue = isOverdue(task);
                 const StatusIcon = STATUS_META[task.status].icon;
-                const initials = `${task.assignee.first_name?.[0] ?? ""}${task.assignee.last_name?.[0] ?? ""}`.toUpperCase();
+                const initials = `${task.assignee.profile.first_name?.[0] ?? ""}${task.assignee.profile.last_name?.[0] ?? ""}`.toUpperCase();
 
                 return (
                   <ListItem
@@ -868,12 +868,12 @@ export default function TasksPanel() {
                               {initials}
                             </Avatar>
                             <Typography variant="caption" fontSize="0.68rem" sx={{ opacity: 0.75 }}>
-                              {formatName(task.assignee.first_name, task.assignee.last_name)}
+                              {formatName(task.assignee.profile.first_name, task.assignee.profile.last_name)}
                             </Typography>
                           </Stack>
 
                           <Typography variant="caption" fontSize="0.62rem" sx={{ opacity: 0.45 }}>
-                            {formatName(task.author.first_name, task.author.last_name)}
+                            {formatName(task.author.profile.first_name, task.author.profile.last_name)}
                           </Typography>
                         </Box>
                       }
@@ -915,7 +915,7 @@ export default function TasksPanel() {
                       {new Date(activeTask.created_at).toLocaleString()}
                     </Typography>
                     <Typography sx={{ fontSize: 11, opacity: 0.55 }}>
-                      {`· ${formatName(activeTask.author.first_name, activeTask.author.last_name)}`}
+                      {`· ${formatName(activeTask.author.profile.first_name, activeTask.author.profile.last_name)}`}
                     </Typography>
                   </Stack>
                 ) : (
@@ -983,7 +983,7 @@ export default function TasksPanel() {
                 >
                   {members.map((member) => (
                     <MenuItem sx={{ fontSize: 11 }} key={member.id} value={member.id}>
-                      {member.id === userId ? 'Self' : `${member.display_name}`}
+                      {member.id === userId ? 'Self' : `${formatName(member.profile.first_name, member.profile.last_name)}`}
                     </MenuItem>
                   ))}
                 </Select>

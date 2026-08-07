@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
-import { adminSignInAPI, agentSignInAPI, changePasswordAPI, getCurrentUserAPI, refreshAPI, signOutAPI, signUpAPI } from '../services/authService';
+import { signInAPI, changePasswordAPI, getCurrentUserAPI, refreshAPI, signOutAPI, signUpAPI } from '../services/authService';
 import type { ChangePasswordDTO, SignInDTO, SignUpDTO, UserState } from '../types/auth';
 
 const initialState: UserState = {
@@ -22,7 +22,7 @@ export const signUp = createAsyncThunk(
       }
 
       return thunkAPI.rejectWithValue(
-        "Failed to sign in user"
+        "Failed to sign up user"
       );
     }
   }
@@ -46,29 +46,11 @@ export const getCurrentUser = createAsyncThunk(
   }
 );
 
-export const adminSignIn = createAsyncThunk(
-  "auth/admin-signin",
+export const signIn = createAsyncThunk(
+  "auth/signin",
   async (dto: SignInDTO, thunkAPI) => {
     try {
-      return await adminSignInAPI(dto);
-
-    } catch (err) {
-      if (err instanceof Error) {
-        return thunkAPI.rejectWithValue(err.message);
-      }
-
-      return thunkAPI.rejectWithValue(
-        "Failed to sign in user"
-      );
-    }
-  }
-);
-
-export const agentSignIn = createAsyncThunk(
-  "auth/agent-signin",
-  async (dto: SignInDTO, thunkAPI) => {
-    try {
-      return await agentSignInAPI(dto);
+      return await signInAPI(dto);
 
     } catch (err) {
       if (err instanceof Error) {
@@ -94,7 +76,7 @@ export const changePassword = createAsyncThunk(
       }
 
       return thunkAPI.rejectWithValue(
-        "Failed to sign in user"
+        "Failed to change password"
       );
     }
   }
@@ -136,8 +118,8 @@ export const refresh = createAsyncThunk(
   }
 );
 
-const userSlice = createSlice({
-  name: "user",
+const authSlice = createSlice({
+  name: "auth",
   initialState,
   reducers: {
     logout: (state) => {
@@ -184,32 +166,16 @@ const userSlice = createSlice({
       })
 
 
-      .addCase(adminSignIn.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-        
-      })
-      .addCase(adminSignIn.fulfilled, (state, action) => {
-        state.loading = false;
-        state.isAuthenticated = true;
-        state.user = action.payload.user;
-      })
-      .addCase(adminSignIn.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload as string;
-      })
-
-
-      .addCase(agentSignIn.pending, (state) => {
+      .addCase(signIn.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(agentSignIn.fulfilled, (state, action) => {
+      .addCase(signIn.fulfilled, (state, action) => {
         state.loading = false;
         state.isAuthenticated = true;
-        state.user = action.payload.user;
+        state.user = action.payload.profile;
       })
-      .addCase(agentSignIn.rejected, (state, action) => {
+      .addCase(signIn.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
       })
@@ -220,7 +186,6 @@ const userSlice = createSlice({
         state.error = null;
       })
       .addCase(signOut.fulfilled, (state) => {
-        console.log("LOGOUT FULFILLED");
         state.loading = false;
         state.loaded = true;
         state.user = null;
@@ -253,4 +218,5 @@ const userSlice = createSlice({
   },
 });
 
-export default userSlice.reducer;
+export const { logout } = authSlice.actions;
+export default authSlice.reducer; 

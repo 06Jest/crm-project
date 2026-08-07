@@ -1,4 +1,4 @@
-import type { Roles } from "./global";
+
 import type { DisplayProfile } from "./profile";
 
 export interface UserState {
@@ -13,21 +13,11 @@ export interface UserState {
 export interface SignUpDTO {
   email: string;
   password: string;
-  first_name: string;
-  last_name: string;
-  org_name: string;
 }
 
 export interface SignInDTO {
   email: string;
   password: string;
-}
-
-
-export interface AccessTokenPayload {
-  sub: string;
-  role: Roles;
-  orgId: string | null;
 }
 
 
