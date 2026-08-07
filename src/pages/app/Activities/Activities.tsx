@@ -277,7 +277,7 @@ export default function Activities() {
           title: a.title,
           description: a.description,
           relatedName: related ? formatName(related.first_name, related.last_name) : null,
-          createdBy: formatName(a.creator.first_name, a.creator.last_name),
+          createdBy: formatName(a.creator.profile.first_name, a.creator.profile.last_name),
           createdAt: a.created_at,
         };
       }),

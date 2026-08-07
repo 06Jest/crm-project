@@ -70,9 +70,26 @@ export interface UpdateDraftEmail {
 export interface EmailListItem extends Email {
   sender: {
     id: string;
+    profile: {
+      first_name: string;
+      last_name: string;
+      avatar_url?: string | null;
+    }
+  };
+
+  contact?: {
+    id: string;
     first_name: string;
     last_name: string;
-  };
+    phone: string;
+  } | null;
+
+  lead?: {
+    id: string;
+    first_name: string;
+    last_name: string;
+    phone: string;
+  } | null;
 
   organization: {
     id: string;

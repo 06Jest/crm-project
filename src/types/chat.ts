@@ -50,20 +50,27 @@ export interface Conversation {
 export interface ConversationWithLastMessage extends Conversation {
 
   last_message: {
-    id: string,
-    sender_id: string,
+    id: string,    
     content: string,
     created_at: string
-  } | null;
-
+    sender: {
+      id: string,
+      profile: {
+        fist_name: string,
+        last_name: string,
+        avatar_url: string | null,
+      }
+    },
+  } | null,
 }
 
 export interface ConversationListItem extends ConversationWithLastMessage {
 
   other_participant?: {
     id: string,
+    fist_name: string,
+    last_name: string,
     avatar_url: string | null,
-    display_name: string,
   },
   my_last_read_at: string  | null
 }
@@ -107,9 +114,12 @@ export interface Message {
 export interface MessageListItem extends Message {
   sender: {
     id: string;
-    first_name: string;
-    last_name: string;
-    avatar_url: string | null,
+    profile: {
+      id: string;
+      first_name: string;
+      last_name: string;
+      avatar_url: string | null,
+    } 
   };
 }
 

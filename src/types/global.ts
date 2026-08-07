@@ -122,7 +122,8 @@ export const PRIORITIES = [
 export type Priority = typeof PRIORITIES[number];
 
 export const ROLES = [
-  "admin",
+  "owner",  
+  "manager",
   "agent",
 ] as const;
 

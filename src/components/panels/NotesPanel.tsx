@@ -109,7 +109,9 @@ export default function NotesPanel() {
   );
 
   const { user } = useAuth();
-  const userId = user?.id;
+  const membership = user?.membership?.[0];
+  const userId = membership?.id;
+  console.log("iKlog:" + userId)
 
   const [query, setQuery] = useState("");
   const [view, setView] = useState<"list" | "editor">("list");
@@ -575,14 +577,14 @@ const removeNote = async (note: NoteListItem) => {
               >
                 <StickyNote2OutlinedIcon sx={{ fontSize: 32, mb: 1 }} />
                 <Typography variant="body2" sx={{ textAlign: "center" }}>
-                  {notes.length === 0 ? "No notes yet — tap + to add one" : "No matches found"}
+                  {notes.length === 0 ? "No notes yet? tap + to add one" : "No matches found"}
                 </Typography>
               </Box>
             ) : (
               <List
                 sx={(theme) => ({
                   overflowY: "auto",
-                  height: 325,
+                  height: 390,
                   pr: 0.5,
                   "&::-webkit-scrollbar": { width: 6 },
                   "&::-webkit-scrollbar-thumb": {
@@ -731,7 +733,7 @@ const removeNote = async (note: NoteListItem) => {
                                 hour: "2-digit",
                                 minute: "2-digit",
                               })}
-                              {` · ${formatName(note.author.first_name, note.author.last_name)}`}
+                              {` · ${formatName(note.author.profile.first_name, note.author.profile.last_name)}`}
                             </Typography>
                           </Box>
                        }
@@ -778,7 +780,7 @@ const removeNote = async (note: NoteListItem) => {
                       bgcolor: alpha(theme.palette.primary.main, 0.08),
                       color: 'primary.main',
                       fontSize: '0.65rem', fontWeight: 600, whiteSpace: 'nowrap',
-                    })}>{`${formatName(activeNote.author.first_name, activeNote.author.last_name)}`}</Typography>
+                    })}>{`${formatName(activeNote.author.profile.first_name, activeNote.author.profile.last_name)}`}</Typography>
                     </>
                   ): (
                      <Typography sx={{ fontWeight: 700, opacity: 0.55 }}>New Note</Typography>

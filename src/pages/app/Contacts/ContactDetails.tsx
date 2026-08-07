@@ -535,7 +535,7 @@ export default function ContactDetail() {
                 }}
               />
               <Chip
-                label={formatName(contact.owner.first_name, contact.owner.last_name)}
+                label={formatName(contact.owner.profile.first_name, contact.owner.profile.last_name)}
                 title="Contact owner"
                 size='small'
                 sx={{

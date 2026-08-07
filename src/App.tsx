@@ -11,7 +11,7 @@ import Landing from './pages/public/Landing/Landing';
 import Pricing from './pages/public/Pricing/Pricing';
 import About from './pages/public/About/About';
 
-
+import Onboarding from "./pages/auth/OnBoarding/Onboarding";
 import Login from './pages/auth/Login/Login';
 import Register from './pages/auth/Register/Register';
 import ForgotPassword from './pages/auth/ForgotPassword/ForgotPassword';
@@ -31,7 +31,6 @@ import CustomerLeaderboard from './pages/app/Customers/CustomerLeaderboard';
 import CustomerDetail from './pages/app/Customers/CustomerDetail';
 import Reports from './pages/app/Reports/Reports';
 import Profile from './pages/app/Profile/Profile';
-import Messaging from './pages/app/Messaging/Messaging';
 import Settings from './pages/app/Settings/Settings';
 import Analytics from './pages/app/Analytics/Analytics';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -73,6 +72,7 @@ function AppRoutes() {
 
         
         <Route element={<ProtectedRoute/>}>
+          <Route path="/onboarding" element={<Onboarding />} />
           <Route element={<AppLayout />}>
             <Route path="/app/dashboard" element={<Dashboard />} />
             <Route path="/app/leads" element={<Leads />} />
@@ -90,7 +90,6 @@ function AppRoutes() {
             <Route path="/app/reports" element={<Reports />} />
             <Route path="/app/profile" element={<Profile />} />
             <Route path="/app/company/:id" element={<CompanyProfile />} />
-            <Route path="/app/messaging" element={<Messaging />} />
             <Route path="/app/settings" element={<Settings />} />
             <Route path="/app/analytics" element={<Analytics />} />
           </Route>

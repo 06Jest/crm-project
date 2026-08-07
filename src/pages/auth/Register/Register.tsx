@@ -26,12 +26,8 @@ export default function Register() {
   const [openRedirect, setOpenRedirect] = useState(false);
 
   const [form, setForm] = useState({
-    email: '',
-    password: '',
-    first_name: '',
-    last_name: '',
-    org_name: ''
-    
+    email: "",
+    password: "",
   });
 
   const handleCloseRedirect = () => {
@@ -78,11 +74,8 @@ export default function Register() {
         elevation={0}
         sx={{
           p: 4,
-          width: '80vw',
-          maxWidth: 600,
-          height: '85vh',
-          maxHeight: 900,
-          minHeight: 900,
+          width: "100%",
+          maxWidth: 480,
           border: 1,
           color: 'white',
           borderColor: 'divider',
@@ -94,11 +87,11 @@ export default function Register() {
         <Box sx={{ textAlign: 'center', mb: 3 }}>
           <BusinessIcon sx={{ fontSize: 40, color: 'primary.main', mb: 1 }} />
           <Typography variant="h5" fontWeight={700} color="text.secondary">
-            Create your organization
+            Create your account
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-            Start your free trial. You'll be the admin of
-            your organization and can invite your team after setup.
+            Create your account to get started.
+            After verifying your email, you'll finish setting up your profile and workspace.
           </Typography>
         </Box>
         <Box sx={{my: 2}}>
@@ -113,39 +106,8 @@ export default function Register() {
         <Box component="form" onSubmit={handleSubmit}>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
 
-
             <TextField
-              label="Organization name"
-              name="org_name"
-              value={form.org_name}
-              onChange={handleChange}
-              placeholder="e.g. Acme Sales Team"
-              required
-              fullWidth
-              helperText="This is the name of your company or team"
-            />
-
-            <Divider />
-
-
-            <TextField
-              label="Your first name"
-              name="first_name"
-              value={form.first_name}
-              onChange={handleChange}
-              required
-              fullWidth
-            />
-            <TextField
-              label="Your last name"
-              name="last_name"
-              value={form.last_name}
-              onChange={handleChange}
-              required
-              fullWidth
-            />
-            <TextField
-              label="Work email"
+              label="Email"
               name="email"
               type="email"
               value={form.email}
@@ -181,11 +143,11 @@ export default function Register() {
               variant="contained"
               fullWidth
               size="large"
-              disabled={loading || !form.email || !form.first_name || !form.last_name || !form.last_name || !form.password}
+              disabled={loading || !form.email  || !form.password}
             >
               {loading
                 ? <CircularProgress size={22} color="inherit" />
-                : 'Create organization account'
+                : 'Create account'
               }
             </Button>
           </Box>
@@ -201,13 +163,6 @@ export default function Register() {
             textAlign: 'center',
           }}
         >
-          <Typography variant="body2" color="text.secondary">
-            🔑 Are you an agent?
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            Ask your admin for your login credentials.
-            Agents do not register here.
-          </Typography>
         </Box>
 
         <Typography
@@ -224,24 +179,28 @@ export default function Register() {
       </Paper>
       <Dialog open={openRedirect} onClose={handleCloseRedirect}>
         <DialogTitle sx={{fontWeight: 700}}>
-          Register Successful
+          Verify your email
         </DialogTitle>
         <DialogContent
           >
-            The email confirmation is sent in your email, Proceed to login?
+            We've sent a verification email to your inbox.
+
+            Please verify your email before signing in.
+
+            Once verified, you'll complete your profile and workspace setup.
           </DialogContent>
           <DialogActions>
             <Button onClick={handleCloseRedirect}>
-              No
+              Later
             </Button>
             <Button 
               variant="contained"
-              color="error"
+              color="primary"
               onClick={() => {
                 handleRedirect();
               }}
             >
-              Yes
+              Go to Login
             </Button>
           </DialogActions>
       </Dialog>

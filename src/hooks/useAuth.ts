@@ -3,12 +3,11 @@ import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "../store/store";
 import { 
   getCurrentUser,
-  adminSignIn,
-  agentSignIn,
   refresh,
   changePassword,
   signOut,
-  signUp
+  signUp,
+  signIn
 } from "../store/userSlice";
 import type { ChangePasswordDTO, SignInDTO, SignUpDTO } from "../types/auth";
 
@@ -21,10 +20,10 @@ export const useAuth = () => {
     ...auth,
     currentUser: () => dispatch(getCurrentUser()),
     register: (dto: SignUpDTO) => dispatch(signUp(dto)),
-    adminLogin: (dto: SignInDTO) => dispatch(adminSignIn(dto)),
-    agentLogin: (dto: SignInDTO) => dispatch(agentSignIn(dto)),
-    isAdmin: auth.user?.role === 'admin',
-    isAgent: auth.user?.role === 'agent',
+    login: (dto: SignInDTO) => dispatch(signIn(dto)),
+    isOwner: auth.user?.membership?.role === 'owner',
+    isManager: auth.user?.membership?.role === 'manager',
+    isAgent: auth.user?.membership?.role === 'agent',
     refreshtoken: () => dispatch(refresh()),
     changePass: (dto: ChangePasswordDTO) =>
     dispatch(changePassword(dto)),

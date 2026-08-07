@@ -1,62 +1,103 @@
-import { supabase } from './supabase';
-import type { Profile } from '../types/profile';
-import type { ProfileIDName } from "../types/profile";
 import { apiClient } from "./apiClient";
 
-export const fetchMyProfileFromDB = async (
-  userId: string
-): Promise<Profile | null> => {
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', userId)
-    .single();
+import type {
+  Profile,
+  DisplayProfile,
+  CompleteProfileDTO,
+  UpdateProfileDTO,
+  ProfileStatus,
+} from "../types/profile";
 
 
-  if (error) {
-    if (error.code === 'PGRST116') return null;
-    throw new Error(error.message);
-  }
-  return data as Profile;
-}
+export const fetchProfileAPI = async (): Promise<DisplayProfile> => {
 
-export const updateProfileInDB = async (
-  userId: string,
-  updates: Partial<Pick<Profile, 'name' | 'avatar_url'>>
+  const result = await apiClient(
+    "/api/profile/me",
+    {
+      method: "GET",
+    }
+  );
+
+  return result.data as DisplayProfile;
+
+};
+
+
+export const completeProfileSetupAPI = async (
+  profile: CompleteProfileDTO
 ): Promise<Profile> => {
-  const { data, error } = await supabase
-    .from('profiles')
-    .update(updates)
-    .eq('id', userId)
-    .select()
-    .single();
 
-  if (error) throw new Error (error.message);;
-  return data as Profile;
-}
+  const result = await apiClient(
+    "/api/profile/setup",
+    {
+      method: "PATCH",
+      body: JSON.stringify(profile),
+    }
+  );
 
-export const updatePasswordInAuth = async (
-  newPassword: string
-): Promise<void> => {
-  const { error } = await supabase.auth.updateUser({
-    password: newPassword,
-  });
-  if(error) throw new Error(error.message);
-}
+  return result.data as Profile;
 
-export const updateNameInAuth = async (name: string): Promise<void> => {
-  const { error } = await supabase.auth.updateUser({
-    data: { name },
-  });
-  if (error) throw new Error(error.message)
 };
 
 
-export const fetchMembersIDNamesAPI = async (): Promise<ProfileIDName[]> => {
-  const result = await apiClient(`/api/org/members/`, {
-    method: "GET",
-  });
+export const updateProfileAPI = async (
+  profile: UpdateProfileDTO
+): Promise<Profile> => {
 
-  return result.data as ProfileIDName[];
+  const result = await apiClient(
+    "/api/profile/me",
+    {
+      method: "PATCH",
+      body: JSON.stringify(profile),
+    }
+  );
+
+  return result.data as Profile;
+
 };
 
+
+export const updateProfileAvatarAPI = async (
+  avatar_url: string | null
+): Promise<{
+  avatar_url: string | null;
+}> => {
+
+  const result = await apiClient(
+    "/api/profile/me/avatar",
+    {
+      method: "PATCH",
+      body: JSON.stringify({
+        avatar_url,
+      }),
+    }
+  );
+
+  return result.data as {
+    avatar_url: string | null;
+  };
+
+};
+
+
+export const updateProfileStatusAPI = async (
+  status: ProfileStatus
+): Promise<{
+  status: ProfileStatus;
+}> => {
+
+  const result = await apiClient(
+    "/api/profile/me/status",
+    {
+      method: "PATCH",
+      body: JSON.stringify({
+        status,
+      }),
+    }
+  );
+
+  return result.data as {
+    status: ProfileStatus;
+  };
+
+};

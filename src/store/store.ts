@@ -1,6 +1,9 @@
 import { configureStore } from "@reduxjs/toolkit"
 import userReducer from "./userSlice"
 import profileReducer from "./profileSlice"
+import subscriptionReducer from './subscriptionSlice';
+import organizationReducer from './organizationSlice';
+import orgMembersReducer from './organizationMemberSlice';
 import dashboardReducer from './dashboardSlice'
 import contactsReducer from "./contactsSlice"
 import leadsReducer from "./leadsSlice"
@@ -20,6 +23,9 @@ export const store = configureStore({
   reducer: {
     user: userReducer, 
     profile: profileReducer,
+    organization: organizationReducer,
+    subscription: subscriptionReducer,
+    orgmembers: orgMembersReducer,
     dashboard: dashboardReducer,
     contacts: contactsReducer,
     leads: leadsReducer,

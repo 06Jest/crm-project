@@ -175,7 +175,7 @@ export default function Customers() {
       open_deals: dealsOpen,
       preferred_contact_time: c.preferred_contact_time,
       owner_name: customer.owner
-        ? formatName(customer.owner.first_name, customer.owner.last_name)
+        ? formatName(customer.owner.profile.first_name, customer.owner.profile.last_name)
         : "Unassigned",
       created_at: customer.created_at,
       action: customer.id

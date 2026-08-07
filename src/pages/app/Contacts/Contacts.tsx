@@ -207,7 +207,7 @@ export default function Contacts() {
     email: contact.email,
     phone: contact.phone,
     status: contact.status,
-    owner_name: formatName(contact.owner.first_name, contact.owner.last_name),
+    owner_name: formatName(contact.owner.profile.first_name, contact.owner.profile.last_name),
     created_at: contact.created_at,
     action: contact.id
   }));
