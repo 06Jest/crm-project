@@ -1,7 +1,8 @@
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { keyframes } from '@emotion/react';
+import { keyframes,  } from '@emotion/react';
+import type { SxProps, Theme } from '@mui/material/styles';
 import {
   Box,
   Container,
@@ -108,49 +109,90 @@ const kanbanGlide = keyframes`
 `;
 
 function usePrefersReducedMotion() {
-  const [reduced, setReduced] = useState(false);
+  const [reduced, setReduced] = useState(() =>
+    typeof window !== 'undefined'
+      ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      : false
+  );
+
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
-    setReduced(mq.matches);
-    const handler = (event) => setReduced(event.matches);
+
+    const handler = (event: MediaQueryListEvent) => {
+      setReduced(event.matches);
+    };
+
     mq.addEventListener('change', handler);
-    return () => mq.removeEventListener('change', handler);
+
+    return () => {
+      mq.removeEventListener('change', handler);
+    };
   }, []);
+
   return reduced;
 }
 
-function Reveal({ children, delay = 0, sx = {} }) {
-  const ref = useRef(null);
+interface RevealProps {
+  children: ReactNode;
+  delay?: number;
+  sx?: SxProps<Theme>;
+}
+
+interface RevealProps {
+  children: ReactNode;
+  delay?: number;
+  sx?: SxProps<Theme>;
+}
+
+function Reveal({ children, delay = 0, sx = {} }: RevealProps) {
+  const ref = useRef<HTMLDivElement | null>(null);
   const [visible, setVisible] = useState(false);
   const reducedMotion = usePrefersReducedMotion();
 
   useEffect(() => {
     if (reducedMotion) {
-      setVisible(true);
-      return undefined;
+      return;
     }
+
     const node = ref.current;
-    if (!node) return undefined;
+
+    if (!node) {
+      return;
+    }
+
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting) {
+        if (entries[0]?.isIntersecting) {
           setVisible(true);
           observer.unobserve(node);
         }
       },
-      { threshold: 0.15, rootMargin: '0px 0px -60px 0px' }
+      {
+        threshold: 0.15,
+        rootMargin: '0px 0px -60px 0px',
+      }
     );
+
     observer.observe(node);
-    return () => observer.disconnect();
+
+    return () => {
+      observer.disconnect();
+    };
   }, [reducedMotion]);
+
+  const shouldShow = reducedMotion || visible;
 
   return (
     <Box
       ref={ref}
       sx={{
-        opacity: visible ? 1 : 0,
-        transform: visible ? 'translateY(0)' : 'translateY(24px)',
-        transition: `opacity 0.7s ease ${delay}s, transform 0.7s ease ${delay}s`,
+        opacity: shouldShow ? 1 : 0,
+        transform: shouldShow
+          ? 'translateY(0)'
+          : 'translateY(24px)',
+        transition: reducedMotion
+          ? 'none'
+          : `opacity 0.7s ease ${delay}s, transform 0.7s ease ${delay}s`,
         ...sx,
       }}
     >
@@ -160,21 +202,49 @@ function Reveal({ children, delay = 0, sx = {} }) {
 }
 
 
-function SectionHeader({ eyebrow, title, description, align = 'left', maxWidth = 640 }) {
+interface SectionHeaderProps {
+  eyebrow: ReactNode;
+  title: ReactNode;
+  description?: ReactNode;
+  align?: 'left' | 'center' | 'right';
+  maxWidth?: number;
+}
+
+function SectionHeader({
+  eyebrow,
+  title,
+  description,
+  align = 'left',
+  maxWidth = 640,
+}: SectionHeaderProps) {
   return (
     <Box sx={{ textAlign: align, mb: 4 }}>
-      <Typography variant="overline" color="primary" fontWeight={700} letterSpacing={2}>
+      <Typography
+        variant="overline"
+        color="primary"
+        fontWeight={700}
+        letterSpacing={2}
+      >
         {eyebrow}
       </Typography>
-      <Typography variant="h4" fontWeight={700} sx={{ mt: 1, mb: description ? 1.5 : 0 }}>
+
+      <Typography
+        variant="h4"
+        fontWeight={700}
+        sx={{ mt: 1, mb: description ? 1.5 : 0 }}
+      >
         {title}
       </Typography>
+
       {description && (
         <Typography
           variant="body1"
           color="text.secondary"
           lineHeight={1.7}
-          sx={{ maxWidth, ...(align === 'center' && { mx: 'auto' }) }}
+          sx={{
+            maxWidth,
+            ...(align === 'center' && { mx: 'auto' }),
+          }}
         >
           {description}
         </Typography>
@@ -183,7 +253,12 @@ function SectionHeader({ eyebrow, title, description, align = 'left', maxWidth =
   );
 }
 
-function ChipGroup({ items, color = 'default' }) {
+interface ChipGroupProps {
+  items: string[];
+  color?: 'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning';
+}
+
+function ChipGroup({ items, color = 'default' }: ChipGroupProps) {
   return (
     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
       {items.map((item) => (
@@ -195,8 +270,11 @@ function ChipGroup({ items, color = 'default' }) {
           color={color}
           sx={{
             transition: 'transform 0.15s ease, background-color 0.15s ease',
-            '&:hover': { transform: 'translateY(-1px)', bgcolor: 'action.hover' },
-            p: '3px 8px'
+            '&:hover': {
+              transform: 'translateY(-1px)',
+              bgcolor: 'action.hover',
+            },
+            p: '3px 8px',
           }}
         />
       ))}
@@ -204,15 +282,38 @@ function ChipGroup({ items, color = 'default' }) {
   );
 }
 
-function BulletList({ items }) {
+interface BulletListProps {
+  items?: string[];
+}
+
+function BulletList({ items = [] }: BulletListProps) {
   return (
-    <Stack spacing={1.25}>
-      {items.map((item: string) => (
-        <Box key={item} sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
-          <Box sx={{ color: 'primary.main', mt: 0.3, display: 'flex' }}>
-            { <CheckCircleIcon fontSize="small" />}
+    <Stack spacing={1}>
+      {items.map((item) => (
+        <Box
+          key={item}
+          sx={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: 1,
+          }}
+        >
+          <Box
+            sx={{
+              color: 'primary.main',
+              mt: 0.3,
+              display: 'flex',
+              flexShrink: 0,
+            }}
+          >
+            <CheckCircleIcon sx={{ fontSize: 17 }} />
           </Box>
-          <Typography variant="body2" color="text.secondary" lineHeight={1.6}>
+
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            lineHeight={1.6}
+          >
             {item}
           </Typography>
         </Box>
@@ -221,7 +322,18 @@ function BulletList({ items }) {
   );
 }
 
-function StageFlow({ steps, branches }) {
+interface StageFlowBranch {
+  label: string;
+  description: string;
+  tone: 'positive' | 'neutral';
+}
+
+interface StageFlowProps {
+  steps: string[];
+  branches?: StageFlowBranch[];
+}
+
+function StageFlow({ steps, branches }: StageFlowProps) {
   return (
     <Box>
       <Box
@@ -254,7 +366,8 @@ function StageFlow({ steps, branches }) {
                 borderColor: 'primary.main',
                 bgcolor: 'transparent',
                 color: 'primary.main',
-                transition: 'transform 0.25s ease, background-color 0.25s ease, color 0.25s ease',
+                transition:
+                  'transform 0.25s ease, background-color 0.25s ease, color 0.25s ease',
                 '&:hover': {
                   bgcolor: 'primary.main',
                   color: 'primary.contrastText',
@@ -262,36 +375,79 @@ function StageFlow({ steps, branches }) {
                 },
               }}
             />
+
             {index < steps.length - 1 && (
               <>
-                <ArrowDownwardIcon sx={{ color: 'text.disabled', display: { xs: 'block', sm: 'none' } }} />
-                <ArrowForwardIcon sx={{ color: 'text.disabled', display: { xs: 'none', sm: 'block' } }} />
+                <ArrowDownwardIcon
+                  sx={{
+                    color: 'text.disabled',
+                    display: { xs: 'block', sm: 'none' },
+                  }}
+                />
+
+                <ArrowForwardIcon
+                  sx={{
+                    color: 'text.disabled',
+                    display: { xs: 'none', sm: 'block' },
+                  }}
+                />
               </>
             )}
           </Box>
         ))}
       </Box>
 
-      {branches && (
-        <Grid container spacing={2} sx={{ mt: 3 }} justifyContent="center">
+      {branches && branches.length > 0 && (
+        <Grid
+          container
+          spacing={2}
+          sx={{ mt: 3 }}
+          justifyContent="center"
+        >
           {branches.map((branch) => (
-            <Grid size={{ xs: 12, sm: 6 }} key={branch.label} sx={{ maxWidth: 320, mx: 'auto' }}>
+            <Grid
+              size={{ xs: 12, sm: 6 }}
+              key={branch.label}
+              sx={{
+                maxWidth: 320,
+                mx: 'auto',
+              }}
+            >
               <Card
                 elevation={0}
                 sx={{
                   border: 1,
-                  borderColor: branch.tone === 'positive' ? 'success.main' : 'divider',
+                  borderColor:
+                    branch.tone === 'positive'
+                      ? 'success.main'
+                      : 'divider',
                   borderRadius: 3,
                   textAlign: 'center',
                   py: 2,
-                  transition: 'transform 0.25s ease, box-shadow 0.25s ease',
-                  '&:hover': { transform: 'translateY(-3px)', boxShadow: 3 },
+                  transition:
+                    'transform 0.25s ease, box-shadow 0.25s ease',
+                  '&:hover': {
+                    transform: 'translateY(-3px)',
+                    boxShadow: 3,
+                  },
                 }}
               >
-                <Typography fontWeight={700} color={branch.tone === 'positive' ? 'success.main' : 'text.secondary'}>
+                <Typography
+                  fontWeight={700}
+                  color={
+                    branch.tone === 'positive'
+                      ? 'success.main'
+                      : 'text.secondary'
+                  }
+                >
                   {branch.label}
                 </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ px: 2, mt: 0.5 }}>
+
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ px: 2, mt: 0.5 }}
+                >
                   {branch.description}
                 </Typography>
               </Card>
@@ -351,25 +507,29 @@ const LIFECYCLE_STAGES = [
     id: 'lead',
     label: 'Lead',
     icon: <PersonSearchIcon />,
-    description: 'A potential customer came from an inquiry, referral or ads response',
+    description:
+      'A potential customer came from an inquiry, referral or ads response.',
   },
   {
     id: 'contact',
     label: 'Contact',
     icon: <ContactPageIcon />,
-    description: 'A qualified lead with a complete profile, ready for ongoing communication.',
+    description:
+      'A qualified lead with a complete profile, ready for ongoing communication.',
   },
   {
     id: 'deal',
     label: 'Deal',
     icon: <HandshakeIcon />,
-    description: 'An active sales opportunity moving through customizable pipeline stages.',
+    description:
+      'An active sales opportunity moving through customizable pipeline stages.',
   },
   {
     id: 'customer',
     label: 'Customer',
-    icon: <CheckCircleIcon />,
-    description: 'A won deal that becomes a managed, long-term client relationship.',
+    icon: <GroupsIcon />,
+    description:
+      'A won deal that becomes a managed, long-term client relationship.',
   },
 ];
 
@@ -775,9 +935,17 @@ export default function ProductOverview() {
     return () => observer.disconnect();
   }, []);
 
-  const scrollToSection = (id) => {
+  type SectionId = (typeof NAV_SECTIONS)[number]['id'];
+
+  const scrollToSection = (id: SectionId) => {
     const node = document.getElementById(id);
-    if (node) node.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    if (node) {
+      node.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    }
   };
 
   return (
@@ -876,7 +1044,7 @@ export default function ProductOverview() {
         <Container maxWidth="lg">
           <Tabs
             value={activeSection}
-            onChange={(event, val) => scrollToSection(val)}
+            onChange={(_, val) => scrollToSection(val)}
             variant="scrollable"
             scrollButtons="auto"
             textColor="primary"
