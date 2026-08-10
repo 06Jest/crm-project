@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { forwardRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector} from 'react-redux';
 import type { AppDispatch } from '../../../store/store';
@@ -25,8 +25,12 @@ import {
   Autocomplete,
   Avatar,
   Tooltip,
+  Collapse,
+  Grow,
+  CircularProgress,
 } from '@mui/material';
-import { alpha, type Theme } from '@mui/material/styles';
+import type { TransitionProps } from '@mui/material/transitions';
+import { alpha, keyframes, type Theme } from '@mui/material/styles';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -65,7 +69,6 @@ import { formatName } from '../../../utils/formatText';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 
 fixLeafletIcons();
-
 
 const STATUS_COLORS: Record<ContactStatus, string> = {
   Contacted: '#ffffff',
@@ -107,6 +110,18 @@ function getInitials(input: string) {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
+const fadeInUp = keyframes`
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+`;
+
+const GrowTransition = forwardRef(function GrowTransition(
+  props: TransitionProps & { children: React.ReactElement },
+  ref: React.Ref<unknown>,
+) {
+  return <Grow ref={ref} timeout={220} {...props} />;
+});
+
 function SectionHeader({
   icon,
   title,
@@ -117,12 +132,13 @@ function SectionHeader({
   onEdit?: () => void;
 }) {
   return (
-    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, gap: 1 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 0 }}>
         <Avatar
           sx={{
             width: 32,
             height: 32,
+            flexShrink: 0,
             bgcolor: (theme: Theme) => alpha(theme.palette.primary.main, 0.12),
             color: 'primary.main',
           }}
@@ -135,7 +151,22 @@ function SectionHeader({
       </Box>
       {onEdit && (
         <Tooltip title="Edit">
-          <IconButton size="small" onClick={onEdit} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
+          <IconButton
+            size="small"
+            onClick={onEdit}
+            sx={{
+              border: '1px solid',
+              borderColor: 'divider',
+              borderRadius: 2,
+              flexShrink: 0,
+              transition: 'border-color 0.2s ease, color 0.2s ease, transform 0.2s ease',
+              '&:hover': {
+                borderColor: 'primary.main',
+                color: 'primary.main',
+                transform: 'scale(1.06)',
+              },
+            }}
+          >
             <EditIcon fontSize="small" />
           </IconButton>
         </Tooltip>
@@ -178,7 +209,22 @@ const fieldSx = {
   fontSize: 13,
   '& .MuiOutlinedInput-root': { borderRadius: 2 },
 };
-// ---------------------------------------------------------------
+const twoColSx = {
+  display: 'grid',
+  gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+  gap: { xs: 0, sm: 4 },
+};
+const twoFieldRowSx = {
+  display: 'grid',
+  gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+  gap: 1.5,
+};
+const threeFieldRowSx = {
+  display: 'grid',
+  gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' },
+  gap: 1.5,
+};
+
 
 const SocialLink = ({
     href,
@@ -203,8 +249,10 @@ const SocialLink = ({
           cursor: "pointer",
           fontSize: 14,
           fontWeight: 500,
+          transition: 'opacity 0.15s ease',
           "&:hover": {
             textDecoration: "underline",
+            opacity: 0.8,
           },
           display: 'block'
         }}
@@ -245,7 +293,7 @@ export default function ContactDetail() {
 
   if (!contact) {
     return (
-      <Box sx={{ textAlign: 'center', mt: 8 }}>
+      <Box sx={{ textAlign: 'center', mt: 8, px: 2 }}>
         <Typography variant="h6" color="text.secondary">
           Contact not found
         </Typography>
@@ -253,11 +301,11 @@ export default function ContactDetail() {
           startIcon={<ArrowBackIcon />}
           onClick={() => {
             dispatch(clearError());
-            navigate('/app/contacts')
+            navigate(-1)
           }}
           sx={{ mt: 2, textTransform: 'none', fontWeight: 600 }}
         >
-          Back to contacts
+          Back
         </Button>
       </Box>
     );
@@ -404,64 +452,115 @@ export default function ContactDetail() {
     fontWeight: 600,
     borderRadius: 2,
     minWidth: 90,
+    width: { xs: '100%', sm: 'auto' },
+    transition: 'background-color 0.2s ease',
   };
   const saveBtnSx = {
     textTransform: 'none',
     fontWeight: 700,
     borderRadius: 2,
     minWidth: 90,
+    width: { xs: '100%', sm: 'auto' },
     boxShadow: '0 1px 4px rgba(0,0,0,0.18)',
+    transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+    '&:hover': {
+      transform: 'translateY(-1px)',
+      boxShadow: '0 4px 10px rgba(0,0,0,0.18)',
+    },
+  };
+  const editActionsSx = {
+    display: 'flex',
+    flexDirection: { xs: 'column-reverse', sm: 'row' },
+    justifyContent: 'flex-end',
+    gap: 1,
+    mt: 1,
   };
 
   return (
-    <Box sx={{ maxWidth: 800, mx: 'auto', pb: 4 }}>
+    <Box sx={{ maxWidth: 800, mx: 'auto', pb: 4, px: { xs: 2, sm: 3, md: 0 } }}>
 
-      {successMessage && (
+      <Collapse in={!!successMessage} unmountOnExit>
         <Box sx={{ my: 2, width: '100%' }}>
           <SuccessAlert
             message={successMessage}
           />
         </Box>
-      )}
+      </Collapse>
 
+      <Collapse in={!!error} unmountOnExit>
       {error && (
         <Box sx={{ width: '100%', my: 2 }}>
           <ErrorAlert
             message={error}
           />
         </Box>
-      )}
+        )}
+      </Collapse>
 
-      <Box sx={{display: 'flex', justifyContent: 'space-between'}}>
-        <Button 
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
+        <Button
           startIcon={<ArrowBackIcon/>}
           onClick={() => {
-            navigate('/app/contacts');
+            navigate(-1);
             dispatch(clearError());
           } }
-          sx={{ alignSelf: 'start', textTransform: 'none', fontWeight: 600, borderRadius: 2 }}>
-          Contacts
+          sx={{
+            alignSelf: 'start',
+            textTransform: 'none',
+            fontWeight: 600,
+            borderRadius: 2,
+            transition: 'transform 0.2s ease',
+            '&:hover': { transform: 'translateX(-2px)' },
+          }}>
+          Back
         </Button>
         {(contact.status === 'Customer' && customer) && (
-        <Button 
+        <Button
           endIcon={<ArrowForwardIcon/>}
           onClick={() => {
             navigate(`/app/customers/${customer.id}`);
             dispatch(clearError());
           } }
-          sx={{ alignSelf: 'start', textTransform: 'none', fontWeight: 600, borderRadius: 2 }}>
+          sx={{
+            alignSelf: 'start',
+            textTransform: 'none',
+            fontWeight: 600,
+            borderRadius: 2,
+            transition: 'transform 0.2s ease',
+            '&:hover': { transform: 'translateX(2px)' },
+          }}>
           Customer Profile
         </Button>
         )}
       </Box>
-      <Paper variant="outlined" sx={{ p: 4, borderRadius: 3, mb: 3, mt: 2, borderColor: 'divider' }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1, width: '100%' }}>
-          <Box sx={{display: 'flex', width: 100, mr: 2, flexDirection: 'column' }}>
+      <Paper
+        variant="outlined"
+        sx={{
+          p: { xs: 2.5, sm: 3, md: 4 },
+          borderRadius: 3,
+          mb: 3,
+          mt: 2,
+          borderColor: 'divider',
+          animation: `${fadeInUp} 0.45s ease-out`,
+          '@media (prefers-reduced-motion: reduce)': { animation: 'none' },
+        }}
+      >
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: { xs: 'column', sm: 'row' },
+            alignItems: { xs: 'center', sm: 'flex-start' },
+            gap: { xs: 2, sm: 2.5 },
+            mb: 1,
+            width: '100%',
+          }}
+        >
+          <Box sx={{ display: 'flex', flexShrink: 0, flexDirection: 'column', alignItems: 'center' }}>
             <Avatar
               sx={{
-                width: 100,
-                height: 100,
-                fontSize: 32,
+                width: { xs: 84, sm: 100 },
+                height: { xs: 84, sm: 100 },
+                fontSize: { xs: 26, sm: 32 },
                 fontWeight: 700,
                 bgcolor: stringToAvatarColor(fullName),
               }}
@@ -483,19 +582,33 @@ export default function ContactDetail() {
                 fontSize: '10px',
                 borderRadius: 999,
                 textTransform: 'none',
+                whiteSpace: 'nowrap',
+                transition: 'background-color 0.2s ease',
+                '&:hover': {
+                  bgcolor: (theme: Theme) => alpha(theme.palette.primary.main, 0.08),
+                },
               }}>
                 Add deal
               </Button>
             </Box>
           </Box>
-          <Box sx={{ flex: 1, overflowWrap: "anywhere", wordBreak: "break-word",}}>
-            <Typography variant='h4' fontWeight={700} sx={{display: 'flex', alignItems: 'center'}}>
+          <Box sx={{ flex: 1, minWidth: 0, width: '100%', overflowWrap: "anywhere", wordBreak: "break-word", textAlign: { xs: 'center', sm: 'left' } }}>
+            <Typography
+              variant='h4'
+              fontWeight={700}
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: { xs: 'center', sm: 'flex-start' },
+                fontSize: { xs: '1.5rem', sm: '1.85rem', md: '2.125rem' },
+              }}
+            >
               {fullName} {contact.suffix} 
-              <Box title={`${contact.priority} Priority`} component="span" sx={{ ml: 1, cursor: 'pointer', display: "flex", width: 30, height: 30 }}>
+              <Box title={`${contact.priority} Priority`} component="span" sx={{ ml: 1, cursor: 'pointer', display: "flex", width: 30, height: 30, flexShrink: 0 }}>
               {priorityIcon(contact.priority)}
             </Box>
             </Typography>
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1.25 }}>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1.25, justifyContent: { xs: 'center', sm: 'flex-start' } }}>
               <Chip
                 label={contact.status}
                 title="Status"
@@ -505,6 +618,8 @@ export default function ContactDetail() {
                   fontWeight: 700,
                   fontSize: 12,
                   cursor: 'pointer',
+                  transition: 'opacity 0.15s ease',
+                  '&:hover': { opacity: 0.85 },
                   border: contact.status === 'Contacted' ? '1px solid #7a7a7a98' : 'none',
                   backgroundColor: STATUS_COLORS[contact.status],
                   color: contact.status === 'Churned' || contact.status === 'Lost' ? 'white' : 'black'
@@ -520,6 +635,8 @@ export default function ContactDetail() {
                   fontSize: 12,
                   cursor: 'pointer',
                   borderColor: 'divider',
+                  transition: 'opacity 0.15s ease',
+                  '&:hover': { opacity: 0.7 },
                 }}
               />
               <Chip
@@ -532,6 +649,8 @@ export default function ContactDetail() {
                   fontSize: 12,
                   cursor: 'pointer',
                   borderColor: 'divider',
+                  transition: 'opacity 0.15s ease',
+                  '&:hover': { opacity: 0.7 },
                 }}
               />
               <Chip
@@ -547,6 +666,8 @@ export default function ContactDetail() {
                   borderColor: 'primary.main',
                   color: 'primary.main',
                   backgroundColor: (theme: Theme) => alpha(theme.palette.primary.main, 0.06),
+                  transition: 'opacity 0.15s ease',
+                  '&:hover': { opacity: 0.85 },
                 }}
               />
             </Box>
@@ -562,20 +683,30 @@ export default function ContactDetail() {
                   bgcolor: (theme: Theme) => alpha(theme.palette.text.primary, 0.03),
                   borderRadius: 2,
                   p: 1.25,
+                  textAlign: 'left',
                 }}
               >
                 {contact.notes}
               </Typography>
             )}
           </Box>
-          <Box sx={{ display: 'flex', width: '14%', justifyContent: 'flex-end' }}>
+          <Box sx={{ display: 'flex', flexShrink: 0, width: { xs: '100%', sm: 'auto' }, justifyContent: { xs: 'center', sm: 'flex-end' } }}>
             {!isEditingBasic && (
               <Button
                 variant='outlined'
                 color='error'
                 startIcon={<DeleteIcon />}
                 onClick={() => setDeleteDialogOpen(true)}
-                sx={{fontSize: '10px', fontWeight: 700, borderRadius: 2, textTransform: 'none'}}
+                sx={{
+                  fontSize: '10px',
+                  fontWeight: 700,
+                  borderRadius: 2,
+                  textTransform: 'none',
+                  transition: 'background-color 0.2s ease',
+                  '&:hover': {
+                    bgcolor: (theme: Theme) => alpha(theme.palette.error.main, 0.06),
+                  },
+                }}
               >
                 Delete
               </Button>
@@ -584,16 +715,16 @@ export default function ContactDetail() {
         </Box>
         <Divider sx={{ mb: 3 }} />
 
-        {!isEditingBasic ? (
+        <Collapse in={!isEditingBasic} unmountOnExit>
           <Box sx={{ display: 'flex', flexDirection: 'column' }}>
             <SectionHeader icon={<PersonOutlineIcon fontSize="small" />} title="Personal Details" onEdit={handleEditStart} />
-            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-              <Box sx={{ display: 'flex', flexDirection: 'column', width: '48%' }}>
+            <Box sx={twoColSx}>
+              <Box sx={{ display: 'flex', flexDirection: 'column' }}>
                 <InfoRow icon={<PersonIcon fontSize="small" />} label="Full name" value={`${fullName} ${contact.suffix ?? ''}`} />
                 <InfoRow icon={<EmailIcon fontSize="small" />} label="Email address" value={contact.email || 'Not Provided'} />
                 <InfoRow icon={<PhoneIcon fontSize="small" />} label="Phone number" value={contact.phone || 'Not Provided'} />
               </Box>
-              <Box sx={{ display: 'flex', flexDirection: 'column', width: '48%' }}>
+              <Box sx={{ display: 'flex', flexDirection: 'column' }}>
                 <InfoRow
                   icon={
                     <Box sx={{ position: "relative", display: "inline-flex" }}>
@@ -609,18 +740,19 @@ export default function ContactDetail() {
               </Box>
             </Box>
           </Box>
-        ) : (
+        </Collapse>
+
+        <Collapse in={isEditingBasic} unmountOnExit>
           <Box
             sx={{
               display: "flex",
               flexDirection: 'column',
               width: '100%',
-              minWidth: 450,
               justifyContent: "center",
               gap: 1.5,
             }}>
             <SectionHeader icon={<PersonOutlineIcon fontSize="small" />} title="Personal Details" />
-            <Box sx={{ display: "flex", width: '100%', justifyContent: "space-between", gap: 1.5 }}>
+            <Box sx={twoFieldRowSx}>
               <TextField
                 label="First Name"
                 name="first_name"
@@ -628,7 +760,8 @@ export default function ContactDetail() {
                 onChange={handleChange}
                 value={formBasic.first_name || ''}
                 size="small"
-                sx={{ ...fieldSx, width: '50%' }}
+                fullWidth
+                sx={fieldSx}
               />
               <TextField
                 label="Last Name"
@@ -637,11 +770,12 @@ export default function ContactDetail() {
                 onChange={handleChange}
                 value={formBasic.last_name || ''}
                 size="small"
-                sx={{ ...fieldSx, width: '50%' }}
+                fullWidth
+                sx={fieldSx}
               />
             </Box>
 
-            <Box sx={{ display: "flex", width: '100%', justifyContent: "space-between", gap: 1.5 }}>
+            <Box sx={twoFieldRowSx}>
               <TextField
                 select
                 label="Suffix"
@@ -649,7 +783,8 @@ export default function ContactDetail() {
                 onChange={handleChange}
                 value={formBasic.suffix || ''}
                 size="small"
-                sx={{ ...fieldSx, width: '50%' }}
+                fullWidth
+                sx={fieldSx}
                 slotProps={{
                   select: {
                     MenuProps: {
@@ -674,7 +809,8 @@ export default function ContactDetail() {
                 onChange={handleChange}
                 value={formBasic.phone || ''}
                 size="small"
-                sx={{ ...fieldSx, width: '50%' }}
+                fullWidth
+                sx={fieldSx}
               />
             </Box>
 
@@ -689,7 +825,7 @@ export default function ContactDetail() {
               sx={fieldSx}
             />
 
-            <Box sx={{ display: "flex", width: '100%', justifyContent: "space-between", gap: 1.5 }}>
+            <Box sx={twoFieldRowSx}>
               <TextField
                 select
                 label="Gender"
@@ -697,7 +833,8 @@ export default function ContactDetail() {
                 onChange={handleChange}
                 value={formBasic.gender || ''}
                 size="small"
-                sx={{ ...fieldSx, width: '50%' }}
+                fullWidth
+                sx={fieldSx}
               >
                 {GENDERS.map((gender) => (
                   <MenuItem key={gender} value={gender}>
@@ -714,9 +851,9 @@ export default function ContactDetail() {
                 onChange={handleChange}
                 slotProps={{ inputLabel: { shrink: true } }}
                 size="small"
+                fullWidth
                 sx={{
                   ...fieldSx,
-                  width: '50%',
                   '& input': {
                     colorScheme: themeMode === 'dark' ? 'dark' : 'light',
                   }
@@ -726,7 +863,7 @@ export default function ContactDetail() {
 
             <Divider sx={{ my: 1 }} />
             <SectionHeader icon={<NotesIcon fontSize="small" />} title="Additional Details" />
-            <Box sx={{ display: "flex", width: '100%', justifyContent: "space-between", gap: 1.5 }}>
+            <Box sx={threeFieldRowSx}>
               <TextField
                 select
                 label="Source"
@@ -734,7 +871,8 @@ export default function ContactDetail() {
                 value={formBasic.source || ''}
                 onChange={handleChange}
                 size="small"
-                sx={{ ...fieldSx, width: '40%' }}
+                fullWidth
+                sx={fieldSx}
                 slotProps={{
                   select: {
                     MenuProps: {
@@ -756,7 +894,8 @@ export default function ContactDetail() {
                 onChange={handleChange}
                 value={formBasic.preferred_contact_time || ''}
                 size="small"
-                sx={{ ...fieldSx, width: '30%' }}
+                fullWidth
+                sx={fieldSx}
               >
                 {PREFERRED_CONTACT_TIMES.map((time) => (
                   <MenuItem key={time} value={time}>
@@ -771,7 +910,8 @@ export default function ContactDetail() {
                 onChange={handleChange}
                 value={formBasic.priority || ''}
                 size="small"
-                sx={{ ...fieldSx, width: '30%' }}
+                fullWidth
+                sx={fieldSx}
               >
                 {PRIORITIES.map((prio) => (
                   <MenuItem key={prio} value={prio}>
@@ -793,7 +933,7 @@ export default function ContactDetail() {
               sx={fieldSx}
             />
 
-            <Box sx={{ display: 'flex', justifyContent: 'end', gap: 1, mt: 1 }}>
+            <Box sx={editActionsSx}>
               <Button
                 onClick={() => {
                   setIsEditingBasic(false)
@@ -810,23 +950,24 @@ export default function ContactDetail() {
                 variant="contained"
                 disableElevation
                 onClick={handleSave}
-                disabled={!formBasic.first_name || !formBasic.email || !formBasic.last_name || !formBasic.phone}
+                disabled={!formBasic.first_name || !formBasic.email || !formBasic.last_name || !formBasic.phone || loading}
+                startIcon={loading ? <CircularProgress size={14} color="inherit" /> : undefined}
                 sx={saveBtnSx}
               >
                 Update
               </Button>
             </Box>
           </Box>
-        )}
+        </Collapse>
 
         <Divider sx={{ mb: 1, mt: 4 }} />
 
-        {!isEditingSocials ? (
+        <Collapse in={!isEditingSocials} unmountOnExit>
           <Box sx={{ display: 'flex', flexDirection: 'column' }}>
             <SectionHeader icon={<ShareIcon fontSize="small" />} title="Social and Messaging Accounts" onEdit={handleEditSocials} />
 
-            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-              <Box sx={{ display: 'flex', flexDirection: 'column', width: '48%' }}>
+            <Box sx={twoColSx}>
+              <Box sx={{ display: 'flex', flexDirection: 'column' }}>
                 <InfoRow
                   icon={<FacebookIcon fontSize="small" />}
                   label="Facebook"
@@ -849,7 +990,7 @@ export default function ContactDetail() {
                 />
               </Box>
 
-              <Box sx={{ display: 'flex', flexDirection: 'column', width: '48%' }}>
+              <Box sx={{ display: 'flex', flexDirection: 'column' }}>
                 <InfoRow
                   icon={<MusicNoteIcon fontSize="small" />}
                   label="Tiktok"
@@ -873,17 +1014,20 @@ export default function ContactDetail() {
               </Box>
             </Box>
           </Box>
-        ) : (
+        </Collapse>
+
+        <Collapse in={isEditingSocials} unmountOnExit>
           <Box sx={{ display: "flex", flexDirection: 'column', width: '100%', gap: 1.5 }}>
             <SectionHeader icon={<ShareIcon fontSize="small" />} title="Social and Messaging Accounts" />
-            <Box sx={{ display: "flex", width: '100%', justifyContent: "space-between", gap: 1.5 }}>
+            <Box sx={twoFieldRowSx}>
               <TextField
                 label="Facebook"
                 name="facebook"
                 onChange={handleChangeSocials}
                 value={formSocials.facebook || ''}
                 size="small"
-                sx={{ ...fieldSx, width: '50%' }}
+                fullWidth
+                sx={fieldSx}
               />
               <TextField
                 label="X / Twitter"
@@ -891,17 +1035,19 @@ export default function ContactDetail() {
                 onChange={handleChangeSocials}
                 value={formSocials.x || ''}
                 size="small"
-                sx={{ ...fieldSx, width: '50%' }}
+                fullWidth
+                sx={fieldSx}
               />
             </Box>
-            <Box sx={{ display: "flex", width: '100%', justifyContent: "space-between", gap: 1.5 }}>
+            <Box sx={twoFieldRowSx}>
               <TextField
                 label="Instagram"
                 name="instagram"
                 onChange={handleChangeSocials}
                 value={formSocials.instagram || ''}
                 size="small"
-                sx={{ ...fieldSx, width: '50%' }}
+                fullWidth
+                sx={fieldSx}
               />
               <TextField
                 label="LinkedIn"
@@ -909,17 +1055,19 @@ export default function ContactDetail() {
                 onChange={handleChangeSocials}
                 value={formSocials.linkedin || ''}
                 size="small"
-                sx={{ ...fieldSx, width: '50%' }}
+                fullWidth
+                sx={fieldSx}
               />
             </Box>
-            <Box sx={{ display: "flex", width: '100%', justifyContent: "space-between", gap: 1.5 }}>
+            <Box sx={twoFieldRowSx}>
               <TextField
                 label="Tiktok"
                 name="tiktok"
                 onChange={handleChangeSocials}
                 value={formSocials.tiktok || ''}
                 size="small"
-                sx={{ ...fieldSx, width: '50%' }}
+                fullWidth
+                sx={fieldSx}
               />
               <TextField
                 label="WhatsApp"
@@ -927,17 +1075,19 @@ export default function ContactDetail() {
                 onChange={handleChangeSocials}
                 value={formSocials.whatsapp || ''}
                 size="small"
-                sx={{ ...fieldSx, width: '50%' }}
+                fullWidth
+                sx={fieldSx}
               />
             </Box>
-            <Box sx={{ display: "flex", width: '100%', justifyContent: "space-between", gap: 1.5 }}>
+            <Box sx={twoFieldRowSx}>
               <TextField
                 label="Viber"
                 name="viber"
                 onChange={handleChangeSocials}
                 value={formSocials.viber || ''}
                 size="small"
-                sx={{ ...fieldSx, width: '50%' }}
+                fullWidth
+                sx={fieldSx}
               />
               <TextField
                 label="Telegram"
@@ -945,11 +1095,12 @@ export default function ContactDetail() {
                 onChange={handleChangeSocials}
                 value={formSocials.telegram || ''}
                 size="small"
-                sx={{ ...fieldSx, width: '50%' }}
+                fullWidth
+                sx={fieldSx}
               />
             </Box>
 
-            <Box sx={{ display: 'flex', justifyContent: 'end', gap: 1, mt: 1 }}>
+            <Box sx={editActionsSx}>
               <Button
                 onClick={() => {
                   setIsEditingSocials(false)
@@ -966,41 +1117,45 @@ export default function ContactDetail() {
                 variant="contained"
                 disableElevation
                 onClick={handleSaveSocials}
+                disabled={loading}
+                startIcon={loading ? <CircularProgress size={14} color="inherit" /> : undefined}
                 sx={saveBtnSx}
               >
                 Update
               </Button>
             </Box>
           </Box>
-        )}
+        </Collapse>
 
         <Divider sx={{ mb: 1, mt: 4 }} />
 
         {/* ---------------- Professional Details ---------------- */}
-        {!isEditingCareer ? (
+        <Collapse in={!isEditingCareer} unmountOnExit>
           <Box sx={{ display: 'flex', flexDirection: 'column' }}>
             <SectionHeader icon={<WorkOutlineIcon fontSize="small" />} title="Professional Details" onEdit={handleEditCareer} />
 
-            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-              <Box sx={{ display: 'flex', flexDirection: 'column', width: '48%' }}>
+            <Box sx={twoColSx}>
+              <Box sx={{ display: 'flex', flexDirection: 'column' }}>
                 <InfoRow icon={<AccountTreeIcon fontSize="small" />} label="Industry" value={contact.industry || 'Not Provided'} />
                 <InfoRow icon={<BusinessIcon fontSize="small" />} label="Company" value={contact.company_name || 'Not Provided'} />
                 <InfoRow icon={<LanguageIcon fontSize="small" />} label="Website" value={contact.website || 'Not Provided'} />
               </Box>
 
-              <Box sx={{ display: 'flex', flexDirection: 'column', width: '48%' }}>
+              <Box sx={{ display: 'flex', flexDirection: 'column' }}>
                 <InfoRow icon={<AccountTreeIcon fontSize="small" />} label="Department" value={contact.department || 'Not Provided'} />
                 <InfoRow icon={<WorkIcon fontSize="small" />} label="Position" value={contact.position || 'Not Provided'} />
               </Box>
             </Box>
           </Box>
-        ) : (
+        </Collapse>
+
+        <Collapse in={isEditingCareer} unmountOnExit>
           <Box sx={{ display: "flex", flexDirection: 'column', width: '100%', gap: 1.5 }}>
             <SectionHeader icon={<WorkOutlineIcon fontSize="small" />} title="Professional Details" />
-            <Box sx={{ display: "flex", width: '100%', justifyContent: "space-between", gap: 1.5 }}>
+            <Box sx={twoFieldRowSx}>
               <Autocomplete
                 freeSolo
-                sx={{ width: '50%' }}
+                fullWidth
                 options={INDUSTRIES}
                 value={formCareer.industry || ''}
                 onInputChange={(_, value) => {
@@ -1020,7 +1175,7 @@ export default function ContactDetail() {
               />
               <Autocomplete
                 freeSolo
-                sx={{ width: '50%' }}
+                fullWidth
                 options={DEPARTMENTS}
                 value={formCareer.department || ''}
                 onInputChange={(_, value) => {
@@ -1039,14 +1194,15 @@ export default function ContactDetail() {
                 )}
               />
             </Box>
-            <Box sx={{ display: "flex", width: '100%', justifyContent: "space-between", gap: 1.5 }}>
+            <Box sx={twoFieldRowSx}>
               <TextField
                 label="Company"
                 name="company_name"
                 onChange={handleChangeCareer}
                 value={formCareer.company_name || ''}
                 size="small"
-                sx={{ ...fieldSx, width: '50%' }}
+                fullWidth
+                sx={fieldSx}
               />
               
               <TextField
@@ -1055,7 +1211,8 @@ export default function ContactDetail() {
                 onChange={handleChangeCareer}
                 value={formCareer.position || ''}
                 size="small"
-                sx={{ ...fieldSx, width: '50%' }}
+                fullWidth
+                sx={fieldSx}
               />
             </Box>
             <TextField
@@ -1068,7 +1225,7 @@ export default function ContactDetail() {
                 sx={fieldSx}
               />
 
-            <Box sx={{ display: 'flex', justifyContent: 'end', gap: 1, mt: 1 }}>
+            <Box sx={editActionsSx}>
               <Button
                 onClick={() => {
                   setIsEditingCareer(false)
@@ -1085,63 +1242,85 @@ export default function ContactDetail() {
                 variant="contained"
                 disableElevation
                 onClick={handleSaveCareer}
+                disabled={loading}
+                startIcon={loading ? <CircularProgress size={14} color="inherit" /> : undefined}
                 sx={saveBtnSx}
               >
                 Update
               </Button>
             </Box>
           </Box>
-        )}
+        </Collapse>
       </Paper>
-      <Dialog
-        open={deleteDialogOpen}
-        onClose={() => setDeleteDialogOpen(false)}
-        maxWidth="xs"
-        fullWidth
-        PaperProps={{ sx: { borderRadius: 3 } }}
-      >
-        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1.5, fontWeight: 700, pb: 1 }}>
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: 44,
-              height: 44,
-              borderRadius: '50%',
-              bgcolor: (theme: Theme) => alpha(theme.palette.error.main, 0.1),
-              color: 'error.main',
-              flexShrink: 0,
-            }}
-          >
-            <WarningAmberRoundedIcon />
-          </Box>
-          Delete contact?
-        </DialogTitle>
-        <DialogContent>
-          <DialogContentText sx={{ fontSize: '0.9rem' }}>
-            Are you sure you want to delete{' '}
-            <Box component="span" sx={{ fontWeight: 700, color: 'text.primary' }}>
-              {contact.first_name} {contact.last_name}
+
+      {deleteDialogOpen && (
+        <Dialog
+          open={deleteDialogOpen}
+          onClose={loading ? undefined : () => setDeleteDialogOpen(false)}
+          maxWidth="xs"
+          fullWidth
+          TransitionComponent={GrowTransition}
+          PaperProps={{ sx: { borderRadius: 3 } }}
+        >
+          <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1.5, fontWeight: 700, pb: 1 }}>
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 44,
+                height: 44,
+                borderRadius: '50%',
+                bgcolor: (theme: Theme) => alpha(theme.palette.error.main, 0.1),
+                color: 'error.main',
+                flexShrink: 0,
+              }}
+            >
+              <WarningAmberRoundedIcon />
             </Box>
-            ? This action cannot be undone.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2.5 }}>
-          <Button onClick={() => setDeleteDialogOpen(false)} color="inherit" sx={{ textTransform: 'none', fontWeight: 600 }}>
-            Cancel
-          </Button>
-          <Button
-            color="error"
-            variant="contained"
-            disableElevation
-            onClick={handleDeleteConfirm}
-            sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 2 }}
-          >
-            Delete
-          </Button>
-        </DialogActions>
-      </Dialog>
+            Delete contact?
+          </DialogTitle>
+          <DialogContent>
+            <DialogContentText sx={{ fontSize: '0.9rem' }}>
+              Are you sure you want to delete{' '}
+              <Box component="span" sx={{ fontWeight: 700, color: 'text.primary' }}>
+                {contact.first_name} {contact.last_name}
+              </Box>
+              ? This action cannot be undone.
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
+            <Button
+              onClick={() => setDeleteDialogOpen(false)}
+              color="inherit"
+              disabled={loading}
+              sx={{ textTransform: 'none', fontWeight: 600, borderRadius: 2 }}
+            >
+              Cancel
+            </Button>
+            <Button
+              color="error"
+              variant="contained"
+              disableElevation
+              onClick={handleDeleteConfirm}
+              disabled={loading}
+              startIcon={loading ? <CircularProgress size={14} color="inherit" /> : undefined}
+              sx={{
+                textTransform: 'none',
+                fontWeight: 700,
+                borderRadius: 2,
+                transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                '&:hover': {
+                  transform: 'translateY(-1px)',
+                  boxShadow: '0 4px 10px rgba(0,0,0,0.25)',
+                },
+              }}
+            >
+              Delete
+            </Button>
+          </DialogActions>
+        </Dialog>
+      )}
     </Box>
   );
-} 
+}

@@ -2,7 +2,7 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 
 import type {
   OrganizationMemberState,
-  UpdateMemberStatusDTO,
+  OrganizationMemberStatus,
 } from "../types/organization.member";
 
 import {
@@ -90,7 +90,7 @@ export const updateMemberStatus = createAsyncThunk(
       status,
     }: {
       id: string;
-      status: UpdateMemberStatusDTO;
+      status: OrganizationMemberStatus;
     },
     thunkAPI
   ) => {

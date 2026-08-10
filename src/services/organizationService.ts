@@ -1,38 +1,52 @@
 import type {
-  Organization,
-  CreateWorkspaceDTO,
+  DisplayOrganization,
+  UpdateWorkspaceDetailsDTO,
 } from "../types/organization";
 
 import { apiClient } from "./apiClient";
 
-export const createWorkspaceAPI = async (
-  workspace: CreateWorkspaceDTO
-): Promise<Organization> => {
+export const fetchWorkspaceAPI = async (
+): Promise<DisplayOrganization> => {
 
   const result = await apiClient(
-    "/api/organizations/",
+    "/api/org/",
     {
-      method: "POST",
-      body: JSON.stringify(workspace),
+      method: "GET",
     }
   );
 
-  return result.data as Organization;
-
+  return result.data as DisplayOrganization;
 };
 
+
 export const renameWorkspaceAPI = async (
-  name: Pick<Organization, "name">
-): Promise<Organization> => {
+  name: Pick<DisplayOrganization, "name">
+): Promise<DisplayOrganization> => {
 
   const result = await apiClient(
-    "/api/organizations/name",
+    "/api/org/rename",
     {
       method: "PATCH",
       body: JSON.stringify(name),
     }
   );
 
-  return result.data as Organization;
+  return result.data as DisplayOrganization;
+
+};
+
+export const updateWorkspaceDetailsAPI = async (
+  updates: UpdateWorkspaceDetailsDTO
+): Promise<DisplayOrganization> => {
+
+  const result = await apiClient(
+    "/api/org/details",
+    {
+      method: "PATCH",
+      body: JSON.stringify(updates),
+    }
+  );
+
+  return result.data as DisplayOrganization;
 
 };

@@ -9,8 +9,10 @@ import AppLayout from './layout/AppLayout';
 import RoleGuard from './components/RoleGuard';
 import Landing from './pages/public/Landing/Landing';
 import Pricing from './pages/public/Pricing/Pricing';
-import About from './pages/public/About/About';
-
+import AboutUs from './pages/public/AboutUs/AboutUs';
+import Feedback from './pages/public/Feedback/Feedback';
+import Health from './pages/public/SystemHealth/SystemHealth';
+import Approval from "./pages/auth/Approval/Approval";
 import Onboarding from "./pages/auth/OnBoarding/Onboarding";
 import Login from './pages/auth/Login/Login';
 import Register from './pages/auth/Register/Register';
@@ -27,10 +29,9 @@ import AddDeal from './pages/app/Deals/AddDeal'
 import AddLead from './pages/app/Leads/AddLead';
 import Activities from './pages/app/Activities/Activities';
 import Customers from './pages/app/Customers/Customers';
-import CustomerLeaderboard from './pages/app/Customers/CustomerLeaderboard';
 import CustomerDetail from './pages/app/Customers/CustomerDetail';
-import Reports from './pages/app/Reports/Reports';
 import Profile from './pages/app/Profile/Profile';
+import Workspace from './pages/app/Workspace/Workspace';
 import Settings from './pages/app/Settings/Settings';
 import Analytics from './pages/app/Analytics/Analytics';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -38,6 +39,14 @@ import ResetPassword from './pages/auth/ForgotPassword/ResetPassword';
 import CompanyProfile from './pages/app/Company/CompanyProfile';
 import { useSidebar } from '../src/hooks//useSidebar';
 import AddDealByID from './pages/app/Deals/AddDealByID';
+import ProductOverview from './pages/public/ProductOverview/ProductOverview';
+import TermsOfService from './pages/public/TermsOfService/Terms';
+import PrivacyPolicy from './pages/public/Privacy/Privacy';
+import Security from './pages/public/Security/Security';
+import RoadmapPage from './pages/public/Roadmap/Roadmap';
+import HelpCenterPage from './pages/public/Help/Help';
+import NotFoundPage from './pages/NotFound/NotFound';
+import CookiePolicyPage from './pages/public/CookiePolicy/CookiePolicy';
 
 
 
@@ -59,7 +68,16 @@ function AppRoutes() {
         <Route element={<PublicLayout />}>
           <Route path="/" element={<Landing />} />
           <Route path="/pricing" element={<Pricing />} />
-          <Route path="/about" element={<About />} />
+          <Route path="/terms" element={<TermsOfService />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/overview" element={<ProductOverview />} />
+          <Route path="/aboutus" element={<AboutUs />} />
+          <Route path="/feedback" element={<Feedback />} />
+          <Route path="/security" element={<Security />} />
+          <Route path="/roadmap" element={<RoadmapPage />} />
+          <Route path="/help" element={<HelpCenterPage />} />
+          <Route path="/cookiepolicy" element={<CookiePolicyPage />} />
+          <Route path="/health" element={<Health />} />
         </Route>
 
         
@@ -73,6 +91,7 @@ function AppRoutes() {
         
         <Route element={<ProtectedRoute/>}>
           <Route path="/onboarding" element={<Onboarding />} />
+          <Route path="/approval" element={<Approval />} />
           <Route element={<AppLayout />}>
             <Route path="/app/dashboard" element={<Dashboard />} />
             <Route path="/app/leads" element={<Leads />} />
@@ -85,23 +104,14 @@ function AppRoutes() {
             <Route path="/app/deals/adddeal/:id" element={<AddDealByID />} />
             <Route path="/app/activities" element={<Activities />} /> 
             <Route path="/app/customers" element={<Customers />} />
-            <Route path="/app/customers/leaderboard" element={<CustomerLeaderboard />} />
             <Route path="/app/customers/:id" element={<CustomerDetail />} /> 
-            <Route path="/app/reports" element={<Reports />} />
             <Route path="/app/profile" element={<Profile />} />
+            <Route path="/app/workspace" element={<Workspace />} />
             <Route path="/app/company/:id" element={<CompanyProfile />} />
             <Route path="/app/settings" element={<Settings />} />
             <Route path="/app/analytics" element={<Analytics />} />
           </Route>
         </Route>
-         <Route
-          path="/app/reports"
-          element={
-            <RoleGuard>
-              <Reports />
-            </RoleGuard>
-          }
-        />
         <Route
           path="/app/settings"
           element={
@@ -110,6 +120,7 @@ function AppRoutes() {
             </RoleGuard>
           }
         />
+        <Route path="*" element={<NotFoundPage />} />
       </Routes> 
   );
 }

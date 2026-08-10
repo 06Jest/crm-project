@@ -4,6 +4,7 @@ import profileReducer from "./profileSlice"
 import subscriptionReducer from './subscriptionSlice';
 import organizationReducer from './organizationSlice';
 import orgMembersReducer from './organizationMemberSlice';
+import orgInvitesReducer from './organizationInviteSlice';
 import dashboardReducer from './dashboardSlice'
 import contactsReducer from "./contactsSlice"
 import leadsReducer from "./leadsSlice"
@@ -26,6 +27,7 @@ export const store = configureStore({
     organization: organizationReducer,
     subscription: subscriptionReducer,
     orgmembers: orgMembersReducer,
+    orginvites: orgInvitesReducer,
     dashboard: dashboardReducer,
     contacts: contactsReducer,
     leads: leadsReducer,

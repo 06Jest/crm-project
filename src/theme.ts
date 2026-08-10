@@ -8,7 +8,13 @@ export const getTheme = (mode: PaletteMode) =>
       primary:{
         main: '#AD7450',
         light: '#ebaa82',
-        dark: '#775038',
+        dark: '#5f402d',
+      },
+
+      secondary: {
+        main: "#ecc33b",
+        light: "#e2d392",
+        dark: "#968437",
       },
 
       background: {
@@ -29,6 +35,13 @@ export const getTheme = (mode: PaletteMode) =>
             
           },
           
+        },
+      },
+       MuiButton: {
+        styleOverrides: {
+          root: {
+            textTransform: "none",
+          },
         },
       },
       MuiMenu: {

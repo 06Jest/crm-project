@@ -1,12 +1,46 @@
 import { useState, useEffect } from 'react';
+import type { FormEvent, ChangeEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../../../services/supabase';
 import {
-  Box, Button, TextField, Typography, Alert,
-  Paper, CircularProgress,
+  Box,
+  Button,
+  TextField,
+  Typography,
+  Alert,
+  Paper,
+  CircularProgress,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import LockIcon from '@mui/icons-material/Lock';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import LinkOffIcon from '@mui/icons-material/LinkOff';
+
+const CARD_MAX_WIDTH = 420;
+
+const cardSx = {
+  width: '100%',
+  maxWidth: CARD_MAX_WIDTH,
+  boxSizing: 'border-box' as const,
+  p: { xs: 2.5, sm: 4 },
+  border: 1,
+  borderColor: 'divider',
+  borderRadius: 3,
+  bgcolor: 'background.paper',
+};
+
+const pageWrapperSx = {
+  minHeight: '100vh',
+  width: '100%',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  px: { xs: 2, sm: 3 },
+  py: { xs: 4, sm: 6 },
+  boxSizing: 'border-box' as const,
+  overflowX: 'hidden' as const,
+};
 
 export default function ResetPassword() {
   const navigate = useNavigate();
@@ -18,13 +52,14 @@ export default function ResetPassword() {
   const [sessionReady, setSessionReady] = useState(false);
   const [invalidLink, setInvalidLink] = useState(false);
 
+  const theme = useTheme();
+  const isDesktop = useMediaQuery(theme.breakpoints.up('sm'));
 
   useEffect(() => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         if (event === 'PASSWORD_RECOVERY') {
-          // Token detected — user can now set new password
           setSessionReady(true);
         } else if (event === 'SIGNED_IN' && session) {
           setSessionReady(true);
@@ -32,7 +67,6 @@ export default function ResetPassword() {
       }
     );
 
-    // Check if there is already a session (token already processed)
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         setSessionReady(true);
@@ -48,7 +82,7 @@ export default function ResetPassword() {
     return () => subscription.unsubscribe();
   }, []);
 
-  const handleReset = async (e: React.FormEvent) => {
+  const handleReset = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
 
@@ -81,31 +115,20 @@ export default function ResetPassword() {
     };
   }
 
+  const handleNewPasswordChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setNewPassword(e.target.value);
+  };
+
+  const handleConfirmPasswordChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setConfirmPassword(e.target.value);
+  };
+
   if (invalidLink) {
     return (
-      <Box
-        sx={{
-          minHeight: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          p: 2,
-          bgcolor: 'background.default',
-        }}
-      >
-        <Paper
-          elevation={0}
-          sx={{
-            p: 4,
-            width: '100%',
-            maxWidth: 420,
-            border: 1,
-            borderColor: 'divider',
-            borderRadius: 3,
-            textAlign: 'center',
-          }}
-        >
-          <Typography variant="h5" fontWeight={700} gutterBottom>
+      <Box sx={pageWrapperSx}>
+        <Paper elevation={0} sx={{ ...cardSx, textAlign: 'center' }}>
+          <LinkOffIcon sx={{ fontSize: { xs: 44, sm: 48 }, color: 'error.main', mb: 2 }} />
+          <Typography variant="h5" component="h1" fontWeight={700} gutterBottom>
             Invalid or expired link
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
@@ -117,6 +140,7 @@ export default function ResetPassword() {
             to="/forgot-password"
             variant="contained"
             fullWidth
+            sx={{ minHeight: 44 }}
           >
             Request a new reset link
           </Button>
@@ -128,39 +152,19 @@ export default function ResetPassword() {
 
   if (done) {
     return (
-      <Box
-        sx={{
-          minHeight: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          p: 2,
-          bgcolor: 'background.default',
-        }}
-      >
-        <Paper
-          elevation={0}
-          sx={{
-            p: 4,
-            width: '100%',
-            maxWidth: 420,
-            border: 1,
-            borderColor: 'divider',
-            borderRadius: 3,
-            textAlign: 'center',
-          }}
-        >
+      <Box sx={pageWrapperSx}>
+        <Paper elevation={0} sx={{ ...cardSx, textAlign: 'center' }}>
           <CheckCircleIcon
-            sx={{ fontSize: 56, color: 'success.main', mb: 2 }}
+            sx={{ fontSize: { xs: 48, sm: 56 }, color: 'success.main', mb: 2 }}
           />
-          <Typography variant="h5" fontWeight={700} gutterBottom>
+          <Typography variant="h5" component="h1" fontWeight={700} gutterBottom>
             Password updated!
           </Typography>
           <Typography variant="body2" color="text.secondary">
             Your password has been changed successfully.
             Redirecting you to login...
           </Typography>
-          <CircularProgress size={20} sx={{ mt: 2 }} />
+          <CircularProgress size={20} sx={{ mt: 2 }} aria-label="Redirecting to login" />
         </Paper>
       </Box>
     );
@@ -169,50 +173,23 @@ export default function ResetPassword() {
 
   if (!sessionReady) {
     return (
-      <Box
-        sx={{
-          minHeight: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          bgcolor: 'background.default',
-        }}
-      >
-        <Box sx={{ textAlign: 'center' }}>
-          <CircularProgress sx={{ mb: 2 }} />
+      <Box sx={pageWrapperSx}>
+        <Paper elevation={0} sx={{ ...cardSx, textAlign: 'center' }}>
+          <CircularProgress sx={{ mb: 2 }} aria-label="Verifying your reset link" />
           <Typography variant="body2" color="text.secondary">
             Verifying your reset link...
           </Typography>
-        </Box>
+        </Paper>
       </Box>
     );
   }
 
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        p: 2,
-        bgcolor: 'background.default',
-      }}
-    >
-      <Paper
-        elevation={0}
-        sx={{
-          p: 4,
-          width: '100%',
-          maxWidth: 420,
-          border: 1,
-          borderColor: 'divider',
-          borderRadius: 3,
-        }}
-      >
+    <Box sx={pageWrapperSx}>
+      <Paper elevation={0} sx={cardSx}>
         <Box sx={{ textAlign: 'center', mb: 3 }}>
-          <LockIcon sx={{ fontSize: 44, color: 'primary.main', mb: 1 }} />
-          <Typography variant="h5" fontWeight={700}>
+          <LockIcon sx={{ fontSize: { xs: 40, sm: 44 }, color: 'primary.main', mb: 1 }} />
+          <Typography variant="h5" component="h1" fontWeight={700}>
             Set new password
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
@@ -221,21 +198,22 @@ export default function ResetPassword() {
         </Box>
 
         {error && (
-          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>
+          <Alert severity="error" sx={{ mb: 2, textAlign: 'left' }} onClose={() => setError('')}>
             {error}
           </Alert>
         )}
 
-        <Box component="form" onSubmit={handleReset}>
+        <Box component="form" onSubmit={handleReset} noValidate>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <TextField
               label="New password"
               type="password"
               value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
+              onChange={handleNewPasswordChange}
               required
               fullWidth
-              autoFocus
+              autoFocus={isDesktop}
+              disabled={loading}
               helperText="Password must be at least 12 characters that include uppercase letter, number, and symbol"
               autoComplete="new-password"
             />
@@ -243,15 +221,16 @@ export default function ResetPassword() {
               label="Confirm new password"
               type="password"
               value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
+              onChange={handleConfirmPasswordChange}
               required
               fullWidth
+              disabled={loading}
               autoComplete="new-password"
             />
 
             {newPassword.length > 0 && (
               <Box>
-                <Box sx={{ display: 'flex', gap: 0.5, mb: 0.5 }}>
+                <Box sx={{ display: 'flex', gap: 0.5, mb: 0.5 }} aria-hidden="true">
                   {[1, 2, 3, 4].map((i) => (
                     <Box
                       key={i}
@@ -272,11 +251,11 @@ export default function ResetPassword() {
                     />
                   ))}
                 </Box>
-                <Typography variant="caption" color="text.secondary">
+                <Typography variant="caption" color="text.secondary" aria-live="polite">
                   {newPassword.length < 7
                     ? 'Too short'
                     : newPassword.length < 9
-                    ? 'Weak — try adding numbers or symbols'
+                    ? 'Weak, try adding numbers or symbols'
                     : newPassword.length >= 12
                     ? 'Good password'
                     : 'Strong password ✓'
@@ -291,11 +270,12 @@ export default function ResetPassword() {
               fullWidth
               size="large"
               disabled={loading}
+              sx={{ minHeight: 48 }}
             >
-              {loading
-                ? <CircularProgress size={22} color="inherit" />
-                : 'Update password'
-              }
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
+                {loading && <CircularProgress size={18} color="inherit" />}
+                {loading ? 'Updating...' : 'Update password'}
+              </Box>
             </Button>
           </Box>
         </Box>

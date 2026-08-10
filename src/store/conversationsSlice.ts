@@ -70,15 +70,17 @@ export const createDirectConversation = createAsyncThunk(
   }
 );
 
+
 export const markConversationAsRead = createAsyncThunk(
   "chat/mark-conversation-read",
   async (conversationId: string, thunkAPI) => {
     try {
-      await markConversationAsReadAPI(conversationId);
+      const result = await markConversationAsReadAPI(conversationId);
 
-      thunkAPI.dispatch(fetchConversations());
-
-      return conversationId;
+      return {
+        conversationId,
+        readAt: result.last_read_at,
+      };
     } catch (err) {
       if (err instanceof Error) {
         return thunkAPI.rejectWithValue(err.message);
@@ -90,6 +92,7 @@ export const markConversationAsRead = createAsyncThunk(
     }
   }
 );
+
 
 const conversationsSlice = createSlice({
   name: "conversations",
@@ -116,13 +119,21 @@ const conversationsSlice = createSlice({
     },
 
     updateRealtimeConversation(state, action) {
-      const index = state.items.findIndex(
-        c => c.id === action.payload.id
-      );
+      const index = state.items.findIndex((c) => c.id === action.payload.id);
+      if (index === -1) return;
 
-      if (index !== -1) {
-        state.items[index] = action.payload;
+      const current = state.items[index];
+      const patch = { ...action.payload };
+
+      if (
+        patch.last_read_at &&
+        current.last_read_at &&
+        new Date(patch.last_read_at).getTime() < new Date(current.last_read_at).getTime()
+      ) {
+        delete patch.last_read_at; 
       }
+
+      state.items[index] = { ...current, ...patch };
     },
 
     removeRealtimeConversation(state, action) {
@@ -195,9 +206,15 @@ const conversationsSlice = createSlice({
       state.error = null;
     });
 
-    builder.addCase(markConversationAsRead.fulfilled, () => {
-      // No state update needed.
-      // fetchConversations() will refresh the list.
+    builder.addCase(markConversationAsRead.fulfilled, (state, action) => {
+      const { conversationId, readAt } = action.payload;
+      const index = state.items.findIndex((c) => c.id === conversationId);
+      if (index !== -1) {
+        const current = state.items[index].last_read_at;
+        if (!current || new Date(readAt).getTime() > new Date(current).getTime()) {
+          state.items[index] = { ...state.items[index], last_read_at: readAt };
+        }
+      }
     });
 
     builder.addCase(markConversationAsRead.rejected, (state, action) => {

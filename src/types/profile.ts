@@ -49,12 +49,12 @@ export interface DisplayProfile {
     last_login?: string;
     job_title?: string;
     membership?: {
-    id: string;
-    display_id: string;
-    role: Roles;
-    status: string;
-    created_at: string;
-    org?: {
+      id: string;
+      display_id: string;
+      role: Roles;
+      status: string;
+      created_at: string;
+      org?: {
         id: string;
         display_id: string;
         name: string;
@@ -92,11 +92,10 @@ export interface CompleteProfileDTO {
 }
 
 export interface UpdateProfileDTO {
-  first_name?: string;
-  last_name?: string;
-  display_name?: string;
-  phone?: string;
-  job_title?: string;
+  first_name: string;
+  last_name: string;
+  display_name: string;
+  job_title: string;
 }
 
 export interface PasswordChangeValues {

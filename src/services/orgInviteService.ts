@@ -4,7 +4,7 @@ import type {
   AcceptInviteDTO ,
 } from "../types/organization.invite";
 
-import type { OrganizationMember } from "../types/organization.member";
+import type { DisplayOrganizationMember, OrganizationMember } from "../types/organization.member";
 
 import { apiClient } from "./apiClient";
 
@@ -13,7 +13,7 @@ export const fetchOrganizationInvitesAPI = async (): Promise<
 > => {
 
   const result = await apiClient(
-    "/api/organization-invites/",
+    "/api/org/invites/",
     {
       method: "GET",
     }
@@ -28,7 +28,7 @@ export const createOrganizationInviteAPI = async (
 ): Promise<OrganizationInvite> => {
 
   const result = await apiClient(
-    "/api/organization-invites/",
+    "/api/org/invites/create",
     {
       method: "POST",
       body: JSON.stringify(invite),
@@ -44,7 +44,7 @@ export const acceptOrganizationInviteAPI = async (
 ): Promise<OrganizationMember> => {
 
   const result = await apiClient(
-    "/api/organization-invites/accept",
+    "/api/org/invites/accept",
     {
       method: "POST",
       body: JSON.stringify(invite),
@@ -60,7 +60,7 @@ export const revokeOrganizationInviteAPI = async (
 ): Promise<OrganizationInvite> => {
 
   const result = await apiClient(
-    `/api/organization-invites/${id}`,
+    `/api/org/invites/delete/${id}`,
     {
       method: "DELETE",
     }
@@ -68,4 +68,30 @@ export const revokeOrganizationInviteAPI = async (
 
   return result.data as OrganizationInvite;
 
+};
+
+export const approveJoinMemberAPI = async (
+  id: string
+): Promise<DisplayOrganizationMember> => {
+  const result = await apiClient(
+    `/api/org/invites/join/approve/${id}`,
+    {
+      method: "PATCH",
+    }
+  );
+
+  return result.data as DisplayOrganizationMember;
+};
+
+export const rejectJoinMemberAPI = async (
+  id: string
+): Promise<{ id: string }> => {
+  const result = await apiClient(
+    `/api/org/invites/join/reject/${id}`,
+    {
+      method: "DELETE",
+    }
+  );
+
+  return result.data as { id: string };
 };

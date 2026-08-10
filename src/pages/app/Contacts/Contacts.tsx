@@ -328,7 +328,7 @@ const selectionCount =
         justifyContent: 'center', 
         flexDirection: 'rows',
         flex: 1,
-        minWidth: 750,
+        minWidth: 320,
         p: 2,
         mx: 2,
         height: 850}}>
@@ -339,14 +339,12 @@ const selectionCount =
             p: 1,
             pt: 0,
             width: '50vw',
-            minWidth: 300,
             transition: 'width 0.3s ease',
             maxHeight:  1000,
             display: 'flex',
             flex: 1,
             borderRadius: 3,
             borderColor: 'divider',
-            marginRight: 6,
             flexDirection: 'column',
             overflow: 'auto'
           }}
@@ -429,8 +427,8 @@ const selectionCount =
           
           <DataGrid
             sx={{
-              flex: 1,
               minHeight: 0,
+              minWidth: 1000,
               mx: 1,
               mb: 1,
               border: 'none',
@@ -472,7 +470,7 @@ const selectionCount =
         </Paper>
         <Box sx={{display: {xs: 'none', lg: 'flex'}, flexDirection: 'column',  width: '15%', alignItems: 'end', minWidth: 270, }}>
           
-          <Paper variant="outlined" sx={{ height: '50%', maxHeight: 300 , width: '100%', minHeight: 310, mx: 1,mb: 1, p: 1.5, borderRadius: 3, borderColor: 'divider'}}>
+          <Paper variant="outlined" sx={{ height: '50%', maxHeight: 300 , width: '90%', minHeight: 310, mx: 1,mb: 1, p: 1.5, borderRadius: 3, borderColor: 'divider'}}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, pb: 1, mb: 0.5, borderBottom: '1px solid', borderColor: 'divider' }}>
               <AccessTimeIcon sx={{ fontSize: 18, color: 'primary.main' }} />
               <Typography variant="h6" fontWeight={700} sx={{ fontSize: 14.5 }}>Recently Added</Typography>
@@ -513,7 +511,7 @@ const selectionCount =
               ))}
             </List>
           </Paper>
-          <Paper variant="outlined" sx={{ height: '50%',maxHeight: 300, width: '100%', minWidth: 200, minHeight: 310, mx: 1, mt: 1, p: 1.5, borderRadius: 3, borderColor: 'divider'}}>
+          <Paper variant="outlined" sx={{ height: '50%',maxHeight: 300, width: '90%', minWidth: 200, minHeight: 310, mx: 1, mt: 1, p: 1.5, borderRadius: 3, borderColor: 'divider'}}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, pb: 1, mb: 0.5, borderBottom: '1px solid', borderColor: 'divider' }}>
               <FlagCircleIcon sx={{ fontSize: 18, color: 'error.main' }} />
               <Typography variant="h6" fontWeight={700} sx={{ fontSize: 14.5 }}>Priorities</Typography>

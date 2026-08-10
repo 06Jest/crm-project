@@ -16,9 +16,9 @@ export const fetchConversationsAPI = async (): Promise<ConversationListItem[]> =
 };
 
 export const fetchDirectConversationAPI = async (
-  userId: string
+  memberId: string
 ): Promise<ConversationWithLastMessage | null> => {
-  const result = await apiClient(`/api/chat/direct-conversation/${userId}`, {
+  const result = await apiClient(`/api/chat/direct-conversation/${memberId}`, {
     method: "GET",
   });
 
@@ -26,15 +26,11 @@ export const fetchDirectConversationAPI = async (
 };
 
 export const createDirectConversationAPI = async (
-  profileId: string
+  memberId: string
 ): Promise<ConversationWithLastMessage> => {
-  const result = await apiClient("/api/chat/direct-conversation", {
+  const result = await apiClient(`/api/chat/direct-conversation/create/${memberId}`, {
     method: "POST",
-    body: JSON.stringify({
-      profile_id: profileId,
-    }),
   });
-
   return result.data as ConversationWithLastMessage;
 };
 
@@ -74,18 +70,21 @@ export const editMessageAPI = async (
 
 export const deleteMessageAPI = async (
   id: string
-): Promise<string> => {
+): Promise<MessageListItem> => {
   const result = await apiClient(`/api/chat/message/${id}`, {
     method: "DELETE",
   });
 
-  return result.data as string;
+  return result.data as MessageListItem;
 };
+
 
 export const markConversationAsReadAPI = async (
   conversationId: string
-): Promise<void> => {
-  await apiClient(`/api/chat/conversation/${conversationId}/read`, {
-    method: "PATCH",
-  });
+): Promise<{ last_read_at: string }> => {
+  const result = await apiClient(
+    `/api/chat/conversation/${conversationId}/read`,
+    { method: "PATCH" }
+  );
+  return result.data as { last_read_at: string };
 };

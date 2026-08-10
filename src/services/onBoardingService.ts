@@ -22,6 +22,14 @@ export const createWorkspaceAPI = async (
   });
 };
 
+export const joinWorkspaceAPI = async (
+  code: string
+) => {
+  return apiClient(`/api/onboarding/workspace/join/${code}`, {
+    method: "POST",
+  });
+};
+
 export const createSubscriptionAPI = async (
   dto: CreateSubscriptionDTO
 ) => {
