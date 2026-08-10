@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, type ReactNode, useRef } from "react";
+import { useState, useMemo, useEffect, type ReactNode, useRef, useCallback } from "react";
 import {
   Box,
   TextField,
@@ -600,19 +600,93 @@ export default function EmailPanel() {
       // Error handled by Redux state
     }
   };
-  useEffect(() => {
-    if (view !== "editor") return;
 
-    const timer = setTimeout(autoSaveDraft, 3000);
-
-    return () => clearTimeout(timer);
-  }, [
+  const buildComposePayload = useCallback(
+  () => ({
+    recipient_email: editRecipient.trim(),
+    subject: editSubject.trim(),
+    body_html: editBodyHtml,
+    body_text: editBodyText,
+    lead_id: ownerType === "lead" ? ownerId || undefined : undefined,
+    contact_id: ownerType === "contact" ? ownerId || undefined : undefined,
+    customer_id: ownerType === "customer" ? ownerId || undefined : undefined,
+  }),
+  [
     editRecipient,
     editSubject,
-    editBodyText,
     editBodyHtml,
+    editBodyText,
+    ownerType,
     ownerId,
-  ]);
+  ]
+);
+
+const buildUpdatePayload = useCallback(
+  () => ({
+    recipient_email: editRecipient.trim(),
+    subject: editSubject.trim(),
+    body_text: editBodyText.trim(),
+    body_html: editBodyHtml,
+  }),
+  [editRecipient, editSubject, editBodyText, editBodyHtml]
+);
+
+
+  const autoSaveDraft = useCallback(async () => {
+  if (!loadedEmail.current) return;
+  if (view !== "editor") return;
+  if (isSending.current) return;
+
+  const hasContent =
+    editRecipient.trim() ||
+    editSubject.trim() ||
+    editBodyText.trim();
+
+  if (!hasContent) return;
+  if (isSavingDraft.current) return;
+
+  isSavingDraft.current = true;
+
+  try {
+    if (activeId) {
+      await dispatch(
+        updateEmailDraft({
+          id: activeId,
+          email: buildUpdatePayload(),
+        })
+      ).unwrap();
+    } else {
+      const created = await dispatch(
+        addEmailDraft(buildComposePayload())
+      ).unwrap();
+
+      setActiveId(created.id);
+    }
+  } catch {
+    // Redux error state handles the error
+  } finally {
+    isSavingDraft.current = false;
+  }
+}, [
+  activeId,
+  dispatch,
+  editRecipient,
+  editSubject,
+  view,
+  buildComposePayload,
+  buildUpdatePayload,
+  editBodyText
+]);
+
+useEffect(() => {
+  if (view !== "editor") return;
+
+  const timer = setTimeout(() => {
+    void autoSaveDraft();
+  }, 3000);
+
+  return () => clearTimeout(timer);
+}, [autoSaveDraft, view]);
 
   const resetEditorState = () => {
     setActiveId(null);
@@ -627,6 +701,8 @@ export default function EmailPanel() {
   };
 
   const openNewEmail = () => {
+    loadedEmail.current = false;
+
     setActiveId(null);
     setEditRecipient("");
     setEditSubject("");
@@ -719,22 +795,7 @@ export default function EmailPanel() {
     editBodyText.trim().length > 0 &&
     (activeId !== null || ownerId.length > 0);
 
-  const buildComposePayload = () => ({
-    recipient_email: editRecipient.trim(),
-    subject: editSubject.trim(),
-    body_html: editBodyHtml,
-    body_text: editBodyText,
-    lead_id: ownerType === "lead" ? ownerId || undefined : undefined,
-    contact_id: ownerType === "contact" ? ownerId || undefined : undefined,
-    customer_id: ownerType === "customer" ? ownerId || undefined : undefined,
-  });
-
-  const buildUpdatePayload = () => ({
-    recipient_email: editRecipient.trim(),
-    subject: editSubject.trim(),
-    body_text: editBodyText.trim(),
-    body_html: editBodyHtml,
-  });
+  
 
   const saveAndExit = async () => {
     if (!canSave) return;
@@ -791,34 +852,60 @@ export default function EmailPanel() {
     }
   };
 
-  const getValue = (type: EmailOwnerType, id: string | null) => {
+const getValue = useCallback(
+  (type: EmailOwnerType, id: string | null) => {
     if (!id) return "";
 
     if (type === "contact") {
-      const value = contactsMap.get(id);
-      return value ? formatName(value.first_name, value.last_name) : "";
+      const contact = contactsMap.get(id);
+
+      return contact
+        ? formatName(contact.first_name, contact.last_name)
+        : "";
     }
 
     if (type === "lead") {
-      const value = leadsMap.get(id);
-      return value ? formatName(value.first_name, value.last_name) : "";
+      const lead = leadsMap.get(id);
+
+      return lead
+        ? formatName(lead.first_name, lead.last_name)
+        : "";
     }
 
     if (type === "customer") {
       const customer = customersMap.get(id);
-      if (!customer) return "";
-      const contact = contactsMap.get(customer.contact_id);
-      return contact ? formatName(contact.first_name, contact.last_name) : "";
-    }
-    return "";
-  };
 
-  const ownerOf = (email: EmailListItem): { type: EmailOwnerType | null; id: string | null } => {
-    if (email.lead_id) return { type: "lead", id: email.lead_id };
-    if (email.contact_id) return { type: "contact", id: email.contact_id };
-    if (email.customer_id) return { type: "customer", id: email.customer_id };
-    return { type: null, id: null };
-  };
+      if (!customer) return "";
+
+      const contact = contactsMap.get(customer.contact_id);
+
+      return contact
+        ? formatName(contact.first_name, contact.last_name)
+        : "";
+    }
+
+    return "";
+  },
+  [contactsMap, leadsMap, customersMap]
+);
+
+const ownerOf = (
+  email: EmailListItem
+): { type: EmailOwnerType | null; id: string | null } => {
+  if (email.lead_id) {
+    return { type: "lead", id: email.lead_id };
+  }
+
+  if (email.contact_id) {
+    return { type: "contact", id: email.contact_id };
+  }
+
+  if (email.customer_id) {
+    return { type: "customer", id: email.customer_id };
+  }
+
+  return { type: null, id: null };
+};
 
   const statusCounts = useMemo(() => {
     const counts: Record<"all" | EmailStatus | "trash", number> = {
@@ -879,7 +966,7 @@ export default function EmailPanel() {
         return matchesSearch && matchesStatus;
       })
       .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
-  }, [emails, query, statusFilter]);
+  }, [emails, query, statusFilter, getValue]);
 
   const leaveEditor = async () => {
     if (view !== "editor") return;
@@ -922,41 +1009,41 @@ export default function EmailPanel() {
     resetEditorState();
   };
 
-  const autoSaveDraft = async () => {
-    if (!loadedEmail.current) return;
-    if (view !== "editor") return;
-    if (isSending.current) return;
-    const hasContent =
-      editRecipient.trim() ||
-      editSubject.trim() ||
-      editBodyText.trim();
+  // const autoSaveDraft = async () => {
+  //   if (!loadedEmail.current) return;
+  //   if (view !== "editor") return;
+  //   if (isSending.current) return;
+  //   const hasContent =
+  //     editRecipient.trim() ||
+  //     editSubject.trim() ||
+  //     editBodyText.trim();
 
-    if (!hasContent) return;
+  //   if (!hasContent) return;
 
-    if (isSavingDraft.current) return;
+  //   if (isSavingDraft.current) return;
 
-    isSavingDraft.current = true;
+  //   isSavingDraft.current = true;
 
-    try {
-      if (activeId) {
-        await dispatch(
-          updateEmailDraft({
-            id: activeId,
-            email: buildUpdatePayload(),
-          })
-        ).unwrap();
+  //   try {
+  //     if (activeId) {
+  //       await dispatch(
+  //         updateEmailDraft({
+  //           id: activeId,
+  //           email: buildUpdatePayload(),
+  //         })
+  //       ).unwrap();
 
-      } else {
-        const created = await dispatch(
-          addEmailDraft(buildComposePayload())
-        ).unwrap();
+  //     } else {
+  //       const created = await dispatch(
+  //         addEmailDraft(buildComposePayload())
+  //       ).unwrap();
 
-        setActiveId(created.id);
-      }
-    } finally {
-      isSavingDraft.current = false;
-    }
-  };
+  //       setActiveId(created.id);
+  //     }
+  //   } finally {
+  //     isSavingDraft.current = false;
+  //   }
+  // };
 
   return (
     <Box sx={{ display: "flex", height: "100%", minHeight: 0 }}>
@@ -1207,7 +1294,7 @@ export default function EmailPanel() {
                                 <Box component="span" sx={{ color: "text.primary", fontWeight: email.status === "draft" ? 500 : 600 }}>
                                   {email.subject || "(No subject)"}
                                 </Box>
-                                {email.preview_text ? ` — ${email.preview_text}` : ""}
+                                {email.preview_text ? `  ${email.preview_text}` : ""}
                               </Typography>
 
                               <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, flexShrink: 0 }}>
