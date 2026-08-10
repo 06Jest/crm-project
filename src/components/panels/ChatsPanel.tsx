@@ -338,7 +338,7 @@ useEffect(() => {
     clearTimeout(conversationsRefreshTimeout.current);
     supabase.removeChannel(channel);
   };
-}, [userId, realtimeReady, dispatch]);
+}, [userId, realtimeReady, memberId,  dispatch]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -1013,7 +1013,7 @@ useEffect(() => {
               </Box>
             ) : messages.length === 0 ? (
               <Typography variant="body2" sx={{ opacity: 0.5, textAlign: "center", mt: 4 }}>
-                No messages yet — say hello
+                No messages yet. say hello!
               </Typography>
             ) : (
               messages.map((message) => {
