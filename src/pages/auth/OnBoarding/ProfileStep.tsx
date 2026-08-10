@@ -1,4 +1,3 @@
-
 import { useState, type ReactElement } from 'react';
 import {
   Box,
@@ -8,6 +7,7 @@ import {
   Typography,
   Avatar,
   Grid,
+  Collapse,
   useMediaQuery,
   useTheme,
 } from '@mui/material';
@@ -19,7 +19,6 @@ import ErrorAlert from '../../../components/Error';
 interface ProfileStepProps {
   onNext: () => void;
 }
-
 
 interface FormErrors {
   first_name?: string;
@@ -37,21 +36,30 @@ export default function ProfileStep({ onNext }: ProfileStepProps): ReactElement 
   const [errors, setErrors] = useState<FormErrors>({});
   const theme = useTheme();
   const [loading, setLoading] = useState(false);
-  const [error , setError] = useState('');
+  const [error, setError] = useState('');
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
 
+    const nameRegex = /^[A-Za-zÀ-ÖØ-öø-ÿ]+(?:[ '-][A-Za-zÀ-ÖØ-öø-ÿ]+)*$/;
+
     if (!formData.first_name.trim()) {
-      newErrors.first_name = 'First name is required';
+      newErrors.first_name = "First name is required";
+    } else if (!nameRegex.test(formData.first_name.trim())) {
+      newErrors.first_name =
+        "Name can only contain letters, spaces, hyphens, or apostrophes.";
     }
 
     if (!formData.last_name.trim()) {
-      newErrors.last_name = 'Last name is required';
+      newErrors.last_name = "Last name is required";
+    } else if (!nameRegex.test(formData.last_name.trim())) {
+      newErrors.last_name =
+        "Name can only contain letters, spaces, hyphens, or apostrophes.";
     }
 
     setErrors(newErrors);
+
     return Object.keys(newErrors).length === 0;
   };
 
@@ -64,7 +72,6 @@ export default function ProfileStep({ onNext }: ProfileStepProps): ReactElement 
       [name]: value,
     }));
 
-    // Clear error for this field when user starts typing
     if (errors[name as keyof FormErrors]) {
       setErrors((prev) => ({
         ...prev,
@@ -74,8 +81,6 @@ export default function ProfileStep({ onNext }: ProfileStepProps): ReactElement 
   };
 
   const handleAvatarClick = (): void => {
-    // In production, this would open a file picker
-    // For now, we'll just log to show the functionality is available
     console.log('Avatar upload clicked');
   };
 
@@ -103,35 +108,40 @@ export default function ProfileStep({ onNext }: ProfileStepProps): ReactElement 
 
   return (
     <Stack spacing={3}>
-      {(error) && (
-        <Box sx={{ width: '100%', mt: 1 }}>
+      <Collapse in={!!error}>
+        <Box sx={{ width: '100%' }}>
           <ErrorAlert
             message={(error) ?? "Failed creating profile, Try again."}
           />
         </Box>
-      )}
+      </Collapse>
+
       <Box>
-        <Typography variant="h5" fontWeight={600} mb={1}>
+        <Typography variant="h5" fontWeight={700} mb={0.75} letterSpacing="-0.01em">
           Complete Your Profile
         </Typography>
-        <Typography variant="body2" color="textSecondary">
+        <Typography variant="body2" color="text.secondary">
           Help us get to know you better. This information will be visible to your team.
         </Typography>
       </Box>
 
-      <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+      <Box sx={{ display: 'flex', justifyContent: 'center', py: 1 }}>
         <Box sx={{ position: 'relative', width: 'fit-content' }}>
           <Avatar
             sx={{
-              width: 80,
-              height: 80,
-              fontSize: '2rem',
-              fontWeight: 600,
-              backgroundColor: 'primary.main',
+              width: 84,
+              height: 84,
+              fontSize: '1.9rem',
+              fontWeight: 700,
+              bgcolor: 'primary.main',
+              border: '3px solid',
+              borderColor: 'background.paper',
+              boxShadow: '0 0 0 1px rgba(0,0,0,0.06)',
+              transition: 'transform 0.2s ease',
             }}
           >
             {formData.avatar_url ? (
-              <img src={formData.avatar_url} alt="avatar" />
+              <img src={formData.avatar_url} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             ) : (
               initials || 'U'
             )}
@@ -144,24 +154,28 @@ export default function ProfileStep({ onNext }: ProfileStepProps): ReactElement 
               right: 0,
               backgroundColor: 'primary.main',
               borderRadius: '50%',
-              p: 0.75,
+              width: 30,
+              height: 30,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              border: '2px solid',
+              borderColor: 'background.paper',
+              transition: 'transform 0.15s ease, background-color 0.15s ease',
               '&:hover': {
                 backgroundColor: 'primary.dark',
+                transform: 'scale(1.08)',
               },
-              transition: 'background-color 0.2s',
             }}
           >
-            <CameraAltIcon sx={{ color: 'white', fontSize: 18 }} />
+            <CameraAltIcon sx={{ color: 'white', fontSize: 15 }} />
           </Box>
         </Box>
       </Box>
 
       <Grid container spacing={2}>
-        <Grid size={{xs:12, sm: 6}}>
+        <Grid size={{ xs: 12, sm: 6 }}>
           <TextField
             disabled={loading}
             fullWidth
@@ -175,7 +189,7 @@ export default function ProfileStep({ onNext }: ProfileStepProps): ReactElement 
             required
           />
         </Grid>
-        <Grid size={{xs:12, sm: 6}}>
+        <Grid size={{ xs: 12, sm: 6 }}>
           <TextField
             disabled={loading}
             fullWidth
@@ -204,9 +218,9 @@ export default function ProfileStep({ onNext }: ProfileStepProps): ReactElement 
       <Box
         sx={{
           display: 'flex',
-          gap: 2,
+          gap: 1.5,
           justifyContent: 'flex-end',
-          mt: 2,
+          mt: 1,
           flexDirection: isMobile ? 'column-reverse' : 'row',
         }}
       >
@@ -214,17 +228,30 @@ export default function ProfileStep({ onNext }: ProfileStepProps): ReactElement 
           variant="outlined"
           disabled
           fullWidth={isMobile}
+          sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
         >
           Back
         </Button>
         <Button
           variant="contained"
+          disableElevation
           onClick={handleContinue}
           disabled={loading}
           fullWidth={isMobile}
-      >
+          sx={{
+            borderRadius: 2,
+            textTransform: 'none',
+            fontWeight: 600,
+            px: 3,
+            transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+            '&:hover': {
+              transform: 'translateY(-1px)',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.12)',
+            },
+          }}
+        >
           {loading ? "Saving..." : "Continue"}
-      </Button>
+        </Button>
       </Box>
     </Stack>
   );

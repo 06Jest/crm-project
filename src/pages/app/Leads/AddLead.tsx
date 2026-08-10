@@ -55,6 +55,7 @@ function SectionHeader({ icon, title, subtitle }: { icon: React.ReactNode; title
 export default function AddLead() {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const themeMode = useSelector((state: RootState) => state.ui.themeMode);
   const { loading, error} = useSelector((state:RootState) => state.leads);
 
@@ -97,9 +98,9 @@ export default function AddLead() {
 
 
   const handleSubmit = async () => {
-    if (loading) return;
-
+    if (isSubmitting || loading) return;
     if (!form) return;
+    setIsSubmitting(true);
     try {
       const newLead = {
       title: form.title,
@@ -133,7 +134,7 @@ export default function AddLead() {
     navigate(`/app/leads`);
     } catch {
       //Error from state
-    }
+    }finally { setIsSubmitting(false); }
   };
 
   const canSubmit = !!form.first_name && !!form.last_name && !!form.title && !!form.notes;
@@ -694,7 +695,7 @@ export default function AddLead() {
             </Typography>
             <Button
               variant="contained"
-              disabled={!canSubmit || loading}
+              disabled={!canSubmit || loading || isSubmitting}
               onClick={handleSubmit}
               disableElevation
               sx={{
@@ -706,7 +707,7 @@ export default function AddLead() {
                 boxShadow: "0 1px 4px rgba(0,0,0,0.18)",
               }}
             >
-              {loading ? "Adding…" : "Add Lead"}
+              {loading || isSubmitting ? "Adding…" : "Add Lead"}
             </Button>
           </Paper>
           

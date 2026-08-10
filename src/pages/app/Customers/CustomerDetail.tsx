@@ -154,11 +154,11 @@ export default function CustomerDetail() {
           startIcon={<ArrowBackIcon />}
           onClick={() => {
             dispatch(clearError());
-            navigate('/app/customers')
+            navigate(-1)
           }}
           sx={{ mt: 2, textTransform: 'none', fontWeight: 600 }}
         >
-          Back to customers
+          Go back
         </Button>
       </Box>
     );
@@ -301,10 +301,10 @@ export default function CustomerDetail() {
           startIcon={<ArrowBackIcon/>}
           onClick={() => {
             navigate(`/app/customers`);
-            dispatch(clearError());
+            navigate(-1);
           } }
           sx={{ alignSelf: 'start', textTransform: 'none', fontWeight: 600, color: 'text.secondary'}}>
-          Customers
+          Back
         </Button>
         <Button 
           endIcon={<ArrowForwardIcon/>}

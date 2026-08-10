@@ -67,6 +67,7 @@ const TYPE_COLORS: Record<ActivityType, string> = {
   note: '#fff59d',
   sms: '#f48fb1',
   email: '#81d4fa',
+  system: '#7c7c7c'
 };
 
 const ACTION_COLORS: Record<ActivityAction, string> = {
@@ -160,7 +161,7 @@ const columns: GridColDef<ActivityRow>[] = [
     display: 'flex',
     renderCell: ({ value }) => (
       <Typography variant="body2" color="text.secondary" noWrap title={value ?? ''}>
-        {value || '—'}
+        {value || 'Not Provided'}
       </Typography>
     ),
   },
@@ -277,7 +278,7 @@ export default function Activities() {
           title: a.title,
           description: a.description,
           relatedName: related ? formatName(related.first_name, related.last_name) : null,
-          createdBy: formatName(a.creator.profile.first_name, a.creator.profile.last_name),
+          createdBy: formatName(a.creator?.profile?.first_name,a.creator?.profile?.last_name) ?? "owner",
           createdAt: a.created_at,
         };
       }),
@@ -347,13 +348,12 @@ export default function Activities() {
   }
 
   return (
-    <Box sx={{ display: 'flex', justifyContent: 'center', flex: 1, minWidth: 750, p: 2, mx: 2, height: 850 }}>
+    <Box sx={{ display: 'flex', justifyContent: 'center', flex: 1, minWidth: 320, p: 2, mx: 2, height: 850 }}>
       <Paper
         sx={{
           p: 2,
           pt: 0,
           width: '70vw',
-          minWidth: 300,
           maxHeight: 1000,
           display: 'flex',
           flex: 1,
@@ -452,6 +452,7 @@ export default function Activities() {
         <DataGrid
           sx={{
             flex: 1,
+            minWidth: 1000,
             minHeight: 0,
             borderRadius: 3,
             fontSize: '0.85rem',

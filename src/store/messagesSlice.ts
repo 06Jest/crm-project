@@ -144,7 +144,7 @@ const messagesSlice = createSlice({
       );
 
       if (index !== -1) {
-        state.items[index] = action.payload;
+        state.items[index] = { ...state.items[index], ...action.payload };
       }
     },
 
@@ -216,17 +216,21 @@ const messagesSlice = createSlice({
     });
 
     builder.addCase(deleteMessage.fulfilled, (state, action) => {
-
-      state.items = state.items.filter(
-        (message) => message.id !== action.payload
+      const index = state.items.findIndex(
+        (message) => message.id === action.payload.id
       );
 
+      if (index !== -1) {
+        state.items[index] = {
+          ...state.items[index],
+          ...action.payload,
+        };
+      }
     });
 
     builder.addCase(deleteMessage.rejected, (state, action) => {
       state.error = action.payload as string;
     });
-
   },
 });
 

@@ -360,21 +360,6 @@ export default function Login() {
             p: { xs: 3, sm: 5 },
           }}
         >
-          <Box sx={{ display: { xs: 'flex', md: 'none' }, alignItems: 'center', gap: 1.25, mb: 4 }}>
-            <Box
-              sx={{
-                width: 32, height: 32, borderRadius: '8px',
-                bgcolor: '#E3A548', color: '#101A2E',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontFamily: 'Fraunces, serif', fontWeight: 700, fontSize: 13,
-              }}
-            >
-              uT
-            </Box>
-            <Typography sx={{ fontFamily: 'Fraunces, serif', fontWeight: 600, fontSize: 19 }}>
-              uniThread
-            </Typography>
-          </Box>
 
           <Grow in appear timeout={550}>
             <Paper

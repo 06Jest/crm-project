@@ -10,6 +10,18 @@ export const INVITE_STATUSES = [
 export type InviteStatus =
   (typeof INVITE_STATUSES)[number];
 
+export interface InviteAcceptance {
+  id: string;
+  profile_id: string;
+  accepted_at: string;
+  profile: {
+    first_name: string;
+    last_name: string;
+    email: string;
+    avatar_url?: string | null;
+  } | null;
+}
+
 export interface OrganizationInvite {
   id: string;
   org_id: string;
@@ -20,17 +32,16 @@ export interface OrganizationInvite {
   used_count: number;
   status: InviteStatus;
   expires_at: string;
-  accepted_at: string | null;
-  accepted_by: string | null;
   created_by: string;
   created_at: string;
+  acceptances?: InviteAcceptance[];
 }
 
 export interface CreateInviteDTO {
   role: Roles;
   email?: string | null;
-  max_uses: number;
-  expires_at: string;
+  max_uses: number | null;
+  expires_at: string | null;
 }
 
 export interface AcceptInviteDTO {
@@ -43,4 +54,14 @@ export interface UpdateInviteDTO {
   max_uses?: number;
   expires_at?: string;
   status?: InviteStatus;
+}
+
+export interface InviteMembersSectionProps {
+  currentUserRole?: Roles;
+  memberLimits: {
+    active_limit: number;
+    store_limit: number;
+  } | null;
+  activeMemberCount: number;
+  totalMemberCount: number;
 }

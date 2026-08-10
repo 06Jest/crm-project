@@ -8,9 +8,9 @@ export interface OrganizationMemberState {
 }
 
 export const ORGANIZATION_MEMBER_STATUSES = [
-  "pending",
+  "invited",
   "active",
-  "inactive",
+  "suspended",
   "removed",
 ] as const;
 
@@ -53,11 +53,9 @@ export interface CreateOrganizationMemberDTO {
 
 export interface UpdateMemberRoleDTO {
   role?: Roles;
-  status?: OrganizationMemberStatus;
 }
 
 export interface UpdateMemberStatusDTO {
-  role?: Roles;
   status?: OrganizationMemberStatus;
 }
 

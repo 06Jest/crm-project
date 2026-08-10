@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '../../../store/store';
 import { useNavigate } from "react-router-dom";
@@ -11,7 +11,7 @@ import {
   fetchDealsLists,
   clearError
 } from '../../../store/dealsSlice';
-import { DEAL_STAGES, type Deal, type DealStage, type UpdateDeal } from '../../../types/deal';
+import { DEAL_STAGES, type Deal, type DealListItem, type DealStage, type UpdateDeal } from '../../../types/deal';
 import type { Contact } from '../../../types/contact';
 
 import {
@@ -33,12 +33,16 @@ import {
   DialogActions,
   TextField,
   Snackbar,
-  CircularProgress,
   Chip,
   Popover,
   IconButton,
   Divider,
   InputAdornment,
+  Skeleton,
+  Fade,
+  Grow,
+  Tooltip,
+  useMediaQuery,
 } from '@mui/material';
 
 import EditIcon from '@mui/icons-material/Edit';
@@ -67,8 +71,6 @@ import { formatName, formatTitle } from '../../../utils/formatText';
     Low: '#ffffff00',
   }
 
-// Purely presentational — one accent color per pipeline stage, used for
-// column headers, chips and the drag-over state. Does not touch any data.
 const STAGE_COLORS: Record<DealStage, string> = {
   Prospecting: '#3b82f6',
   Proposal: '#8b5cf6',
@@ -78,6 +80,354 @@ const STAGE_COLORS: Record<DealStage, string> = {
 };
 
 type DealForm = Partial<UpdateDeal>;
+
+function useInViewOnce(
+  rootRef: React.RefObject<HTMLDivElement | null>,
+  rootMargin = '500px'
+) {
+  const nodeRef = useRef<HTMLDivElement | null>(null);
+  const [inView, setInView] = useState(
+    () => typeof IntersectionObserver === 'undefined'
+  );
+
+  useEffect(() => {
+    if (inView) return;
+
+    const node = nodeRef.current;
+
+    if (!node) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          setInView(true);
+          observer.disconnect();
+        }
+      },
+      {
+        root: rootRef.current ?? null,
+        rootMargin,
+        threshold: 0.01,
+      }
+    );
+
+    observer.observe(node);
+
+    return () => observer.disconnect();
+  }, [inView, rootMargin, rootRef]);
+
+  return { nodeRef, inView };
+}
+
+function DealCardSkeleton() {
+  return (
+    <Card
+      elevation={0}
+      sx={{ mb: 1, borderRadius: 2.5, border: '1px solid', borderColor: 'divider' }}
+    >
+      <CardContent sx={{ p: 1.25, '&:last-child': { pb: 1.25 } }}>
+        <Box sx={{ display: 'flex', gap: 1.25 }}>
+          <Skeleton variant="circular" width={42} height={42} />
+          <Box sx={{ flex: 1 }}>
+            <Skeleton variant="text" width="60%" height={20} />
+            <Skeleton variant="text" width="40%" height={16} />
+            <Skeleton variant="rounded" width="80%" height={12} sx={{ mt: 1 }} />
+            <Skeleton variant="rounded" width="35%" height={18} sx={{ mt: 1, borderRadius: 5 }} />
+          </Box>
+        </Box>
+      </CardContent>
+    </Card>
+  );
+}
+
+interface LazyColumnBodyProps {
+  stage: DealStage;
+  deals: DealListItem[];
+  contacts: Contact[];
+  stageColor: string;
+  scrollRoot: React.RefObject<HTMLDivElement | null>;
+  reduceMotion: boolean;
+  onHoverEnter: (event: React.MouseEvent<HTMLDivElement>, deal: Deal) => void;
+  onHoverLeave: () => void;
+  onNavigateContact: (contactId: string) => void;
+  onEdit: (deal: Deal) => void;
+  onDelete: (deal: Deal) => void;
+  onQuickAction: () => void;
+}
+
+function LazyColumnBody({
+  stage,
+  deals,
+  contacts,
+  stageColor,
+  scrollRoot,
+  reduceMotion,
+  onHoverEnter,
+  onHoverLeave,
+  onNavigateContact,
+  onEdit,
+  onDelete,
+  onQuickAction,
+}: LazyColumnBodyProps) {
+  const { nodeRef, inView } = useInViewOnce(scrollRoot);
+
+  return (
+    <Droppable droppableId={stage}>
+      {(provided, snapshot) => (
+        <Box
+          ref={(node: HTMLDivElement | null) => {
+            provided.innerRef(node);
+            nodeRef.current = node;
+          }}
+          {...provided.droppableProps}
+          sx={{
+            minHeight: 300,
+            bgcolor: snapshot.isDraggingOver
+              ? `${stageColor}12`
+              : 'background.paper',
+            overflowY: 'auto',
+            borderRadius: '0 0 8px 8px',
+            p: 1,
+            transition: reduceMotion ? 'none' : 'background-color 0.2s ease',
+            height: 850,
+          }}
+        >
+          {!inView ? (
+            <>
+              <DealCardSkeleton />
+              <DealCardSkeleton />
+              <DealCardSkeleton />
+              <DealCardSkeleton />
+              <DealCardSkeleton />
+              <DealCardSkeleton />
+              <DealCardSkeleton />
+              <DealCardSkeleton />
+              <DealCardSkeleton />
+            </>
+          ) : deals.length === 0 ? (
+            <Box sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              height: '100%',
+              opacity: 0.5,
+            }}>
+              <Typography variant="body2" color="text.secondary">
+                No deals here yet
+              </Typography>
+            </Box>
+          ) : (
+            <Fade in={inView} timeout={reduceMotion ? 0 : 400}>
+              <Box>
+                {deals.map((deal, index) => {
+                  const contact = contacts.find((c) => c.id === deal.contact_id);
+                  if (!contact) return null;
+
+                  return (
+                    <Draggable
+                      key={deal.id}
+                      draggableId={deal.id}
+                      index={index}
+                    >
+                      {(provided, snapshot) => (
+                        <Card
+                          ref={provided.innerRef}
+                          {...provided.draggableProps}
+                          {...provided.dragHandleProps}
+                          sx={(theme) => ({
+                            mb: 1,
+                            borderRadius: 2.5,
+                            border: `1px solid ${theme.palette.mode === 'dark' ? '#3a3a3a' : '#eaeaea'}`,
+                            borderLeft: `3px solid ${stageColor}`,
+                            boxShadow: snapshot.isDragging
+                              ? '0 8px 20px rgba(0,0,0,0.18)'
+                              : '0 1px 2px rgba(0,0,0,0.06)',
+                            cursor: 'grab',
+                            opacity: snapshot.isDragging ? 0.9 : 1,
+                            transition: reduceMotion ? 'none' : 'box-shadow 0.2s ease, transform 0.15s ease',
+                            '&:hover': {
+                              boxShadow: '0 4px 12px rgba(0,0,0,0.10)',
+                              transform: reduceMotion || snapshot.isDragging ? 'none' : 'translateY(-1px)',
+                            },
+                          })}
+                        >
+                          <CardContent sx={{ p: 1.25, '&:last-child': { pb: 1.25 }, display: 'flex' }}>
+                            <Box sx={{display: 'flex', width: '100%'}}>
+                              <Box sx={{display: 'flex', flexDirection: 'column', width: '18%'}}>
+                                <Box 
+                                  onMouseEnter={(e) => onHoverEnter(e, deal)}
+                                   onClick={()=> onNavigateContact(contact.id)}
+                                  onMouseLeave={onHoverLeave}
+                                  sx={(theme) => ({
+                                    width: 42,
+                                    height: 42,
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    border: `1px solid ${stageColor}55`,
+                                    bgcolor: theme.palette.mode === 'dark' ? '#2c2c2c' : `${stageColor}0d`,
+                                    borderRadius: 100,
+                                    transition: reduceMotion ? 'none' : 'border-color 0.15s ease',
+                                    '&:hover': { borderColor: stageColor },
+                                  })}>
+                                  <PersonIcon sx={{width: '62%', height: '62%', opacity: 0.75}}/>
+                                </Box>
+                              </Box>
+                              
+                              <Box sx={{display: 'flex', flexDirection: 'column', flex: 1}} >
+                                <Box sx={{display: 'flex', width: '100%'}}>
+                                  <Box sx={{display: 'flex', width: '90%', flexDirection: 'column'}}>
+                                    <Typography sx={{cursor: 'pointer', fontSize: '15px'}} title="Deal Title" fontWeight={700}>
+                                    {(deal.title.length > 25
+                                      ? `${deal.title.slice(0, 25)}...`
+                                      : formatTitle(deal.title).toUpperCase())}
+                                    </Typography>
+                                    <Typography sx={{cursor: 'pointer'}} title="Contact name" variant="body2" color="text.secondary">
+                                      {formatName(contact.first_name, contact.last_name)} {contact.suffix}
+                                    </Typography>
+                                  </Box>
+                                  <Box sx={{display: 'flex', width: '10%', flexDirection: 'column'}}>
+                                    <Tooltip title="Edit deal" arrow>
+                                      <IconButton
+                                        sx={{
+                                          height: 25,
+                                          width: 25,
+                                          mr: '5px',
+                                          transition: reduceMotion ? 'none' : 'background-color 0.15s ease',
+                                          '&:hover': { bgcolor: `${stageColor}1f` },
+                                        }}
+                                        size="small"
+                                        onClick={() => onEdit(deal)}
+                                      >
+                                        <EditIcon titleAccess="Edit deal" sx={{fontSize: '14px'}} />
+                                      </IconButton>
+                                    </Tooltip>
+                                  </Box>
+                                  
+                                </Box>
+                                <Box sx={{display: 'flex'}}>
+                                  {deal.notes && (
+                                  <Typography
+                                    title="notes"
+                                    variant="caption"
+                                    color="text.secondary"
+                                    display="block"
+                                    sx={{
+                                      mb: 1,
+                                      wordBreak: 'break-word',
+                                      cursor: 'pointer'
+                                    }}
+                                  >
+                                    {deal.notes.length > 85
+                                    ? `${deal.notes.slice(0, 85)}...`
+                                    : deal.notes}
+                                  </Typography>
+                                  )}
+                                  
+                                </Box>
+                              
+                              
+                                <Box sx={{
+                                  display: 'flex', 
+                                  alignItems: 'center', 
+                                  
+                                  }}>
+                                  <Typography 
+                                  title="Deal Owner"
+                                  color="text.secondary"
+                                  sx={{ px: 1, py: '1px', 
+                                    border: `1px solid`,
+                                    borderColor: 'primary.main',
+                                    color: 'primary.main',
+                                    borderRadius: 10,
+                                    fontSize: 10,
+                                    fontWeight: 600,
+                                    cursor: 'pointer'
+                                  }}
+                                  >{formatName(deal.owner.profile.first_name, deal.owner.profile.last_name) ?? "unknown"}</Typography>
+                                </Box>
+                                <Box sx={{
+                                  display: 'flex',
+                                  justifyContent: 'space-between',
+                                  alignItems: 'center',
+                                  mt: '6px',
+                                }}>
+                                  <Box sx={{
+                                    display: 'flex',
+                                    gap: 0.25,
+                                  }}>
+                                    <Tooltip title="Email lead" arrow>
+                                      <IconButton sx={{p: '4px', transition: reduceMotion ? 'none' : 'background-color 0.15s ease', '&:hover': { bgcolor: `${stageColor}1f` }}}>
+                                        <EmailIcon
+                                          titleAccess="Email lead"
+                                          onClick={onQuickAction}
+                                          sx={{cursor: 'pointer', color: 'primary.main', fontSize: 17}}
+                                        />
+                                      </IconButton>
+                                    </Tooltip>
+                                    <Tooltip title="Call lead" arrow>
+                                      <IconButton sx={{p: '4px', transition: reduceMotion ? 'none' : 'background-color 0.15s ease', '&:hover': { bgcolor: `${stageColor}1f` }}}>
+                                        <CallIcon
+                                          onClick={onQuickAction}
+                                          titleAccess="Call lead"
+                                          sx={{cursor: 'pointer', color: 'primary.main', fontSize: 17}}
+                                        />
+                                      </IconButton>
+                                    </Tooltip>
+                                    <Tooltip title="Message lead" arrow>
+                                      <IconButton sx={{p: '4px', transition: reduceMotion ? 'none' : 'background-color 0.15s ease', '&:hover': { bgcolor: `${stageColor}1f` }}}>
+                                        <SmsIcon
+                                          onClick={onQuickAction}
+                                          titleAccess="Message lead"
+                                          sx={{cursor: 'pointer', color: 'primary.main', fontSize: 17}}
+                                        />
+                                      </IconButton>
+                                    </Tooltip>
+                                  </Box>
+                                  <Box 
+                                    sx={{
+                                      backgroundColor: 'primary.main', 
+                                      color: '#FFFFFF', 
+                                      p: '3px 10px', 
+                                      borderRadius: 1.5,
+                                      display: 'flex', 
+                                      cursor: 'pointer',
+                                      alignItems: 'center'}}>
+                                      <Typography variant='body2' title="Deal Value" fontWeight={700} fontSize={13}>
+                                        {formatCurrency(deal.value)}
+                                      </Typography>
+                                  </Box>
+                                  <Box sx={{ display: 'flex' }}>
+                                    <Tooltip title="Delete deal" arrow>
+                                      <IconButton
+                                        size="small"
+                                        color="error"
+                                        sx={{ transition: reduceMotion ? 'none' : 'background-color 0.15s ease', '&:hover': { bgcolor: 'error.main', color: '#fff' } }}
+                                        onClick={() => onDelete(deal)}
+                                      >
+                                        <DeleteIcon titleAccess="Delete lead" fontSize="small" />
+                                      </IconButton>
+                                    </Tooltip>
+                                  </Box>
+                                </Box> 
+                              </Box>
+                            </Box>
+                          </CardContent>
+                        </Card>
+                      )}
+                    </Draggable>
+                  );
+                })}
+              </Box>
+            </Fade>
+          )}
+          {provided.placeholder}
+        </Box>
+      )}
+    </Droppable>
+  );
+}
 
 export default function Deals() {
   const { items: deals, loading, loaded, error } = useSelector(
@@ -111,6 +461,12 @@ export default function Deals() {
       'Closed Won': '',
       'Closed Lost': '',
     });
+
+  // UI-only additions: reduced-motion preference and the ref used as the
+  // IntersectionObserver root so each column lazy-mounts as it scrolls
+  // into view. Neither is read by, or affects, any business logic below.
+  const reduceMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
+  const boardScrollRef = useRef<HTMLDivElement>(null);
 
 
   useEffect(() => {
@@ -300,8 +656,55 @@ export default function Deals() {
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 20, height: 850 }}>
-        <CircularProgress />
+      <Box sx={{ pb: 2 }}>
+        <Box sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          width: '84vw',
+          justifySelf: 'center'
+        }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+            <Skeleton variant="rounded" width={40} height={40} sx={{ borderRadius: 2 }} />
+            <Box>
+              <Skeleton variant="text" width={90} height={28} />
+              <Skeleton variant="text" width={170} height={16} />
+            </Box>
+          </Box>
+          <Skeleton variant="rounded" width={118} height={36} sx={{ borderRadius: 2 }} />
+        </Box>
+        <Box sx={{
+          overflow: 'auto',
+          width: '85vw',
+          mb: 2,
+          p: '10px',
+          borderRadius: 2,
+          display: 'flex',
+          justifySelf: 'center'
+        }}>
+          <Box sx={{ display: 'flex', gap: 1.5, pb: 2, overflow: 'auto', width: '100%' }}>
+            {DEAL_STAGES.map((stage) => (
+              <Box
+                key={stage}
+                sx={{
+                  minWidth: 300,
+                  flex: 1,
+                  borderRadius: 3,
+                  overflow: 'hidden',
+                  border: '1px solid',
+                  borderColor: 'divider',
+                }}
+              >
+                <Skeleton variant="rectangular" height={78} />
+                <Box sx={{ p: 1 }}>
+                  <Skeleton variant="rounded" height={92} sx={{ mb: 1, borderRadius: 2.5 }} />
+                  <Skeleton variant="rounded" height={92} sx={{ mb: 1, borderRadius: 2.5 }} />
+                  <Skeleton variant="rounded" height={92} sx={{ borderRadius: 2.5 }} />
+                </Box>
+              </Box>
+            ))}
+          </Box>
+        </Box>
       </Box>
     );
   }
@@ -358,11 +761,14 @@ export default function Deals() {
             fontWeight: 700,
             textTransform: 'none',
             boxShadow: '0 1px 2px rgba(0,0,0,0.12)',
+            transition: reduceMotion ? 'none' : 'box-shadow 0.15s ease, transform 0.1s ease',
+            '&:active': { transform: reduceMotion ? 'none' : 'scale(0.97)' },
           }}>
           New Deal
         </Button>
       </Box>
       <Box 
+        ref={boardScrollRef}
         sx={{
           overflow: 'auto', 
           width: '85vw', 
@@ -374,352 +780,132 @@ export default function Deals() {
           }}>
         <DragDropContext onDragEnd={handleDragEnd}>
           <Box sx={{display: 'flex', gap: 1.5, pb: 2, overflow: 'auto',  width: '100%' }}>
-            {DEAL_STAGES.map((stage) => {
+            {DEAL_STAGES.map((stage, columnIndex) => {
 
               const stageDeals = getDealsByStage(stage);
               const stageValue = getStageValue(stage);
               const stageColor = STAGE_COLORS[stage];
 
               return (
-                <Box
-                  key={stage}
-                  sx={(theme) => ({
-                    minWidth: 300,
-                    flex: 1,
-                    borderRadius: 3,
-                    overflow: 'hidden',
-                    border: `1px solid ${theme.palette.mode === 'dark' ? '#3a3a3a' : '#e3e3e3'}`,
-                    bgcolor: 'background.paper',
-                  })}
-                >
+                <Grow key={stage} in timeout={reduceMotion ? 0 : 250 + columnIndex * 80}>
                   <Box
-                   sx={(theme) => ({
-                    py: 1.25,
-                    borderTop: `3px solid ${stageColor}`,
-                    borderRadius: '3px 3px 0 0 ',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    width:'100%',
-                    bgcolor: theme.palette.mode === 'dark'
-                      ? '#2c2c2c'
-                      : `${stageColor}14`,
-                  })}
-                  >
-                    <Box sx={{display: 'flex', px: 2, alignItems: 'center',
-                       width: '100%', justifyContent: 'space-between', gap: 1}}>
-                      <Typography fontWeight={700} variant="subtitle1" noWrap>
-                        {stage}
-                      </Typography>
-                      <Typography
-                        title={`Total possible value if won`}
-                        variant="body2"
-                        fontWeight={600}
-                        sx={{ opacity: 0.85, cursor:'pointer', whiteSpace: 'nowrap' }}>
-                        {formatCurrency(stageValue)}
-                      </Typography>
-                      <Chip
-                      title={`${stage} Deals count`}
-                      label={stageDeals.length}
-                      size="small"
-                      sx={{
-                        cursor: 'pointer',
-                        fontWeight: 700,
-                        bgcolor: stageColor,
-                        color: '#fff',
-                        minWidth: 28,
-                      }}
-                      />
-                    </Box>
-                    <Box sx={{px: 2, width: '100%'}}>
-                      <TextField 
-                        size="small"
-                        placeholder="Search this stage..."
-                        value={search[stage]}
-                        onChange={(e) =>
-                          setSearch((prev) => ({
-                            ...prev,
-                            [stage]: e.target.value,
-                          }))
-                        }
-                        slotProps={{
-                          input: {
-                            endAdornment: (
-                              <InputAdornment sx={{paddingRight: '1px'}} position="end">
-                                <SearchIcon sx={{ borderRadius: 10, p: 0.3, color: '#7a7a7a'}} fontSize="small" />
-                              </InputAdornment>
-                            ),
-                          },
-                        }}
-                        sx={{
-                          borderRadius: 4,
-                          mt: 1,
-                          width: '100%',
-                          backgroundColor: '#ffffff',
-                          color: '#383838',
-                          '& .MuiOutlinedInput-notchedOutline': {
-                            border: '1px solid #e2e2e2',
-                          },
-                          '&:hover .MuiOutlinedInput-notchedOutline': {
-                            borderColor: stageColor,
-                          },
-                          '& .Mui-focused .MuiOutlinedInput-notchedOutline': {
-                            borderColor: stageColor,
-                          },
-                          '& .MuiOutlinedInput-root': {
-                            borderRadius: 3,
-                            paddingRight: '4px !important',
-                          },
-                          '& .MuiInputBase-input': {
-                            py: '6px',
-                            paddingLeft: '12px',
-                            paddingRight: 0,
-                            color: 'black',
-                            fontSize: 13,
-                          },
-                        }}>
-                          <SearchIcon/>
-                      </TextField>
-                    </Box>
-                  </Box>
-                  <Droppable droppableId={stage}>
-                  {(provided, snapshot) => (
-                    <Box
-                      ref={provided.innerRef}
-                      {...provided.droppableProps}
-                      sx={{
-                        minHeight: 300,
-                        bgcolor: snapshot.isDraggingOver
-                          ? `${stageColor}12`
-                          : 'background.paper',
-                        overflowY: 'auto',
-                        borderRadius: '0 0 8px 8px',
-                        p: 1,
-                        transition: 'background-color 0.2s ease',
-                        height: 850,
-                      }}
-                    >
-                      {getDealsByStage(stage).length === 0 && (
-                        <Box sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          height: '100%',
-                          opacity: 0.5,
-                        }}>
-                          <Typography variant="body2" color="text.secondary">
-                            No deals here yet
-                          </Typography>
-                        </Box>
-                      )}
-                      {getDealsByStage(stage).map((deal, index) => {
-                        const contact = contacts.find((c) => c.id === deal.contact_id)
-                        if (!contact) return;
-
-                        return (
-                        <Draggable
-                          key={deal.id}
-                          draggableId={deal.id}
-                          index={index}
-                          
-                        >
-                          {(provided, snapshot) => (
-                            <Card
-                              ref={provided.innerRef}
-                              {...provided.draggableProps}
-                              {...provided.dragHandleProps}
-                              sx={(theme) => ({
-                                mb: 1,
-                                borderRadius: 2.5,
-                                border: `1px solid ${theme.palette.mode === 'dark' ? '#3a3a3a' : '#eaeaea'}`,
-                                borderLeft: `3px solid ${stageColor}`,
-                                boxShadow: snapshot.isDragging
-                                  ? '0 8px 20px rgba(0,0,0,0.18)'
-                                  : '0 1px 2px rgba(0,0,0,0.06)',
-                                cursor: 'grab',
-                                opacity: snapshot.isDragging ? 0.9 : 1,
-                                transition: 'box-shadow 0.2s ease, transform 0.15s ease',
-                                '&:hover': {
-                                  boxShadow: '0 4px 12px rgba(0,0,0,0.10)',
-                                },
-                              })}
-                            >
-                              <CardContent sx={{ p: 1.25, '&:last-child': { pb: 1.25 }, display: 'flex' }}>
-                                <Box sx={{display: 'flex', width: '100%'}}>
-                                  <Box sx={{display: 'flex', flexDirection: 'column', width: '18%'}}>
-                                    <Box 
-                                      onMouseEnter={(e) => handleMouseEnter(e, deal)}
-                                       onClick={()=> navigate(`/app/contacts/${contact.id}`)}
-                                      onMouseLeave={handleMouseLeave}
-                                      sx={(theme) => ({
-                                        width: 42,
-                                        height: 42,
-                                        cursor: 'pointer',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        border: `1px solid ${stageColor}55`,
-                                        bgcolor: theme.palette.mode === 'dark' ? '#2c2c2c' : `${stageColor}0d`,
-                                        borderRadius: 100,
-                                        transition: 'border-color 0.15s ease',
-                                        '&:hover': { borderColor: stageColor },
-                                      })}>
-                                      <PersonIcon sx={{width: '62%', height: '62%', opacity: 0.75}}/>
-                                    </Box>
-                                  </Box>
-                                  
-                                  <Box sx={{display: 'flex', flexDirection: 'column', flex: 1}} >
-                                    <Box sx={{display: 'flex', width: '100%'}}>
-                                      <Box sx={{display: 'flex', width: '90%', flexDirection: 'column'}}>
-                                        <Typography sx={{cursor: 'pointer', fontSize: '15px'}} title="Deal Title" fontWeight={700}>
-                                        {(deal.title.length > 25
-                                          ? `${deal.title.slice(0, 25)}...`
-                                          : formatTitle(deal.title).toUpperCase())}
-                                        </Typography>
-                                        <Typography sx={{cursor: 'pointer'}} title="Contact name" variant="body2" color="text.secondary">
-                                          {formatName(contact.first_name, contact.last_name)} {contact.suffix}
-                                        </Typography>
-                                      </Box>
-                                      <Box sx={{display: 'flex', width: '10%', flexDirection: 'column'}}>
-                                        {/* <IconButton
-                                          size="small"
-                                          onClick={()=> (navigate(`/app/contacts/${contact.id}`, {
-                                            state: {
-                                              scrollTo: `${deal.id}`,
-                                            },
-                                          }))}
-                                        >
-                                          <InfoIcon titleAccess="Full details" fontSize="small" />
-                                        </IconButton> */}
-                                        <IconButton
-                                          sx={{
-                                            height: 25,
-                                            width: 25,
-                                            mr: '5px',
-                                            '&:hover': { bgcolor: `${stageColor}1f` },
-                                          }}
-                                          size="small"
-                                          onClick={() => handleOpenEdit(deal)}
-                                        >
-                                          <EditIcon titleAccess="Edit deal" sx={{fontSize: '14px'}} />
-                                        </IconButton>
-                                      </Box>
-                                      
-                                    </Box>
-                                    <Box sx={{display: 'flex'}}>
-                                      {deal.notes && (
-                                      <Typography
-                                        title="notes"
-                                        variant="caption"
-                                        color="text.secondary"
-                                        display="block"
-                                        sx={{
-                                          mb: 1,
-                                          wordBreak: 'break-word',
-                                          cursor: 'pointer'
-                                        }}
-                                      >
-                                        {deal.notes.length > 85
-                                        ? `${deal.notes.slice(0, 85)}...`
-                                        : deal.notes}
-                                      </Typography>
-                                      )}
-                                      
-                                    </Box>
-                                  
-                                  
-                                    <Box sx={{
-                                      display: 'flex', 
-                                      alignItems: 'center', 
-                                      
-                                      }}>
-                                      <Typography 
-                                      title="Deal Owner"
-                                      color="text.secondary"
-                                      sx={{ px: 1, py: '1px', 
-                                        border: `1px solid`,
-                                        borderColor: 'primary.main',
-                                        color: 'primary.main',
-                                        borderRadius: 10,
-                                        fontSize: 10,
-                                        fontWeight: 600,
-                                        cursor: 'pointer'
-                                      }}
-                                      >{formatName(deal.owner.profile.first_name, deal.owner.profile.last_name)}</Typography>
-                                    </Box>
-                                    <Box sx={{
-                                      display: 'flex',
-                                      justifyContent: 'space-between',
-                                      alignItems: 'center',
-                                      mt: '6px',
-                                    }}>
-                                      <Box sx={{
-                                        display: 'flex',
-                                        gap: 0.25,
-                                      }}>
-                                        <IconButton sx={{p: '4px', '&:hover': { bgcolor: `${stageColor}1f` }}}>
-                                          <EmailIcon
-                                            titleAccess="Email lead"
-                                            onClick={() => setOpenSnackbar(true)}
-                                            sx={{cursor: 'pointer', color: 'primary.main', fontSize: 17}}
-                                          />
-                                        </IconButton>
-                                        <IconButton sx={{p: '4px', '&:hover': { bgcolor: `${stageColor}1f` }}}>
-                                          <CallIcon
-                                            onClick={() => setOpenSnackbar(true)}
-                                            titleAccess="Call lead"
-                                            sx={{cursor: 'pointer', color: 'primary.main', fontSize: 17}}
-                                          />
-                                        </IconButton>
-                                        <IconButton sx={{p: '4px', '&:hover': { bgcolor: `${stageColor}1f` }}}>
-                                          <SmsIcon
-                                            onClick={() => setOpenSnackbar(true)}
-                                            titleAccess="Message lead"
-                                            sx={{cursor: 'pointer', color: 'primary.main', fontSize: 17}}
-                                          />
-                                        </IconButton>
-                                      </Box>
-                                      <Box 
-                                        sx={{
-                                          backgroundColor: 'primary.main', 
-                                          color: '#FFFFFF', 
-                                          p: '3px 10px', 
-                                          borderRadius: 1.5,
-                                          display: 'flex', 
-                                          cursor: 'pointer',
-                                          alignItems: 'center'}}>
-                                          <Typography variant='body2' title="Deal Value" fontWeight={700} fontSize={13}>
-                                            {formatCurrency(deal.value)}
-                                          </Typography>
-                                      </Box>
-                                      <Box sx={{ display: 'flex' }}>
-                                        
-                                        <IconButton
-                                          size="small"
-                                          color="error"
-                                          sx={{ '&:hover': { bgcolor: 'error.main', color: '#fff' } }}
-                                          onClick={() => handleOpenDelete(deal)}
-                                        >
-                                          <DeleteIcon titleAccess="Delete lead" fontSize="small" />
-                                        </IconButton>
-                                      </Box>
-                                    </Box> 
-                                  </Box>
-                                </Box>
-                                
-                                
-                                
-                              </CardContent>
-                            </Card>
-                          )}
-                        </Draggable>
-                        )
+                    sx={(theme) => ({
+                      minWidth: 300,
+                      flex: 1,
+                      borderRadius: 3,
+                      overflow: 'hidden',
+                      border: `1px solid ${theme.palette.mode === 'dark' ? '#3a3a3a' : '#e3e3e3'}`,
+                      bgcolor: 'background.paper',
                     })}
-                      {provided.placeholder}
+                  >
+                    <Box
+                     sx={(theme) => ({
+                      py: 1.25,
+                      borderTop: `3px solid ${stageColor}`,
+                      borderRadius: '3px 3px 0 0 ',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      width:'100%',
+                      bgcolor: theme.palette.mode === 'dark'
+                        ? '#2c2c2c'
+                        : `${stageColor}14`,
+                    })}
+                    >
+                      <Box sx={{display: 'flex', px: 2, alignItems: 'center',
+                         width: '100%', justifyContent: 'space-between', gap: 1}}>
+                        <Typography fontWeight={700} variant="subtitle1" noWrap>
+                          {stage}
+                        </Typography>
+                        <Typography
+                          title={`Total possible value if won`}
+                          variant="body2"
+                          fontWeight={600}
+                          sx={{ opacity: 0.85, cursor:'pointer', whiteSpace: 'nowrap' }}>
+                          {formatCurrency(stageValue)}
+                        </Typography>
+                        <Chip
+                        title={`${stage} Deals count`}
+                        label={stageDeals.length}
+                        size="small"
+                        sx={{
+                          cursor: 'pointer',
+                          fontWeight: 700,
+                          bgcolor: stageColor,
+                          color: '#fff',
+                          minWidth: 28,
+                        }}
+                        />
+                      </Box>
+                      <Box sx={{px: 2, width: '100%'}}>
+                        <TextField 
+                          size="small"
+                          placeholder="Search this stage..."
+                          value={search[stage]}
+                          onChange={(e) =>
+                            setSearch((prev) => ({
+                              ...prev,
+                              [stage]: e.target.value,
+                            }))
+                          }
+                          slotProps={{
+                            input: {
+                              endAdornment: (
+                                <InputAdornment sx={{paddingRight: '1px'}} position="end">
+                                  <SearchIcon sx={{ borderRadius: 10, p: 0.3, color: '#7a7a7a'}} fontSize="small" />
+                                </InputAdornment>
+                              ),
+                            },
+                          }}
+                          sx={{
+                            borderRadius: 4,
+                            mt: 1,
+                            width: '100%',
+                            backgroundColor: '#ffffff',
+                            color: '#383838',
+                            '& .MuiOutlinedInput-notchedOutline': {
+                              border: '1px solid #e2e2e2',
+                            },
+                            '&:hover .MuiOutlinedInput-notchedOutline': {
+                              borderColor: stageColor,
+                            },
+                            '& .Mui-focused .MuiOutlinedInput-notchedOutline': {
+                              borderColor: stageColor,
+                            },
+                            '& .MuiOutlinedInput-root': {
+                              borderRadius: 3,
+                              paddingRight: '4px !important',
+                              transition: reduceMotion ? 'none' : 'border-color 0.15s ease',
+                            },
+                            '& .MuiInputBase-input': {
+                              py: '6px',
+                              paddingLeft: '12px',
+                              paddingRight: 0,
+                              color: 'black',
+                              fontSize: 13,
+                            },
+                          }}>
+                            <SearchIcon/>
+                        </TextField>
+                      </Box>
                     </Box>
-                  )}
-                </Droppable>
-                </Box>
+
+                    <LazyColumnBody
+                      stage={stage}
+                      deals={stageDeals}
+                      contacts={contacts}
+                      stageColor={stageColor}
+                      scrollRoot={boardScrollRef}
+                      reduceMotion={reduceMotion}
+                      onHoverEnter={handleMouseEnter}
+                      onHoverLeave={handleMouseLeave}
+                      onNavigateContact={(contactId) => navigate(`/app/contacts/${contactId}`)}
+                      onEdit={handleOpenEdit}
+                      onDelete={handleOpenDelete}
+                      onQuickAction={() => setOpenSnackbar(true)}
+                    />
+                  </Box>
+                </Grow>
               )
           })}
           </Box>
@@ -735,6 +921,7 @@ export default function Deals() {
             borderRadius: 3,
           }
         }}
+        transitionDuration={reduceMotion ? 0 : undefined}
         open={isEditing}
         onClose={() => setIsEditing(false)}>
           <Box>
@@ -815,7 +1002,14 @@ export default function Deals() {
                 variant="contained"
                 disableElevation
                 onClick={() => setConfirmEdit(true)}
-                sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 2, px: 2.5 }}
+                sx={{
+                  textTransform: 'none',
+                  fontWeight: 700,
+                  borderRadius: 2,
+                  px: 2.5,
+                  transition: reduceMotion ? 'none' : 'transform 0.1s ease',
+                  '&:active': { transform: reduceMotion ? 'none' : 'scale(0.97)' },
+                }}
                 >
                 Submit
               </Button>
@@ -825,6 +1019,7 @@ export default function Deals() {
       <Dialog
         sx={{position: "absolute"}}
         PaperProps={{ sx: { borderRadius: 3 } }}
+        transitionDuration={reduceMotion ? 0 : undefined}
         open={confirmClose} 
         onClose={() => {
           setConfirmClose(false);
@@ -861,7 +1056,13 @@ export default function Deals() {
                 setConfirmClose(false)
                 handleClose();
               }}
-              sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 2 }}
+              sx={{
+                textTransform: 'none',
+                fontWeight: 700,
+                borderRadius: 2,
+                transition: reduceMotion ? 'none' : 'transform 0.1s ease',
+                '&:active': { transform: reduceMotion ? 'none' : 'scale(0.97)' },
+              }}
             >
               Yes
             </Button>
@@ -870,6 +1071,7 @@ export default function Deals() {
       <Dialog
         sx={{position: "absolute"}}
         PaperProps={{ sx: { borderRadius: 3 } }}
+        transitionDuration={reduceMotion ? 0 : undefined}
         open={confirmEdit} 
         onClose={() => {
           setConfirmEdit(false);
@@ -903,7 +1105,13 @@ export default function Deals() {
                 setIsEditing(false)
                 handleEdit();
               }}
-              sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 2 }}
+              sx={{
+                textTransform: 'none',
+                fontWeight: 700,
+                borderRadius: 2,
+                transition: reduceMotion ? 'none' : 'transform 0.1s ease',
+                '&:active': { transform: reduceMotion ? 'none' : 'scale(0.97)' },
+              }}
             >
               Yes
             </Button>
@@ -911,6 +1119,7 @@ export default function Deals() {
       </Dialog>
       <Dialog
         PaperProps={{ sx: { borderRadius: 3 } }}
+        transitionDuration={reduceMotion ? 0 : undefined}
         open={deleteOpen}
         onClose={() => setDeleteOpen(false)}
       >
@@ -930,7 +1139,13 @@ export default function Deals() {
             variant="contained"
             disableElevation
             onClick={handleDeleteConfirm}
-            sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 2 }}
+            sx={{
+              textTransform: 'none',
+              fontWeight: 700,
+              borderRadius: 2,
+              transition: reduceMotion ? 'none' : 'transform 0.1s ease',
+              '&:active': { transform: reduceMotion ? 'none' : 'scale(0.97)' },
+            }}
           >
             Delete
           </Button>
@@ -946,6 +1161,7 @@ export default function Deals() {
           vertical: 'bottom',
           horizontal: 'left',
         }}
+        transitionDuration={reduceMotion ? 0 : undefined}
         slotProps={{ paper: { sx: { borderRadius: 3, overflow: 'hidden' } } }}
       >
         <Box

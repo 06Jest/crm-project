@@ -46,6 +46,7 @@ import {
   createDirectConversation,
   markConversationAsRead,
   clearError as clearConversationError,
+  updateRealtimeConversation,
 } from "../../store/conversationsSlice";
 
 import {
@@ -53,8 +54,11 @@ import {
   sendMessage,
   editMessage,
   deleteMessage,
-  clearError as clearMessageError,
   clearMessages,
+  clearError as clearMessageError,
+  addRealtimeMessage,
+  updateRealtimeMessage,
+  // removeRealtimeMessage,
 } from "../../store/messagesSlice";
 
 import { CHAT_TARGET_TYPES } from "../../types/chat";
@@ -63,6 +67,7 @@ import type {
   MessageListItem,
   ChatTargetType,
   AddMessage,
+  Message,
 } from "../../types/chat";
 
 import { fetchContactsLists } from "../../store/contactsSlice";
@@ -74,7 +79,7 @@ import { formatName, formatShortTitle, formatTitle } from "../../utils/formatTex
 import { useAuth } from "../../hooks/useAuth";
 import ErrorAlert from "../Error";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "../../services/supabase";
+import { supabase, syncRealtimeAuth } from "../../services/supabase";
 import { fetchOrgMembers } from "../../store/organizationMemberSlice";
 import type { DisplayOrganizationMember } from "../../types/organization.member";
 
@@ -126,6 +131,7 @@ export default function ChatPanel() {
   const navigate = useNavigate();
   const { user, isAgent} = useAuth();
   const userId = user?.id;
+  const memberId = user?.membership?.[0].id;
   
   const {
     items: conversations,
@@ -157,10 +163,23 @@ export default function ChatPanel() {
   const [editingText, setEditingText] = useState("");
   const [selectedProfile, setSelectedProfile] = useState<DisplayOrganizationMember | null>(null);
   const [searchText, setSearchText] = useState("");
+  const [realtimeReady, setRealtimeReady] = useState(false);
   const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null);
-    const [selectedMessage, setSelectedMessage] = useState<MessageListItem | null>();
-    const [openDelete, setOpenDelete] = useState(false);
+  const [selectedMessage, setSelectedMessage] = useState<MessageListItem | null>();
+  const [openDelete, setOpenDelete] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [savingEdit, setSavingEdit] = useState(false);
   const [now, setNow] = useState(() => Date.now());
+
+  const membersMap = useMemo(
+    () => new Map(members.map((m) => [m.id, m])),
+    [members]
+  );
+
+  const conversationsRef = useRef(conversations);
+  useEffect(() => {
+    conversationsRef.current = conversations;
+  }, [conversations]);
 
   useEffect(() => {
     const interval = setInterval(() => setNow(Date.now()), 30000); // tick every 30s
@@ -170,22 +189,53 @@ export default function ChatPanel() {
 
   const needsEntityLists = !cLd || !lLd || !dLd || !cuLd || !pLd;
   
+useEffect(() => {
+  if (!userId) return;
+
+  let cancelled = false;
+
+  const sync = async () => {
+    const success = await syncRealtimeAuth();
+
+    if (!cancelled) {
+      setRealtimeReady(success);
+    }
+  };
+
+  sync();
+
+  return () => {
+    cancelled = true;
+  };
+}, [userId]);
+
 
 useEffect(() => {
-  if (!activeId) return;
+  if (!userId || !memberId || !realtimeReady) return;
 
   const channel = supabase
-    .channel(`messages-${activeId}`)
+    .channel(`conversation-members-${memberId}`)
     .on(
       "postgres_changes",
       {
-        event: "*",
+        event: "UPDATE",
         schema: "public",
-        table: "messages",
-        filter: `conversation_id=eq.${activeId}`,
+        table: "conversation_members",
+        filter: `member_id=eq.${memberId}`,
       },
-      () => {
-        dispatch(fetchMessages(activeId));
+      (payload) => {
+        const row = payload.new as {
+          conversation_id: string;
+          member_id: string;
+          last_read_at: string | null;
+        };
+
+        dispatch(
+          updateRealtimeConversation({
+            id: row.conversation_id,
+            last_read_at: row.last_read_at,
+          })
+        );
       }
     )
     .subscribe();
@@ -193,7 +243,102 @@ useEffect(() => {
   return () => {
     supabase.removeChannel(channel);
   };
-}, [activeId, dispatch]);
+}, [
+  userId,
+  memberId,
+  realtimeReady,
+  dispatch,
+]);
+
+useEffect(() => {
+  if (!activeId || !userId || !realtimeReady) return;
+
+  const channel = supabase
+    .channel(`messages-${activeId}`)
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "messages", filter: `conversation_id=eq.${activeId}` },
+      (payload) => {
+        if (payload.eventType === "INSERT") {
+          const row = payload.new as Message;
+          const senderMember = membersMap.get(row.sender_id);
+
+          if (!senderMember) {
+            dispatch(fetchMessages(activeId));
+            return;
+          }
+
+          dispatch(
+            addRealtimeMessage({
+              ...row,
+              sender: { id: senderMember.id, profile: senderMember.profile },
+            })
+          );
+
+          if (row.sender_id !== memberId) {
+            dispatch(markConversationAsRead(activeId));
+            dispatch(
+              updateRealtimeConversation({
+                id: activeId,
+                last_read_at: new Date().toISOString(),
+              })
+            );
+          }
+        } else if (payload.eventType === "UPDATE") {
+          dispatch(updateRealtimeMessage(payload.new as MessageListItem));
+        }
+      }
+    )
+    .subscribe();
+
+  return () => { supabase.removeChannel(channel); };
+}, [activeId, userId, memberId, realtimeReady, dispatch, membersMap]);
+
+const conversationsRefreshTimeout = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+useEffect(() => {
+  if (!userId || !realtimeReady) return;
+
+  const channel = supabase
+    .channel("conversations-list")
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "messages" },
+      (payload) => {
+        if (payload.eventType === "INSERT") {
+          const row = payload.new as Message;
+          const existing = conversationsRef.current.find((c) => c.id === row.conversation_id);
+
+          if (!existing) {
+            dispatch(fetchConversations());
+            return;
+          }
+
+          dispatch(
+            updateRealtimeConversation({
+              id: existing.id,
+              last_message: { id: row.id, content: row.content, created_at: row.created_at, sender: { id: row.sender_id } },
+              updated_at: row.created_at,
+              ...(row.sender_id === memberId ? { last_read_at: row.created_at } : {}),
+            })
+          );
+          return;
+        }
+
+        clearTimeout(conversationsRefreshTimeout.current);
+        conversationsRefreshTimeout.current = setTimeout(
+          () => dispatch(fetchConversations()),
+          300
+        );
+      }
+    )
+    .subscribe();
+
+  return () => {
+    clearTimeout(conversationsRefreshTimeout.current);
+    supabase.removeChannel(channel);
+  };
+}, [userId, realtimeReady, dispatch]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -250,10 +395,10 @@ useEffect(() => {
     if (conversation.type === "announcement") return "Announcements";
     if (conversation.type === "organization") return "Organization";
 
-    return conversation.other_participant ? 
-    `${conversation.other_participant.fist_name} 
-    ${conversation.other_participant.last_name}` :
-     "DM";
+    return conversation.other_participant
+    ? `${conversation.other_participant.profile.first_name} 
+      ${conversation.other_participant.profile.last_name}`
+    : "DM";
   };
 
   const handleOpenDelete = (message: MessageListItem) => {
@@ -263,17 +408,14 @@ useEffect(() => {
 
   const isUnread = useCallback(
     (conversation: ConversationListItem) => {
+      if (conversation.id === activeId) return false; 
       if (!conversation.last_message) return false;
-      if (conversation.last_message.sender.id === userId) return false;
-
-      if (!conversation.my_last_read_at) return true;
-
-      return (
-        new Date(conversation.last_message.created_at).getTime() >
-        new Date(conversation.my_last_read_at).getTime()
-      );
+      if (conversation.last_message.sender.id === memberId) return false;
+      if (!conversation.last_read_at) return true;
+      return new Date(conversation.last_message.created_at).getTime() >
+            new Date(conversation.last_read_at).getTime();
     },
-    [userId]
+    [memberId, activeId]
   );
 
 
@@ -299,9 +441,6 @@ useEffect(() => {
 );
 
 useEffect(() => {
-  console.log("CONVERSATIONS:", conversations);
-  console.log("ANNOUNCEMENTS:", grouped.announcements);
-  console.log("ORGANIZATION:", grouped.organization);
 }, [conversations, grouped]);
 
   const contactsMap = useMemo(
@@ -327,54 +466,40 @@ useEffect(() => {
   const getValue = (
     type: ChatTargetType,
     id: string
-) => {
-
-    switch(type){
-
-        case "contact": {
-            const c = contactsMap.get(id);
-            return c
-                ? formatName(c.first_name, c.last_name)
-                : "";
-        }
-
-        case "lead": {
-            const l = leadsMap.get(id);
-            return l
-                ? formatName(l.first_name, l.last_name)
-                : "";
-        }
-
-        case "deal": {
-
-            const deal = dealsMap.get(id);
-
-            if(!deal) return "";
-
-            const contact = contactsMap.get(deal.contact_id);
-
-            return contact
-                ? `${formatName(contact.first_name, contact.last_name)} 
-                ${formatShortTitle(deal.title)}`
-                : "";
-        }
-
-        case "customer": {
-
-            const customer = customersMap.get(id);
-
-            if(!customer) return "";
-
-            const contact = contactsMap.get(customer.contact_id);
-
-            return contact
-                ? formatName(contact.first_name, contact.last_name)
-                : "";
-        }
-
-        default:
-            return "";
+  ) => {
+  switch(type){
+    case "contact": {
+      const c = contactsMap.get(id);
+      return c
+        ? formatName(c.first_name, c.last_name)
+        : "";
     }
+    case "lead": {
+      const l = leadsMap.get(id);
+      return l
+        ? formatName(l.first_name, l.last_name)
+        : "";
+    }
+    case "deal": {
+      const deal = dealsMap.get(id);
+      if(!deal) return "";
+      const contact = contactsMap.get(deal.contact_id);
+      return contact
+        ? `${formatName(contact.first_name, contact.last_name)} 
+        ${formatShortTitle(deal.title)}`
+        : "";
+    }
+    case "customer": {
+      const customer = customersMap.get(id);
+      if(!customer) return "";
+      const contact = contactsMap.get(customer.contact_id);
+      return contact
+        ? formatName(contact.first_name, contact.last_name)
+        : "";
+    }
+    default:
+    return "";
+  }
 }
 
   const openConversation = async (conversation: ConversationListItem) => {
@@ -385,19 +510,25 @@ useEffect(() => {
     setEditingId(null);
     setMessageText("");
 
+    dispatch(
+      updateRealtimeConversation({
+        id: conversation.id,
+        last_read_at: new Date().toISOString(),
+      })
+    );
+
     try {
       await dispatch(markConversationAsRead(conversation.id)).unwrap();
     } catch {
-      // Non-fatal — local read state already reflects the open
+      // redux error
     }
   };
 
-  const openOrCreateConversation = async (profileId: string) => {
-  // Does one already exist?
+  const openOrCreateConversation = async (memberId: string) => {
     const existing = conversations.find(
       (c) =>
         c.type === "direct" &&
-        c.other_participant?.id === profileId
+        c.other_participant?.id === memberId
     );
 
     if (existing) {
@@ -407,7 +538,7 @@ useEffect(() => {
 
     try {
       const conversation = await dispatch(
-        createDirectConversation(profileId)
+        createDirectConversation(memberId)
       ).unwrap();
 
       await openConversation(conversation as ConversationListItem);
@@ -454,6 +585,8 @@ useEffect(() => {
   const handleSend = async () => {
     if (!activeId || !canSend) return;
 
+    const conversationId = activeId;
+
     const payload: AddMessage = {
       content: messageText.trim(),
       entity_type: entityType === "none" ? null : entityType,
@@ -461,15 +594,28 @@ useEffect(() => {
     };
 
     try {
-      await dispatch(sendMessage({ conversationId: activeId, message: payload })).unwrap();
+      const sent = await dispatch(sendMessage({ conversationId, message: payload })).unwrap();
       setMessageText("");
+      dispatch(updateRealtimeConversation({
+        id: conversationId,
+        last_message: {
+          id: sent.id,
+          content: sent.content,
+          created_at: sent.created_at,
+          sender: { id: sent.sender_id ?? sent.sender.id },
+        },
+        updated_at: sent.created_at,
+        last_read_at: sent.created_at,
+      }));
+
+      await dispatch(markConversationAsRead(conversationId)).unwrap();
     } catch {
-      // Error surfaced via msgError
+      // Error in redux
     }
   };
 
   const startEdit = (message: MessageListItem) => {
-    if (message.sender_id !== userId) return;
+    if (message.sender_id !== memberId) return;
 
     setEditingId(message.id);
     setEditingText(message.content);
@@ -483,21 +629,56 @@ useEffect(() => {
   const saveEdit = async () => {
     if (!editingId || !editingText.trim()) return;
 
+    const id = editingId;
+
     try {
-      await dispatch(editMessage({ id: editingId, content: editingText.trim() })).unwrap();
+      setSavingEdit(true);
+
+      await dispatch(
+        editMessage({
+          id,
+          content: editingText.trim(),
+        })
+      ).unwrap();
+
       cancelEdit();
     } catch {
       // Error surfaced via msgError
+    } finally {
+      setSavingEdit(false);
     }
   };
 
   const removeMessage = async (id: string) => {
     try {
+      setDeletingId(id);
+
       await dispatch(deleteMessage(id)).unwrap();
+
+      setOpenDelete(false);
+      setSelectedMessage(null);
     } catch {
       // Error surfaced via msgError
+    } finally {
+      setDeletingId(null);
     }
   };
+
+
+  const MESSAGE_MODIFY_WINDOW_MS = 15 * 60 * 1000;
+  const CLOCK_SKEW_TOLERANCE_MS = 60 * 1000;
+
+  const canModifyMessage = (message: MessageListItem) => {
+    if (message.deleted_at) return false;
+    if (message.sender_id !== memberId) return false;
+
+    const age = now - new Date(message.created_at).getTime();
+
+    return age < MESSAGE_MODIFY_WINDOW_MS &&
+          age > -CLOCK_SKEW_TOLERANCE_MS;
+  };
+
+  
 
   const renderConversationRow = (conversation: ConversationListItem) => {
     const unread = isUnread(conversation);
@@ -525,10 +706,10 @@ useEffect(() => {
     } else if (conversation.other_participant?.id) {
       avatar = (
         <Avatar
-          src={conversation.other_participant.avatar_url ?? undefined}
+          src={conversation.other_participant.profile.avatar_url ?? undefined}
           sx={{ bgcolor: stringToAvatarColor(displayName) }}
         >
-         {!conversation.other_participant.avatar_url && (
+         {!conversation.other_participant.profile.avatar_url && (
            getInitials(displayName)
           )}
         </Avatar>
@@ -631,7 +812,7 @@ useEffect(() => {
             inputValue={searchText}
             size="small"
             options={[...members]
-            .filter((p) => p.profile.id !== userId)
+            .filter((p) => p.id !== memberId)
             .sort((a, b) =>
               formatName(a.profile.first_name, a.profile.last_name).localeCompare(formatName(b.profile.first_name, b.profile.last_name))
             )}
@@ -749,7 +930,7 @@ useEffect(() => {
             </IconButton>
 
             <Avatar
-              src={activeConversation.type === "direct" ? activeConversation.other_participant?.avatar_url ?? undefined : undefined}
+              src={activeConversation.type === "direct" ? activeConversation.other_participant?.profile.avatar_url ?? undefined : undefined}
               sx={{
                 width: 32,
                 height: 32,
@@ -766,7 +947,7 @@ useEffect(() => {
                 <CampaignIcon fontSize="small" />
               ) : activeConversation.type === "organization" ? (
                 <BusinessIcon fontSize="small" />
-              ) : !activeConversation.other_participant?.avatar_url ? (
+              ) : !activeConversation.other_participant?.profile.avatar_url ? (
                 getInitials(getDisplayName(activeConversation))
               ) : null}
             </Avatar>
@@ -836,9 +1017,9 @@ useEffect(() => {
               </Typography>
             ) : (
               messages.map((message) => {
-                const isOwn = message.sender.profile.id === userId;
                 const isEditing = editingId === message.id;
-
+                const isOwn = message.sender.id === memberId;
+                const canModify = canModifyMessage(message);
                 return (
                   <Box
                     key={message.id}
@@ -852,7 +1033,7 @@ useEffect(() => {
                     onMouseEnter={() => setHoveredMessageId(message.id)}
                     onMouseLeave={() => setHoveredMessageId(null)}
                   > 
-                    {isOwn && !isEditing && (
+                    {isOwn && !isEditing &&(
                     <Box
                       sx={{
                         display: "flex",
@@ -875,7 +1056,7 @@ useEffect(() => {
                       </Typography> 
 
                       <>
-                        {now - new Date(message.created_at).getTime() < 15 * 60 * 1000 && (
+                        {now - new Date(message.created_at).getTime() < 15 * 60 * 1000 && message.deleted_at === null && (
                           <IconButton
                             size="small"
                             sx={{ p: "3px", "&:hover": { bgcolor: "action.hover" } }}
@@ -884,16 +1065,29 @@ useEffect(() => {
                             <EditIcon sx={{ fontSize: '0.85rem' }} />
                           </IconButton>
                         )}
+                        {isOwn && !isEditing && canModify && !message.deleted_at &&(
                         <IconButton
                           size="small"
-                          sx={{ p: "3px", "&:hover": { bgcolor: "action.hover", color: "error.main" } }}
+                          disabled={deletingId === message.id}
+                          sx={{
+                            p: "3px",
+                            "&:hover": {
+                              bgcolor: "action.hover",
+                              color: "error.main",
+                            },
+                          }}
                           onClick={(e) => {
-                                e.stopPropagation();
-                                handleOpenDelete(message)
-                              }}
+                            e.stopPropagation();
+                            handleOpenDelete(message);
+                          }}
                         >
-                          <DeleteIcon sx={{ fontSize: '0.85rem' }} />
+                          {deletingId === message.id ? (
+                            <CircularProgress size={14} />
+                          ) : (
+                            <DeleteIcon sx={{ fontSize: "0.85rem" }} />
+                          )}
                         </IconButton>
+                        )}
                       </>
                     </Box>
                     )}
@@ -903,21 +1097,21 @@ useEffect(() => {
 
                       <Box sx={{display: 'flex', justifySelf: isOwn ?'end' : 'start', alignItems: 'flex-end'}}>
                         {!isOwn && (
-                          <Avatar
-                            title={formatName(message.sender.profile.first_name, message.sender.profile.last_name)}
-                            sx={{
-                              cursor: 'pointer',
-                              height: 28,
-                              width: 28,
-                              mr: 0.75,
-                              fontSize: 11,
-                              fontWeight: 700,
-                              bgcolor: stringToAvatarColor(formatName(message.sender.profile.first_name, message.sender.profile.last_name)),
-                              flexShrink: 0,
-                            }}
-                          >
-                            {getInitials(formatName(message.sender.profile.first_name, message.sender.profile.last_name))}
-                          </Avatar>
+                        <Avatar
+                          title={formatName(message.sender.profile.first_name, message.sender.profile.last_name)}
+                          sx={{
+                            cursor: 'pointer',
+                            height: 28,
+                            width: 28,
+                            mr: 0.75,
+                            fontSize: 11,
+                            fontWeight: 700,
+                            bgcolor: stringToAvatarColor(formatName(message.sender.profile.first_name, message.sender.profile.last_name)),
+                            flexShrink: 0,
+                          }}
+                        >
+                          {getInitials(formatName(message.sender.profile.first_name, message.sender.profile.last_name))}
+                        </Avatar>
                         )}
                         <Paper
                           elevation={0}
@@ -947,6 +1141,7 @@ useEffect(() => {
                               <TextField
                                 size="small"
                                 variant="standard"
+                                disabled={savingEdit}
                                 multiline
                                 fullWidth
                                 value={editingText}
@@ -972,11 +1167,33 @@ useEffect(() => {
                                 autoFocus
                               />
                               <Box sx={{display: 'flex', justifyContent: 'flex-end', width: '100%'}}>
-                                <IconButton sx={{p: '3px'}}  onClick={saveEdit}>
-                                  <CheckIcon sx={{fontSize: '0.85rem', color: 'white'}} />
+                                <IconButton
+                                  sx={{ p: "3px" }}
+                                  disabled={savingEdit}
+                                  onClick={saveEdit}
+                                >
+                                  {savingEdit ? (
+                                    <CircularProgress size={14} sx={{ color: "white" }} />
+                                  ) : (
+                                    <CheckIcon
+                                      sx={{
+                                        fontSize: "0.85rem",
+                                        color: "white",
+                                      }}
+                                    />
+                                  )}
                                 </IconButton>
-                                <IconButton  sx={{p: '3px'}} onClick={cancelEdit}>
-                                  <CloseIcon sx={{fontSize: '0.85rem', color: 'white'}} />
+                                <IconButton
+                                  sx={{ p: "3px" }}
+                                  disabled={savingEdit}
+                                  onClick={cancelEdit}
+                                >
+                                  <CloseIcon
+                                    sx={{
+                                      fontSize: "0.85rem",
+                                      color: "white",
+                                    }}
+                                  />
                                 </IconButton>
                               </Box>
                             </Box>
@@ -988,44 +1205,44 @@ useEffect(() => {
                           )} 
                                   
                           {message.entity_type && message.entity_id && (
-                            <Paper
-                              onClick={(e) => {
-                                if (message.entity_type !== 'customer' && message.entity_type !== 'contact') return
-                                e.stopPropagation();
-                                navigate(`/app/${message.entity_type}s/${message.entity_id}`)
-                                }}
-                                title={`View ${getValue(message.entity_type, message.entity_id)} Details`}
-                                elevation={0} 
-                                sx={{
-                                display: 'flex',
-                                width: "fit-content",
-                                maxWidth: "100%", 
-                                alignItems: 'center',
-                                justifyContent: 'start', 
-                                bgcolor: (theme: Theme) => alpha(theme.palette.text.primary, isOwn ? 0.12 : 0.045),
-                                color: isOwn ? "primary.contrastText" : "text.primary",
-                                mt: 1,  
-                                borderRadius: 2, 
-                                p: 1, 
-                                cursor:'pointer', 
-                                "&:hover": { bgcolor: (theme: Theme) => alpha(theme.palette.text.primary, isOwn ? 0.2 : 0.08) }
-                              }}>
-                              <Box sx={{ height: 34, width: 34, borderRadius: "50%", bgcolor: (theme: Theme) => alpha(theme.palette.text.primary, 0.08), mr: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', flexShrink: 0 }}>
-                                <PersonIcon sx={{ fontSize: '18px'}}/>
-                              </Box>
-                              <Box 
+                          <Paper
+                            onClick={(e) => {
+                              if (message.entity_type !== 'customer' && message.entity_type !== 'contact') return
+                              e.stopPropagation();
+                              navigate(`/app/${message.entity_type}s/${message.entity_id}`)
+                              }}
+                              title={`View ${getValue(message.entity_type, message.entity_id)} Details`}
+                              elevation={0} 
                               sx={{
-                                flex: "none",
-                                minWidth: 0,
-                              }}>
-                                <Typography sx={{ fontSize: "0.7rem", fontWeight: 700, opacity: 0.7, letterSpacing: 0.3 }}>
-                                {message.entity_type.toUpperCase()}
-                                </Typography>
-                                <Typography sx={{ fontSize: "0.8rem", fontWeight: 600, whiteSpace: "pre-line", mt: "1px" }}>
-                                {getValue(message.entity_type, message.entity_id)}
-                                </Typography>
-                              </Box>
-                            </Paper>
+                              display: 'flex',
+                              width: "fit-content",
+                              maxWidth: "100%", 
+                              alignItems: 'center',
+                              justifyContent: 'start', 
+                              bgcolor: (theme: Theme) => alpha(theme.palette.text.primary, isOwn ? 0.12 : 0.045),
+                              color: isOwn ? "primary.contrastText" : "text.primary",
+                              mt: 1,  
+                              borderRadius: 2, 
+                              p: 1, 
+                              cursor:'pointer', 
+                              "&:hover": { bgcolor: (theme: Theme) => alpha(theme.palette.text.primary, isOwn ? 0.2 : 0.08) }
+                            }}>
+                            <Box sx={{ height: 34, width: 34, borderRadius: "50%", bgcolor: (theme: Theme) => alpha(theme.palette.text.primary, 0.08), mr: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', flexShrink: 0 }}>
+                              <PersonIcon sx={{ fontSize: '18px'}}/>
+                            </Box>
+                            <Box 
+                            sx={{
+                              flex: "none",
+                              minWidth: 0,
+                            }}>
+                              <Typography sx={{ fontSize: "0.7rem", fontWeight: 700, opacity: 0.7, letterSpacing: 0.3 }}>
+                              {message.entity_type.toUpperCase()}
+                              </Typography>
+                              <Typography sx={{ fontSize: "0.8rem", fontWeight: 600, whiteSpace: "pre-line", mt: "1px" }}>
+                              {getValue(message.entity_type, message.entity_id)}
+                              </Typography>
+                            </Box>
+                          </Paper>
                           )}
                         </Paper>
                       </Box>
@@ -1039,20 +1256,22 @@ useEffect(() => {
                         alignItems: "center",
                         gap: 0.5,
                         ml: 1,
-                        alignSelf: "flex-end",
+                        alignSelf: "center",
                         opacity: hoveredMessageId === message.id ? 1 : 0,
                         transition: "opacity 0.15s ease",
                       }}
                     >
-                      <Typography sx={{ fontSize: "0.72rem", opacity: 0.5, whiteSpace: "nowrap" }}>
-                        {new Date(message.created_at).toLocaleString([], {
-                          month: "short",
-                          day: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                        {message.edited_at ? " (edited)" : ""}
-                      </Typography> 
+                      <Box sx={{display: 'flex', alignItems: 'center',}}>
+                        <Typography sx={{ fontSize: "0.72rem", opacity: 0.5, whiteSpace: "nowrap", }}>
+                          {new Date(message.created_at).toLocaleString([], {
+                            month: "short",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                          {message.edited_at ? " (edited)" : ""}
+                        </Typography>
+                      </Box> 
                     </Box>
                     )}
                   </Box>
@@ -1065,7 +1284,7 @@ useEffect(() => {
           <Divider />
           {isAgent && activeConversation.type === 'announcement' ? (
           <Box sx={{ mt: 1, mb: 0.5, textAlign: 'center', fontSize: '0.8rem', color: 'text.secondary', py: 1 }}>
-              Only Admins can Chat in Announcement
+              Only Owner / Managers can add message here
           </Box>
           ) : (
             <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, p: 0.75 }}>
@@ -1219,13 +1438,13 @@ useEffect(() => {
             variant="contained"
             color="error"
             disableElevation
+            disabled={deletingId === selectedMessage?.id}
             onClick={() => {
               if (!selectedMessage) return;
-              removeMessage(selectedMessage?.id)
-              setOpenDelete(false);
+              removeMessage(selectedMessage.id);
             }}
           >
-            Delete
+            {deletingId === selectedMessage?.id ? "Deleting" : "Delete"}
           </Button>
         </DialogActions>
       </Dialog>

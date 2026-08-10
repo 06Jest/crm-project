@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "../../../store/store";
-// import { useAuthContext } from '../../../hooks/useAuthContext'
+
 
 import {
   updateLead,
@@ -75,16 +75,39 @@ const PRIORITY_COLORS: Record<Priority, string> = {
 
 // --- Presentation-only helpers/styles. These do not touch lead data or app
 // logic — they only decide how existing fields are laid out and labeled. ---
+
+// How many cards render per column before the rest lazy-load in on scroll.
+const LAZY_CHUNK = 8;
+
+const CARD_TRANSITION =
+  'transform 0.2s cubic-bezier(0.4,0,0.2,1), box-shadow 0.2s cubic-bezier(0.4,0,0.2,1), border-color 0.2s ease';
+
 const fieldSx = {
+  '& .MuiOutlinedInput-root': {
+    borderRadius: 1.5,
+    transition: 'border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease',
+  },
   '& .MuiInputBase-input': { py: '6px', fontSize: 14 },
-  '& .Mui-disabled': { opacity: 0.85 },
+  '& .Mui-disabled': { opacity: 1 },
+  '& .MuiOutlinedInput-root.Mui-disabled': { backgroundColor: 'transparent' },
+  '& .MuiOutlinedInput-root.Mui-disabled .MuiOutlinedInput-notchedOutline': { borderColor: 'transparent' },
+  '& .MuiOutlinedInput-root.Mui-disabled .MuiInputBase-input': { color: 'text.secondary' },
 } as const;
 
 function SectionHeader({ icon, children }: { icon: ReactNode; children: ReactNode }) {
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 2, mb: 0.25 }}>
       {icon}
-      <Typography variant="subtitle2" fontWeight={700} sx={{ whiteSpace: 'nowrap' }}>
+      <Typography
+        variant="caption"
+        sx={{
+          fontWeight: 700,
+          letterSpacing: '0.07em',
+          textTransform: 'uppercase',
+          color: 'text.secondary',
+          whiteSpace: 'nowrap',
+        }}
+      >
         {children}
       </Typography>
       <Divider sx={{ flex: 1 }} />
@@ -106,11 +129,74 @@ function PriorityBadge({ priority }: { priority: Priority }) {
         fontSize: 9,
         fontWeight: 700,
         color,
-        borderColor: alpha(color, 0.6),
+        bgcolor: alpha(color, 0.08),
+        borderColor: alpha(color, 0.5),
+        transition: 'background-color 0.2s ease',
         "& .MuiChip-label": { px: 0.5 },
       }}
     />
   );
+}
+
+// Fades a card in the first time it scrolls into view. A lightweight stand-in
+// for image lazy-loading, since these cards render icon avatars, not photos.
+function RevealOnScroll({ children, delay = 0 }: { children: ReactNode; delay?: number }) {
+  const ref = useRef<HTMLDivElement | null>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.12 }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <Box
+      ref={ref}
+      sx={{
+        opacity: visible ? 1 : 0,
+        transform: visible ? 'translateY(0)' : 'translateY(6px)',
+        transition: `opacity 0.35s ease ${delay}ms, transform 0.35s ease ${delay}ms`,
+      }}
+    >
+      {children}
+    </Box>
+  );
+}
+
+// Sentinel that reveals the next chunk of cards in a column once it scrolls
+// into view — keeps long columns from rendering everything up front.
+function LoadMoreSentinel({ onVisible }: { onVisible: () => void }) {
+  const ref = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) onVisible();
+      },
+      { rootMargin: '160px' }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [onVisible]);
+
+  return <Box ref={ref} aria-hidden sx={{ height: 1 }} />;
 }
 
 export default function Leads() {
@@ -120,7 +206,7 @@ export default function Leads() {
   // const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [edit, setEdit] = useState(false);
-  
+  const [openCloseConfirmation, setOpenCloseConfirmation] = useState(false);
   const [dropResult, setDropResult] = useState<DropResult | null>(null)
   const [openDelete, setOpenDelete] = useState(false);
   const [invalid, setInvalid] = useState('');
@@ -133,6 +219,19 @@ export default function Leads() {
   const [anchorEl, setAnchorEl] = useState<HTMLDivElement | null>(null);
   const [hoveredLead, setHoveredLead] = useState<Lead | null>(null);
   const [openSnackbar, setOpenSnackbar] = useState(false);
+
+  // Presentation-only: how many cards per column are currently rendered.
+  // Purely controls lazy-loading of the list — never touches `leads` itself.
+  const [visibleCounts, setVisibleCounts] = useState<Record<LeadStatus, number>>({
+    New: LAZY_CHUNK,
+    Contacted: LAZY_CHUNK,
+    Qualified: LAZY_CHUNK,
+    Closed: LAZY_CHUNK,
+  });
+
+  const revealMore = useCallback((status: LeadStatus) => {
+    setVisibleCounts((prev) => ({ ...prev, [status]: prev[status] + LAZY_CHUNK }));
+  }, []);
   
   const [search, setSearch] = useState<Record<LeadStatus, string>>({
     New: '',
@@ -311,6 +410,44 @@ export default function Leads() {
     
   };
 
+  const handleOpenCloseConfirmation = () => {
+  setOpenCloseConfirmation(true);
+};
+
+const handleCloseCloseConfirmation = () => {
+  setOpenCloseConfirmation(false);
+  setDropResult(null);
+};
+
+const handleConfirmCloseLead = async () => {
+  if (!dropResult) return;
+
+  const leadId = dropResult.draggableId;
+  const newStatus = dropResult.destination?.droppableId as LeadStatus;
+
+  if (!newStatus) return;
+
+  try {
+    dispatch(
+      moveLeadLocally({
+        id: leadId,
+        newStatus,
+      })
+    );
+
+    await dispatch(
+      updateLeadStatus({
+        id: leadId,
+        status: newStatus,
+      })
+    ).unwrap();
+
+    handleCloseCloseConfirmation();
+  } catch {
+    // Error in state
+  }
+};
+
   const handleMouseEnter = (
     event: React.MouseEvent<HTMLDivElement>,
     lead: Lead
@@ -386,16 +523,26 @@ export default function Leads() {
       return;
     }
 
-    dispatch(moveLeadLocally({ id: leadId, newStatus }));
+    if (newStatus === 'Closed') {
+        setDropResult(result);
+        handleOpenCloseConfirmation();
+        return;
+      }
 
-    if (newStatus === 'Qualified') {
-      handleOpenAddContact(result);
-    } else {
-      await dispatch(updateLeadStatus({ id: leadId, status: newStatus })).unwrap();
-    }
-  };
+      dispatch(moveLeadLocally({ id: leadId, newStatus }));
+
+      if (newStatus === 'Qualified') {
+        handleOpenAddContact(result);
+      } else {
+        await dispatch(
+          updateLeadStatus({
+            id: leadId,
+            status: newStatus,
+          })
+        ).unwrap();
+      }
+  }
   
-
   const getLeadsByStatus = (status: LeadStatus) => {
     const query = search[status].toLowerCase().trim();
 
@@ -423,7 +570,7 @@ export default function Leads() {
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', mt: 20, height: 1200 }}>
-        <CircularProgress />
+        <CircularProgress size={36} thickness={3.6} sx={{ color: 'primary.main', animationDuration: '900ms' }} />
       </Box>
     );
   }
@@ -450,7 +597,13 @@ export default function Leads() {
             disableElevation
             startIcon={<AddIcon />}
             onClick={() => navigate(`/app/addlead`)}
-            sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 2 }}
+            sx={{
+              textTransform: 'none',
+              fontWeight: 700,
+              borderRadius: 2,
+              transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+              '&:hover': { transform: 'translateY(-1px)', boxShadow: '0 6px 14px rgba(0,0,0,0.12)' },
+            }}
           >
             Add Lead
           </Button>
@@ -465,8 +618,28 @@ export default function Leads() {
         )}
       </Box>
       <DragDropContext onDragEnd={handleDragEnd}>
-        <Box sx={{display: 'flex', gap: 2, pb: 2, overflow: 'auto', width: '80vw', maxWidth: 1400, mb: 2,  p: '10px', borderRadius: 2, mx: 'auto' }}>
-          {LEAD_STATUSES.map((column) =>(
+        <Box
+          sx={{
+            display: 'flex',
+            gap: 2,
+            pb: 2,
+            overflow: 'auto',
+            width: '80vw',
+            maxWidth: 1400,
+            mb: 2,
+            p: '10px',
+            borderRadius: 2,
+            mx: 'auto',
+            '&::-webkit-scrollbar': { height: 8 },
+            '&::-webkit-scrollbar-thumb': { backgroundColor: 'rgba(0,0,0,0.15)', borderRadius: 4 },
+            '&::-webkit-scrollbar-track': { backgroundColor: 'transparent' },
+          }}
+        >
+          {LEAD_STATUSES.map((column) => {
+            const columnLeads = getLeadsByStatus(column);
+            const visibleLeads = columnLeads.slice(0, visibleCounts[column]);
+
+            return (
             <Box
               key={column}
               sx={{ width: '100%' ,minWidth: 260, flex: 1}}
@@ -483,6 +656,8 @@ export default function Leads() {
                   bgcolor: theme.palette.mode === 'dark'
                     ? 'grey.800'
                     : 'grey.200',
+                  borderBottom: '1px solid',
+                  borderColor: 'divider',
                 })}
                 >
                 <Typography fontWeight={700} variant="subtitle1" sx={{ whiteSpace: 'nowrap' }}>
@@ -512,8 +687,12 @@ export default function Leads() {
                     minWidth: 0,
                     bgcolor: 'background.paper',
                     borderRadius: 5,
+                    transition: 'box-shadow 0.2s ease',
                     '& .MuiOutlinedInput-notchedOutline': {
                       border: 'none',
+                    },
+                    '& .MuiInputBase-root.Mui-focused': {
+                      boxShadow: (t) => `0 0 0 2px ${alpha(t.palette.primary.main, 0.25)}`,
                     },
                     '& .MuiInputBase-input': {
                       py: '4px',
@@ -522,7 +701,7 @@ export default function Leads() {
                   }}
                 />
                 <Chip
-                  label={getLeadsByStatus(column).length}
+                  label={columnLeads.length}
                   size="small"
                   sx={{ fontWeight: 700, bgcolor: 'background.paper' }}
                   />
@@ -542,29 +721,42 @@ export default function Leads() {
                       p: 1,
                       transition: 'background-color 0.2s ease',
                       height: 850,
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      borderTop: 0,
+                      '&::-webkit-scrollbar': { width: 6 },
+                      '&::-webkit-scrollbar-thumb': { backgroundColor: 'rgba(0,0,0,0.12)', borderRadius: 3 },
                     }}
                   >
-                    {getLeadsByStatus(column).map((lead, index) => (
+                    {visibleLeads.map((lead, index) => (
                       <Draggable
                         key={lead.id}
                         draggableId={lead.id}
                         index={index}
                       >
                         {(provided, snapshot) => (
+                          <RevealOnScroll delay={Math.min(index, 6) * 35}>
                           <Card
                             ref={provided.innerRef}
                             {...provided.draggableProps}
                             {...provided.dragHandleProps}
                             sx={{
                               mb: 1.25,
-                              borderRadius: 2,
+                              borderRadius: 2.5,
                               border: '1px solid',
                               borderColor: snapshot.isDragging ? 'primary.main' : 'divider',
-                              boxShadow: snapshot.isDragging ? 6 : 0,
+                              boxShadow: snapshot.isDragging
+                                ? '0 10px 24px rgba(0,0,0,0.16)'
+                                : '0 1px 2px rgba(0,0,0,0.05)',
                               cursor: 'grab',
-                              opacity: snapshot.isDragging ? 0.9 : 1,
-                              transition: 'box-shadow 0.2s ease, border-color 0.2s ease',
-                              '&:hover': { borderColor: 'primary.main' },
+                              opacity: snapshot.isDragging ? 0.96 : 1,
+                              transform: snapshot.isDragging ? 'scale(1.01)' : 'scale(1)',
+                              transition: CARD_TRANSITION,
+                              '&:hover': {
+                                borderColor: 'primary.main',
+                                boxShadow: '0 6px 16px rgba(0,0,0,0.08)',
+                                transform: 'translateY(-2px)',
+                              },
                             }}
                           >
                             <CardContent sx={{ p: 1.25, '&:last-child': { pb: 1.25 }, display: 'flex', gap: 1.25 }}>
@@ -578,6 +770,8 @@ export default function Leads() {
                                   cursor: 'pointer',
                                   bgcolor: 'action.hover',
                                   flexShrink: 0,
+                                  transition: 'transform 0.2s ease, background-color 0.2s ease',
+                                  '&:hover': { transform: 'scale(1.06)', bgcolor: 'action.selected' },
                                 }}
                               >
                                 <PersonIcon sx={{ opacity: 0.65, color: 'text.secondary' }}/>
@@ -590,6 +784,7 @@ export default function Leads() {
                                     cursor: 'pointer',
                                     fontSize: 13,
                                     fontWeight: 700,
+                                    letterSpacing: '0.01em',
                                     overflow: 'hidden',
                                     textOverflow: 'ellipsis',
                                     display: '-webkit-box',
@@ -640,7 +835,10 @@ export default function Leads() {
                                 <Stack direction="row" spacing={0.75} sx={{ mt: 0.75, flexWrap: 'wrap', rowGap: 0.5 }}>
                                   <Chip
                                     title="Deal Owner"
-                                    label={formatName(lead.owner.profile.first_name, lead.owner.profile.last_name)}
+                                    label={formatName(
+                                      lead.owner?.profile?.first_name ?? "Unknown",
+                                      lead.owner?.profile?.last_name ?? "Owner"
+                                    )}
                                     size="small"
                                     variant="outlined"
                                     color="primary"
@@ -692,24 +890,30 @@ export default function Leads() {
                               
                             </CardContent>
                           </Card>
+                          </RevealOnScroll>
                         )}
                       </Draggable>
                     ))}
                     {provided.placeholder}
+                    {visibleLeads.length < columnLeads.length && (
+                      <LoadMoreSentinel onVisible={() => revealMore(column)} />
+                    )}
                   </Box>
                 )}
               </Droppable>
             </Box>
-          ))}
+            );
+          })}
         </Box>
       </DragDropContext>
       <Dialog
         PaperProps={{
           sx: {
             position: "absolute",
-            backgroundColor: themeMode === 'dark' ? '#30303065' : '#ffffffa9',
+            backgroundColor: 'background.paper',
             borderRadius: 3,
             minWidth: 340,
+            boxShadow: '0 20px 40px rgba(0,0,0,0.18)',
           },
         }}
         open={openDelete}
@@ -732,14 +936,19 @@ export default function Leads() {
             Are you sure you want to delete this lead: <b>{selectedLead?.first_name} {selectedLead?.last_name} {selectedLead?.suffix}?</b>
           </DialogContent>
           <DialogActions sx={{ px: 3, pb: 2 }}>
-            <Button onClick={handleCloseDelete} sx={{ textTransform: 'none' }}>
+            <Button onClick={handleCloseDelete} sx={{ textTransform: 'none', borderRadius: 2 }}>
               Cancel
             </Button>
             <Button 
               variant="contained"
               disableElevation
               color="error"
-              sx={{ textTransform: 'none' }}
+              sx={{
+                textTransform: 'none',
+                borderRadius: 2,
+                transition: 'transform 0.15s ease',
+                '&:hover': { transform: 'translateY(-1px)' },
+              }}
               onClick={() => {
                 if (selectedLead) {
                   handleDelete(selectedLead.id);
@@ -751,7 +960,7 @@ export default function Leads() {
               </Button>
           </DialogActions>
         </Dialog>
-        <Dialog  sx={{position: "absolute", maxHeight: 800, top: 100 }} maxWidth="md" open={isEditing} onClose={handleCloseEdit} PaperProps={{ sx: { borderRadius: 3 } }}>
+        <Dialog  sx={{position: "absolute", maxHeight: 800, top: 100 }} maxWidth="md" open={isEditing} onClose={handleCloseEdit} PaperProps={{ sx: { borderRadius: 3, boxShadow: '0 24px 48px rgba(0,0,0,0.18)' } }}>
           
           <DialogActions sx={{
             display: 'flex',
@@ -763,7 +972,12 @@ export default function Leads() {
               <IconButton
                 size="small"
                 onClick={handleEditable}
-                sx={{ border: '1px solid', borderColor: 'primary.main', borderRadius: 2 }}
+                sx={{
+                  border: '1px solid',
+                  borderColor: 'primary.main',
+                  borderRadius: 2,
+                  transition: 'background-color 0.2s ease',
+                }}
               >
                 <EditIcon titleAccess="Edit" color="primary" sx={{ fontSize: 16 }} />
               </IconButton>
@@ -776,6 +990,7 @@ export default function Leads() {
                   bgcolor: 'error.main',
                   color: 'common.white',
                   borderRadius: 1,
+                  transition: 'background-color 0.2s ease',
                   '&:hover': { bgcolor: 'error.dark' },
                 }}
               >
@@ -1357,13 +1572,18 @@ export default function Leads() {
           </Box > 
           </DialogContent>
           <DialogActions sx={{ display: edit === true ? 'flex' : 'none', px: 3, pb: 2 }}>
-            <Button onClick={handleNotEditable} sx={{ textTransform: 'none' }}>
+            <Button onClick={handleNotEditable} sx={{ textTransform: 'none', borderRadius: 2 }}>
               Cancel
             </Button>
             <Button 
               variant="contained"
               disableElevation
-              sx={{ textTransform: 'none' }}
+              sx={{
+                textTransform: 'none',
+                borderRadius: 2,
+                transition: 'transform 0.15s ease',
+                '&:hover': { transform: 'translateY(-1px)' },
+              }}
               onClick={() => {
                 handleOpenEditConfirmation();
               }}
@@ -1373,7 +1593,7 @@ export default function Leads() {
           </DialogActions>
           </Box>
         </Dialog>
-        <Dialog sx={{position: "absolute"}} open={openAddContact} onClose={handleCloseAddContact} PaperProps={{ sx: { borderRadius: 3, minWidth: 340 } }}>
+        <Dialog sx={{position: "absolute"}} open={openAddContact} onClose={handleCloseAddContact} PaperProps={{ sx: { borderRadius: 3, minWidth: 340, boxShadow: '0 20px 40px rgba(0,0,0,0.18)' } }}>
           <DialogTitle sx={{fontWeight: 700}}>
             Move to Qualified?
           </DialogTitle>  
@@ -1390,7 +1610,7 @@ export default function Leads() {
               Moving this to Qualified will automatically add it as a Contact.
             </DialogContent>
             <DialogActions sx={{ px: 3, pb: 2 }}>
-              <Button sx={{ textTransform: 'none' }} onClick={() => {
+              <Button sx={{ textTransform: 'none', borderRadius: 2 }} onClick={() => {
                   if (!dropResult) return;
                   handleCloseAddContact(dropResult);
                 }}>
@@ -1399,7 +1619,12 @@ export default function Leads() {
               <Button 
                 variant="contained"
                 disableElevation
-                sx={{ textTransform: 'none' }}
+                sx={{
+                  textTransform: 'none',
+                  borderRadius: 2,
+                  transition: 'transform 0.15s ease',
+                  '&:hover': { transform: 'translateY(-1px)' },
+                }}
                 onClick={() => {
                   if (!dropResult) return;
                   handleAddContact(dropResult);
@@ -1409,7 +1634,61 @@ export default function Leads() {
               </Button>
           </DialogActions>
         </Dialog>
-        <Dialog sx={{position: "absolute"}} open={openInvalid} onClose={handleCloseInvalid} PaperProps={{ sx: { borderRadius: 3, minWidth: 340 } }}>
+        <Dialog
+          sx={{ position: "absolute" }}
+          open={openCloseConfirmation}
+          onClose={handleCloseCloseConfirmation}
+          PaperProps={{
+            sx: {
+              borderRadius: 3,
+              minWidth: 340,
+              boxShadow: '0 20px 40px rgba(0,0,0,0.18)',
+            },
+          }}
+        >
+          <DialogTitle sx={{ fontWeight: 700 }}>
+            Close this lead?
+          </DialogTitle>
+
+          <DialogContent
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 2,
+              mt: 1,
+              maxWidth: 600,
+            }}
+          >
+            Are you sure you want to mark this lead as Closed?
+            This action indicates that the lead was lost and cannot
+            be moved back to an earlier stage.
+          </DialogContent>
+
+          <DialogActions sx={{ px: 3, pb: 2 }}>
+            <Button
+              sx={{ textTransform: "none", borderRadius: 2 }}
+              onClick={handleCloseCloseConfirmation}
+            >
+              Cancel
+            </Button>
+
+            <Button
+              variant="contained"
+              color="error"
+              disableElevation
+              sx={{
+                textTransform: "none",
+                borderRadius: 2,
+                transition: 'transform 0.15s ease',
+                '&:hover': { transform: 'translateY(-1px)' },
+              }}
+              onClick={handleConfirmCloseLead}
+            >
+              Yes, close lead
+            </Button>
+          </DialogActions>
+        </Dialog>
+        <Dialog sx={{position: "absolute"}} open={openInvalid} onClose={handleCloseInvalid} PaperProps={{ sx: { borderRadius: 3, minWidth: 340, boxShadow: '0 20px 40px rgba(0,0,0,0.18)' } }}>
           <DialogTitle sx={{fontWeight: 700}}>
             Unable to update as Qualified
           </DialogTitle>  
@@ -1429,7 +1708,12 @@ export default function Leads() {
               <Button 
                 variant="contained"
                 disableElevation
-                sx={{ textTransform: 'none' }}
+                sx={{
+                  textTransform: 'none',
+                  borderRadius: 2,
+                  transition: 'transform 0.15s ease',
+                  '&:hover': { transform: 'translateY(-1px)' },
+                }}
                 onClick={() => {
                   handleCloseInvalid();
                 }}
@@ -1438,7 +1722,7 @@ export default function Leads() {
               </Button>
           </DialogActions>
         </Dialog>
-        <Dialog sx={{position: "absolute"}} open={openEditConfirmation} onClose={handleCloseEditConfirmation} PaperProps={{ sx: { borderRadius: 3, minWidth: 340 } }}>
+        <Dialog sx={{position: "absolute"}} open={openEditConfirmation} onClose={handleCloseEditConfirmation} PaperProps={{ sx: { borderRadius: 3, minWidth: 340, boxShadow: '0 20px 40px rgba(0,0,0,0.18)' } }}>
           <DialogTitle sx={{fontWeight: 700}}>
             Confirm changes
           </DialogTitle>  
@@ -1455,13 +1739,18 @@ export default function Leads() {
               Are you sure you want to edit this lead?
             </DialogContent>
             <DialogActions sx={{ px: 3, pb: 2 }}>
-              <Button sx={{ textTransform: 'none' }} onClick={handleCloseEditConfirmation}>
+              <Button sx={{ textTransform: 'none', borderRadius: 2 }} onClick={handleCloseEditConfirmation}>
                 Cancel
               </Button>
               <Button 
                 variant="contained"
                 disableElevation
-                sx={{ textTransform: 'none' }}
+                sx={{
+                  textTransform: 'none',
+                  borderRadius: 2,
+                  transition: 'transform 0.15s ease',
+                  '&:hover': { transform: 'translateY(-1px)' },
+                }}
                 onClick={() => {
                   handleCloseEditConfirmation();
                   handleEdit();
@@ -1486,6 +1775,7 @@ export default function Leads() {
                 borderRadius: 3,
                 whiteSpace: 'normal',
                 overflowWrap: 'break-word',
+                boxShadow: '0 16px 32px rgba(0,0,0,0.14)',
               }}>
             <Stack alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
               <Avatar sx={{ width: 64, height: 64, bgcolor: 'action.hover' }}>

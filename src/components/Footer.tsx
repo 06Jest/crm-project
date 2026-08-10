@@ -12,8 +12,6 @@ import {
 } from '@mui/material';
 import {
   Facebook as FacebookIcon,
-  X as  XIcon ,
-  Instagram as InstagramIcon,
   LinkedIn as LinkedInIcon,
   GitHub as GitHubIcon,
   Email as EmailIcon,
@@ -21,7 +19,7 @@ import {
   LocationOn as LocationIcon,
   ArrowOutward as ArrowIcon,
 } from '@mui/icons-material';
-import logo from '../assets/logobrown.png'
+import logo from '../assets/logobrown.svg'
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../store/store';
@@ -53,41 +51,34 @@ const footerSections: FooterSection[] = [
   {
     title: 'Product',
     links: [
-      { label: 'Features', href: '/features' },
       { label: 'Pricing', href: '/pricing' },
       { label: 'Security', href: '/security' },
       { label: 'Roadmap', href: '/roadmap' },
-      { label: 'Status', href: 'https://status.unithread.io', external: true },
+      { label: 'Status', href: '/health', external: true },
     ],
   },
   {
     title: 'Company',
     links: [
-      { label: 'About Us', href: '/about' },
-      { label: 'Blog', href: '/blog' },
-      { label: 'Careers', href: '/careers' },
-      { label: 'Press Kit', href: '/press' },
+      { label: 'About Us', href: '/aboutus' },
       { label: 'Contact Us', href: '/contact' },
     ],
   },
   {
     title: 'Resources',
     links: [
-      { label: 'Documentation', href: '', external: true },
-      { label: 'API Reference', href: '', external: true },
-      { label: 'Community', href: '', external: true },
-      { label: 'Help Center', href: '' },
-      { label: 'Report Bug', href: '', external: true },
+      { label: 'Product Overview', href: '/overview', external: true },
+      { label: 'Help Center', href: '/help' },
+      { label: 'Report Bug', href: '/feedback', external: true },
     ],
   },
   {
     title: 'Developer',
     links: [
-      { label: 'Portfolio', href: '', external: true },
+      // { label: 'Portfolio', href: 'scalejest.dev', external: true },
       { label: 'GitHub Profile', href: 'https://github.com/06Jest', external: true },
       { label: 'Project Repo', href: 'https://github.com/06Jest/crm-project', external: true },
-      { label: 'LinkedIn', href: 'https://linkedin.com/in/jestonyfrontenddev', external: true },
-      { label: 'Twitter', href: 'https://twitter.com', external: true },
+      { label: 'LinkedIn', href: 'https://linkedin.com/in/scaledev', external: true },
     ],
   },
   {
@@ -95,9 +86,7 @@ const footerSections: FooterSection[] = [
     links: [
       { label: 'Terms of Service', href: '/terms' },
       { label: 'Privacy Policy', href: '/privacy' },
-      { label: 'Cookie Policy', href: '/cookies' },
-      { label: 'GDPR', href: '/gdpr' },
-      { label: 'Compliance', href: '/compliance' },
+      { label: 'Cookie Policy', href: '/cookiepolicy' },
     ],
   },
 ];
@@ -107,28 +96,14 @@ const socialLinks: SocialLink[] = [
   {
     name: 'Facebook',
     icon: <FacebookIcon />,
-    url: 'https://facebook.com',
+    url: 'https://facebook.com/jestonykun',
     color: '#1877F2',
     hoverColor: '#165FD9',
   },
   {
-    name: 'X',
-    icon: <XIcon />,
-    url: 'https://x.com',
-    color: '#000000',
-    hoverColor: '#1a1a1a',
-  },
-  {
-    name: 'Instagram',
-    icon: <InstagramIcon />,
-    url: 'https://instagram.com',
-    color: '#E4405F',
-    hoverColor: '#d1306f',
-  },
-  {
     name: 'LinkedIn',
     icon: <LinkedInIcon />,
-    url: 'https://www.linkedin.com/in/jestonyfrontenddev/',
+    url: 'https://www.linkedin.com/in/scaledev/',
     color: '#0A66C2',
     hoverColor: '#004182',
   },
@@ -368,7 +343,7 @@ export default function Footer() {
               component="button"
               variant="caption"
               color="text.secondary"
-              onClick={() => handleLinkClick('/cookies')}
+              onClick={() => handleLinkClick('/cookiepolicy')}
               sx={{ textDecoration: 'none', '&:hover': { color: 'primary.main' } }}
             >
               Cookies

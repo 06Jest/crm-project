@@ -57,7 +57,7 @@ const getColumns = (
   { field: 'phone', headerName: 'Phone', flex: 1, },
   { field: 'status', 
     headerName: 'Status', 
-    flex: 1,
+    width: 120,
     display: 'flex',
     align: 'left',
     renderCell: ({ value }) => (
@@ -88,13 +88,13 @@ const getColumns = (
     </Box>
     ),
   },
-  { field: 'open_deals', headerName: 'Open Deals', flex: 1 },
+  { field: 'open_deals', headerName: 'Open Deals', width: 100 },
   { field: 'preferred_contact_time', headerName: 'Preferred time', flex: 1 },
   { field: 'owner_name', headerName: 'Owner',  flex: 1 },
   {
     field: 'created_at',
     headerName: 'Since',
-    flex: 1,
+    width: 100,
     valueGetter: (value) =>
       value
         ? formatRelativeTime(new Date(value))
@@ -239,7 +239,7 @@ const hasSelection =
         justifyContent: 'center', 
         flexDirection: 'rows',
         flex: 1,
-        minWidth: 750,
+        minWidth: 320,
         p: 2,
         mx: 2,
         height: 850}}>
@@ -250,7 +250,6 @@ const hasSelection =
               p: 1,
               pt: 0,
               width: '50vw',
-              minWidth: 300,
               transition: 'width 0.3s ease',
               maxHeight:  1000,
               display: 'flex',
@@ -328,6 +327,7 @@ const hasSelection =
               sx={(theme) => ({
                 flex: 1,
                 minHeight: 0,
+                minWidth: 1000,
                 border: 'none',
                 borderTop: `1px solid ${theme.palette.mode === 'dark' ? '#3a3a3a' : '#e3e3e3'}`,
                 borderRadius: '0 0 12px 12px',
@@ -409,4 +409,3 @@ const hasSelection =
       </Box>
     );
 }
-

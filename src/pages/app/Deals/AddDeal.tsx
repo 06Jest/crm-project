@@ -28,6 +28,7 @@ export default function AddDeal() {
   const { loading:  loadingDeals,error: errorDeals} = useSelector((state:RootState) => state.deals);
   const { user, loading: userLoading } = useAuth();
   const dispatch = useDispatch<AppDispatch>();
+  const [submitting, setSubmitting] = useState(false);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
   const navigate = useNavigate();
   // const themeMode = useSelector((state: RootState) => state.ui.themeMode);
@@ -71,8 +72,9 @@ export default function AddDeal() {
   };
 
   const handleSubmit = async () => {
-    
-    if (loadingDeals) return;
+    if (submitting || loadingDeals) return;
+
+    setSubmitting(true);
 
     try {
        const newDeal = {
@@ -88,6 +90,8 @@ export default function AddDeal() {
       navigate(`/app/deals`);
     } catch {
       //Error in state
+    } finally {
+      setSubmitting(false);
     }
    
   };
@@ -241,7 +245,7 @@ export default function AddDeal() {
             variant="contained"
             disableElevation
             fullWidth
-            disabled={!form.contact_id || !form.title || !form.stage || !form.value}
+            disabled={!form.contact_id || !form.title || !form.stage || !form.value || submitting}
             onClick={handleSubmit}
             startIcon={<HandshakeIcon />}
             sx={{
@@ -254,7 +258,7 @@ export default function AddDeal() {
               boxShadow: '0 1px 2px rgba(0,0,0,0.12)',
             }}
           >
-            Add Deal
+            {submitting ? "Adding…" : "Add deal"}
           </Button>
           
       </Box >  

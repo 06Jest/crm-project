@@ -18,6 +18,11 @@ import {
   Avatar,
   Chip,
   Paper,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from "@mui/material";
 import { alpha, type SxProps, type Theme } from "@mui/material/styles";
 
@@ -93,7 +98,7 @@ const STATUS_META: Record<EmailStatus, { label: string; color: string }> = {
 };
 
 const SIDEBAR_ITEMS: {
-  key: "all" | EmailStatus;
+  key: "all" | EmailStatus | "trash";
   label: string;
   icon: ReactNode;
 }[] = [
@@ -102,6 +107,7 @@ const SIDEBAR_ITEMS: {
   { key: "queued", label: "Queue", icon: <ScheduleIcon fontSize="small" /> },
   { key: "sent", label: "Sent", icon: <MarkEmailReadIcon fontSize="small" /> },
   { key: "failed", label: "Failed", icon: <ErrorOutlineIcon fontSize="small" /> },
+  { key: "trash", label: "Trash", icon: <DeleteOutlineIcon fontSize="small" /> },
 ];
 
 
@@ -527,11 +533,12 @@ export default function EmailPanel() {
   const [editBodyHtml, setEditBodyHtml] = useState("");
   const [editBodyText, setEditBodyText] = useState("");
   const [saving, setSaving] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<"all" | EmailStatus>("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | EmailStatus | "trash">("all");
   const [ownerType, setOwnerType] = useState<EmailOwnerType>("lead");
   const [ownerId, setOwnerId] = useState("");
   const [recipientAutoFilled, setRecipientAutoFilled] = useState(false);
-
+  const [deleteTarget, setDeleteTarget] = useState<EmailListItem | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const activeEmail = emails.find((e) => e.id === activeId) ?? null;
   const isDraft = !activeEmail || activeEmail.status === "draft";
 
@@ -652,20 +659,30 @@ export default function EmailPanel() {
     setView("editor");
   };
 
-  const removeEmail = async (email: EmailListItem, e?: React.MouseEvent) => {
+  const removeEmail = (email: EmailListItem, e?: React.MouseEvent) => {
     e?.stopPropagation();
+    setDeleteTarget(email);
+  };
 
+  const confirmDeleteEmail = async () => {
+    if (!deleteTarget) return;
+
+    setDeleting(true);
     try {
-      await dispatch(deleteEmail(email.id)).unwrap();
+      await dispatch(deleteEmail(deleteTarget.id)).unwrap();
     } catch {
+      setDeleting(false);
       return; // error in state
     }
 
-    if (activeId === email.id) {
+    if (activeId === deleteTarget.id) {
       setView("list");
       setActiveId(null);
       resetEditorState();
     }
+
+    setDeleting(false);
+    setDeleteTarget(null);
   };
 
   const items = useMemo(() => {
@@ -804,14 +821,20 @@ export default function EmailPanel() {
   };
 
   const statusCounts = useMemo(() => {
-    const counts: Record<"all" | EmailStatus, number> = {
-      all: emails.length,
+    const counts: Record<"all" | EmailStatus | "trash", number> = {
+      all: 0,
       draft: 0,
       queued: 0,
       sent: 0,
       failed: 0,
+      trash: 0,
     };
     emails.forEach((e) => {
+      if (e.deleted_at) {
+        counts.trash += 1;
+        return;
+      }
+      counts.all += 1;
       counts[e.status] = (counts[e.status] ?? 0) + 1;
     });
     return counts;
@@ -822,6 +845,14 @@ export default function EmailPanel() {
 
     return emails
       .filter((email) => {
+        const isTrashed = Boolean(email.deleted_at);
+
+        if (statusFilter === "trash") {
+          if (!isTrashed) return false;
+        } else if (isTrashed) {
+          return false;
+        }
+
         const updated = new Date(email.updated_at);
         const owner = ownerOf(email);
 
@@ -842,7 +873,8 @@ export default function EmailPanel() {
         const matchesSearch =
           !search || searchableFields.some((field) => field.toLowerCase().includes(search));
 
-        const matchesStatus = statusFilter === "all" || email.status === statusFilter;
+        const matchesStatus =
+          statusFilter === "all" || statusFilter === "trash" || email.status === statusFilter;
 
         return matchesSearch && matchesStatus;
       })
@@ -1094,22 +1126,24 @@ export default function EmailPanel() {
                     const owner = ownerOf(email);
                     const ownerName = owner.type ? getValue(owner.type, owner.id) : "";
                     const displayName = ownerName || email.recipient_email;
+                    const isTrashed = Boolean(email.deleted_at);
 
                     return (
                       <ListItem
                         key={email.id}
                         disableGutters
-                        onClick={() => handleOpenEmail(email)}
+                        onClick={isTrashed ? undefined : () => handleOpenEmail(email)}
                         sx={{
                           p: 1,
                           mb: 0.5,
                           gap: 1.25,
                           alignItems: "flex-start",
                           borderRadius: 2,
-                          cursor: "pointer",
-                          transition: "background-color 0.15s ease",
-                          "&:hover": { bgcolor: "action.hover" },
-                          "&:hover .email-row-delete": { opacity: 1 },
+                          cursor: isTrashed ? "default" : "pointer",
+                          opacity: isTrashed ? 0.55 : 1,
+                          transition: "background-color 0.15s ease, opacity 0.15s ease",
+                          "&:hover": { bgcolor: isTrashed ? "transparent" : "action.hover" },
+                          "&:hover .email-row-delete": { opacity: isTrashed ? 0 : 1 },
                         }}
                       >
                         <Box sx={{ position: "relative", flexShrink: 0, mt: 0.25 }}>
@@ -1603,6 +1637,48 @@ export default function EmailPanel() {
             )}
           </Box>
         )}
+        <Dialog
+          open={Boolean(deleteTarget)}
+          onClose={() => (deleting ? null : setDeleteTarget(null))}
+          maxWidth="xs"
+          fullWidth
+          PaperProps={{ sx: { borderRadius: 3 } }}
+        >
+          <DialogTitle sx={{ fontSize: 16, fontWeight: 700, pb: 1 }}>
+            Delete this email?
+          </DialogTitle>
+          <DialogContent>
+            <DialogContentText sx={{ fontSize: 13.5 }}>
+              {deleteTarget?.subject ? (
+                <>
+                  "<Box component="span" sx={{ fontWeight: 600, color: "text.primary" }}>{deleteTarget.subject}</Box>" will be permanently removed. This action cannot be undone.
+                </>
+              ) : (
+                "This email will be permanently removed. This action cannot be undone."
+              )}
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions sx={{ px: 3, pb: 2.5 }}>
+            <Button
+              onClick={() => setDeleteTarget(null)}
+              disabled={deleting}
+              sx={{ textTransform: "none", fontWeight: 600, borderRadius: 999 }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={confirmDeleteEmail}
+              disabled={deleting}
+              variant="contained"
+              color="error"
+              disableElevation
+              startIcon={deleting ? <CircularProgress size={14} color="inherit" /> : <DeleteOutlineIcon fontSize="small" />}
+              sx={{ textTransform: "none", fontWeight: 700, borderRadius: 999 }}
+            >
+              Delete
+            </Button>
+          </DialogActions>
+        </Dialog>
       </Box>
     </Box>
   );

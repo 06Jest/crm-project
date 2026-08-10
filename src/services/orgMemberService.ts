@@ -1,7 +1,7 @@
 import type {
   DisplayOrganizationMember,
-  UpdateMemberStatusDTO,
-} from "../types//organization.member";
+  OrganizationMemberStatus,
+} from "../types/organization.member";
 import type { Roles } from "../types/global";
 
 import { apiClient } from "./apiClient";
@@ -9,7 +9,6 @@ import { apiClient } from "./apiClient";
 export const fetchOrgMembersAPI = async (): Promise<
   DisplayOrganizationMember[]
 > => {
-
   const result = await apiClient(
     "/api/org/members/",
     {
@@ -18,47 +17,41 @@ export const fetchOrgMembersAPI = async (): Promise<
   );
 
   return result.data as DisplayOrganizationMember[];
-
 };
 
 export const updateMemberRoleAPI = async (
   id: string,
   role: Roles
 ): Promise<DisplayOrganizationMember> => {
-
   const result = await apiClient(
     `/api/org/members/${id}/role`,
     {
       method: "PATCH",
-      body: JSON.stringify(role),
+      body: JSON.stringify({ role }),
     }
   );
 
   return result.data as DisplayOrganizationMember;
-
 };
 
 export const updateMemberStatusAPI = async (
   id: string,
-  member: UpdateMemberStatusDTO
+  status: OrganizationMemberStatus
 ): Promise<DisplayOrganizationMember> => {
-
   const result = await apiClient(
     `/api/org/members/${id}/status`,
     {
       method: "PATCH",
-      body: JSON.stringify(member),
+      body: JSON.stringify({ status }),
     }
   );
 
   return result.data as DisplayOrganizationMember;
-
 };
 
 export const removeOrgMemberAPI = async (
   id: string
 ): Promise<{ id: string }> => {
-
   const result = await apiClient(
     `/api/org/members/${id}`,
     {
@@ -67,5 +60,4 @@ export const removeOrgMemberAPI = async (
   );
 
   return result.data as { id: string };
-
 };

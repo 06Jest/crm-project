@@ -5,11 +5,9 @@ import { useAuth } from "../hooks/useAuth";
 export default function ProtectedRoute() {
   const { user, loading, loaded } = useAuth();
   const location = useLocation();
-  
-  console.log({
-    pathname: location.pathname,
-    completed: user?.onboarding_completed,
-  });
+
+  const membershipStatus = user?.membership?.[0]?.status;
+
   if (loading || !loaded) {
     return (
       <Box
@@ -38,7 +36,16 @@ export default function ProtectedRoute() {
 
   if (
     user.onboarding_completed &&
-    location.pathname === "/onboarding"
+    membershipStatus === "invited" &&
+    location.pathname !== "/approval"
+  ) {
+    return <Navigate to="/approval" replace />;
+  }
+
+  if (
+    user.onboarding_completed &&
+    membershipStatus !== "invited" &&
+    location.pathname === "/approval"
   ) {
     return <Navigate to="/app/dashboard" replace />;
   }

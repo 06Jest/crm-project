@@ -31,7 +31,7 @@ export default function AddDealByID() {
   const { loading, error} = useSelector((state:RootState) => state.deals);
   const { user, loading: userLoading } = useAuth();
   const dispatch = useDispatch<AppDispatch>();
-
+  const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
   // const themeMode = useSelector((state: RootState) => state.ui.themeMode);
 
@@ -65,9 +65,9 @@ export default function AddDealByID() {
   };
 
   const handleSubmit = async () => {
+    if (submitting || loading) return;
     if (!id) return;
-    if (loading) return;
-
+    setSubmitting(true);
     try {
        const newDeal = {
         contact_id: id,
@@ -244,7 +244,7 @@ export default function AddDealByID() {
             variant="contained"
             disableElevation
             fullWidth
-            disabled={ !form.title || !form.stage || !form.value}
+            disabled={ !form.title || !form.stage || !form.value || submitting}
             onClick={handleSubmit}
             startIcon={<HandshakeIcon />}
             sx={{
@@ -257,7 +257,7 @@ export default function AddDealByID() {
               boxShadow: '0 1px 2px rgba(0,0,0,0.12)',
             }}
           >
-            Add Deal
+            {submitting ? "Adding…" : "Add deal"}
           </Button>
           
       </Box >  

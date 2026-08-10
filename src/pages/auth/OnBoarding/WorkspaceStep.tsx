@@ -1,4 +1,424 @@
 
+// import { useState, type ReactElement } from 'react';
+// import {
+//   Box,
+//   Stack,
+//   TextField,
+//   Button,
+//   Typography,
+//   RadioGroup,
+//   FormControlLabel,
+//   Radio,
+//   useMediaQuery,
+//   useTheme,
+//   Collapse,
+// } from '@mui/material';
+// import PersonIcon from '@mui/icons-material/Person';
+// import BusinessIcon from '@mui/icons-material/Business';
+// import { createWorkspaceAPI, joinWorkspaceAPI } from "../../../services/onBoardingService";
+// import type {  OrganizationType } from '../../../types/organization';
+// import ErrorAlert from '../../../components/Error';
+
+// interface WorkspaceStepProps {
+//   onBack: () => void;
+//   onNext: () => void;
+//   onFinish: () => void;
+// }
+
+
+// interface FormErrors {
+//   workspaceName?: string;
+//   organizationName?: string;
+// }
+
+// export default function WorkspaceStep({
+//   onBack,
+//   onNext,
+//   onFinish,
+// }: WorkspaceStepProps): ReactElement {
+//   const [formData, setFormData] = useState({
+//     name: '',
+//     type: 'personal' as OrganizationType,
+//     industry: '',
+//     product_type: '',
+//     company_size: '',
+//     code: ''
+//   });
+
+//   const [errors, setErrors] = useState<FormErrors>({});
+//   const theme = useTheme();
+//   const [loading, setLoading] = useState(false);
+//   const [error, setError] = useState<string | null>(null);
+//   const [workspaceAction, setWorkspaceAction] = useState<"create" | "join">("create");
+//   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
+//   const isPersonalSelected =
+//     workspaceAction === "create" && formData.type === "personal";
+
+//   const isBusinessSelected =
+//     workspaceAction === "create" && formData.type === "business";
+
+//   const isJoinSelected =
+//     workspaceAction === "join";
+
+//   const validateForm = (): boolean => {
+//     const newErrors: FormErrors = {};
+
+//     if (formData.type === 'personal') {
+//       if (!formData.name.trim()) {
+//         newErrors.workspaceName = 'Workspace name is required';
+//       }
+//     } else {
+//       if (!formData.name.trim()) {
+//         newErrors.organizationName = 'Organization name is required';
+//       }
+//     }
+
+//     setErrors(newErrors);
+//     return Object.keys(newErrors).length === 0;
+//   };
+
+
+//   const handleInputChange = (
+//     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+//   ): void => {
+//     const { name, value } = event.target;
+//     setFormData((prev) => ({
+//       ...prev,
+//       [name]: value,
+//     }));
+
+//     if (errors[name as keyof FormErrors]) {
+//       setErrors((prev) => ({
+//         ...prev,
+//         [name]: undefined,
+//       }));
+//     }
+//   };
+
+//   const handleContinue = async (): Promise<void> => {
+//     setLoading(true);
+//     setError(null);
+
+//     try {
+
+//       if (workspaceAction === "join") {
+
+//         if (!formData.code.trim()) {
+//           throw new Error("Invitation code is required");
+//         }
+
+//         await joinWorkspaceAPI(formData.code.trim());
+
+//         onFinish();
+//         return;
+//       }
+
+
+//       if (!validateForm()) {
+//         return;
+//       }
+
+
+//       await createWorkspaceAPI({
+//         name: formData.name,
+//         type: formData.type,
+//         industry: formData.industry,
+//         product_type: formData.product_type,
+//         company_size: formData.company_size,
+//       });
+
+
+//       onNext();
+
+//     } catch (err) {
+//       setError(
+//         err instanceof Error
+//           ? err.message
+//           : "Failed"
+//       );
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   return (
+//     <Stack spacing={3}>
+//       {(error) && (
+//         <Box sx={{ width: '100%', mt: 1 }}>
+//           <ErrorAlert
+//             message={(error) ?? "Failed creating workspace, Try again."}
+//           />
+//         </Box>
+//       )}
+//       <Box>
+//         <Typography variant="h5" fontWeight={600} mb={1}>
+//           Set Up Your Workspace
+//         </Typography>
+//         <Typography variant="body2" color="textSecondary">
+//           Choose whether this is a Personal workspace or for an Organization.
+//         </Typography>
+//       </Box>
+
+//       <RadioGroup
+//         value={
+//           workspaceAction === "join"
+//             ? "join"
+//             : formData.type
+//         }
+//         onChange={(e) => {
+//           const value = e.target.value;
+
+//           if (value === "join") {
+//             setWorkspaceAction("join");
+//             return;
+//           }
+
+//           setWorkspaceAction("create");
+
+//           setFormData((prev) => ({
+//             ...prev,
+//             type: value as OrganizationType,
+//           }));
+//         }}
+//       >
+//         <Box
+//           sx={{
+//             border: '1px solid',
+//             borderColor: isPersonalSelected ? 'primary.main' : 'divider',
+//             backgroundColor: isPersonalSelected
+//               ? 'action.selected'
+//               : 'transparent',
+//             borderRadius: 1,
+//             p: 2,
+//             cursor: 'pointer',
+//             transition: 'all 0.2s',
+//             '&:hover': {
+//               borderColor: 'primary.main',
+//             },
+//           }}
+//           onClick={() => {
+//             setWorkspaceAction("create");
+
+//             setFormData((prev) => ({
+//               ...prev,
+//               type: "personal",
+//             }));
+//           }}
+//         >
+//           <FormControlLabel
+//             value="personal"
+//             control={<Radio />}
+//             label={
+//               <Stack direction="row" alignItems="center" spacing={1}>
+//                 <PersonIcon color={isPersonalSelected ? "primary" : "disabled"} />
+//                 <Box>
+//                   <Typography fontWeight={500}>Personal Workspace</Typography>
+//                   <Typography variant="caption" color="textSecondary">
+//                     For individual use
+//                   </Typography>
+//                 </Box>
+//               </Stack>
+//             }
+//           />
+//         </Box>
+
+//         <Box
+//           sx={{
+//             border: '1px solid',
+//           borderColor: isBusinessSelected ? 'primary.main' : 'divider',
+//           backgroundColor: isBusinessSelected
+//             ? 'action.selected'
+//             : 'transparent',
+//             borderRadius: 1,
+//             p: 2,
+//             cursor: 'pointer',
+//             transition: 'all 0.2s',
+//             '&:hover': {
+//               borderColor: 'primary.main',
+//             },
+//           }}
+//           onClick={() => {
+//             setWorkspaceAction("create");
+
+//             setFormData((prev) => ({
+//               ...prev,
+//               type: "business",
+//             }));
+//           }}
+//         >
+//           <FormControlLabel
+//             value="business"
+//             control={<Radio />}
+//             label={
+//               <Stack direction="row" alignItems="center" spacing={1}>
+//                 <BusinessIcon
+//                   color={isBusinessSelected ? "primary" : "disabled"}
+//                 />
+//                 <Box>
+//                   <Typography fontWeight={500}>Organization</Typography>
+//                   <Typography variant="caption" color="textSecondary">
+//                     For teams and companies
+//                   </Typography>
+//                 </Box>
+//               </Stack>
+//             }
+//           />
+//         </Box>
+//         <Box
+//           onClick={() => setWorkspaceAction("join")}
+//           sx={{
+//             border: "1px solid",
+//             borderColor: isJoinSelected ? "primary.main" : "divider",
+//             borderRadius: 1,
+//             p: 2,
+//             cursor: "pointer",
+//             backgroundColor: isJoinSelected
+//               ? "action.selected"
+//               : "transparent",
+//             transition: "all 0.2s",
+//             "&:hover": {
+//               borderColor: "primary.main",
+//             },
+//           }}
+//         >
+//           <FormControlLabel
+//             value="join"
+//             control={<Radio />}
+//             label={
+//               <Stack direction="row" alignItems="center" spacing={1}>
+//                 <BusinessIcon
+//                   color={isJoinSelected ? "primary" : "disabled"}
+//                 />
+//                 <Box>
+//                   <Stack direction="row" spacing={1} alignItems="center">
+//                     <Typography fontWeight={500}>
+//                       Join Organization
+//                     </Typography>
+//                   </Stack>
+
+//                   <Typography variant="caption" color="text.secondary">
+//                     Join an existing workspace using an invitation code.
+//                   </Typography>
+//                 </Box>
+//               </Stack>
+//             }
+//           />
+//         </Box>
+//       </RadioGroup>
+
+//       <Collapse in={workspaceAction === "create" && formData.type === "personal"}>
+//         <Stack spacing={2}>
+//           <TextField
+//             fullWidth
+//             label="Workspace Name"
+//             name="name"
+//             value={formData.name}
+//             onChange={handleInputChange}
+//             error={!!errors.workspaceName}
+//             helperText={errors.workspaceName}
+//             placeholder="My Personal Workspace"
+//             required
+//           />
+//           <TextField
+//             fullWidth
+//             label="Industry"
+//             name="industry"
+//             value={formData.industry}
+//             onChange={handleInputChange}
+//             placeholder="Information Technology(IT)"
+//           />
+//           <TextField
+//             fullWidth
+//             label="Type of Product/Services"
+//             name="product_type"
+//             value={formData.product_type}
+//             onChange={handleInputChange}
+//             placeholder="Software Service"
+//             required
+//           />
+//         </Stack>
+//       </Collapse>
+
+//       <Collapse in={workspaceAction === "create" && formData.type === "business"}>
+//         <Stack spacing={2}>
+//           <TextField
+//             fullWidth
+//             label="Organization Name"
+//             name="name"
+//             value={formData.name}
+//             onChange={handleInputChange}
+//             error={!!errors.organizationName}
+//             helperText={errors.organizationName}
+//             placeholder="Acme Corporation"
+//             required
+//           />
+//           <TextField
+//             fullWidth
+//             label="Industry"
+//             name="industry"
+//             value={formData.industry}
+//             onChange={handleInputChange}
+//             placeholder="Information Technology(IT)"
+//           />
+//           <TextField
+//             fullWidth
+//             label="Type of Product/Services"
+//             name="product_type"
+//             value={formData.product_type}
+//             onChange={handleInputChange}
+//             placeholder="Software Service"
+//             required
+//           />
+//           <TextField
+//             fullWidth
+//             label="Company size"
+//             name="company_size"
+//             value={formData.company_size}
+//             onChange={handleInputChange}
+//             placeholder="50"
+//           />
+//         </Stack>
+//       </Collapse>
+//       <Collapse in={workspaceAction === "join"}>
+//         <TextField
+//           fullWidth
+//           label="Invitation Code"
+//           name="code"
+//           value={formData.code}
+//           onChange={handleInputChange}
+//         />
+//       </Collapse>
+
+//       <Box
+//         sx={{
+//           display: 'flex',
+//           gap: 2,
+//           justifyContent: 'flex-end',
+//           mt: 2,
+//           flexDirection: isMobile ? 'column-reverse' : 'row',
+//         }}
+//       >
+//         <Button
+//           variant="outlined"
+//           onClick={onBack}
+//           fullWidth={isMobile}
+//         >
+//           Back
+//         </Button>
+//         <Button
+//           variant="contained"
+//           onClick={handleContinue}
+//           disabled={loading}
+//           fullWidth={isMobile}
+//         >
+//           {loading ? "Creating..." : "Continue"}
+//         </Button>
+//       </Box>
+//     </Stack>
+//   );
+// }
+
 import { useState, type ReactElement } from 'react';
 import {
   Box,
@@ -12,19 +432,20 @@ import {
   useMediaQuery,
   useTheme,
   Collapse,
-  Chip,
+  Zoom,
 } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
 import BusinessIcon from '@mui/icons-material/Business';
-import { createWorkspaceAPI } from "../../../services/onBoardingService";
-import type { CreateWorkspaceDTO, OrganizationType } from '../../../types/organization';
+import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
+import { createWorkspaceAPI, joinWorkspaceAPI } from "../../../services/onBoardingService";
+import type { OrganizationType } from '../../../types/organization';
 import ErrorAlert from '../../../components/Error';
 
 interface WorkspaceStepProps {
   onBack: () => void;
   onNext: () => void;
+  onFinish: () => void;
 }
-
 
 interface FormErrors {
   workspaceName?: string;
@@ -34,20 +455,32 @@ interface FormErrors {
 export default function WorkspaceStep({
   onBack,
   onNext,
+  onFinish,
 }: WorkspaceStepProps): ReactElement {
-  const [formData, setFormData] = useState<CreateWorkspaceDTO>({
+  const [formData, setFormData] = useState({
     name: '',
-    type: 'personal',
+    type: 'personal' as OrganizationType,
     industry: '',
     product_type: '',
-    company_size: ''
+    company_size: '',
+    code: ''
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
   const theme = useTheme();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [workspaceAction, setWorkspaceAction] = useState<"create" | "join">("create");
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
+  const isPersonalSelected =
+    workspaceAction === "create" && formData.type === "personal";
+
+  const isBusinessSelected =
+    workspaceAction === "create" && formData.type === "business";
+
+  const isJoinSelected =
+    workspaceAction === "join";
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
@@ -64,16 +497,6 @@ export default function WorkspaceStep({
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  };
-
-  const handleWorkspaceTypeChange = (
-    event: React.ChangeEvent<HTMLInputElement>
-  ): void => {
-    setFormData((prev) => ({
-      ...prev,
-      type: event.target.value as OrganizationType,
-    }));
-    setErrors({});
   };
 
   const handleInputChange = (
@@ -94,78 +517,132 @@ export default function WorkspaceStep({
   };
 
   const handleContinue = async (): Promise<void> => {
-    if (!validateForm()) return;
-
     setLoading(true);
     setError(null);
 
     try {
-      await createWorkspaceAPI(formData);
+
+      if (workspaceAction === "join") {
+
+        if (!formData.code.trim()) {
+          throw new Error("Invitation code is required");
+        }
+
+        await joinWorkspaceAPI(formData.code.trim());
+
+        onFinish();
+        return;
+      }
+
+      if (!validateForm()) {
+        return;
+      }
+
+      await createWorkspaceAPI({
+        name: formData.name,
+        type: formData.type,
+        industry: formData.industry,
+        product_type: formData.product_type,
+        company_size: formData.company_size,
+      });
 
       onNext();
+
     } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("Failed to create workspace.");
-      }
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed"
+      );
     } finally {
       setLoading(false);
     }
   };
 
+  const optionCardSx = (selected: boolean) => ({
+    position: 'relative' as const,
+    border: '1.5px solid',
+    borderColor: selected ? 'primary.main' : 'divider',
+    backgroundColor: selected ? 'action.selected' : 'transparent',
+    borderRadius: 2,
+    p: 2,
+    cursor: 'pointer',
+    transition: 'border-color 0.2s ease, background-color 0.2s ease, transform 0.15s ease',
+    '&:hover': {
+      borderColor: 'primary.main',
+      transform: 'translateY(-1px)',
+    },
+  });
+
+  const selectionBadge = (selected: boolean) => (
+    <Zoom in={selected}>
+      <CheckCircleRoundedIcon
+        color="primary"
+        sx={{ position: 'absolute', top: 10, right: 10, fontSize: 20 }}
+      />
+    </Zoom>
+  );
+
   return (
     <Stack spacing={3}>
-      {(error) && (
-        <Box sx={{ width: '100%', mt: 1 }}>
+      <Collapse in={!!error}>
+        <Box sx={{ width: '100%' }}>
           <ErrorAlert
             message={(error) ?? "Failed creating workspace, Try again."}
           />
         </Box>
-      )}
+      </Collapse>
+
       <Box>
-        <Typography variant="h5" fontWeight={600} mb={1}>
+        <Typography variant="h5" fontWeight={700} mb={0.75} letterSpacing="-0.01em">
           Set Up Your Workspace
         </Typography>
-        <Typography variant="body2" color="textSecondary">
+        <Typography variant="body2" color="text.secondary">
           Choose whether this is a Personal workspace or for an Organization.
         </Typography>
       </Box>
 
       <RadioGroup
-        value={formData.type}
-        onChange={handleWorkspaceTypeChange}
-        sx={{
-          gap: 2,
+        value={
+          workspaceAction === "join"
+            ? "join"
+            : formData.type
+        }
+        onChange={(e) => {
+          const value = e.target.value;
+
+          if (value === "join") {
+            setWorkspaceAction("join");
+            return;
+          }
+
+          setWorkspaceAction("create");
+
+          setFormData((prev) => ({
+            ...prev,
+            type: value as OrganizationType,
+          }));
         }}
+        sx={{ gap: 1.25 }}
       >
         <Box
-          sx={{
-            border: '1px solid',
-            borderColor: formData.type === 'personal' ? 'primary.main' : 'divider',
-            borderRadius: 1,
-            p: 2,
-            cursor: 'pointer',
-            backgroundColor:
-              formData.type === 'personal' ? 'action.selected' : 'transparent',
-            transition: 'all 0.2s',
-            '&:hover': {
-              borderColor: 'primary.main',
-            },
+          sx={optionCardSx(isPersonalSelected)}
+          onClick={() => {
+            setWorkspaceAction("create");
+            setFormData((prev) => ({ ...prev, type: "personal" }));
           }}
-          onClick={() =>
-            setFormData((prev) => ({ ...prev, type: 'personal' }))
-          }
         >
+          {selectionBadge(isPersonalSelected)}
           <FormControlLabel
             value="personal"
-            control={<Radio />}
+            control={<Radio size="small" />}
+            sx={{ m: 0, width: '100%' }}
             label={
-              <Stack direction="row" alignItems="center" spacing={1}>
-                <PersonIcon color="primary" />
+              <Stack direction="row" alignItems="center" spacing={1.5} sx={{ pr: 3 }}>
+                <PersonIcon color={isPersonalSelected ? "primary" : "disabled"} fontSize="small" />
                 <Box>
-                  <Typography fontWeight={500}>Personal Workspace</Typography>
-                  <Typography variant="caption" color="textSecondary">
+                  <Typography fontWeight={600} variant="body2">Personal Workspace</Typography>
+                  <Typography variant="caption" color="text.secondary">
                     For individual use
                   </Typography>
                 </Box>
@@ -175,32 +652,23 @@ export default function WorkspaceStep({
         </Box>
 
         <Box
-          sx={{
-            border: '1px solid',
-            borderColor: formData.type === 'business' ? 'primary.main' : 'divider',
-            borderRadius: 1,
-            p: 2,
-            cursor: 'pointer',
-            backgroundColor:
-              formData.type === 'business' ? 'action.selected' : 'transparent',
-            transition: 'all 0.2s',
-            '&:hover': {
-              borderColor: 'primary.main',
-            },
+          sx={optionCardSx(isBusinessSelected)}
+          onClick={() => {
+            setWorkspaceAction("create");
+            setFormData((prev) => ({ ...prev, type: "business" }));
           }}
-          onClick={() =>
-            setFormData((prev) => ({ ...prev, type: 'business' }))
-          }
         >
+          {selectionBadge(isBusinessSelected)}
           <FormControlLabel
             value="business"
-            control={<Radio />}
+            control={<Radio size="small" />}
+            sx={{ m: 0, width: '100%' }}
             label={
-              <Stack direction="row" alignItems="center" spacing={1}>
-                <BusinessIcon color="primary" />
+              <Stack direction="row" alignItems="center" spacing={1.5} sx={{ pr: 3 }}>
+                <BusinessIcon color={isBusinessSelected ? "primary" : "disabled"} fontSize="small" />
                 <Box>
-                  <Typography fontWeight={500}>Organization</Typography>
-                  <Typography variant="caption" color="textSecondary">
+                  <Typography fontWeight={600} variant="body2">Organization</Typography>
+                  <Typography variant="caption" color="text.secondary">
                     For teams and companies
                   </Typography>
                 </Box>
@@ -208,40 +676,20 @@ export default function WorkspaceStep({
             }
           />
         </Box>
-        <Box
-          sx={{
-            border: "1px solid",
-            borderColor: "divider",
-            borderRadius: 1,
-            p: 2,
-            opacity: 0.5,
-            cursor: "not-allowed",
-            backgroundColor: "action.disabledBackground",
-            "&:hover": {
-              borderColor: "divider",
-            },
-          }}
-        >
-          <FormControlLabel
-            disabled
-            value="join"
-            control={<Radio />}
-            label={
-              <Stack direction="row" alignItems="center" spacing={1}>
-                <BusinessIcon color="disabled" />
-                <Box>
-                  <Stack direction="row" spacing={1} alignItems="center">
-                    <Typography fontWeight={500}>
-                      Join Organization
-                    </Typography>
-                    <Chip
-                      label="Coming Soon"
-                      size="small"
-                      color="warning"
-                      variant="outlined"
-                    />
-                  </Stack>
 
+        <Box sx={optionCardSx(isJoinSelected)} onClick={() => setWorkspaceAction("join")}>
+          {selectionBadge(isJoinSelected)}
+          <FormControlLabel
+            value="join"
+            control={<Radio size="small" />}
+            sx={{ m: 0, width: '100%' }}
+            label={
+              <Stack direction="row" alignItems="center" spacing={1.5} sx={{ pr: 3 }}>
+                <BusinessIcon color={isJoinSelected ? "primary" : "disabled"} fontSize="small" />
+                <Box>
+                  <Typography fontWeight={600} variant="body2">
+                    Join Organization
+                  </Typography>
                   <Typography variant="caption" color="text.secondary">
                     Join an existing workspace using an invitation code.
                   </Typography>
@@ -252,7 +700,7 @@ export default function WorkspaceStep({
         </Box>
       </RadioGroup>
 
-      <Collapse in={formData.type === 'personal'}>
+      <Collapse in={workspaceAction === "create" && formData.type === "personal"} timeout={250}>
         <Stack spacing={2}>
           <TextField
             fullWidth
@@ -267,6 +715,14 @@ export default function WorkspaceStep({
           />
           <TextField
             fullWidth
+            label="Industry"
+            name="industry"
+            value={formData.industry}
+            onChange={handleInputChange}
+            placeholder="Information Technology(IT)"
+          />
+          <TextField
+            fullWidth
             label="Type of Product/Services"
             name="product_type"
             value={formData.product_type}
@@ -277,7 +733,7 @@ export default function WorkspaceStep({
         </Stack>
       </Collapse>
 
-      <Collapse in={formData.type === 'business'}>
+      <Collapse in={workspaceAction === "create" && formData.type === "business"} timeout={250}>
         <Stack spacing={2}>
           <TextField
             fullWidth
@@ -300,6 +756,15 @@ export default function WorkspaceStep({
           />
           <TextField
             fullWidth
+            label="Type of Product/Services"
+            name="product_type"
+            value={formData.product_type}
+            onChange={handleInputChange}
+            placeholder="Software Service"
+            required
+          />
+          <TextField
+            fullWidth
             label="Company size"
             name="company_size"
             value={formData.company_size}
@@ -309,12 +774,22 @@ export default function WorkspaceStep({
         </Stack>
       </Collapse>
 
+      <Collapse in={workspaceAction === "join"} timeout={250}>
+        <TextField
+          fullWidth
+          label="Invitation Code"
+          name="code"
+          value={formData.code}
+          onChange={handleInputChange}
+        />
+      </Collapse>
+
       <Box
         sx={{
           display: 'flex',
-          gap: 2,
+          gap: 1.5,
           justifyContent: 'flex-end',
-          mt: 2,
+          mt: 1,
           flexDirection: isMobile ? 'column-reverse' : 'row',
         }}
       >
@@ -322,14 +797,27 @@ export default function WorkspaceStep({
           variant="outlined"
           onClick={onBack}
           fullWidth={isMobile}
+          sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
         >
           Back
         </Button>
         <Button
           variant="contained"
+          disableElevation
           onClick={handleContinue}
           disabled={loading}
           fullWidth={isMobile}
+          sx={{
+            borderRadius: 2,
+            textTransform: 'none',
+            fontWeight: 600,
+            px: 3,
+            transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+            '&:hover': {
+              transform: 'translateY(-1px)',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.12)',
+            },
+          }}
         >
           {loading ? "Creating..." : "Continue"}
         </Button>

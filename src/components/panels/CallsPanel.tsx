@@ -93,6 +93,20 @@ const getPriorityLabel = (priority: CallPriority): string => {
   }
 };
 
+const formatCallType = (type: CallType): string => {
+  return type
+    .split("_")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+};
+
+const formatCallOutcome = (outcome: CallOutcome): string => {
+  return outcome
+    .split("_")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+};
+
 const getPriorityColor = (priority: CallPriority): 'error' | 'warning' | 'default' => {
   switch (priority) {
     case 'high':
@@ -846,8 +860,8 @@ export default function CallsPanel() {
                         <Typography variant="subtitle2" fontWeight={700} noWrap>
                           {call.subject}
                         </Typography>
-                        <Chip
-                          label={call.type}
+                       <Chip
+                          label={formatCallType(call.type)}
                           size="small"
                           variant="outlined"
                           sx={{
@@ -909,7 +923,7 @@ export default function CallsPanel() {
                           <Chip
                             icon={<CheckCircleIcon 
                                 />}
-                            label={call.outcome}
+                            label={formatCallOutcome(call.outcome)}
                             size="small"
                             variant="outlined"
                             color="success"

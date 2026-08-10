@@ -45,7 +45,7 @@ export const updateProfileAPI = async (
 ): Promise<Profile> => {
 
   const result = await apiClient(
-    "/api/profile/me",
+    "/api/profile/me/update",
     {
       method: "PATCH",
       body: JSON.stringify(profile),

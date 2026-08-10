@@ -1,38 +1,34 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 
 import type {
-  Organization,
-  CreateWorkspaceDTO,
   OrganizationState,
+  DisplayOrganization,
+  UpdateWorkspaceDetailsDTO,
 } from "../types/organization";
 
 import {
-  createWorkspaceAPI,
+  fetchWorkspaceAPI,
   renameWorkspaceAPI,
+  updateWorkspaceDetailsAPI,
 } from "../services/organizationService";
-
 
 
 const initialState: OrganizationState = {
   item: null,
   loading: false,
+  updating: false,
   loaded: false,
   error: null,
 };
 
 
-export const createWorkspace = createAsyncThunk(
-  "organization/create-workspace",
-  async (
-    workspace: CreateWorkspaceDTO,
-    thunkAPI
-  ) => {
+export const fetchWorkspace = createAsyncThunk(
+  "organization/fetch-organization",
+  async (_, thunkAPI) => {
 
     try {
 
-      return await createWorkspaceAPI(
-        workspace
-      );
+      return await fetchWorkspaceAPI();
 
     } catch (err) {
 
@@ -43,9 +39,8 @@ export const createWorkspace = createAsyncThunk(
       }
 
       return thunkAPI.rejectWithValue(
-        "Failed to create workspace"
+        "Failed to fetch organization"
       );
-
     }
 
   }
@@ -55,15 +50,13 @@ export const createWorkspace = createAsyncThunk(
 export const renameWorkspace = createAsyncThunk(
   "organization/rename-workspace",
   async (
-    name: Pick<Organization, "name">,
+    name: Pick<DisplayOrganization, "name">,
     thunkAPI
   ) => {
 
     try {
 
-      return await renameWorkspaceAPI(
-        name
-      );
+      return await renameWorkspaceAPI(name);
 
     } catch (err) {
 
@@ -75,6 +68,36 @@ export const renameWorkspace = createAsyncThunk(
 
       return thunkAPI.rejectWithValue(
         "Failed to rename workspace"
+      );
+
+    }
+
+  }
+);
+
+
+// NEW: powers the Workspace.tsx "Edit workspace details" form.
+export const updateWorkspaceDetails = createAsyncThunk(
+  "organization/update-workspace-details",
+  async (
+    updates: UpdateWorkspaceDetailsDTO,
+    thunkAPI
+  ) => {
+
+    try {
+
+      return await updateWorkspaceDetailsAPI(updates);
+
+    } catch (err) {
+
+      if (err instanceof Error) {
+        return thunkAPI.rejectWithValue(
+          err.message
+        );
+      }
+
+      return thunkAPI.rejectWithValue(
+        "Failed to update workspace details"
       );
 
     }
@@ -102,10 +125,14 @@ const organizationSlice = createSlice({
 
   },
 
+
   extraReducers: (builder) => {
 
+
+    // FETCH ORGANIZATION
+
     builder.addCase(
-      createWorkspace.pending,
+      fetchWorkspace.pending,
       (state) => {
 
         state.loading = true;
@@ -114,8 +141,9 @@ const organizationSlice = createSlice({
       }
     );
 
+
     builder.addCase(
-      createWorkspace.fulfilled,
+      fetchWorkspace.fulfilled,
       (state, action) => {
 
         state.loading = false;
@@ -125,8 +153,9 @@ const organizationSlice = createSlice({
       }
     );
 
+
     builder.addCase(
-      createWorkspace.rejected,
+      fetchWorkspace.rejected,
       (state, action) => {
 
         state.loading = false;
@@ -134,36 +163,79 @@ const organizationSlice = createSlice({
 
       }
     );
+
+
+
+    // RENAME WORKSPACE
 
     builder.addCase(
       renameWorkspace.pending,
       (state) => {
 
-        state.loading = true;
+        state.updating = true;
         state.error = null;
 
       }
     );
 
+
     builder.addCase(
       renameWorkspace.fulfilled,
       (state, action) => {
 
-        state.loading = false;
+        state.updating = false;
         state.item = action.payload;
 
       }
     );
 
+
     builder.addCase(
       renameWorkspace.rejected,
       (state, action) => {
 
-        state.loading = false;
+        state.updating = false;
         state.error = action.payload as string;
 
       }
     );
+
+
+
+    // UPDATE WORKSPACE DETAILS
+
+    builder.addCase(
+      updateWorkspaceDetails.pending,
+      (state) => {
+
+        state.updating = true;
+        state.error = null;
+
+      }
+    );
+
+
+    builder.addCase(
+      updateWorkspaceDetails.fulfilled,
+      (state, action) => {
+
+        state.updating = false;
+        state.item = action.payload;
+
+      }
+    );
+
+
+    builder.addCase(
+      updateWorkspaceDetails.rejected,
+      (state, action) => {
+
+        state.updating = false;
+        state.error = action.payload as string;
+
+      }
+    );
+
 
   },
 
@@ -174,5 +246,6 @@ export const {
   clearError,
   clearOrganization,
 } = organizationSlice.actions;
+
 
 export default organizationSlice.reducer;

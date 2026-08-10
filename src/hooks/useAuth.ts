@@ -21,9 +21,9 @@ export const useAuth = () => {
     currentUser: () => dispatch(getCurrentUser()),
     register: (dto: SignUpDTO) => dispatch(signUp(dto)),
     login: (dto: SignInDTO) => dispatch(signIn(dto)),
-    isOwner: auth.user?.membership?.role === 'owner',
-    isManager: auth.user?.membership?.role === 'manager',
-    isAgent: auth.user?.membership?.role === 'agent',
+    isOwner: auth.user?.membership?.[0]?.role === "owner",
+    isManager: auth.user?.membership?.[0]?.role === "manager",
+    isAgent: auth.user?.membership?.[0]?.role === "agent",
     refreshtoken: () => dispatch(refresh()),
     changePass: (dto: ChangePasswordDTO) =>
     dispatch(changePassword(dto)),
