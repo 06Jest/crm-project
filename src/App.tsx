@@ -61,7 +61,7 @@ function AppRoutes() {
     setCollapsed(true);
   }
     // trackPageView(location.pathname);
-  }, [location.pathname]);
+  }, [location.pathname, setCollapsed, collapsed]);
 
   return (
       <Routes>
