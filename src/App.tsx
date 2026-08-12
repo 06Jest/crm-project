@@ -5,8 +5,6 @@ import PublicLayout from './layout/PublicLayout';
 import AuthLayout from './layout/AuthLayout';
 import AppLayout from './layout/AppLayout';
 
-
-import RoleGuard from './components/RoleGuard';
 import Landing from './pages/public/Landing/Landing';
 import Pricing from './pages/public/Pricing/Pricing';
 import AboutUs from './pages/public/AboutUs/AboutUs';
@@ -33,10 +31,8 @@ import CustomerDetail from './pages/app/Customers/CustomerDetail';
 import Profile from './pages/app/Profile/Profile';
 import Workspace from './pages/app/Workspace/Workspace';
 import Settings from './pages/app/Settings/Settings';
-import Analytics from './pages/app/Analytics/Analytics';
 import ProtectedRoute from './components/ProtectedRoute';
 import ResetPassword from './pages/auth/ForgotPassword/ResetPassword';
-import CompanyProfile from './pages/app/Company/CompanyProfile';
 import { useSidebar } from '../src/hooks//useSidebar';
 import AddDealByID from './pages/app/Deals/AddDealByID';
 import ProductOverview from './pages/public/ProductOverview/ProductOverview';
@@ -107,19 +103,9 @@ function AppRoutes() {
             <Route path="/app/customers/:id" element={<CustomerDetail />} /> 
             <Route path="/app/profile" element={<Profile />} />
             <Route path="/app/workspace" element={<Workspace />} />
-            <Route path="/app/company/:id" element={<CompanyProfile />} />
             <Route path="/app/settings" element={<Settings />} />
-            <Route path="/app/analytics" element={<Analytics />} />
           </Route>
         </Route>
-        <Route
-          path="/app/settings"
-          element={
-            <RoleGuard>
-              <Settings/>
-            </RoleGuard>
-          }
-        />
         <Route path="*" element={<NotFoundPage />} />
       </Routes> 
   );

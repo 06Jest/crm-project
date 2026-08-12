@@ -188,7 +188,6 @@ function BackgroundThread() {
   );
 }
 
-/** Small filled node used to mark a point on the thread. */
 function ThreadNode({ sx }: { sx?: SxProps<Theme> }) {
   return (
     <Box
@@ -328,7 +327,6 @@ function AboutIntro() {
           information sitting in separate tools. They're parts of one relationship.
         </Typography>
 
-        {/* Lead → Contact → Deal → Customer */}
         <Box
           sx={{
             display: 'flex',
@@ -575,21 +573,23 @@ function ComparisonColumn({
 }
 
 function DeveloperMessage() {
-const message = [
-  `Hello!, I’m Jestony Silvano, the developer behind UniThread. I graduated from Quezon City University in June 2026 with a Bachelor of Science in Information Technology, graduating with Latin Honors (Cum Laude) and a GPA of 1.59.`,
+  const message = [
+    `Hello! I’m Jestony Silvano, the developer behind UniThread. I graduated from Quezon City University in June 2026 with a Bachelor of Science in Information Technology, graduating with Latin Honors (Cum Laude) and a GPA of 1.59.`,
 
-  `UniThread is one of the projects that grew alongside my journey as a developer. A journey that has challenged me to learn beyond writing code, rethink my decisions, solve problems from the ground up, and turn an idea into something that can genuinely be useful to others. What began as a personal project has become an opportunity for me to explore how technology, design, and human connection can come together to create better ways of building and maintaining relationships.`,
+    `My interest in building UniThread started during my internship at Aqua Smart Guard Corp., where I was first exposed to a real business system through ERPNext. I remember being fascinated by how large and interconnected it was. Seeing how software supported an actual business made me think, "What if I tried building something like this myself, but started with something smaller?" That thought eventually led me toward building a CRM.`,
 
-  `UniThread started from a simple idea: technology should help us build better relationships, not make those relationships feel less human.`,
+    `That experience was valuable to me because it showed me that software is more than just code and features. There are real people and real businesses behind the systems we build. UniThread became a way for me to explore that idea while growing as a developer learning from mistakes, questioning my decisions, solving problems from the ground up, and trying to build something genuinely useful.`,
 
-  `As AI continues to become a larger part of how we work and communicate, I believe there is an important balance we need to maintain. AI can help us work faster, write better, organize information, identify patterns, and handle repetitive tasks. But a customer is still a person.`,
+    `UniThread started from a simple belief: technology should help us build better relationships, not make those relationships feel less human.`,
 
-  `The goal of UniThread is not to replace the person behind the relationship. It is to give that person better tools. I want UniThread to become a system where technology handles more of the work around the relationship, while people remain responsible for the relationship itself.`,
+    `As AI becomes a bigger part of how we work and communicate, I believe that matters even more. AI can help us work faster, organize information, recognize patterns, and handle repetitive tasks. But behind every customer and every conversation is still a person. I don't want UniThread to replace that person. I want it to give them better tools while keeping the relationship human.`,
 
-  `I also want to express my sincere appreciation to Myrtle Alyn Baes, who has been my personal QA Analyst and future QA Engineer throughout this journey. Her time spent reviewing UniThread, checking its behavior, questioning decisions and details, and helping me look at the system from a user's perspective has been an important part of making this project better. Having someone willing to challenge what I built and help me maintain a higher standard reminded me that good software is not only about making something work, but also about making sure it works well for the people who use it.`,
+    `I also want to sincerely thank Myrtle Alyn Baes, my personal QA Analyst and future QA Engineer throughout this journey. She reviewed UniThread, tested its behavior, questioned my decisions, caught details I missed, and helped me see the system from a user's perspective. Having someone willing to challenge what I built reminded me that good software isn't just about making something work, it's about making sure it works well for the people using it.`,
 
-  `This is still the beginning of the journey, but that principle will remain at the center of what I build.`,
-];
+    `UniThread is still far from finished, and I still have a lot to learn. But I'm proud of how far this idea has come and grateful for everyone who has helped shape it. This is only the beginning, but one principle will remain at the heart of what I build: technology should make human relationships better, not replace them.`,
+  ];
+
+
 
 
 
