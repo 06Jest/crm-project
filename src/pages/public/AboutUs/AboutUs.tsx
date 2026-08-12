@@ -14,12 +14,16 @@ import PersonIcon from '@mui/icons-material/Person';
 import ImageOutlinedIcon from '@mui/icons-material/ImageOutlined';
 import EastIcon from '@mui/icons-material/East';
 import FormatQuoteRoundedIcon from '@mui/icons-material/FormatQuoteRounded';
+import logoBrown from '../../../../assets/logobrown.svg';
+import developerImage from '../../../../assets/SilvanoFormalPicture.jpg';
+import humanConnectionImage from '../../../../assets/anthropomorphic-robot-that-performs-regular-human-job_23-2151061705.avif';
+import credImage from '../../../../assets/photo_2026-08-11_00-37-58.jpg';
 
-const LOGO_SRC = '/assets/unithread-logo.png';
-const DEVELOPER_IMAGE = '/src/assets/SilvanoFormalPicture.jpg';
-const HUMAN_CONNECTION_IMAGE =
-  '/src/assets/anthropomorphic-robot-that-performs-regular-human-job_23-2151061705.avif';
-const CRED_IMAGE = 'src/assets/photo_2026-08-11_00-37-58.jpg';
+const LOGO_SRC = logoBrown;
+const DEVELOPER_IMAGE = developerImage;
+const HUMAN_CONNECTION_IMAGE = humanConnectionImage;
+const CRED_IMAGE = credImage;
+
 const DEFAULT_DASHBOARD_ROUTE = '/app/dashboard';
 
 const CONTENT_MAX_WIDTH = 1140;
