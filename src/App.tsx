@@ -48,16 +48,13 @@ import CookiePolicyPage from './pages/public/CookiePolicy/CookiePolicy';
 
 function AppRoutes() {
   const location = useLocation();
-  const { collapsed, setCollapsed } = useSidebar(); 
+  const { setCollapsed } = useSidebar(); 
 
 
 
-  useEffect(() => {  
-    if (!collapsed) {
+  useEffect(() => {
     setCollapsed(true);
-  }
-    // trackPageView(location.pathname);
-  }, [location.pathname, setCollapsed, collapsed]);
+  }, [location.pathname, setCollapsed]);
 
   return (
       <Routes>
