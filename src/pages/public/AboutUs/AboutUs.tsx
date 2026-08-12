@@ -16,7 +16,7 @@ import EastIcon from '@mui/icons-material/East';
 import FormatQuoteRoundedIcon from '@mui/icons-material/FormatQuoteRounded';
 import logoBrown from '/logobrown.svg';
 import developerImage from '/SilvanoFormalPicture.jpg';
-import humanConnectionImage from './aiEmployee.avif';
+import humanConnectionImage from '/aiEmployee.avif';
 import credImage from '/photo_2026-08-11_00-37-58.jpg';
 
 const LOGO_SRC = logoBrown;
