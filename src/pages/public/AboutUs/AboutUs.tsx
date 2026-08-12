@@ -14,10 +14,10 @@ import PersonIcon from '@mui/icons-material/Person';
 import ImageOutlinedIcon from '@mui/icons-material/ImageOutlined';
 import EastIcon from '@mui/icons-material/East';
 import FormatQuoteRoundedIcon from '@mui/icons-material/FormatQuoteRounded';
-import logoBrown from '../../../../assets/logobrown.svg';
-import developerImage from '../../../../assets/SilvanoFormalPicture.jpg';
-import humanConnectionImage from '../../../../assets/anthropomorphic-robot-that-performs-regular-human-job_23-2151061705.avif';
-import credImage from '../../../../assets/photo_2026-08-11_00-37-58.jpg';
+import logoBrown from '/logobrown.svg';
+import developerImage from '/SilvanoFormalPicture.jpg';
+import humanConnectionImage from './anthropomorphic-robot-that-performs-regular-human-job_23-2151061705.avif';
+import credImage from '/photo_2026-08-11_00-37-58.jpg';
 
 const LOGO_SRC = logoBrown;
 const DEVELOPER_IMAGE = developerImage;
