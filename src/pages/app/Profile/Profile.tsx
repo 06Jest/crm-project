@@ -849,7 +849,6 @@ export default function Profile({
 
                   <InfoRow
                     label="Password"
-                    value="••••••••••"
                     trailing={
                       <Button
                         size="small"

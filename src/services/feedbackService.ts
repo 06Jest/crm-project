@@ -1,8 +1,15 @@
 import { apiClient } from "./apiClient";
 
+export type FeedbackUserType =
+  | "everyday_user"
+  | "manager"
+  | "technical"
+  | "prefer_not_to_say";
+
 export interface CreateFeedbackData {
   name?: string;
   email?: string;
+  userType?: FeedbackUserType;
   rating?: number | null;
   message: string;
 }
@@ -11,6 +18,7 @@ export interface Feedback {
   id: string;
   name: string | null;
   email: string | null;
+  userType: FeedbackUserType;
   rating: number | null;
   message: string;
   created_at: string;

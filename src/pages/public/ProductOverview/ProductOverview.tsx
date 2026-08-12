@@ -678,7 +678,7 @@ const TECH_STACK = [
       'Supabase Auth',
       'Supabase Realtime',
       'Row Level Security',
-      'Node.js + Express (coming)',
+      'Node.js + Express',
       'RESTful API',
     ],
   },
@@ -705,7 +705,7 @@ const TECH_STACK = [
       '3-tier role system',
       'Vercel (frontend)',
       'Railway (backend)',
-      'GitHub Actions CI/CD',
+      'Docker (backend)',
     ],
   },
 ];
@@ -1580,6 +1580,13 @@ export default function ProductOverview() {
               </Grid>
             ))}
           </Grid>
+          <Box sx={{display: 'flex', justifyContent: 'center', mt: 2}}>
+            <Button 
+            endIcon={<ArrowForwardIcon />}
+            variant="outlined" onClick={() => navigate('/security')} sx={{ fontWeight: 600 }}>
+                  Full Details
+            </Button>
+          </Box>
         </Container>
       </Box>
 
@@ -1705,6 +1712,13 @@ export default function ProductOverview() {
               </Reveal>
             </Grid>
           </Grid>
+          <Box sx={{display: 'flex', justifyContent: 'center', mt: 5}}>
+            <Button 
+            endIcon={<ArrowForwardIcon />}
+            variant="outlined" onClick={() => navigate('/pricing')} sx={{ fontWeight: 600 }}>
+                  Full Details
+            </Button>
+          </Box>
         </Container>
       </Box>
 
@@ -1844,6 +1858,13 @@ export default function ProductOverview() {
                 </AccordionDetails>
               </Accordion>
             ))}
+            <Box sx={{display: 'flex', justifyContent: 'center'}}>
+              <Button 
+              endIcon={<ArrowForwardIcon />}
+              variant="outlined" onClick={() => navigate('/roadmap')} sx={{ fontWeight: 600 }}>
+                    Full Roadmap 
+              </Button>
+            </Box>
           </Reveal>
         </Container>
       </Box>

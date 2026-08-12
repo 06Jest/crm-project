@@ -120,7 +120,7 @@ const socialLinks: SocialLink[] = [
 const contactInfo = {
   email: 'silvanojestony27@gmail.com',
   phone: '+63 968 768 0777',
-  address: 'Quezon City, National Capital Region, Philippines',
+  address: 'Rodriguez, Rizal, Philippines',
 };
 
 
