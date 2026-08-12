@@ -17,6 +17,7 @@ import CallsPanel from './components/panels/CallsPanel';
 import SmsPanel from './components/panels/SMSPanel';
 import ChatsPanel from './components/panels/ChatsPanel';
 import { BrowserRouter } from 'react-router-dom';
+import ScrollToTop from './components/ScrollToTop';
 
 export  function ThemedApp() {
   const themeMode = useSelector(
@@ -48,6 +49,7 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
     <Provider store={store}>
       <BrowserRouter>
+        <ScrollToTop />
         <SidebarProvider>
           <DockProvider>
             <ThemedApp />
