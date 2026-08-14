@@ -13,8 +13,6 @@ import PersonSearchIcon from '@mui/icons-material/PersonSearch';
 function Topbar() {
   const navigate = useNavigate();
   const location = useLocation();
-  // const { isAdmin, isSuperAdmin } = useRole();
-
   const handleChange = (_: unknown, newValue: string) => {
     navigate(newValue);
   };
@@ -27,13 +25,6 @@ function Topbar() {
     { label: "Customers", value: "/app/customers", icon: <PermContactCalendarIcon /> },
     { label: "Activities", value: "/app/activities", icon: <EventNoteIcon /> },
 
-    // ...(isAdmin
-    //   ? [{ label: "Reports", value: "/app/reports", icon: <DashboardIcon /> }]
-    //   : []),
-
-    // ...(isSuperAdmin
-    //   ? [{ label: "Analytics", value: "/app/analytics", icon: <DashboardIcon /> }]
-    //   : []),
   ];
 
 const path = location.pathname;
@@ -51,11 +42,11 @@ const tabValue =
   return (
     <Box
       sx={{
-        mt: 8,
+        mt: 7.5,
         position: "fixed",
         left: 0,
         right: 0,
-        zIndex: 2,
+        zIndex: 400,
         borderColor: "divider",
         display: "flex",
         justifyContent: "center",
@@ -86,20 +77,21 @@ const tabValue =
 
               },
               minWidth: {
-                xs: 60,
-                sm: 90,
+                xs: 50,
+                sm: 80,
+                md: 100
               },
               minHeight: {
                 xs: 30,
                 sm: 50,
               },
               fontSize: {
-                xs: "0.7rem",
+                xs: "0.65rem",
                 sm: "0.85rem",
-                md: "1rem",
+                md: "1.2rem",
               },
               padding: {
-                xs: "4px 8px",
+                xs: "2px 8px",
                 sm: "6px 12px",
               },
             }}

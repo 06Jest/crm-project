@@ -224,7 +224,16 @@ function DashboardMockup() {
   ];
   return (
     <Box>
-      <Box sx={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 1.25, mb: 2.25 }}>
+      <Box  
+      sx={{
+        display: "grid",
+        gridTemplateColumns: {
+          xs: "repeat(2, 1fr)",
+          sm: "repeat(4, 1fr)",
+        },
+        gap: 1.25,
+        mb: 2.25,
+      }}>
         {stats.map((s) => (
           <Box key={s.label} sx={{ p: 1.25, borderRadius: 2, border: "1px solid", borderColor: "divider" }}>
             <Stack direction="row" alignItems="center" spacing={0.5} sx={{ color: "text.secondary", mb: 0.5 }}>
@@ -669,7 +678,7 @@ function ProblemSection() {
         Keep every customer relationship in one connected thread.
       </SectionHeading>
       <Typography color="text.secondary" sx={{ maxWidth: 680, mb: 4 }}>
-      Businesses connect with people at every stage. From leads discovering them, to contacts becoming opportunities, to customers building lasting relationships. UniThread brings those relationships together in one place, so businesses can stay connected to the people who matter. </Typography>
+      Businesses connect with people at every stage. From leads discovering them, to contacts becoming opportunities, to customers building lasting relationships. uniThread brings those relationships together in one place, so businesses can stay connected to the people who matter. </Typography>
       <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)" }, gap: 1.25, maxWidth: 680, mb: 6 }}>
         {PROBLEM_QUESTIONS.map((q) => (
           <Stack key={q} direction="row" spacing={1} alignItems="center">
@@ -715,7 +724,7 @@ function ProblemSection() {
         </Card>
       </Box>
       <Typography sx={{ fontWeight: 700 }}>
-      UniThread solves this by connecting businesses and the people they serve through a single, continuous thread. </Typography>
+      uniThread solves this by connecting businesses and the people they serve through a single, continuous thread. </Typography>
     </Section>
   );
 }

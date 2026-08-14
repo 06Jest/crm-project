@@ -328,9 +328,15 @@ const selectionCount =
         justifyContent: 'center', 
         flexDirection: 'rows',
         flex: 1,
-        minWidth: 320,
-        p: 2,
-        mx: 2,
+        minWidth: 300,
+        p: {
+          sm: 0,
+          md: 2
+        },
+        mx: {
+          sm: 0.5,
+          md: 2
+        },
         height: 850}}>
         <Paper
           variant="outlined"
@@ -350,7 +356,7 @@ const selectionCount =
           }}
         >
           <Box sx={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 2, pb: 1.5}}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, position: 'sticky' }}>
               <Avatar
                 sx={{
                   width: 38,
@@ -362,7 +368,7 @@ const selectionCount =
                 <GroupsIcon fontSize="small" />
               </Avatar>
               <Box>
-                <Typography variant="h5" fontWeight={800} sx={{ lineHeight: 1.2, fontSize: 20 }}>
+                <Typography variant="h5" fontWeight={800} sx={{ lineHeight: 1.2, fontSize: {md: 20, sm: 18, xs: 16}}}>
                   Contacts
                 </Typography>
                 <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>

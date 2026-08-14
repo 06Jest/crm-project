@@ -10,11 +10,13 @@ import {
   Collapse,
   useMediaQuery,
   useTheme,
+  Autocomplete,
 } from '@mui/material';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import { completeProfileSetupAPI } from "../../../services/onBoardingService";
-import type { CompleteProfileDTO } from '../../../types/profile';
+import { type CompleteProfileDTO } from '../../../types/profile';
 import ErrorAlert from '../../../components/Error';
+import { JOB_TITLE_OPTIONS } from '../../../types/global';
 
 interface ProfileStepProps {
   onNext: () => void;
@@ -205,14 +207,32 @@ export default function ProfileStep({ onNext }: ProfileStepProps): ReactElement 
         </Grid>
       </Grid>
 
-      <TextField
-        fullWidth
+      <Autocomplete
+        freeSolo
+        clearOnBlur={false}
+        options={JOB_TITLE_OPTIONS}
+        value={formData.job_title ?? ""}
         disabled={loading}
-        label="Job Title"
-        name="job_title"
-        value={formData.job_title}
-        onChange={handleInputChange}
-        placeholder="Sales Manager"
+        onChange={(_, value) => {
+          setFormData((prev) => ({
+            ...prev,
+            job_title: value ?? "",
+          }));
+        }}
+        onInputChange={(_, value) => {
+          setFormData((prev) => ({
+            ...prev,
+            job_title: value,
+          }));
+        }}
+        renderInput={(params) => (
+          <TextField
+            {...params}
+            fullWidth
+            label="Job Title"
+            placeholder="e.g. Sales Manager"
+          />
+        )}
       />
 
       <Box

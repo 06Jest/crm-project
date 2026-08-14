@@ -489,7 +489,7 @@ export default function AddContact() {
               <SectionHeader
                 icon={<ShareIcon fontSize="small" />}
                 title="Social & Messaging"
-                subtitle="Optional — add any accounts you have on hand"
+                subtitle="Optional, add any accounts you have on hand"
               />
 
               <Box sx={{ display: "flex", flexDirection: "column", gap: 1.75 }}>

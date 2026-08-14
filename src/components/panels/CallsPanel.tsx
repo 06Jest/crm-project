@@ -1,5 +1,4 @@
 
-
 import  { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import {
   Box,
@@ -24,6 +23,7 @@ import {
   Stack,
   Autocomplete,
   CircularProgress,
+  useMediaQuery,
 } from '@mui/material';
 import {
   Call as CallIcon,
@@ -51,9 +51,8 @@ import ClearAllIcon from '@mui/icons-material/ClearAll';
 import AddCallIcon from '@mui/icons-material/AddCall';
 import ErrorAlert from '../Error';
 import { formatName, formatShortTitle} from '../../utils/formatText';
-import { alpha } from '@mui/material/styles';
 import { fetchOrgMembers } from '../../store/organizationMemberSlice';
-
+import { alpha, useTheme } from '@mui/material/styles';
 
 
 const formatDuration = (seconds: number | null): string => {
@@ -155,6 +154,8 @@ export default function CallsPanel() {
   loaded: mLd,
 } = useSelector((state: RootState) => state.orgmembers);
 
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const dialTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -629,7 +630,7 @@ export default function CallsPanel() {
 }
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: 470, overflowY: 'auto' }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: { xs: '100%', md: 470 }, overflowY: 'auto' }}>
       <Box>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}> 
           <TextField
@@ -683,7 +684,7 @@ export default function CallsPanel() {
         </Box>
       </Box>
 
-      <Box sx={{ p: 0.8, display: 'flex', alignItems: 'center', gap: 1, overflowX: 'auto', pt: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
+      <Box sx={{ p: 0.8, display: 'flex', alignItems: 'center', gap: 1, flexWrap: { xs: 'wrap', sm: 'nowrap' }, overflowX: { xs: 'visible', sm: 'auto' }, pt: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
          <FormControl size="small">
             <InputLabel sx={{ fontSize: "0.85rem", mt: "-5px" }}>
               Status
@@ -699,7 +700,7 @@ export default function CallsPanel() {
                 })
               }
               sx={(theme) => ({
-                width: 130,
+                width: { xs: 110, sm: 130 },
                 borderRadius: 2,
                 bgcolor: alpha(theme.palette.text.primary, 0.03),
                 "& .MuiInputBase-input": {
@@ -732,13 +733,13 @@ export default function CallsPanel() {
               </MenuItem>
             </Select>
           </FormControl>
-        <FormControl size="small" sx={{ minWidth: 120 }}>
+        <FormControl size="small" sx={{ minWidth: { xs: 100, sm: 120 } }}>
           <InputLabel sx={{fontSize: '0.85rem', mt: '-5px'}}>Type</InputLabel>
           <Select
             value={filters.type || ''}
             onChange={(e) => setFilters({ ...filters, type: (e.target.value as CallType) || undefined })}
             sx={(theme) => ({
-              width: 120,
+              width: { xs: 100, sm: 120 },
               borderRadius: 2,
               bgcolor: alpha(theme.palette.text.primary, 0.03),
               "& .MuiInputBase-input": { py: "3px", fontSize: 11, fontWeight: 700 },
@@ -754,13 +755,13 @@ export default function CallsPanel() {
           </Select>
         </FormControl>
 
-        <FormControl size="small" sx={{ minWidth: 100 }}>
+        <FormControl size="small" sx={{ minWidth: { xs: 90, sm: 100 } }}>
           <InputLabel sx={{fontSize: '0.85rem', mt: '-5px'}}>Priority</InputLabel>
           <Select
             value={filters.priority || ''}
             onChange={(e) => setFilters({ ...filters, priority: (e.target.value as CallPriority) || undefined })}
             sx={(theme) => ({
-              width: 100,
+              width: { xs: 90, sm: 100 },
               borderRadius: 2,
               bgcolor: alpha(theme.palette.text.primary, 0.03),
               "& .MuiInputBase-input": { py: "3px", fontSize: 11, fontWeight: 700 },
@@ -856,8 +857,8 @@ export default function CallsPanel() {
                     </Avatar>
 
                     <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Typography variant="subtitle2" fontWeight={700} noWrap>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                        <Typography variant="subtitle2" fontWeight={700} noWrap sx={{ minWidth: 0, flexShrink: 1 }}>
                           {call.subject}
                         </Typography>
                        <Chip
@@ -867,6 +868,7 @@ export default function CallsPanel() {
                           sx={{
                             height: 18,
                             fontSize: '0.6rem',
+                            flexShrink: 0,
                           }}
                         />
                         <Chip
@@ -877,6 +879,7 @@ export default function CallsPanel() {
                             color: '#fff',
                             height: 18,
                             fontSize: '0.6rem',
+                            flexShrink: 0,
                           }}
                         />
                       </Box>
@@ -1000,9 +1003,26 @@ export default function CallsPanel() {
       <Dialog
         open={openCreateDialog}
         onClose={() => setOpenCreateDialog(false)}
+        fullScreen={isMobile}
         maxWidth="sm"
         fullWidth
-        PaperProps={{ sx: { borderRadius: 3, overflow: 'hidden' } }}
+        scroll="paper"
+        sx={{  
+          zIndex: 2500,
+        }}
+        PaperProps={{
+          sx: {
+            display: 'flex',
+            flexDirection: 'column',
+            width: '100%',
+            maxWidth: { xs: '100%', sm: 600 },
+            height: { xs: '100dvh', sm: 'auto' },
+            maxHeight: { xs: '100dvh', sm: '90vh' },
+            margin: { xs: 0, sm: 2 },
+            borderRadius: { xs: 0, sm: 3 },
+            overflow: 'hidden',
+          },
+        }}
       >
         <DialogTitle
           sx={{
@@ -1012,45 +1032,79 @@ export default function CallsPanel() {
             bgcolor: 'primary.main',
             color: '#fff',
             py: 1.5,
+            px: { xs: 2, sm: 3 },
+            flexShrink: 0,
           }}
         >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <Avatar sx={{ width: 32, height: 32,color: 'white' , bgcolor: 'rgba(255,255,255,0.2)' }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1.5,
+              minWidth: 0,
+            }}
+          >
+            <Avatar
+              sx={{
+                width: 32,
+                height: 32,
+                color: 'white',
+                bgcolor: 'rgba(255,255,255,0.2)',
+                flexShrink: 0,
+              }}
+            >
               <AddCallIcon sx={{ fontSize: 18 }} />
             </Avatar>
-            <Typography variant="subtitle1" fontWeight={700}>
+
+            <Typography
+              variant="subtitle1"
+              fontWeight={700}
+              noWrap
+            >
               New Call
             </Typography>
           </Box>
+
           <IconButton
             size="small"
             onClick={() => {
               dispatch(clearCallsError());
               setOpenCreateDialog(false);
             }}
-            sx={{ color: '#fff' }}
+            sx={{
+              color: '#fff',
+              flexShrink: 0,
+            }}
           >
             <CloseIcon fontSize="small" />
           </IconButton>
         </DialogTitle>
 
-        <DialogContent sx={{ pt: 3, pb: 2}}>
-          <Stack spacing={2.5} sx={{ pt: 1 }}>
+        <DialogContent
+          sx={{
+            px: { xs: 1.5, sm: 3 },
+            pt: { xs: 2, sm: 3 },
+            pb: 2,
+            overflowY: 'auto',
+            WebkitOverflowScrolling: 'touch',
+          }}
+        >
+          <Stack spacing={{ xs: 1.5, sm: 2.5 }} sx={{ pt: 1 }}>
             {error && (
               <Box sx={{ width: '100%' }}>
                 <ErrorAlert message={error} />
               </Box>
             )}
 
-            <Box
-              sx={(theme) => ({
-                p: 1.5,
-                borderRadius: 2,
-                border: '1px solid',
-                borderColor: theme.palette.divider,
-                bgcolor: alpha(theme.palette.text.primary, 0.015),
-              })}
-            >
+           <Box
+            sx={(theme) => ({
+              p: { xs: 1.25, sm: 1.5 },
+              borderRadius: 2,
+              border: '1px solid',
+              borderColor: theme.palette.divider,
+              bgcolor: alpha(theme.palette.text.primary, 0.015),
+            })}
+          >
               <Typography
                 variant="overline"
                 color="text.secondary"
@@ -1060,8 +1114,8 @@ export default function CallsPanel() {
               </Typography>
 
               <Stack spacing={2}>
-                <Stack direction="row" spacing={2}>
-                  <FormControl size="small" sx={{ width: '50%' }}>
+                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                  <FormControl size="small" sx={{ width: { xs: '100%', sm: '50%' } }}>
                     <InputLabel>Assigned To</InputLabel>
                     <Select
                       value={formData.assigned_to || ''}
@@ -1081,7 +1135,7 @@ export default function CallsPanel() {
                     </Select>
                   </FormControl>
 
-                  <FormControl sx={{ width: '50%' }}>
+                  <FormControl sx={{ width: { xs: '100%', sm: '50%' } }}>
                     <InputLabel>Recipient Type</InputLabel>
                     <Select
                       size="small"
@@ -1095,7 +1149,7 @@ export default function CallsPanel() {
                   </FormControl>
                 </Stack>
 
-                <Stack direction="row" spacing={2}>
+                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
                   <Autocomplete
                     size="small"
                     options={recipientOptions}
@@ -1129,12 +1183,12 @@ export default function CallsPanel() {
                         });
                       }
                     }}
-                    sx={{ width: '50%' }}
+                    sx={{ width: { xs: '100%', sm: '50%' } }}
                     renderInput={(params) => <TextField {...params} label="Recipient" />}
                   />
 
                   <TextField
-                    sx={{ width: '50%' }}
+                    sx={{ width: { xs: '100%', sm: '50%' } }}
                     size="small"
                     label="Phone Number"
                     value={selectedPhone}
@@ -1181,7 +1235,7 @@ export default function CallsPanel() {
                   }
                 />
 
-                <Stack direction="row" spacing={2}>
+                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
                   <FormControl fullWidth size="small">
                     <InputLabel>Call Type</InputLabel>
                     <Select
@@ -1286,13 +1340,26 @@ export default function CallsPanel() {
           </Stack>
         </DialogContent>
 
-        <DialogActions sx={{ px: 3, py: 2}}>
+        <DialogActions
+          sx={{
+            flexShrink: 0,
+            px: { xs: 1.5, sm: 3 },
+            py: 2,
+            gap: 1,
+            borderTop: '1px solid',
+            borderColor: 'divider',
+            backgroundColor: 'background.paper',
+          }}
+        >
           <Button
             onClick={() => {
               dispatch(clearCallsError());
               setOpenCreateDialog(false);
             }}
-            sx={{ borderRadius: 2 }}
+            sx={{
+              borderRadius: 2,
+              minHeight: 40,
+            }}
           >
             Cancel
           </Button>
@@ -1306,8 +1373,18 @@ export default function CallsPanel() {
               (!formData.lead_id && !formData.contact_id) ||
               !formData.assigned_to
             }
-            sx={{ borderRadius: 2 }}
-            startIcon={!caL ? (formData.scheduled_for ? <ScheduleIcon /> : <CallIcon />) : undefined}
+            sx={{
+              borderRadius: 2,
+              minHeight: 40,
+              minWidth: { xs: 120, sm: 'auto' },
+            }}
+            startIcon={
+              !caL
+                ? (formData.scheduled_for
+                    ? <ScheduleIcon />
+                    : <CallIcon />)
+                : undefined
+            }
           >
             {caL ? (
               <CircularProgress size={15} color="inherit" />
@@ -1324,9 +1401,23 @@ export default function CallsPanel() {
       <Dialog
         open={openDetailDialog}
         onClose={() => setOpenDetailDialog(false)}
+        fullScreen={isMobile}
         maxWidth="sm"
         fullWidth
-        PaperProps={{ sx: { borderRadius: 3, overflow: 'hidden' } }}
+        scroll="paper"
+        sx={{
+          zIndex: 2600,
+        }}
+        PaperProps={{
+          sx: {
+            borderRadius: { xs: 0, sm: 3 },
+            overflow: 'hidden',
+            width: '100%',
+            maxWidth: { xs: '100%', sm: 600 },
+            maxHeight: { xs: '100%', sm: '90vh' },
+            m: { xs: 0, sm: 2 },
+          },
+        }}
       >
         <DialogTitle
           sx={{
@@ -1336,6 +1427,7 @@ export default function CallsPanel() {
             bgcolor: 'primary.main',
             color: '#fff',
             py: 1.5,
+            
           }}
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>

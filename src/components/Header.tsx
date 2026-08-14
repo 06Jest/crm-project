@@ -23,8 +23,9 @@ import {
   useTheme,
   useMediaQuery,
 } from "@mui/material";
-import { useSelector } from 'react-redux';
-import type { RootState } from '../store/store';
+import { toggleTheme } from '../store/uiSlice';
+import { useDispatch, useSelector } from 'react-redux';
+import type { AppDispatch, RootState } from '../store/store';
 import logo from '../assets/logobrown.svg'
 import { useState } from "react";
 import { useNavigate } from 'react-router-dom';
@@ -34,6 +35,8 @@ import FeedbackIcon from '@mui/icons-material/Feedback';
 import CancelIcon from '@mui/icons-material/Cancel';
 import MenuIcon from '@mui/icons-material/Menu';
 import HomeRoundedIcon from '@mui/icons-material/HomeRounded';
+import DarkModeIcon from '@mui/icons-material/DarkMode';
+import LightModeIcon from '@mui/icons-material/LightMode';
 
 const NAV_LINKS = [
   { label: 'Overview', path: '/overview' },
@@ -46,7 +49,7 @@ const NAV_LINKS = [
 export default function Header() {
   const themeMode = useSelector((state: RootState) => state.ui.themeMode);
   const { logout } = useAuth();
-
+  const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const theme = useTheme();
   const isXs = useMediaQuery(theme.breakpoints.down('sm'));
@@ -70,8 +73,7 @@ export default function Header() {
     navigate('/login');
   };
 
-  const { user } = useSelector(
-    (state: RootState) => state.user)
+  const { user } = useAuth();
 
   const displayName =
     [user?.first_name, user?.last_name]
@@ -155,7 +157,6 @@ export default function Header() {
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
           {!user && (
             <>
-              {/* Desktop / tablet nav links */}
               <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 1 }}>
                 {NAV_LINKS.map((link) => (
                   <Button
@@ -182,9 +183,20 @@ export default function Header() {
                 >
                   Get started
                 </Button>
+                {!user && (
+                  <IconButton
+                    onClick={()=> dispatch(toggleTheme())}
+                    title={themeMode === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
+                    >
+                    {themeMode === 'dark' ? (
+                      <LightModeIcon />
+                    ): (
+                      <DarkModeIcon />
+                    )}
+                  </IconButton>
+                  )}
               </Box>
 
-              {/* Mobile: compact CTA + hamburger */}
               <Box sx={{ display: { xs: 'flex', md: 'none' }, alignItems: 'center', gap: 1 }}>
                 <Button
                   variant="contained" disableElevation
@@ -195,6 +207,18 @@ export default function Header() {
                 >
                   {isXs ? 'Register' : 'Get started'}
                 </Button>
+                {!user && (
+                  <IconButton
+                    onClick={()=> dispatch(toggleTheme())}
+                    title={themeMode === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
+                    >
+                    {themeMode === 'dark' ? (
+                      <LightModeIcon />
+                    ): (
+                      <DarkModeIcon />
+                    )}
+                  </IconButton>
+                  )}
                 <IconButton
                   aria-label="Open menu"
                   color="primary"
@@ -202,6 +226,7 @@ export default function Header() {
                 >
                   <MenuIcon />
                 </IconButton>
+                
               </Box>
             </>
           )}
@@ -318,6 +343,7 @@ export default function Header() {
           >
             Get started
           </Button>
+          
         </Box>
       </Drawer>
 

@@ -48,18 +48,35 @@ export const getTheme = (mode: PaletteMode) =>
         defaultProps: {
           disableScrollLock: true,
         },
+        styleOverrides: {
+          root: {
+            zIndex: 3000,
+          },
+        },
+      },
+       MuiAutocomplete: {
+        styleOverrides: {
+          popper: {
+            zIndex: 3000,
+          },
+        },
+      },
+
+      MuiPopover: {
+        defaultProps: {
+          disableScrollLock: true,
+        },
+        styleOverrides: {
+          root: {
+            zIndex: 3000,
+          },
+        },
       },
        MuiDialog: {
         defaultProps: {
           disableScrollLock: true,
         },
       },
-      MuiPopover: {
-        defaultProps: {
-          disableScrollLock: true,
-        },
-      },
-
       MuiCard: {
         styleOverrides: {
           root: {

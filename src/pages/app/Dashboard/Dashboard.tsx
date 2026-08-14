@@ -179,8 +179,6 @@ const ACTIVITY_ICONS: Record<ActivityType, React.ElementType> = {
   task: TaskAltOutlinedIcon,
 };
 
-// Shared hover treatment for outlined surfaces — flat, no gradient, just a
-// slightly firmer border/shadow and a 1px lift. Respects reduced-motion.
 const surfaceHoverSx = {
   transition: (theme: Theme) =>
     theme.transitions.create(['border-color', 'box-shadow', 'transform'], { duration: 200 }),

@@ -9,9 +9,9 @@ to do before job seek:
 *1 day	  calls 
 *1 days   activities
 *1 day	  dashboard
-2 days	  settings(admin privilege)
-2 days	  responsiveness
-4 days	  test-polish
+*2 days	  settings(admin privilege)
+*2 days	  responsiveness
+*4 days	  test-polish
 1 day  deploy-documentation-Preparation-Loom Video - READme.md
 
 
@@ -40,4 +40,8 @@ to do during application:
 5 days	tan stack migration
 2 days  multi data migration
 7 days  full documentation( about, help, contact us, roadmap, terms, privacy)
+
+to do:
+modify dev message
+add user type for feedback
 

@@ -434,17 +434,17 @@ Organization
 
 Security
 
-⬜ Change password
+✅ Change password
 
-⬜ Correct current password required
+✅ Correct current password required
 
-⬜ Wrong current password rejected
+✅ Wrong current password rejected
 
-⬜ New password validation
+✅ New password validation
 
-⬜ Existing sessions handled correctly
+✅ Existing sessions handled correctly
 
-⬜ Login with new password
+✅ Login with new password
 
 16. 👨‍👩‍👧 Team / Members
 

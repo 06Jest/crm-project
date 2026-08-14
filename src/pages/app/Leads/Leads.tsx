@@ -35,7 +35,6 @@ import {
   DialogActions,
   TextField,
   MenuItem,
-  CircularProgress,
   IconButton,
   Chip,
   Popover,
@@ -45,6 +44,7 @@ import {
   Avatar,
   Stack,
   Tooltip,
+  Skeleton,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import InfoIcon from '@mui/icons-material/Info';
@@ -73,14 +73,10 @@ const PRIORITY_COLORS: Record<Priority, string> = {
   Low: '#ffffff00',
 }
 
-// --- Presentation-only helpers/styles. These do not touch lead data or app
-// logic — they only decide how existing fields are laid out and labeled. ---
-
-// How many cards render per column before the rest lazy-load in on scroll.
 const LAZY_CHUNK = 8;
-
+const LOAD_MORE_DELAY = 220;
 const CARD_TRANSITION =
-  'transform 0.2s cubic-bezier(0.4,0,0.2,1), box-shadow 0.2s cubic-bezier(0.4,0,0.2,1), border-color 0.2s ease';
+  'box-shadow 0.2s cubic-bezier(0.4,0,0.2,1), border-color 0.2s ease, opacity 0.2s ease';
 
 const fieldSx = {
   '& .MuiOutlinedInput-root': {
@@ -138,13 +134,39 @@ function PriorityBadge({ priority }: { priority: Priority }) {
   );
 }
 
-// Fades a card in the first time it scrolls into view. A lightweight stand-in
-// for image lazy-loading, since these cards render icon avatars, not photos.
-function RevealOnScroll({ children, delay = 0 }: { children: ReactNode; delay?: number }) {
+function usePrefersReducedMotion() {
+  const [reduced, setReduced] = useState(() =>
+    typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+      ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      : false
+  );
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return;
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const handler = () => setReduced(mq.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+
+  return reduced;
+}
+
+function RevealOnScroll({
+  children,
+  delay = 0,
+  disabled = false,
+}: {
+  children: ReactNode;
+  delay?: number;
+  disabled?: boolean;
+}) {
   const ref = useRef<HTMLDivElement | null>(null);
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
+    if (disabled) return;
+
     const el = ref.current;
     if (!el) return;
 
@@ -159,8 +181,13 @@ function RevealOnScroll({ children, delay = 0 }: { children: ReactNode; delay?: 
     );
 
     observer.observe(el);
+
     return () => observer.disconnect();
-  }, []);
+  }, [disabled]);
+
+  if (disabled) {
+    return <>{children}</>;
+  }
 
   return (
     <Box
@@ -176,8 +203,6 @@ function RevealOnScroll({ children, delay = 0 }: { children: ReactNode; delay?: 
   );
 }
 
-// Sentinel that reveals the next chunk of cards in a column once it scrolls
-// into view — keeps long columns from rendering everything up front.
 function LoadMoreSentinel({ onVisible }: { onVisible: () => void }) {
   const ref = useRef<HTMLDivElement | null>(null);
 
@@ -199,11 +224,53 @@ function LoadMoreSentinel({ onVisible }: { onVisible: () => void }) {
   return <Box ref={ref} aria-hidden sx={{ height: 1 }} />;
 }
 
+function LeadCardSkeleton({ reducedMotion }: { reducedMotion: boolean }) {
+  const anim = reducedMotion ? false : 'wave';
+  return (
+    <Card
+      sx={{
+        mb: 1.25,
+        borderRadius: 2.5,
+        border: '1px solid',
+        borderColor: 'divider',
+        boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+      }}
+    >
+      <CardContent sx={{ p: 1.25, '&:last-child': { pb: 1.25 }, display: 'flex', gap: 1.25 }}>
+        <Skeleton
+          variant="circular"
+          width={38}
+          height={38}
+          animation={anim}
+          sx={{ flexShrink: 0, mt: '2px' }}
+        />
+        <Box flex={1} minWidth={0}>
+          <Skeleton variant="text" width="65%" height={18} animation={anim} />
+          <Skeleton variant="text" width="40%" height={14} animation={anim} sx={{ mt: 0.5 }} />
+          <Stack direction="row" spacing={0.75} sx={{ mt: 0.75 }}>
+            <Skeleton variant="rounded" width={58} height={18} animation={anim} />
+            <Skeleton variant="rounded" width={68} height={18} animation={anim} />
+          </Stack>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 0.75 }}>
+            <Stack direction="row" spacing={0.5}>
+              <Skeleton variant="circular" width={22} height={22} animation={anim} />
+              <Skeleton variant="circular" width={22} height={22} animation={anim} />
+              <Skeleton variant="circular" width={22} height={22} animation={anim} />
+            </Stack>
+            <Skeleton variant="circular" width={22} height={22} animation={anim} />
+          </Box>
+        </Box>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function Leads() {
   const themeMode = useSelector((state: RootState) => state.ui.themeMode);
   const {items: leads, loading, loaded,  error } = useSelector((state: RootState) => state.leads);
   const dispatch = useDispatch<AppDispatch>();
   // const { user } = useAuth();
+  const prefersReducedMotion = usePrefersReducedMotion();
   const [isEditing, setIsEditing] = useState(false);
   const [edit, setEdit] = useState(false);
   const [openCloseConfirmation, setOpenCloseConfirmation] = useState(false);
@@ -220,8 +287,6 @@ export default function Leads() {
   const [hoveredLead, setHoveredLead] = useState<Lead | null>(null);
   const [openSnackbar, setOpenSnackbar] = useState(false);
 
-  // Presentation-only: how many cards per column are currently rendered.
-  // Purely controls lazy-loading of the list — never touches `leads` itself.
   const [visibleCounts, setVisibleCounts] = useState<Record<LeadStatus, number>>({
     New: LAZY_CHUNK,
     Contacted: LAZY_CHUNK,
@@ -232,6 +297,35 @@ export default function Leads() {
   const revealMore = useCallback((status: LeadStatus) => {
     setVisibleCounts((prev) => ({ ...prev, [status]: prev[status] + LAZY_CHUNK }));
   }, []);
+
+  const [loadingMore, setLoadingMore] = useState<Record<LeadStatus, boolean>>({
+    New: false,
+    Contacted: false,
+    Qualified: false,
+    Closed: false,
+  });
+  const loadMoreTimers = useRef<Partial<Record<LeadStatus, ReturnType<typeof setTimeout>>>>({});
+
+  useEffect(() => {
+    const timers = loadMoreTimers.current;
+    return () => {
+      Object.values(timers).forEach((timer) => {
+        if (timer) clearTimeout(timer);
+      });
+    };
+  }, []);
+
+  const handleLoadMore = useCallback((status: LeadStatus) => {
+    if (loadMoreTimers.current[status]) return;
+
+    setLoadingMore((prev) => (prev[status] ? prev : { ...prev, [status]: true }));
+
+    loadMoreTimers.current[status] = setTimeout(() => {
+      revealMore(status);
+      setLoadingMore((prev) => ({ ...prev, [status]: false }));
+      loadMoreTimers.current[status] = undefined;
+    }, LOAD_MORE_DELAY);
+  }, [revealMore]);
   
   const [search, setSearch] = useState<Record<LeadStatus, string>>({
     New: '',
@@ -569,8 +663,87 @@ const handleConfirmCloseLead = async () => {
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 20, height: 1200 }}>
-        <CircularProgress size={36} thickness={3.6} sx={{ color: 'primary.main', animationDuration: '900ms' }} />
+      <Box sx={{height: 1000}}>
+        <Box sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          width: { xs: '92%', sm: '85vw', md: '80vw' },
+          maxWidth: 1400,
+          mx: 'auto',
+          mb: 1,
+        }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
+            <Typography variant="h5" fontWeight={700}>
+              Leads
+            </Typography>
+            <Skeleton
+              variant="rounded"
+              width={120}
+              height={36}
+              animation={prefersReducedMotion ? false : 'wave'}
+              sx={{ borderRadius: 2 }}
+            />
+          </Box>
+        </Box>
+        <Box
+          sx={{
+            display: 'flex',
+            gap: 2,
+            pb: 2,
+            overflow: 'auto',
+            width: { xs: '92%', sm: '85vw', md: '80vw' },
+            maxWidth: 1400,
+            mb: 2,
+            p: '10px',
+            borderRadius: 2,
+            mx: 'auto',
+          }}
+        >
+          {LEAD_STATUSES.map((column) => (
+            <Box key={column} sx={{ width: '100%', minWidth: 300, flex: 1 }}>
+              <Box
+                sx={(theme) => ({
+                  px: 2,
+                  py: 1.25,
+                  borderRadius: '10px 10px 0 0',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  gap: 1,
+                  bgcolor: theme.palette.mode === 'dark' ? 'grey.800' : 'grey.200',
+                  borderBottom: '1px solid',
+                  borderColor: 'divider',
+                })}
+              >
+                <Typography fontWeight={700} variant="subtitle1" sx={{ whiteSpace: 'nowrap' }}>
+                  {column}
+                </Typography>
+                <Skeleton
+                  variant="rounded"
+                  height={24}
+                  animation={prefersReducedMotion ? false : 'wave'}
+                  sx={{ flex: 1, mx: 1, borderRadius: 5 }}
+                />
+              </Box>
+              <Box
+                sx={{
+                  minHeight: 500,
+                  height: 850,
+                  bgcolor: 'background.paper',
+                  borderRadius: '0 0 10px 10px',
+                  p: 1,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  borderTop: 0,
+                }}
+              >
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <LeadCardSkeleton key={i} reducedMotion={prefersReducedMotion} />
+                ))}
+              </Box>
+            </Box>
+          ))}
+        </Box>
       </Box>
     );
   }
@@ -582,31 +755,45 @@ const handleConfirmCloseLead = async () => {
       <Box sx={{
         display: 'flex',
         flexDirection: 'column',
-        width: '80vw',
+        width: { xs: '92%', sm: '85vw', md: '80vw' },
         maxWidth: 1400,
         mx: 'auto',
         mb: 1,
       }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="h5" fontWeight={700}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
+          <Typography sx={{fontSize: {md: 30, sm: 15}}} fontWeight={700}>
             Leads
           </Typography>
 
-          <Button
-            variant="contained"
-            disableElevation
-            startIcon={<AddIcon />}
-            onClick={() => navigate(`/app/addlead`)}
+          <IconButton
+            onClick={() => navigate("/app/addlead")}
             sx={{
-              textTransform: 'none',
-              fontWeight: 700,
-              borderRadius: 2,
-              transition: 'transform 0.15s ease, box-shadow 0.15s ease',
-              '&:hover': { transform: 'translateY(-1px)', boxShadow: '0 6px 14px rgba(0,0,0,0.12)' },
+              width: { xs: 36, sm: 40 },
+              height: { xs: 36, sm: 40 },
+              backgroundColor: 'primary.main',
+              borderRadius: "50%",
+              flexShrink: 0,
+              p: 0,
+              color: 'white',
+
+              "& svg": {
+                fontSize: { xs: 20, sm: 22 },
+              },
+
+              transition: "transform 0.15s ease, box-shadow 0.15s ease",
+
+              "&:hover": {
+                transform: "translateY(-1px)",
+                boxShadow: "0 6px 14px rgba(0,0,0,0.12)",
+              },
+
+              "&:active": {
+                transform: "scale(0.96)",
+              },
             }}
           >
-            Add Lead
-          </Button>
+            <AddIcon />
+          </IconButton>
         </Box>
 
         {(error || invalid) && (
@@ -624,7 +811,7 @@ const handleConfirmCloseLead = async () => {
             gap: 2,
             pb: 2,
             overflow: 'auto',
-            width: '80vw',
+            width: {md: '85vw', sm: '90vw', xs: '98vw' }, 
             maxWidth: 1400,
             mb: 2,
             p: '10px',
@@ -735,7 +922,6 @@ const handleConfirmCloseLead = async () => {
                         index={index}
                       >
                         {(provided, snapshot) => (
-                          <RevealOnScroll delay={Math.min(index, 6) * 35}>
                           <Card
                             ref={provided.innerRef}
                             {...provided.draggableProps}
@@ -746,19 +932,26 @@ const handleConfirmCloseLead = async () => {
                               border: '1px solid',
                               borderColor: snapshot.isDragging ? 'primary.main' : 'divider',
                               boxShadow: snapshot.isDragging
-                                ? '0 10px 24px rgba(0,0,0,0.16)'
+                                ? '0 14px 28px rgba(0,0,0,0.22)'
                                 : '0 1px 2px rgba(0,0,0,0.05)',
-                              cursor: 'grab',
-                              opacity: snapshot.isDragging ? 0.96 : 1,
-                              transform: snapshot.isDragging ? 'scale(1.01)' : 'scale(1)',
-                              transition: CARD_TRANSITION,
+                              cursor: snapshot.isDragging ? 'grabbing' : 'grab',
+                              opacity: snapshot.isDragging ? 0.97 : 1,
+                              bgcolor: 'background.paper',
+                              // Keep the dragged card above sibling cards. This is a
+                              // visual aid only - it does not participate in the
+                              // actual drag positioning, which the library owns.
+                              zIndex: snapshot.isDragging ? 1300 : 'auto',
+                              transition: prefersReducedMotion ? 'none' : CARD_TRANSITION,
                               '&:hover': {
                                 borderColor: 'primary.main',
                                 boxShadow: '0 6px 16px rgba(0,0,0,0.08)',
-                                transform: 'translateY(-2px)',
                               },
                             }}
                           >
+                            <RevealOnScroll
+                              delay={Math.min(index, 6) * 35}
+                              disabled={prefersReducedMotion}
+                            >
                             <CardContent sx={{ p: 1.25, '&:last-child': { pb: 1.25 }, display: 'flex', gap: 1.25 }}>
                               <Avatar
                                 onMouseEnter={(e) => handleMouseEnter(e, lead)}
@@ -889,14 +1082,22 @@ const handleConfirmCloseLead = async () => {
                               
                               
                             </CardContent>
+                            </RevealOnScroll>
                           </Card>
-                          </RevealOnScroll>
                         )}
                       </Draggable>
                     ))}
                     {provided.placeholder}
                     {visibleLeads.length < columnLeads.length && (
-                      <LoadMoreSentinel onVisible={() => revealMore(column)} />
+                      <>
+                        <LoadMoreSentinel onVisible={() => handleLoadMore(column)} />
+                        {loadingMore[column] && (
+                          <>
+                            <LeadCardSkeleton reducedMotion={prefersReducedMotion} />
+                            <LeadCardSkeleton reducedMotion={prefersReducedMotion} />
+                          </>
+                        )}
+                      </>
                     )}
                   </Box>
                 )}
@@ -1003,7 +1204,7 @@ const handleConfirmCloseLead = async () => {
             flexDirection: 'column',
             justifyContent: 'center',
             p: 2,
-            mx: 5,
+            mx: { xs: 1, sm: 3, md: 5 },
             mb: 1,
           }}>
           <DialogContent

@@ -90,18 +90,18 @@ const sections: TermsSection[] = [
   {
     id: 'about',
     number: 1,
-    title: 'About UniThread CRM',
+    title: 'About uniThread CRM',
     body: (
       <>
         <Paragraph>
-          UniThread CRM is a
+          uniThread CRM is a
           software-as-a-service platform designed to help individuals, teams, and
           organizations manage customer relationships and business communications.
           The name reflects the platform's purpose: a centralized thread connecting
           people, information, customer relationships, and business activities in
           one place.
         </Paragraph>
-        <Paragraph>UniThread provides functionality that may include:</Paragraph>
+        <Paragraph>uniThread provides functionality that may include:</Paragraph>
         <BulletList
           items={[
             'Lead management',
@@ -132,7 +132,7 @@ const sections: TermsSection[] = [
       <>
         <Paragraph>
           You must be legally capable of entering into these Terms to use
-          UniThread. By using the Service, you represent that you meet this
+          uniThread. By using the Service, you represent that you meet this
           requirement.
         </Paragraph>
         <Paragraph>You agree to:</Paragraph>
@@ -176,7 +176,7 @@ const sections: TermsSection[] = [
     body: (
       <>
         <Paragraph>
-          UniThread uses a multi-tenant organization model. An organization is a
+          uniThread uses a multi-tenant organization model. An organization is a
           workspace that may contain multiple members with different roles and
           permissions, including Owner, Manager, and Agent.
         </Paragraph>
@@ -202,7 +202,7 @@ const sections: TermsSection[] = [
     body: (
       <>
         <Paragraph>
-          Through your use of UniThread, you may submit information such as
+          Through your use of uniThread, you may submit information such as
           customer names, contact information, lead information, sales
           information, notes, messages, activities, business records, customer
           communications, files, and other supported information.
@@ -227,7 +227,7 @@ const sections: TermsSection[] = [
     body: (
       <>
         <Paragraph>
-          You are responsible for the information you submit to UniThread. You
+          You are responsible for the information you submit to uniThread. You
           must have the necessary rights, permissions, and lawful basis to
           collect, store, and process any information including personal
           information about your leads, contacts, and customers that you place
@@ -235,7 +235,7 @@ const sections: TermsSection[] = [
         </Paragraph>
         <Paragraph>
           You are responsible for complying with applicable privacy and
-          data-protection laws that apply to your use of UniThread and to the
+          data-protection laws that apply to your use of uniThread and to the
           information you process through it.
         </Paragraph>
       </>
@@ -247,7 +247,7 @@ const sections: TermsSection[] = [
     title: 'Acceptable Use',
     body: (
       <>
-        <Paragraph>You agree not to use UniThread to:</Paragraph>
+        <Paragraph>You agree not to use uniThread to:</Paragraph>
         <BulletList
           items={[
             'Violate any applicable law or regulation',
@@ -279,19 +279,19 @@ const sections: TermsSection[] = [
     body: (
       <>
         <Paragraph>
-          UniThread may provide communication tools such as email, internal
+          uniThread may provide communication tools such as email, internal
           messaging, SMS-related workflows, call-related functionality, and other
           communication features.
         </Paragraph>
         <Paragraph>
           Some communication functionality may currently be simulated, limited,
-          experimental, or dependent on third-party integrations. UniThread is not
+          experimental, or dependent on third-party integrations. uniThread is not
           a telecommunications provider, and delivery of any message is not
           guaranteed.
         </Paragraph>
         <Paragraph>
           You are responsible for ensuring that your communications sent through
-          UniThread comply with applicable laws regarding consent, marketing,
+          uniThread comply with applicable laws regarding consent, marketing,
           privacy, and unsolicited communications.
         </Paragraph>
       </>
@@ -304,7 +304,7 @@ const sections: TermsSection[] = [
     body: (
       <>
         <Paragraph>
-          UniThread may provide AI-assisted functionality, such as drafting
+          uniThread may provide AI-assisted functionality, such as drafting
           suggestions, summaries, or organizational assistance.
         </Paragraph>
         <Paragraph>
@@ -324,7 +324,7 @@ const sections: TermsSection[] = [
     body: (
       <>
         <Paragraph>
-          UniThread is currently a beta / developing service. By using the
+          uniThread is currently a beta / developing service. By using the
           Service, you acknowledge and accept that:
         </Paragraph>
         <BulletList
@@ -348,7 +348,7 @@ const sections: TermsSection[] = [
     body: (
       <>
         <Paragraph>
-          UniThread may offer free plans, paid plans, promotional plans, or other
+          uniThread may offer free plans, paid plans, promotional plans, or other
           subscription tiers introduced over time. Plans may differ in features,
           usage limits, member limits, record limits, storage limits, AI limits,
           communication limits, and retention limits.
@@ -383,7 +383,7 @@ const sections: TermsSection[] = [
     title: 'Payments and Refunds',
     body: (
       <>
-        <Paragraph>If paid subscriptions are offered on UniThread:</Paragraph>
+        <Paragraph>If paid subscriptions are offered on uniThread:</Paragraph>
         <BulletList
           items={[
             'Pricing will be shown before purchase',
@@ -403,7 +403,7 @@ const sections: TermsSection[] = [
     body: (
       <>
         <Paragraph>
-          UniThread may rely on third-party services for functionality such as
+          uniThread may rely on third-party services for functionality such as
           authentication, database infrastructure, hosting, email, payments,
           communication, analytics, AI, and other infrastructure.
         </Paragraph>
@@ -421,7 +421,7 @@ const sections: TermsSection[] = [
     body: (
       <>
         <Paragraph>
-          UniThread is provided on a best-effort basis. Uninterrupted or
+          uniThread is provided on a best-effort basis. Uninterrupted or
           error-free availability is not guaranteed. Downtime may occur due to
           maintenance, updates, infrastructure failures, third-party failures,
           network problems, security incidents, bugs, or force majeure events.
@@ -455,15 +455,15 @@ const sections: TermsSection[] = [
     body: (
       <>
         <Paragraph>
-          Personal information submitted to or collected by UniThread is handled
+          Personal information submitted to or collected by uniThread is handled
           in accordance with the{' '}
           <MuiLink component={RouterLink} to="/privacy" underline="hover">
-            UniThread Privacy Policy
+            uniThread Privacy Policy
           </MuiLink>
           .
         </Paragraph>
         <Paragraph>
-          Organizations using UniThread to process customer or employee
+          Organizations using uniThread to process customer or employee
           information remain responsible for complying with applicable privacy
           and data-protection requirements that apply to that information.
         </Paragraph>
@@ -477,13 +477,13 @@ const sections: TermsSection[] = [
     body: (
       <>
         <Paragraph>
-          UniThread's software, branding, interface, design, documentation,
+          uniThread's software, branding, interface, design, documentation,
           underlying technology, and other proprietary components belong to, or
           are licensed to, the Operator.
         </Paragraph>
         <Paragraph>
           These Terms grant you permission to use the Service; they do not
-          transfer any ownership of UniThread itself to you.
+          transfer any ownership of uniThread itself to you.
         </Paragraph>
       </>
     ),
@@ -496,7 +496,7 @@ const sections: TermsSection[] = [
       <>
         <Paragraph>
           You may submit suggestions, feature requests, bug reports, ideas, or
-          other feedback about UniThread. The Operator may use this feedback to
+          other feedback about uniThread. The Operator may use this feedback to
           improve the Service without any obligation to compensate you, provided
           that any confidential information you share is not improperly
           disclosed.
@@ -511,7 +511,7 @@ const sections: TermsSection[] = [
     body: (
       <>
         <Paragraph>
-          The Operator may suspend or terminate your access to UniThread in
+          The Operator may suspend or terminate your access to uniThread in
           circumstances including:
         </Paragraph>
         <BulletList
@@ -536,7 +536,7 @@ const sections: TermsSection[] = [
     body: (
       <>
         <Paragraph>
-          After termination, your access to UniThread generally ends. Your User
+          After termination, your access to uniThread generally ends. Your User
           Content may be deleted, retained for a limited period, or otherwise
           handled in accordance with the Privacy Policy and applicable law.
         </Paragraph>
@@ -554,7 +554,7 @@ const sections: TermsSection[] = [
     body: (
       <>
         <Paragraph>
-          To the maximum extent permitted by applicable law, UniThread is
+          To the maximum extent permitted by applicable law, uniThread is
           provided on an <strong>"AS IS"</strong> and <strong>"AS AVAILABLE"</strong>{' '}
           basis, without warranties of any kind, whether express, implied, or
           statutory.
@@ -589,7 +589,7 @@ const sections: TermsSection[] = [
           not be liable for any indirect, incidental, special, consequential,
           exemplary, or punitive damages, including but not limited to loss of
           profits, revenue, business opportunities, data, goodwill, or business
-          operations, arising out of or related to your use of UniThread.
+          operations, arising out of or related to your use of uniThread.
         </Paragraph>
         <Paragraph>
           To the extent permitted by applicable law, the Operator's total
@@ -610,7 +610,7 @@ const sections: TermsSection[] = [
         <Paragraph>
           To the extent permitted by applicable law, you agree to be responsible
           for claims, damages, or expenses arising from your violation of these
-          Terms, your unlawful use of UniThread, your User Content, your
+          Terms, your unlawful use of uniThread, your User Content, your
           violation of another person's rights, or your violation of applicable
           law.
         </Paragraph>
@@ -624,7 +624,7 @@ const sections: TermsSection[] = [
     body: (
       <>
         <Paragraph>
-          UniThread is continuously developing. The Operator may add, remove, or
+          uniThread is continuously developing. The Operator may add, remove, or
           modify features, change interfaces, suspend functionality, or
           discontinue parts of the Service. Reasonable notice will be provided
           for material changes where appropriate.
@@ -644,8 +644,8 @@ const sections: TermsSection[] = [
         </Paragraph>
         <Paragraph>
           For material changes, the Operator may provide notice through
-          UniThread, email, the website, or other reasonable methods. Continued
-          use of UniThread after changes become effective constitutes acceptance
+          uniThread, email, the website, or other reasonable methods. Continued
+          use of uniThread after changes become effective constitutes acceptance
           of the updated Terms, where legally permitted.
         </Paragraph>
       </>
@@ -720,7 +720,7 @@ const sections: TermsSection[] = [
         <Paragraph>
           These Terms, together with the Privacy Policy and any applicable
           feature-specific terms, constitute the entire agreement between you
-          and the Operator concerning your use of UniThread.
+          and the Operator concerning your use of uniThread.
         </Paragraph>
       </>
     ),
@@ -933,7 +933,7 @@ function ContactCard() {
       }}
     >
       <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
-        UniThread CRM
+        uniThread CRM
       </Typography>
       <Box sx={{ display: 'grid', gap: 0.75 }}>
         <Typography variant="body2" color="text.secondary">
@@ -1007,9 +1007,9 @@ export default function TermsOfService() {
           </Typography>
           <Paragraph>
             These Terms of Service govern your access to and use of
-            UniThread CRM, including the website, application, and related
+            uniThread CRM, including the website, application, and related
             services. By creating an account or
-            otherwise using UniThread, you agree to these Terms.
+            otherwise using uniThread, you agree to these Terms.
           </Paragraph>
         </Box>
 
@@ -1047,11 +1047,11 @@ export default function TermsOfService() {
                 Acceptance of These Terms
               </Typography>
               <Paragraph>
-                By creating an account or using UniThread CRM, you acknowledge
+                By creating an account or using uniThread CRM, you acknowledge
                 that you have read, understood, and agreed to these Terms.
               </Paragraph>
               <Paragraph sx={{ mb: 0 }}>
-                UniThread is currently a beta / developing service. You are
+                uniThread is currently a beta / developing service. You are
                 responsible for the data and communications you place into the
                 platform.
               </Paragraph>
@@ -1066,7 +1066,7 @@ export default function TermsOfService() {
                 Help Center
               </MuiLink>
               <MuiLink component={RouterLink} to="/aboutus" underline="hover" sx={{ fontWeight: 600 }}>
-                About UniThread
+                About uniThread
               </MuiLink>
             </Box>
           </Box>

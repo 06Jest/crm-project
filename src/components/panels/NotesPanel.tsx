@@ -1058,6 +1058,7 @@ const removeNote = async (note: NoteListItem) => {
         open={openDelete}
         onClose={() => setOpenDelete(false)}
         maxWidth="xs"
+        sx={{zIndex: 2500}}
         fullWidth
         PaperProps={{ sx: { borderRadius: 3 } }}
       >
