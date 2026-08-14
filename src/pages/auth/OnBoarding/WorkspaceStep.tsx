@@ -230,7 +230,7 @@ export default function WorkspaceStep({
                 </Box>
               </Stack>
             }
-          />S
+          />
         </Box>
 
         <Box

@@ -315,7 +315,7 @@ export default function Footer() {
           }}
         >
           <Typography variant="caption" color="text.secondary">
-            © {CURRENT_YEAR} UniThread. All rights reserved.
+            © {CURRENT_YEAR} uniThread. All rights reserved.
           </Typography>
 
           <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', justifyContent: 'center', flex: 1 }}>
