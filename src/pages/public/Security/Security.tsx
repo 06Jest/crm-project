@@ -39,7 +39,7 @@ const LAST_UPDATED = 'August 10, 2026';
 const OPERATOR_NAME = 'Jestony Silvano';
 const SECURITY_EMAIL = 'silvanojestony27@gmail.com';
 
-const subject = 'Security issue report UniThread CRM';
+const subject = 'Security issue report uniThread CRM';
 
 const gmailHref =
   `https://mail.google.com/mail/?view=cm&fs=1` +
@@ -504,7 +504,7 @@ const COMMUNICATION_FEATURES = [
     label: 'Email',
     icon: <MailOutlineIcon />,
     status: 'Live',
-    description: "Sent through UniThread's email infrastructure.",
+    description: "Sent through uniThread's email infrastructure.",
   },
   {
     label: 'Internal chat',
@@ -598,7 +598,7 @@ export default function Security() {
             </Typography>
 
             <Typography variant="h6" component="p" color="text.secondary" sx={{ fontWeight: 400, lineHeight: 1.7, fontSize: { xs: '1rem', sm: '1.1rem' } }}>
-              UniThread CRM is designed with authentication, authorization,
+              uniThread CRM is designed with authentication, authorization,
               database-level isolation, and organization-scoped access
               controls working together to protect workspace data.
             </Typography>
@@ -679,12 +679,12 @@ export default function Security() {
         <Reveal>
           <SectionHeader eyebrow="Access" title="Authentication" />
           <Typography variant="body1" color="text.secondary" sx={{ lineHeight: 1.8, mb: 2, maxWidth: 700 }}>
-            UniThread uses authenticated access to protect user accounts and
+            uniThread uses authenticated access to protect user accounts and
             workspace resources. Before a user can reach protected CRM
             functionality, they must establish a valid session.
           </Typography>
           <Typography variant="body1" color="text.secondary" sx={{ lineHeight: 1.8, mb: 3, maxWidth: 700 }}>
-            UniThread currently uses:
+            uniThread currently uses:
           </Typography>
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5 }}>
             {['JWT-based authentication', 'Email verification', 'Secure login flows', 'Password reset functionality', 'Protected application routes', 'Authenticated API requests'].map(
@@ -703,7 +703,7 @@ export default function Security() {
           <SectionHeader
             eyebrow="Permissions"
             title="Role-based access control"
-            description="UniThread uses role-based authorization to control what members can do within an organization."
+            description="uniThread uses role-based authorization to control what members can do within an organization."
           />
         </Reveal>
 
@@ -756,7 +756,7 @@ export default function Security() {
           <SectionHeader
             eyebrow="Multi-tenancy"
             title="Multi-tenant data isolation"
-            description="UniThread is built around a multi-tenant architecture. Each organization has its own workspace and organization-scoped data."
+            description="uniThread is built around a multi-tenant architecture. Each organization has its own workspace and organization-scoped data."
           />
         </Reveal>
 
@@ -804,7 +804,7 @@ export default function Security() {
             <Box sx={{ flex: 1 }}>
               <SectionHeader eyebrow="Data layer" title="Database-level security" />
               <Typography variant="body1" color="text.secondary" sx={{ lineHeight: 1.8, mb: 2, maxWidth: 700 }}>
-                UniThread uses PostgreSQL Row Level Security (RLS) to enforce
+                uniThread uses PostgreSQL Row Level Security (RLS) to enforce
                 organization-level data access policies. RLS helps restrict
                 database operations according to authenticated user context
                 and organization membership.
@@ -867,7 +867,7 @@ export default function Security() {
         <Reveal>
           <SectionHeader eyebrow="Data integrity" title="Input validation" />
           <Typography variant="body1" color="text.secondary" sx={{ lineHeight: 1.8, mb: 1, maxWidth: 700 }}>
-            UniThread uses schema-based validation, powered by{' '}
+            uniThread uses schema-based validation, powered by{' '}
             <Typography component="span" sx={{ fontWeight: 700 }}>
               Zod
             </Typography>
@@ -908,7 +908,7 @@ export default function Security() {
           <SectionHeader
             eyebrow="Visibility"
             title="Activity and audit visibility"
-            description="Important CRM and organizational actions can be recorded through UniThread's activity system, helping organizations understand what happened within their workspace."
+            description="Important CRM and organizational actions can be recorded through uniThread's activity system, helping organizations understand what happened within their workspace."
           />
         </Reveal>
 
@@ -989,11 +989,11 @@ export default function Security() {
             <Typography variant="body1" color="text.secondary" sx={{ lineHeight: 1.8, mb: 2 }}>
               Communication features may depend on third-party infrastructure
               and integrations. Some communication features are currently
-              simulated or experimental because UniThread is in beta.
+              simulated or experimental because uniThread is in beta.
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.7, fontStyle: 'italic' }}>
               Users are responsible for ensuring information communicated
-              through UniThread is handled according to applicable privacy,
+              through uniThread is handled according to applicable privacy,
               communications, and data-protection requirements.
             </Typography>
           </Box>
@@ -1007,7 +1007,7 @@ export default function Security() {
           <SectionHeader
             eyebrow="Ecosystem"
             title="Third-party infrastructure"
-            description="UniThread relies on third-party infrastructure and services for portions of the platform. Not every category below is necessarily active at a given time."
+            description="uniThread relies on third-party infrastructure and services for portions of the platform. Not every category below is necessarily active at a given time."
           />
         </Reveal>
 
@@ -1022,7 +1022,7 @@ export default function Security() {
         <Reveal>
           <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 700, lineHeight: 1.8, mb: 6 }}>
             Third-party providers operate under their own security practices,
-            terms, and privacy policies. UniThread does not take
+            terms, and privacy policies. uniThread does not take
             responsibility for the independent security practices or
             availability of third-party services.
           </Typography>
@@ -1031,7 +1031,7 @@ export default function Security() {
         <Reveal>
           <SectionHeader eyebrow="Ongoing work" title="Security is an ongoing process" />
           <Typography variant="body1" color="text.secondary" sx={{ lineHeight: 1.8, mb: 3, maxWidth: 700 }}>
-            UniThread is actively developed, and security controls continue
+            uniThread is actively developed, and security controls continue
             to evolve alongside the platform.
           </Typography>
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 1.25, mb: 2, maxWidth: 700 }}>
@@ -1067,7 +1067,7 @@ export default function Security() {
             <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 2 }}>
               <InfoOutlinedIcon sx={{ color: 'primary.main' }} aria-hidden />
               <Typography variant="h5" component="h2" sx={{ fontWeight: 700, fontSize: { xs: '1.15rem', sm: '1.35rem' } }}>
-                UniThread is currently in Beta
+                uniThread is currently in Beta
               </Typography>
             </Stack>
 
@@ -1096,7 +1096,7 @@ export default function Security() {
             </Box>
 
             <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.75, maxWidth: 700 }}>
-              Users should avoid storing information in UniThread that they
+              Users should avoid storing information in uniThread that they
               are not authorized to store, or that they cannot reasonably
               protect through appropriate organizational safeguards. Keeping
               backups of important business information is recommended.
@@ -1163,11 +1163,11 @@ export default function Security() {
         <Reveal>
           <SectionHeader eyebrow="Related" title="Security and privacy" />
           <Typography variant="body1" color="text.secondary" sx={{ lineHeight: 1.8, mb: 1.5, maxWidth: 700 }}>
-            This page explains how UniThread approaches the technical and
+            This page explains how uniThread approaches the technical and
             organizational security of the platform.
           </Typography>
           <Typography variant="body1" color="text.secondary" sx={{ lineHeight: 1.8, mb: 3, maxWidth: 700 }}>
-            For information about what personal information UniThread
+            For information about what personal information uniThread
             collects, how it is used, how it is retained, and applicable user
             rights, please see the Privacy Policy.
           </Typography>
@@ -1207,7 +1207,7 @@ export default function Security() {
               are not.
             </Typography>
             <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 560, mx: 'auto', lineHeight: 1.75 }}>
-              Security is an ongoing process, and UniThread will continue
+              Security is an ongoing process, and uniThread will continue
               improving its architecture as the platform grows.
             </Typography>
           </Reveal>
@@ -1216,7 +1216,7 @@ export default function Security() {
       <Box sx={{ py: 4, borderTop: '1px solid', borderColor: 'divider' }}>
         <Container maxWidth="lg">
           <Typography variant="caption" color="text.secondary" component="div" sx={{ lineHeight: 1.9 }}>
-            UniThread CRM
+            uniThread CRM
             <br />
             Operated by: {OPERATOR_NAME}
             <br />

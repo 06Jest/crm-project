@@ -197,12 +197,6 @@ function LazyColumnBody({
               <DealCardSkeleton />
               <DealCardSkeleton />
               <DealCardSkeleton />
-              <DealCardSkeleton />
-              <DealCardSkeleton />
-              <DealCardSkeleton />
-              <DealCardSkeleton />
-              <DealCardSkeleton />
-              <DealCardSkeleton />
             </>
           ) : deals.length === 0 ? (
             <Box sx={{
@@ -661,7 +655,7 @@ export default function Deals() {
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          width: '84vw',
+          width: { xs: '92%', sm: '85vw', md: '80vw' },
           justifySelf: 'center'
         }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
@@ -712,66 +706,130 @@ export default function Deals() {
 
   return (
     <Box sx={{ pb: 2 }}>
-      
-      <Box sx={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        width: '84vw',
-        justifySelf: 'center'
-      }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
-          <Box sx={(theme) => ({
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: 40,
-            height: 40,
-            borderRadius: 2,
-            bgcolor: theme.palette.mode === 'dark' ? '#2a2a2a' : '#eef1f6',
-            color: 'primary.main',
-          })}>
-            <HandshakeIcon />
+      {(error || invalid) && (
+          <Box
+            sx={{
+              width: "100%",
+              minWidth: 0,
+              order: { xs: 3, sm: 2 },
+            }}
+          >
+            <ErrorAlert
+              message={
+                (error || invalid) ?? "An unknown error occurred."
+              }
+            />
           </Box>
-          <Box>
-            <Typography variant="h5" fontWeight={800} letterSpacing={-0.3} lineHeight={1.2}>
+        )}
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: 'center',
+          gap: { xs: 1.5, sm: 2 },
+          width: { xs: "98%", sm: "84vw" },
+          maxWidth: "100%",
+          mx: "auto",
+          px: { xs: 1, sm: 0 },
+          boxSizing: "border-box",
+        }}
+      >
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: { xs: 1, sm: 1.25 },
+            minWidth: 0,
+          }}
+        >
+          <Box
+            sx={(theme) => ({
+              flexShrink: 0,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: { xs: 36, sm: 40 },
+              height: { xs: 36, sm: 40 },
+              borderRadius: 2,
+              bgcolor:
+                theme.palette.mode === "dark" ? "#2a2a2a" : "#eef1f6",
+              color: "primary.main",
+            })}
+          >
+            <HandshakeIcon
+              sx={{
+                fontSize: { xs: 20, sm: 24 },
+              }}
+            />
+          </Box>
+
+          <Box sx={{ minWidth: 0 }}>
+            <Typography
+              variant="h5"
+              fontWeight={800}
+              letterSpacing={-0.3}
+              lineHeight={1.2}
+              sx={{
+                fontSize: { xs: "1.2rem", sm: "1.5rem" },
+                whiteSpace: "nowrap",
+              }}
+            >
               Deals
             </Typography>
-            <Typography variant="caption" color="text.secondary">
-              {deals.length} {deals.length === 1 ? 'deal' : 'deals'} across your pipeline
+
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{
+                display: "block",
+                fontSize: { xs: "0.7rem", sm: "0.75rem" },
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
+            >
+              {deals.length}{" "}
+              {deals.length === 1 ? "deal" : "deals"} across your pipeline
             </Typography>
           </Box>
         </Box>
-        {(error  || invalid) && (
-          <ErrorAlert
-            message={(error  || invalid) ?? "An unknown error occurred."}
-          />
-        )}
-        <Button
-          title="Add Deal"
+
+        
+        <IconButton
           onClick={() => navigate(`/app/deals/adddeal`)}
-          variant="contained"
-          disableElevation
-          startIcon={<AddIcon sx={{ fontSize: '16px !important' }} />}
           sx={{
-            fontSize: 13,
-            py: 0.9,
-            px: 2,
-            borderRadius: 2,
-            fontWeight: 700,
-            textTransform: 'none',
-            boxShadow: '0 1px 2px rgba(0,0,0,0.12)',
-            transition: reduceMotion ? 'none' : 'box-shadow 0.15s ease, transform 0.1s ease',
-            '&:active': { transform: reduceMotion ? 'none' : 'scale(0.97)' },
-          }}>
-          New Deal
-        </Button>
+            width: { xs: 36, sm: 40 },
+            height: { xs: 36, sm: 40 },
+            backgroundColor: 'primary.main',
+            borderRadius: "50%",
+            flexShrink: 0,
+            p: 0,
+            color: 'white',
+
+            "& svg": {
+              fontSize: { xs: 20, sm: 22 },
+            },
+
+            transition: "transform 0.15s ease, box-shadow 0.15s ease",
+
+            "&:hover": {
+              transform: "translateY(-1px)",
+              boxShadow: "0 6px 14px rgba(0,0,0,0.12)",
+            },
+
+            "&:active": {
+              transform: "scale(0.96)",
+            },
+          }}
+        >
+          <AddIcon />
+        </IconButton>
       </Box>
       <Box 
         ref={boardScrollRef}
         sx={{
           overflow: 'auto', 
-          width: '85vw', 
+          width: {md: '85vw', sm: '90vw', xs: '98vw' }, 
           mb: 2,  
           p: '10px', 
           borderRadius: 2, 

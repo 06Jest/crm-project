@@ -467,6 +467,14 @@ useEffect(() => {
     type: ChatTargetType,
     id: string
   ) => {
+    console.log("GET ENTITY VALUE:", {
+    type,
+    id,
+    contacts: contacts.length,
+    leads: leads.length,
+    deals: deals.length,
+    customers: customers.length,
+  });
   switch(type){
     case "contact": {
       const c = contactsMap.get(id);
@@ -907,7 +915,7 @@ useEffect(() => {
       )}
 
       {view === "chat" && activeConversation && (
-        <Box sx={{ display: "flex", flexDirection: "column", height: 480, overflowY: 'auto' }}>
+        <Box sx={{ display: "flex", flexDirection: "column", height: '99%', overflowY: 'auto' }}>
           
           <Box
             sx={{
@@ -1399,6 +1407,7 @@ useEffect(() => {
         onClose={() => setOpenDelete(false)}
         maxWidth="xs"
         fullWidth
+        sx={{zIndex: 2500}}
         PaperProps={{ sx: { borderRadius: 3 } }}
       >
         <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1.5, fontWeight: 600, pb: 1 }}>

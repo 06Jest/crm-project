@@ -67,7 +67,7 @@ const CRM_TIPS: CrmTip[] = [
   {
     eyebrow: "DEAL PROGRESS",
     icon: Timeline,
-    text: "Move deals through each stage only after meaningful customer progress—not assumptions or optimism.",
+    text: "Move deals through each stage only after meaningful customer progress, not assumptions or optimism.",
   },
   {
     eyebrow: "FAST RESPONSE",
@@ -117,7 +117,7 @@ const CRM_TIPS: CrmTip[] = [
   {
     eyebrow: "MOBILE PRODUCTIVITY",
     icon: PhoneIphone,
-    text: "Update customer information immediately after meetings or calls—even while you're on the go.",
+    text: "Update customer information immediately after meetings or calls, even while you're on the go.",
   },
   {
     eyebrow: "GETTING STARTED",

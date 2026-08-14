@@ -2,6 +2,7 @@ import { Box } from '@mui/material';
 import DockWindow from './DockWindow';
 import { type ReactNode } from 'react';
 import useDock from '../hooks/useDock';
+// import { MOBILE_BOTTOM_NAV_HEIGHT } from './Sidebar';
 
 interface DockContainerProps {
   renderContent: (id: string) => ReactNode;
@@ -15,15 +16,18 @@ export default function DockContainer({ renderContent }: DockContainerProps) {
   return (
     <Box
       sx={{
-        position: 'fixed',
-        bottom: 0,
-        right: 90,
-        display: 'flex',
-        flexDirection: 'row-reverse',
-        gap: 1.5,
-        alignItems: 'flex-end',
-        zIndex: 1300,
-      }}
+      position: 'fixed',
+      bottom: { xs: 'auto', md: 0 },
+      right: { xs: 'auto', md: 90 },
+      left: { xs: 0, md: 'auto' },
+      top: { xs: 0, md: 'auto' },
+      width: { xs: '100%', md: 'auto' },
+      display: 'flex',
+      flexDirection: 'row-reverse',
+      gap: 1.5,
+      alignItems: 'flex-end',
+      zIndex: { xs: 2400, md: 2300 },
+    }}
     >
       {windows.map((win, index) => (
         <DockWindow

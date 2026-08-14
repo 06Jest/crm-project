@@ -124,21 +124,35 @@ const pillFieldSx = {
   "&.Mui-focused .MuiOutlinedInput-notchedOutline": { border: "none" },
 } as const;
 
-const filterPillSx = (minWidth: number) => ({
+const filterPillSx = (minWidth: {
+  xs: number;
+  sm: number;
+}) => ({
   minWidth,
   bgcolor: "action.hover",
   borderRadius: 5,
+
   "& .MuiInputBase-input": {
     py: "4px",
-    fontSize: 11,
+    px: { xs: "8px", sm: "10px" },
+    fontSize: { xs: 10, sm: 11 },
     fontWeight: 700,
     display: "flex",
     alignItems: "center",
     gap: "4px",
   },
-  "& .MuiOutlinedInput-notchedOutline": { border: "none" },
-  "&.Mui-focused .MuiOutlinedInput-notchedOutline": { border: "none" },
-  "&:hover": { bgcolor: "action.selected" },
+
+  "& .MuiOutlinedInput-notchedOutline": {
+    border: "none",
+  },
+
+  "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+    border: "none",
+  },
+
+  "&:hover": {
+    bgcolor: "action.selected",
+  },
 });
 
 const menuItemSx = { fontSize: 11 } as const;
@@ -534,6 +548,7 @@ export default function TasksPanel() {
     setOpenDelete(true);
   };
 
+
   return (
     <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
       {view === "list" && (
@@ -544,7 +559,7 @@ export default function TasksPanel() {
             </Box>
           )}
 
-          {/* Header */}
+
           <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1 }}>
             <Stack direction="row" alignItems="center" spacing={1}>
               <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
@@ -597,7 +612,6 @@ export default function TasksPanel() {
             </Stack>
           </Box>
 
-          {/* Search */}
           <TextField
             size="small"
             fullWidth
@@ -621,23 +635,37 @@ export default function TasksPanel() {
             }}
           />
 
-          {/* Filters */}
           <Stack
             direction="row"
-            spacing={0.75}
+            spacing={{ xs: 0.5, sm: 0.75 }}
             sx={{
+              width: "100%",
+              maxWidth: "100%",
               overflowX: "auto",
+              overflowY: "hidden",
               pb: 1,
               mb: 0.5,
-              "&::-webkit-scrollbar": { height: 4 },
+              WebkitOverflowScrolling: "touch",
+              scrollbarWidth: "thin",
+              "&::-webkit-scrollbar": {
+                height: 4,
+              },
+              "& > *": {
+                flexShrink: 0,
+              },
             }}
           >
             <FormControl size="small">
               <Select
                 title="Filter task type"
                 value={taskTypeFilter}
-                onChange={(e) => setTaskTypeFilter(e.target.value as "all" | TaskType)}
-                sx={filterPillSx(96)}
+                onChange={(e) =>
+                  setTaskTypeFilter(e.target.value as "all" | TaskType)
+                }
+                sx={filterPillSx({
+                  xs: 82,
+                  sm: 96,
+                })}
               >
                 <MenuItem sx={menuItemSx} value="all">All types</MenuItem>
                 <MenuItem sx={menuItemSx} value="other">Other</MenuItem>
@@ -652,8 +680,13 @@ export default function TasksPanel() {
               <Select
                 title="Filter status"
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value as "all" | TaskStatus)}
-                sx={filterPillSx(104)}
+                onChange={(e) =>
+                  setStatusFilter(e.target.value as "all" | TaskStatus)
+                }
+                sx={filterPillSx({
+                  xs: 92,
+                  sm: 104,
+                })}
               >
                 <MenuItem sx={menuItemSx} value="all">All statuses</MenuItem>
                 <MenuItem sx={menuItemSx} value="todo">To Do</MenuItem>
@@ -667,8 +700,13 @@ export default function TasksPanel() {
               <Select
                 title="Filter priority"
                 value={priorityFilter}
-                onChange={(e) => setPriorityFilter(e.target.value as "all" | TaskPriority)}
-                sx={filterPillSx(96)}
+                onChange={(e) =>
+                  setPriorityFilter(e.target.value as "all" | TaskPriority)
+                }
+                sx={filterPillSx({
+                  xs: 86,
+                  sm: 96,
+                })}
               >
                 <MenuItem sx={menuItemSx} value="all">All priorities</MenuItem>
                 <MenuItem sx={menuItemSx} value="low">Low</MenuItem>
@@ -682,8 +720,13 @@ export default function TasksPanel() {
               <Select
                 title="Filter target"
                 value={targetFilter}
-                onChange={(e) => setTargetFilter(e.target.value as "all" | TaskTargetType)}
-                sx={filterPillSx(104)}
+                onChange={(e) =>
+                  setTargetFilter(e.target.value as "all" | TaskTargetType)
+                }
+                sx={filterPillSx({
+                  xs: 92,
+                  sm: 104,
+                })}
               >
                 <MenuItem sx={menuItemSx} value="all">All targets</MenuItem>
                 <MenuItem sx={menuItemSx} value="personal">Personal</MenuItem>

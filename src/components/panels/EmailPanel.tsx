@@ -240,12 +240,18 @@ function EditorToolbar({ editor }: { editor: Editor | null }) {
       sx={{
         display: "flex",
         alignItems: "center",
-        flexWrap: "wrap",
+        flexWrap: { xs: "nowrap", sm: "wrap" },
+        overflowX: { xs: "auto", sm: "visible" },
+        overflowY: "hidden",
         gap: 0.25,
         p: 0.5,
         borderRadius: 2.5,
         bgcolor: "action.hover",
         borderColor: "divider",
+
+        "&::-webkit-scrollbar": {
+          height: 4,
+        },
       }}
     >
       <TextField
@@ -633,9 +639,17 @@ const buildUpdatePayload = useCallback(
 
 
   const autoSaveDraft = useCallback(async () => {
-  if (!loadedEmail.current) return;
-  if (view !== "editor") return;
-  if (isSending.current) return;
+    if (!loadedEmail.current) return;
+    if (view !== "editor") return;
+    if (isSending.current) return;
+
+    if (activeId) {
+      const email = emails.find((e) => e.id === activeId);
+
+      if (!email || email.status !== "draft") {
+        return;
+      }
+    }
 
   const hasContent =
     editRecipient.trim() ||
@@ -675,17 +689,29 @@ const buildUpdatePayload = useCallback(
   view,
   buildComposePayload,
   buildUpdatePayload,
-  editBodyText
+  editBodyText,
+  emails,
 ]);
 
 useEffect(() => {
   if (view !== "editor") return;
+  if (isSending.current) return;
 
-  const timer = setTimeout(() => {
-    void autoSaveDraft();
-  }, 3000);
+  if (autoSaveTimer.current) {
+    clearTimeout(autoSaveTimer.current);
+  }
 
-  return () => clearTimeout(timer);
+  autoSaveTimer.current = setTimeout(() => {
+    if (!isSending.current) {
+      void autoSaveDraft();
+    }
+  }, 7500)
+  return () => {
+    if (autoSaveTimer.current) {
+      clearTimeout(autoSaveTimer.current);
+      autoSaveTimer.current = null;
+    }
+  };
 }, [autoSaveDraft, view]);
 
   const resetEditorState = () => {
@@ -818,24 +844,48 @@ useEffect(() => {
   };
 
   const handleOpenEmail = async (email: EmailListItem) => {
+    dispatch(clearError());
+
+    if (autoSaveTimer.current) {
+      clearTimeout(autoSaveTimer.current);
+      autoSaveTimer.current = null;
+    }
+
     await leaveEditor();
     openExistingEmail(email);
   };
 
+  const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isSending = useRef(false);
   const isSavingDraft = useRef(false);
 
   const handleSend = async () => {
     if (!canSave) return;
+
+    if (autoSaveTimer.current) {
+      clearTimeout(autoSaveTimer.current);
+      autoSaveTimer.current = null;
+    }
+
     isSending.current = true;
+
     setSaving(true);
+
     try {
       let id = activeId;
 
       if (id) {
-        await dispatch(updateEmailDraft({ id, email: buildUpdatePayload() })).unwrap();
+        await dispatch(
+          updateEmailDraft({
+            id,
+            email: buildUpdatePayload(),
+          })
+        ).unwrap();
       } else {
-        const created = await dispatch(addEmailDraft(buildComposePayload())).unwrap();
+        const created = await dispatch(
+          addEmailDraft(buildComposePayload())
+        ).unwrap();
+
         id = created.id;
       }
 
@@ -971,11 +1021,20 @@ const ownerOf = (
   const leaveEditor = async () => {
     if (view !== "editor") return;
 
-    if (activeEmail?.status !== "draft") {
-      setView("list");
-      setActiveId(null);
-      resetEditorState();
-      return;
+    if (autoSaveTimer.current) {
+      clearTimeout(autoSaveTimer.current);
+      autoSaveTimer.current = null;
+    }
+
+    if (activeId) {
+      const email = emails.find((e) => e.id === activeId);
+
+      if (!email || email.status !== "draft") {
+        setView("list");
+        setActiveId(null);
+        resetEditorState();
+        return;
+      }
     }
 
     const hasContent =
@@ -988,6 +1047,13 @@ const ownerOf = (
 
       try {
         if (activeId) {
+          const email = emails.find((e) => e.id === activeId);
+
+          // Double protection
+          if (!email || email.status !== "draft") {
+            return;
+          }
+
           await dispatch(
             updateEmailDraft({
               id: activeId,
@@ -999,68 +1065,45 @@ const ownerOf = (
             addEmailDraft(buildComposePayload())
           ).unwrap();
         }
+      } catch {
+        // Redux handles error
       } finally {
         setSaving(false);
       }
-}
+    }
 
     setView("list");
     setActiveId(null);
     resetEditorState();
   };
 
-  // const autoSaveDraft = async () => {
-  //   if (!loadedEmail.current) return;
-  //   if (view !== "editor") return;
-  //   if (isSending.current) return;
-  //   const hasContent =
-  //     editRecipient.trim() ||
-  //     editSubject.trim() ||
-  //     editBodyText.trim();
-
-  //   if (!hasContent) return;
-
-  //   if (isSavingDraft.current) return;
-
-  //   isSavingDraft.current = true;
-
-  //   try {
-  //     if (activeId) {
-  //       await dispatch(
-  //         updateEmailDraft({
-  //           id: activeId,
-  //           email: buildUpdatePayload(),
-  //         })
-  //       ).unwrap();
-
-  //     } else {
-  //       const created = await dispatch(
-  //         addEmailDraft(buildComposePayload())
-  //       ).unwrap();
-
-  //       setActiveId(created.id);
-  //     }
-  //   } finally {
-  //     isSavingDraft.current = false;
-  //   }
-  // };
-
   return (
-    <Box sx={{ display: "flex", height: "100%", minHeight: 0 }}>
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: { xs: "column", sm: "row" },
+        height: "100%",
+        minHeight: 0,
+        minWidth: 0,
+      }}
+    >
       <Box
         sx={{
-          width: 150,
+          width: { xs: "100%", sm: 150 },
           flexShrink: 0,
           display: "flex",
-          flexDirection: "column",
-          borderRight: "1px solid",
+          flexDirection: { xs: "row", sm: "column" },
+          alignItems: { xs: "stretch", sm: "stretch" },
+          overflowX: { xs: "auto", sm: "visible" },
+          overflowY: "hidden",
+          borderRight: { xs: "none", sm: "1px solid" },
           borderColor: "divider",
-          pr: 1.5,
+          pr: { xs: 0, sm: 1.5 },
+          pb: { xs: 1, sm: 0 },
           pt: 0.5,
         }}
       >
         <Button
-          fullWidth
           variant="contained"
           disableElevation
           startIcon={<AddIcon fontSize="small" />}
@@ -1070,75 +1113,165 @@ const ownerOf = (
             openNewEmail();
           }}
           sx={{
-            borderRadius: 3,
+            width: { xs: 40, sm: "100%" },
+            minWidth: { xs: 40, sm: 0 },
+            height: { xs: 40, sm: "auto" },
+            p: { xs: 0, sm: "8px 12px" },
+            mb: { xs: 0, sm: 1.5 },
+            mr: {sm: 0, xs: 2}, 
+            borderRadius: { xs: 10, sm: 3 },
             textTransform: "none",
             fontWeight: 700,
             fontSize: 13,
-            py: 1,
-            mb: 1.5,
+
             boxShadow: "0 1px 4px rgba(0,0,0,0.18)",
-            "&:hover": { boxShadow: "0 2px 8px rgba(0,0,0,0.24)" },
+            "&:hover": {
+              boxShadow: "0 2px 8px rgba(0,0,0,0.24)",
+            },
+
+            "& .MuiButton-startIcon": {
+              margin: 0,
+            },
           }}
         >
-          Compose
+          <Box
+            component="span"
+            sx={{
+              display: { xs: "none", sm: "inline" },
+            }}
+          >
+            Compose
+          </Box>
         </Button>
+        <List
+          dense
+          disablePadding
+          sx={{
+            display: "flex",
+            flexDirection: { xs: "row", sm: "column" },
+            width: "100%",
+            minWidth: 0,
+            gap: { xs: 0.5, sm: 0.5 },
+            alignItems: { xs: "stretch", sm: "stretch" },
+          }}
+        >
+        {SIDEBAR_ITEMS.map(({ key, label, icon }) => {
+        const active = statusFilter === key;
 
-        <List dense disablePadding sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
-          {SIDEBAR_ITEMS.map(({ key, label, icon }) => {
-            const active = statusFilter === key;
-            return (
-              <ListItem
-                key={key}
-                disableGutters
-                onClick={async () => {
-                  await leaveEditor();
-                  setStatusFilter(key);
-                  
-                }}
+        return (
+          <ListItem
+            key={key}
+            disableGutters
+            onClick={async () => {
+              dispatch(clearError());
+
+              if (autoSaveTimer.current) {
+                clearTimeout(autoSaveTimer.current);
+                autoSaveTimer.current = null;
+              }
+
+              await leaveEditor();
+              setStatusFilter(key);
+            }}
+            sx={{
+              cursor: "pointer",
+
+              width: { xs: "auto", sm: "100%" },
+              minWidth: { xs: "max-content", sm: 0 },
+              flex: { xs: "1 1 0", sm: "0 0 auto" },
+              justifyContent: "center",
+              px: { xs: 1, sm: 1.25 },
+              py: { xs: 0.6, sm: 0.7 },
+              borderRadius: 999,
+              bgcolor: active
+                ? (theme) => alpha(theme.palette.primary.main, 0.12)
+                : "transparent",
+              color: active ? "primary.main" : "text.primary",
+              transition: "background-color 0.15s ease",
+              "&:hover": {
+                bgcolor: active
+                  ? (theme: Theme) =>
+                      alpha(theme.palette.primary.main, 0.16)
+                  : "action.hover",
+              },
+            }}
+          >
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: 'center',
+                width: { xs: "fit-content", sm: "100%" },
+                minWidth: 0,
+                gap: 0.75,
+              }}
+            >
+              <Box
                 sx={{
-                  cursor: "pointer",
-                  px: 1.25,
-                  py: 0.7,
-                  borderRadius: 999,
-                  bgcolor: active ? (theme) => alpha(theme.palette.primary.main, 0.12) : "transparent",
-                  color: active ? "primary.main" : "text.primary",
-                  transition: "background-color 0.15s ease",
-                  "&:hover": { bgcolor: active ? (theme: Theme) => alpha(theme.palette.primary.main, 0.16) : "action.hover" },
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                  fontSize: 25,
+                  opacity: active ? 1 : 0.65,
                 }}
               >
-                <Box sx={{ display: "flex", alignItems: "center", width: "100%", gap: 1.25 }}>
-                  <Box sx={{ display: "flex", opacity: active ? 1 : 0.65 }}>{icon}</Box>
-                  <Typography
-                    sx={{
-                      flex: 1,
-                      fontSize: 13,
-                      fontWeight: active ? 700 : 500,
-                    }}
-                  >
-                    {label}
-                  </Typography>
-                  {statusCounts[key] > 0 && (
-                    <Chip
-                      label={statusCounts[key]}
-                      size="small"
-                      sx={{
-                        height: 18,
-                        fontSize: 10,
-                        fontWeight: 700,
-                        bgcolor: active ? "primary.main" : "action.selected",
-                        color: active ? "primary.contrastText" : "text.secondary",
-                        "& .MuiChip-label": { px: "6px" },
-                      }}
-                    />
-                  )}
-                </Box>
-              </ListItem>
-            );
-          })}
+                {icon}
+              </Box>
+
+              <Typography
+                sx={{
+                  display: { xs: "none", sm: "block" },
+                  flex: 1,
+                  minWidth: 0,
+                  fontSize: 13,
+                  fontWeight: active ? 700 : 500,
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}
+              >
+                {label}
+              </Typography>
+
+              {statusCounts[key] > 0 && (
+  <Chip
+    label={statusCounts[key]}
+    size="small"
+    sx={{
+      height: 18,
+      minWidth: 18,
+      fontSize: 10,
+      fontWeight: 700,
+      flexShrink: 0,
+
+      bgcolor: active
+        ? "primary.main"
+        : "action.selected",
+
+      color: active
+        ? "primary.contrastText"
+        : "text.secondary",
+
+      "& .MuiChip-label": {
+        px: "5px",
+      },
+
+      // Hide count on very small screens
+      "@media (max-width: 400px)": {
+        display: "none",
+      },
+    }}
+  />
+)}
+            </Box>
+          </ListItem>
+        );
+        })}
         </List>
       </Box>
 
-      <Box sx={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", pl: 2 }}>
+      <Box sx={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", pl: {sm: 2, xs: 0} }}>
         {view === "list" && (
           <>
             {error && (
@@ -1146,14 +1279,15 @@ const ownerOf = (
                 <ErrorAlert message={error} />
               </Box>
             )}
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1, width: "100%", }}>
               <Paper
                 variant="outlined"
                 sx={{
                   flex: 1,
+                  minWidth: 0,
                   display: "flex",
                   alignItems: "center",
-                  px: 1.5,
+                  px: { xs: 1, sm: 1.5 },
                   borderRadius: 999,
                   borderColor: "divider",
                   bgcolor: "action.hover",
@@ -1208,7 +1342,15 @@ const ownerOf = (
                   </Typography>
                 </Box>
               ) : (
-                <List sx={{ overflowY: "auto", height: 325 }} dense disablePadding>
+                <List
+                  dense
+                  disablePadding
+                  sx={{
+                    overflowY: "auto",
+                    height: { xs: "calc(100vh - 230px)", sm: 325 },
+                    maxHeight: { xs: "calc(100vh - 230px)", sm: 325 },
+                  }}
+                >
                   {visibleEmails.map((email) => {
                     const owner = ownerOf(email);
                     const ownerName = owner.type ? getValue(owner.type, owner.id) : "";
@@ -1339,15 +1481,25 @@ const ownerOf = (
             <Box
               sx={{
                 display: "flex",
-                alignItems: "center",
+                alignItems: { xs: "flex-start", sm: "center" },
                 justifyContent: "space-between",
+                gap: 1,
+                flexWrap: { xs: "wrap", sm: "nowrap" },
                 mb: 1.5,
                 pb: 1.25,
                 borderBottom: "1px solid",
                 borderColor: "divider",
               }}
             >
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1, minWidth: 0 }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1,
+                  minWidth: 0,
+                  flex: 1,
+                }}
+              >
                 <IconButton
                   title="Back"
                   size="small"
@@ -1437,8 +1589,22 @@ const ownerOf = (
                   overflow: "hidden",
                 }}
               >
-                <Box sx={{ display: "flex", justifyContent: "space-between", px: 1.5, pt: 1.25, gap: 1 }}>
-                  <Box sx={{ width: 110 }}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    flexDirection: { xs: "column", sm: "row" },
+                    justifyContent: "space-between",
+                    px: { xs: 1, sm: 1.5 },
+                    pt: 1.25,
+                    gap: 1,
+                  }}
+                >
+                  <Box
+                    sx={{
+                      width: { xs: "100%", sm: 110 },
+                      flexShrink: 0,
+                    }}
+                  >
                     <TextField
                       select
                       size="small"
@@ -1465,7 +1631,13 @@ const ownerOf = (
                     </TextField>
                   </Box>
 
-                  <Box sx={{ width: 230 }}>
+                  <Box
+                    sx={{
+                      width: { xs: "100%", sm: 230 },
+                      minWidth: 0,
+                      flex: 1,
+                    }}
+                  >
                     <TextField
                       select
                       size="small"
@@ -1579,9 +1751,10 @@ const ownerOf = (
                 <Box
                   sx={{
                     flex: 1,
+                    minHeight: 0,
                     overflowY: "auto",
-                    px: 2,
-                    py: 1.5,
+                    px: { xs: 1, sm: 2 },
+                    py: { xs: 1, sm: 1.5 },
                     "& .ProseMirror": {
                       outline: "none",
                       minHeight: "100%",
@@ -1618,7 +1791,15 @@ const ownerOf = (
 
                 <Divider />
 
-                <Box sx={{ display: "flex", justifyContent: "flex-end", alignItems: "center", px: 1.5, py: 1.25 }}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "flex-end",
+                    alignItems: "center",
+                    px: { xs: 1, sm: 1.5 },
+                    py: 1.25,
+                  }}
+                >
                   <Button
                     size="small"
                     variant="contained"
@@ -1627,6 +1808,7 @@ const ownerOf = (
                     disabled={!canSave || saving}
                     onClick={handleSend}
                     sx={{
+                      width: { xs: "100%", sm: "auto" },
                       borderRadius: 999,
                       textTransform: "none",
                       fontWeight: 700,
@@ -1652,8 +1834,19 @@ const ownerOf = (
                     overflow: "hidden",
                   }}
                 >
-                  <Box sx={{ px: 3, pt: 3, pb: 2 }}>
-                    <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 1, mb: 1.5 }}>
+                  <Box
+                    sx={{
+                      px: { xs: 1.5, sm: 3 },
+                      pt: { xs: 2, sm: 3 },
+                      pb: 2,
+                    }}
+                  >
+                    <Box sx={{
+                      display: "flex",
+                      alignItems: { xs: "flex-start", sm: "center" },
+                      justifyContent: "space-between",
+                      flexDirection: { xs: "column", sm: "row" },
+                      gap: 1, mb: 1.5 }}>
                       <Typography sx={{ fontWeight: 700, fontSize: 17, lineHeight: 1.3 }}>
                         {activeEmail.subject || "(No subject)"}
                       </Typography>
@@ -1729,6 +1922,7 @@ const ownerOf = (
           onClose={() => (deleting ? null : setDeleteTarget(null))}
           maxWidth="xs"
           fullWidth
+          sx={{zIndex: 2500}}
           PaperProps={{ sx: { borderRadius: 3 } }}
         >
           <DialogTitle sx={{ fontSize: 16, fontWeight: 700, pb: 1 }}>

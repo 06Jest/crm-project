@@ -17,6 +17,7 @@ interface DockWindowProps {
   children: ReactNode;
 }
 
+// const MOBILE_VERTICAL_SAFE_OFFSET = 180;
 
 export default function DockWindow({
   title,
@@ -38,26 +39,25 @@ export default function DockWindow({
           title={`Open ${title}`}
           onClick={onToggleMinimize}
           sx={{
-            display: 'flex', 
-            position: 'fixed', 
-            right: 20, 
+            display: 'flex',
+            position: 'fixed',
+            right: 20,
             bottom: 80 + minimizedIndex * 60,
             width: 50,
             height: 50,
             borderRadius: 100,
             cursor: 'pointer',
-            zIndex: 1000, 
             justifyContent: 'center',
             alignItems: 'center',
             color: "#fff",
             backgroundColor: 'primary.main',
           }}>
           <Box sx={{
-            display: 'flex', 
+            display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
-            
-            }}>
+
+          }}>
             {Icon && <Icon sx={{ color: '#fff' }} />}
           </Box>
         </Paper>
@@ -70,18 +70,20 @@ export default function DockWindow({
       <Grow timeout={250} in={!minimized}>
         <Box
           sx={{
-            width,
-            height: height,
+            width: { xs: '100vw', md: width },
+            height: { xs: '100dvh', md: height },
+            position: { xs: 'fixed', md: 'static' },
+            top: { xs: 0, md: 'auto' },
+            left: { xs: 0, md: 'auto' },
+            borderRadius: { xs: 0, md: '10px 10px 0 0' },
+            zIndex: { xs: 1200, md: 'auto' },
             display: 'flex',
             flexDirection: 'column',
-            borderRadius: '10px 10px 0 0',
             overflow: 'hidden',
             boxShadow: '0 4px 18px rgba(0,0,0,0.25)',
             backgroundColor: themeMode === 'dark' ? '#2b2b2b' : '#ffffff',
             border: '1px solid',
             borderColor: '#63636338',
-            borderBottom: 'none',
-            transition: 'height 0.25s ease',
             flexShrink: 0,
           }}
         >
@@ -130,12 +132,22 @@ export default function DockWindow({
             </Box>
           </Box>
           {!minimized && (
-          <Box sx={{ flex: 1,  p: 1.5 }}>
-            {children}
-          </Box>
+            <Box
+              sx={{
+                 flex: 1,
+                  minHeight: 0,
+                  minWidth: 0,
+                  p: 1.5,
+                  overflowY: 'auto',
+                  overflowX: 'hidden',
+                  WebkitOverflowScrolling: 'touch',
+              }}
+            >
+              {children}
+            </Box>
           )}
         </Box>
       </Grow>
-  </Collapse>
+    </Collapse>
   );
 }

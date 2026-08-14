@@ -348,7 +348,7 @@ export default function Activities() {
   }
 
   return (
-    <Box sx={{ display: 'flex', justifyContent: 'center', flex: 1, minWidth: 320, p: 2, mx: 2, height: 850 }}>
+    <Box sx={{ display: 'flex', justifyContent: 'center', flex: 1, minWidth: 300, p: 2, mx: 2, height: 850 }}>
       <Paper
         sx={{
           p: 2,
@@ -377,15 +377,35 @@ export default function Activities() {
               Activities
             </Typography>
           </Box>
-
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
+          <IconButton
             onClick={() => setOpenAddDialog(true)}
-            sx={{ borderRadius: 2 }}
+            sx={{
+              width: { xs: 36, sm: 40 },
+              height: { xs: 36, sm: 40 },
+              backgroundColor: 'primary.main',
+              borderRadius: "50%",
+              flexShrink: 0,
+              p: 0,
+              color: 'white',
+
+              "& svg": {
+                fontSize: { xs: 20, sm: 22 },
+              },
+
+              transition: "transform 0.15s ease, box-shadow 0.15s ease",
+
+              "&:hover": {
+                transform: "translateY(-1px)",
+                boxShadow: "0 6px 14px rgba(0,0,0,0.12)",
+              },
+
+              "&:active": {
+                transform: "scale(0.96)",
+              },
+            }}
           >
-            Log Activity
-          </Button>
+            <AddIcon />
+          </IconButton>
         </Box>
 
         {error && (

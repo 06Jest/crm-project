@@ -75,7 +75,7 @@ const footerSections: FooterSection[] = [
   {
     title: 'Developer',
     links: [
-      // { label: 'Portfolio', href: 'scalejest.dev', external: true },
+      { label: 'Portfolio', href: 'https://jest-scale-dev.vercel.app/', external: true },
       { label: 'GitHub Profile', href: 'https://github.com/06Jest', external: true },
       { label: 'Project Repo', href: 'https://github.com/06Jest/crm-project', external: true },
       { label: 'LinkedIn', href: 'https://linkedin.com/in/scaledev', external: true },
@@ -354,7 +354,7 @@ export default function Footer() {
             Made with ❤️ by{' '}
             <Link
               component="button"
-              onClick={() => window.open('https://jestony.dev', '_blank')}
+              onClick={() => window.open('https://jest-scale-dev.vercel.app/', '_blank')}
               sx={{
                 textDecoration: 'none',
                 color: 'primary.main',

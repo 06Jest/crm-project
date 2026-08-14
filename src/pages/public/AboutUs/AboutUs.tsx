@@ -17,7 +17,7 @@ import FormatQuoteRoundedIcon from '@mui/icons-material/FormatQuoteRounded';
 import logoBrown from '/logobrown.svg';
 import developerImage from '/SilvanoFormalPicture.jpg';
 import humanConnectionImage from '/aiEmployee.avif';
-import credImage from '/photo_2026-08-11_00-37-58.jpg';
+import credImage from '/freshgrad.jpg';
 
 const LOGO_SRC = logoBrown;
 const DEVELOPER_IMAGE = developerImage;
@@ -578,19 +578,19 @@ function ComparisonColumn({
 
 function DeveloperMessage() {
   const message = [
-    `Hello! I’m Jestony Silvano, the developer behind UniThread. I graduated from Quezon City University in June 2026 with a Bachelor of Science in Information Technology, graduating with Latin Honors (Cum Laude) and a GPA of 1.59.`,
+    `Hello! I’m Jestony Silvano, the developer behind uniThread. I graduated from Quezon City University in June 2026 with a Bachelor of Science in Information Technology, graduating with Latin Honors (Cum Laude) and a GPA of 1.59.`,
 
-    `My interest in building UniThread started during my internship at Aqua Smart Guard Corp., where I was first exposed to a real business system through ERPNext. I remember being fascinated by how large and interconnected it was. Seeing how software supported an actual business made me think, "What if I tried building something like this myself, but started with something smaller?" That thought eventually led me toward building a CRM.`,
+    `My interest in building uniThread started during my internship at Aqua Smart Guard Corp., where I was first exposed to a real business system through ERPNext. I remember being fascinated by how large and interconnected it was. Seeing how software supported an actual business made me think, "What if I tried building something like this myself, but started with something smaller?" That thought eventually led me toward building a CRM.`,
 
-    `That experience was valuable to me because it showed me that software is more than just code and features. There are real people and real businesses behind the systems we build. UniThread became a way for me to explore that idea while growing as a developer learning from mistakes, questioning my decisions, solving problems from the ground up, and trying to build something genuinely useful.`,
+    `That experience was valuable to me because it showed me that software is more than just code and features. There are real people and real businesses behind the systems we build. uniThread became a way for me to explore that idea while growing as a developer learning from mistakes, questioning my decisions, solving problems from the ground up, and trying to build something genuinely useful.`,
 
-    `UniThread started from a simple belief: technology should help us build better relationships, not make those relationships feel less human.`,
+    `uniThread started from a simple belief: technology should help us build better relationships, not make those relationships feel less human.`,
 
-    `As AI becomes a bigger part of how we work and communicate, I believe that matters even more. AI can help us work faster, organize information, recognize patterns, and handle repetitive tasks. But behind every customer and every conversation is still a person. I don't want UniThread to replace that person. I want it to give them better tools while keeping the relationship human.`,
+    `As AI becomes a bigger part of how we work and communicate, I believe that matters even more. AI can help us work faster, organize information, recognize patterns, and handle repetitive tasks. But behind every customer and every conversation is still a person. I don't want uniThread to replace that person. I want it to give them better tools while keeping the relationship human.`,
 
-    `I also want to sincerely thank Myrtle Alyn Baes, my personal QA Analyst and future QA Engineer throughout this journey. She reviewed UniThread, tested its behavior, questioned my decisions, caught details I missed, and helped me see the system from a user's perspective. Having someone willing to challenge what I built reminded me that good software isn't just about making something work, it's about making sure it works well for the people using it.`,
+    `I also want to sincerely thank Myrtle Alyn Baes, my personal QA Analyst and future QA Engineer throughout this journey. She reviewed uniThread, tested its behavior, questioned my decisions, caught details I missed, and helped me see the system from a user's perspective. Having someone willing to challenge what I built reminded me that good software isn't just about making something work, it's about making sure it works well for the people using it.`,
 
-    `UniThread is still far from finished, and I still have a lot to learn. But I'm proud of how far this idea has come and grateful for everyone who has helped shape it. This is only the beginning, but one principle will remain at the heart of what I build: technology should make human relationships better, not replace them.`,
+    `uniThread is still far from finished, and I still have a lot to learn. But I'm proud of how far this idea has come and grateful for everyone who has helped shape it. This is only the beginning, but one principle will remain at the heart of what I build: technology should make human relationships better, not replace them.`,
   ];
 
 
@@ -650,14 +650,20 @@ function DeveloperMessage() {
             ~ Jest, Developer &amp; Founder
           </Typography>
           {CRED_IMAGE && (
-          <Box sx={{ mt: 3, width: '90%' }}>
-            <FallbackImage
-              src={CRED_IMAGE}
-              alt="Developer's photo with his credentials"
-              ratio="16 / 9"
-            />
-          </Box>
-        )}
+            <Box sx={{ mt: 3, width: '90%' }}>
+              <FallbackImage
+                src={CRED_IMAGE}
+                alt="Developer's photo with his credentials"
+                ratio="16 / 9"
+                sx={{
+                  objectPosition: 'center 55%',
+                }}
+              />
+              <Typography variant="body1" color="text.secondary" sx={{lineHeight: 1.8, fontSize: '0.8rem', fontStyle: 'italic', textAlign: 'right' }}>
+                From left to right: Jestony Silvano and Myrtle Alyn Baes, QCU graduates.
+              </Typography>
+            </Box>
+          )}
         </Box>
         
       </SectionContainer>
@@ -678,7 +684,7 @@ function VisionSection() {
         <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 700, lineHeight: 1.8, mb: 3 }}>
            We envision a future where businesses can use advanced technology without
             sacrificing the human relationships that make those businesses successful.
-            UniThread aims to help businesses connect with people, not simply treat them
+            uniThread aims to help businesses connect with people, not simply treat them
             as sources of revenue.
         </Typography>
 

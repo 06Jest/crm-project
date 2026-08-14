@@ -239,9 +239,15 @@ const hasSelection =
         justifyContent: 'center', 
         flexDirection: 'rows',
         flex: 1,
-        minWidth: 320,
-        p: 2,
-        mx: 2,
+        minWidth: 300,
+        p: {
+          sm: 0,
+          md: 2
+        },
+        mx: {
+          sm: 0.5,
+          md: 2
+        },
         height: 850}}>
           <Paper
             variant="outlined"
@@ -255,7 +261,6 @@ const hasSelection =
               display: 'flex',
               flex: 1,
               borderRadius: 3,
-              marginLeft: 1,
               flexDirection: 'column',
               overflow: 'auto',
               border: `1px solid ${theme.palette.mode === 'dark' ? '#3a3a3a' : '#e3e3e3'}`,
@@ -276,11 +281,11 @@ const hasSelection =
                   <GroupsIcon />
                 </Box>
                 <Box>
-                  <Typography variant="h5" fontWeight={800} letterSpacing={-0.3} lineHeight={1.2}>
+                  <Typography sx={{ lineHeight: 1.2, fontSize: {md: 20, sm: 18, xs: 16}}} fontWeight={800} letterSpacing={-0.3}>
                     Customers
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
-                    {rows.length} {rows.length === 1 ? 'customer' : 'customers'} on file
+                    {rows.length}
                   </Typography>
                 </Box>
               </Box>
