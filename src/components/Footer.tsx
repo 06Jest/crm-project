@@ -152,7 +152,7 @@ export default function Footer() {
         pt: 8,
         pb: 4,
         mt: 'auto',
-        zIndex: 300,
+        zIndex: 600,
       }}
     >
       <Container maxWidth="lg">

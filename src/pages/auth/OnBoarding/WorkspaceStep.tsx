@@ -295,6 +295,7 @@ export default function WorkspaceStep({
             placeholder="My Personal Workspace"
             required
           />
+
           <Autocomplete
             options={INDUSTRIES}
             value={formData.industry || null}
@@ -314,6 +315,7 @@ export default function WorkspaceStep({
               />
             )}
           />
+
           <Autocomplete
             options={PRODUCT_TYPES}
             value={formData.product_type || null}
@@ -333,6 +335,32 @@ export default function WorkspaceStep({
               />
             )}
           />
+
+          <Box
+            sx={{
+              p: 1.5,
+              borderRadius: 2,
+              bgcolor: 'action.hover',
+              border: '1px solid',
+              borderColor: 'divider',
+            }}
+          >
+            <Typography
+              variant="body2"
+              fontWeight={700}
+              color="primary.main"
+              sx={{ mb: 0.5 }}
+            >
+              Recommended: Create an Organization
+            </Typography>
+
+            <Typography variant="caption" color="text.secondary">
+              Personal workspaces are intended for individual use. Chat and
+              team collaboration are not available here. If you plan to work
+              with a team or manage customers together, we highly recommend
+              creating an Organization.
+            </Typography>
+          </Box>
         </Stack>
       </Collapse>
 

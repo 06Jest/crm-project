@@ -15,26 +15,46 @@ function AppLayout() {
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <Header />
       <Topbar />
-      <Box component="main" sx={{ mt: 12, pt: 2, width: '100%', display: 'flex' }}>
-        <Box
+      <Box
+          component="main"
           sx={{
-            width: { xs: 0, md: collapsed ? 70 : 200 },
-            transition: "width 0.3s ease",
+            mt: 12,
+            pt: 1,
+            width: '99vw',
+            display: "flex",
+            minWidth: 0,
+            px: 1.3
           }}
         >
-          <Sidebar />
-        </Box>
-        <Box
-          sx={{
-            flex: 1,
-            minHeight: 900,
-            pb: { xs: `${MOBILE_BOTTOM_NAV_HEIGHT + 16}px`, md: 0 },
-          }}
-        >
-          <Outlet />
-        </Box>
+          <Box
+            sx={{
+              flexShrink: 0,
+              width: {
+                xs: 0,
+                md: collapsed ? 60 : 180,
+              },
+              transition: "width 0.3s ease",
+              overflow: "hidden",
+            }}
+          >
+            <Sidebar />
+          </Box>
 
-      </Box>
+          <Box
+            sx={{
+              flex: 1,
+              minWidth: 0,
+              minHeight: 0,
+              pb: {
+                xs: `${MOBILE_BOTTOM_NAV_HEIGHT + 16}px`,
+                md: 0,
+              },
+              transition: "width 0.3s ease",
+            }}
+          >
+            <Outlet />
+          </Box>
+        </Box>
       <Footer />
     </Box>
 

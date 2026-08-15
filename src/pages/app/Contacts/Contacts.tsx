@@ -24,12 +24,12 @@ import {
   ListItemText,
   ListItemAvatar,
   Avatar,
-  CircularProgress,
   Typography,
   IconButton,
   Chip,
   Tooltip,
   DialogActions,
+  CircularProgress,
 } from "@mui/material";
 import DeleteIcon from '@mui/icons-material/Delete';
 import PriorityIcon from '@mui/icons-material/PriorityHighRounded';
@@ -44,6 +44,8 @@ import type { Priority } from "../../../types/global";
 import ErrorAlert from "../../../components/Error";
 import { formatName } from "../../../utils/formatText";
 import { formatRelativeTime } from "../../../utils/formatTime";
+import ContactsSkeleton from "../../../components/ContactsSkeleton";
+import RefreshIcon from "@mui/icons-material/Refresh";
 
 
 const STATUS_COLORS: Record<ContactStatus, string> = {
@@ -113,10 +115,10 @@ const getColumns = (
     ),
   },
   { field: 'email', headerName: 'Email', flex: 1,},
-  { field: 'phone', headerName: 'Phone', flex: 1, },
+  { field: 'phone', headerName: 'Phone', width: 150, },
   { field: 'status', 
     headerName: 'Status', 
-    flex: 1,
+    width: 180,
     display: 'flex',
     align: 'left',
     renderCell: ({ value }) => (
@@ -144,7 +146,7 @@ const getColumns = (
   {
     field: 'created_at',
     headerName: 'Created',
-    flex: 1,
+    width: 100,
     valueGetter: (value) =>
       value
         ? formatRelativeTime(new Date(value))
@@ -152,8 +154,7 @@ const getColumns = (
   },
   { field: 'action', 
     headerName: 'Action', 
-    width: 100, 
-    flex: 1,
+    width: 150, 
     align:'center',
     headerAlign:  'center',
     renderCell: ({ value }) => (
@@ -275,6 +276,14 @@ const sortedContacts = [...filteredContacts].sort((a, b) => {
   );
 });
 
+const refreshContacts = async () => {
+  try {
+    await dispatch(fetchContactsLists()).unwrap();
+  } catch {
+    // Error handled by Redux state
+  }
+};
+
 
 const PriorityList = sortedContacts.map(contact => ({
   name: `${fullname(contact)}`,
@@ -316,113 +325,18 @@ const selectionCount =
     : selectedRows.ids.size;
 
   if (loading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 20, height: 850 }}>
-        <CircularProgress />
-      </Box>
-    );
+    return <ContactsSkeleton />;
   }
     return (
       <Box sx={{ 
         display: 'flex', 
-        justifyContent: 'center', 
-        flexDirection: 'rows',
-        flex: 1,
-        minWidth: 300,
-        p: {
-          sm: 0,
-          md: 2
-        },
-        mx: {
-          sm: 0.5,
-          md: 2
-        },
-        height: 850}}>
-        <Paper
-          variant="outlined"
-          sx={{
-            justifyContent: 'center',
-            p: 1,
-            pt: 0,
-            width: '50vw',
-            transition: 'width 0.3s ease',
-            maxHeight:  1000,
-            display: 'flex',
-            flex: 1,
-            borderRadius: 3,
-            borderColor: 'divider',
-            flexDirection: 'column',
-            overflow: 'auto'
-          }}
-        >
-          <Box sx={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 2, pb: 1.5}}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, position: 'sticky' }}>
-              <Avatar
-                sx={{
-                  width: 38,
-                  height: 38,
-                  bgcolor: (theme) => alpha(theme.palette.primary.main, 0.12),
-                  color: 'primary.main',
-                }}
-              >
-                <GroupsIcon fontSize="small" />
-              </Avatar>
-              <Box>
-                <Typography variant="h5" fontWeight={800} sx={{ lineHeight: 1.2, fontSize: {md: 20, sm: 18, xs: 16}}}>
-                  Contacts
-                </Typography>
-                <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>
-                  {contacts.length} total{hasSelection ? ` • ${selectionCount} selected` : ''}
-                </Typography>
-              </Box>
-            </Box>
-
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Tooltip title="Add contact">
-                <IconButton
-                  onClick={() => {
-                    dispatch(clearError());
-                    navigate(`/app/contacts/addcontact`)
-                  }}
-                  sx={{
-                  fontSize: 12,
-                  py: 1,
-                  px: 1,
-                  border: '1px solid',
-                  borderColor: 'divider',
-                  borderRadius: 2,
-                  color: 'primary.main',
-                  fontWeight: 700
-                }}>
-                  <PersonAddIcon titleAccess="Add Contact" fontSize="small" />
-                </IconButton>
-              </Tooltip>
-              <Tooltip title={hasSelection ? "Delete selected" : "Select contacts to delete"}>
-                <span>
-                  <IconButton
-                    onClick={() => setConfirmOpen(true)}
-                    disabled={!hasSelection}
-                    sx={{
-                      border: '1px solid',
-                      borderColor: hasSelection ? alpha('#e95858', 0.4) : 'divider',
-                      borderRadius: 2,
-                      py: 1,
-                      px: 1,
-                    }}
-                  >
-                    <DeleteIcon
-                      sx={{
-                        opacity: hasSelection ? 1 : 0.3,
-                        color: hasSelection ? '#e95858' : 'text.disabled',
-                      }}
-                      fontSize="small"
-                    />
-                  </IconButton>
-                </span>
-              </Tooltip>
-            </Box>
-          </Box>
-
+        justifyContent: 'center',
+        alignItems: 'center',
+        flexDirection: 'column',
+        minWidth: 0,
+        minHeight: 0,
+        mx: 2
+        }}>
           {error && (
             <Box sx={{ px: 2, pb: 1 }}>
               <ErrorAlert
@@ -430,64 +344,179 @@ const selectionCount =
               />
             </Box>
           )}
-          
-          <DataGrid
-            sx={{
-              minHeight: 0,
-              minWidth: 1000,
-              mx: 1,
-              mb: 1,
-              border: 'none',
-              borderRadius: 3,
-              fontSize: '0.85rem',
-              cursor: 'pointer',
-              overflow: 'auto',
-              '& .MuiDataGrid-columnHeaders': {
-                bgcolor: (theme) => alpha(theme.palette.text.primary, 0.03),
-                borderRadius: 2,
-              },
-              '& .MuiDataGrid-columnHeaderTitle': {
-                fontWeight: 700,
-                fontSize: '0.75rem',
-                textTransform: 'uppercase',
-                letterSpacing: 0.3,
-                opacity: 0.7,
-              },
-              '& .MuiDataGrid-row:hover': {
-                bgcolor: (theme) => alpha(theme.palette.primary.main, 0.05),
-              },
-              '& .MuiDataGrid-cell:focus, & .MuiDataGrid-cell:focus-within': {
-                outline: 'none',
-              },
-            }}
-            rows={rows}
-            columns={columns}
-            initialState={{ pagination: { paginationModel } }}
-            pageSizeOptions={[30, 50]}
-            rowHeight={30}
-            checkboxSelection
-            apiRef={apiRef}
-            disableRowSelectionOnClick
-            onRowSelectionModelChange={(ids) => {
-              setSelectedRows(ids);
-            }}
-          />
-          
-        </Paper>
-        <Box sx={{display: {xs: 'none', lg: 'flex'}, flexDirection: 'column',  width: '15%', alignItems: 'end', minWidth: 270, }}>
-          
-          <Paper variant="outlined" sx={{ height: '50%', maxHeight: 300 , width: '90%', minHeight: 310, mx: 1,mb: 1, p: 1.5, borderRadius: 3, borderColor: 'divider'}}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, pb: 1, mb: 0.5, borderBottom: '1px solid', borderColor: 'divider' }}>
-              <AccessTimeIcon sx={{ fontSize: 18, color: 'primary.main' }} />
-              <Typography variant="h6" fontWeight={700} sx={{ fontSize: 14.5 }}>Recently Added</Typography>
+
+        <Box sx={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', pb: {xs: 1, sm: 1.25, md: 1.5, width: '100%'}, flex: 1,  px: {xs: 0.5, sm: 0.5, md: 2} }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: {xs: 0.75, sm: 1, md: 1.25}, position: 'sticky' }}>
+            <Avatar
+              sx={{
+                width: {xs: 30, sm: 34, md: 38},
+                height: {xs: 30, sm: 34, md: 38},
+                bgcolor: (theme) => alpha(theme.palette.primary.main, 0.12),
+                color: 'primary.main',
+              }}
+            >
+              <GroupsIcon sx={{ fontSize: {xs: 15, sm: 17, md: 20} }} />
+            </Avatar>
+            <Box>
+              <Typography variant="h5" fontWeight={800} sx={{ lineHeight: 1.2, fontSize: {xs: 15, sm: 17, md: 20}}}>
+                Contacts
+              </Typography>
+              <Typography sx={{ fontSize: {xs: 10, sm: 11, md: 12}, color: 'text.secondary' }}>
+                {contacts.length} total{hasSelection ? ` • ${selectionCount} selected` : ''}
+              </Typography>
             </Box>
-            <List dense disablePadding sx={{ overflowY: 'auto', height: 'calc(100% - 36px)' }}>
-              {recentContactsList.length === 0 ? (
-                <Typography sx={{ fontSize: 12.5, color: 'text.secondary', textAlign: 'center', mt: 3 }}>
-                  No contacts yet
-                </Typography>
-              ) : recentContactsList.map((contact) => (
-                <ListItem key={contact.id} onClick={() => navigate(`/app/contacts/${contact.id}`)} sx={{
+          </Box>
+
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: {xs: 0.5, sm: 0.75, md: 1} }}>
+            <Tooltip title="Add contact">
+              <IconButton
+                onClick={() => {
+                  dispatch(clearError());
+                  navigate(`/app/contacts/addcontact`);
+                }}
+                sx={{
+                  py: {xs: 0.5, sm: 0.75, md: 1},
+                  px: {xs: 0.5, sm: 0.75, md: 1},
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  borderRadius: 2,
+                  color: 'primary.main',
+                  fontWeight: 700,
+                }}
+              >
+                <PersonAddIcon titleAccess="Add Contact" sx={{ fontSize: {xs: 15, sm: 17, md: 20} }} />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Refresh contacts">
+              <span>
+                <IconButton
+                  onClick={refreshContacts}
+                  disabled={loading}
+                  sx={{
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    borderRadius: 2,
+                    py: {xs: 0.5, sm: 0.75, md: 1},
+                    px: {xs: 0.5, sm: 0.75, md: 1},
+                  }}
+                >
+                  {loading ? (
+                    <CircularProgress size={16} sx={{ fontSize: {xs: 14, sm: 16, md: 18} }} />
+                  ) : (
+                    <RefreshIcon sx={{ fontSize: {xs: 15, sm: 17, md: 20} }} />
+                  )}
+                </IconButton>
+              </span>
+            </Tooltip>
+            <Tooltip
+              title={
+                hasSelection
+                  ? "Delete selected"
+                  : "Select contacts to delete"
+              }
+            >
+              <span>
+                <IconButton
+                  onClick={() => setConfirmOpen(true)}
+                  disabled={!hasSelection}
+                  sx={{
+                    border: '1px solid',
+                    borderColor: hasSelection
+                      ? alpha('#e95858', 0.4)
+                      : 'divider',
+                    borderRadius: 2,
+                    py: {xs: 0.5, sm: 0.75, md: 1},
+                    px: {xs: 0.5, sm: 0.75, md: 1},
+                  }}
+                >
+                  <DeleteIcon
+                    sx={{
+                      opacity: hasSelection ? 1 : 0.3,
+                      color: hasSelection
+                        ? '#e95858'
+                        : 'text.disabled',
+                      fontSize: {xs: 15, sm: 17, md: 20},
+                    }}
+                  />
+                </IconButton>
+              </span>
+            </Tooltip>
+          </Box>
+        </Box>
+        <Box sx={{display: 'flex', height: 850, gap: 2, justifyContent: 'space-between', width: '100%', overflow: 'auto', mb: 5 }}>
+          <Paper
+            variant="outlined"
+            sx={{
+              justifyContent: 'center',
+              p: 1,
+              pt: 0,
+              transition: 'width 0.3s ease',
+              height: 850,
+              minWidth: 300,
+              display: 'flex',
+              flex: 1,
+              borderRadius: 3,
+              borderColor: 'divider',
+              flexDirection: 'column',
+              overflow: 'auto'
+            }}
+          >
+            <DataGrid
+              sx={{
+                minHeight: 0,
+                minWidth: 1200,
+                mx: 1,
+                mb: 1,
+                border: 'none',
+                borderRadius: 3,
+                fontSize: '0.85rem',
+                cursor: 'pointer',
+                overflow: 'auto',
+                '& .MuiDataGrid-columnHeaders': {
+                  bgcolor: (theme) => alpha(theme.palette.text.primary, 0.03),
+                  borderRadius: 2,
+                },
+                '& .MuiDataGrid-columnHeaderTitle': {
+                  fontWeight: 700,
+                  fontSize: '0.75rem',
+                  textTransform: 'uppercase',
+                  letterSpacing: 0.3,
+                  opacity: 0.7,
+                },
+                '& .MuiDataGrid-row:hover': {
+                  bgcolor: (theme) => alpha(theme.palette.primary.main, 0.05),
+                },
+                '& .MuiDataGrid-cell:focus, & .MuiDataGrid-cell:focus-within': {
+                  outline: 'none',
+                },
+              }}
+              rows={rows}
+              columns={columns}
+              initialState={{ pagination: { paginationModel } }}
+              pageSizeOptions={[30, 50]}
+              rowHeight={30}
+              checkboxSelection
+              apiRef={apiRef}
+              disableRowSelectionOnClick
+              onRowSelectionModelChange={(ids) => {
+                setSelectedRows(ids);
+              }}
+            />
+            
+          </Paper>
+          <Box sx={{display: {xs: 'none', xl: 'flex'}, flexDirection: 'column',  width: '15%', alignItems: 'end', minWidth: 270, height: '100%', gap: 2 }}>
+            <Paper variant="outlined" sx={{ height: '50%', width: '100%', minWidth: 200, minHeight: 400, p: 1.5, borderRadius: 3, borderColor: 'divider'}}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, pb: 1, mb: 0.5, borderBottom: '1px solid', borderColor: 'divider' }}>
+                <FlagCircleIcon sx={{ fontSize: 18, color: 'error.main' }} />
+                <Typography variant="h6" fontWeight={700} sx={{ fontSize: 14.5 }}>Priorities</Typography>
+              </Box>
+              <List dense disablePadding sx={{overflowY: 'auto', height: 'calc(100% - 36px)'}}>
+                {PriorityList.length === 0 ? (
+                  <Typography sx={{ fontSize: 12.5, color: 'text.secondary', textAlign: 'center', mt: 3 }}>
+                    Nothing flagged
+                  </Typography>
+                ) : PriorityList.map((contact) => (
+                  <ListItem key={contact.id} onClick={() => navigate(`/app/contacts/${contact.id}`)} sx={{
                       cursor: 'pointer',
                       py: 0.75,
                       px: 0.75,
@@ -496,135 +525,137 @@ const selectionCount =
                         bgcolor: (theme) =>
                         alpha(theme.palette.text.primary, 0.06),
                       },}}>
-                  <ListItemAvatar sx={{ minWidth: 32 }}>
-                    <Avatar sx={{ width: 26, height: 26, fontSize: 10.5, fontWeight: 700, bgcolor: stringToAvatarColor(contact.name) }}>
-                      {getInitials(contact.name)}
-                    </Avatar>
-                  </ListItemAvatar>
-                  <ListItemText
-                    primary={contact.name.length > 22
-                    ? `${(contact.name).slice(0, 22)}...`
-                    : (contact.name)}
-                    primaryTypographyProps={{color: "text.primary", fontSize: 13, fontWeight: 600 }}
-                    sx={{textAlign: 'left'}}
-                  />
-                  <ListItemText
-                    sx={{textAlign: 'right'}}
-                    primaryTypographyProps={{ fontSize: 10.5, color: 'text.secondary' }}
-                    primary={contact.created}
-                  />
-                </ListItem>
-              ))}
-            </List>
-          </Paper>
-          <Paper variant="outlined" sx={{ height: '50%',maxHeight: 300, width: '90%', minWidth: 200, minHeight: 310, mx: 1, mt: 1, p: 1.5, borderRadius: 3, borderColor: 'divider'}}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, pb: 1, mb: 0.5, borderBottom: '1px solid', borderColor: 'divider' }}>
-              <FlagCircleIcon sx={{ fontSize: 18, color: 'error.main' }} />
-              <Typography variant="h6" fontWeight={700} sx={{ fontSize: 14.5 }}>Priorities</Typography>
-            </Box>
-            <List dense disablePadding sx={{overflowY: 'auto', height: 'calc(100% - 36px)'}}>
-              {PriorityList.length === 0 ? (
-                <Typography sx={{ fontSize: 12.5, color: 'text.secondary', textAlign: 'center', mt: 3 }}>
-                  Nothing flagged
-                </Typography>
-              ) : PriorityList.map((contact) => (
-                <ListItem key={contact.id} onClick={() => navigate(`/app/contacts/${contact.id}`)} sx={{
-                    cursor: 'pointer',
-                    py: 0.75,
-                    px: 0.75,
-                    borderRadius: 2,
-                    '&:hover': {
-                      bgcolor: (theme) =>
-                      alpha(theme.palette.text.primary, 0.06),
-                    },}}>
-                  {contact.priorityIcon}
-                  <ListItemText
-                    primaryTypographyProps={{color: "text.primary", fontSize: 13, fontWeight: 600 }}
-                    sx={{textAlign: 'left', justifyContent: 'center'}} >
+                    {contact.priorityIcon}
+                    <ListItemText
+                      primaryTypographyProps={{color: "text.primary", fontSize: 13, fontWeight: 600 }}
+                      sx={{textAlign: 'left', justifyContent: 'center'}} >
 
-                    {contact.name.length > 22
-                    ? `${(contact.name).slice(0, 22)}...`
-                    : (contact.name)}
-                      
-                  </ListItemText>
-                  <ListItemText 
-                    sx={{textAlign: 'right'}}
-                    primaryTypographyProps={{ fontSize: 10.5, color: 'text.secondary' }}
-                  >{contact.created}</ListItemText>
-                </ListItem>
-              ))}
-            </List>
-          </Paper>
-        </Box>
-          <Dialog
-            open={confirmOpen}
-            onClose={() => setConfirmOpen(false)}
-            maxWidth="xs"
-            fullWidth
-            PaperProps={{ sx: { borderRadius: 3 } }}
-          >
-            <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1.5, fontWeight: 700, pb: 1 }}>
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  width: 44,
-                  height: 44,
-                  borderRadius: '50%',
-                  bgcolor: (theme) => alpha(theme.palette.error.main, 0.1),
-                  color: 'error.main',
-                  flexShrink: 0,
-                }}
-              >
-                <WarningAmberRoundedIcon />
+                      {contact.name.length > 22
+                      ? `${(contact.name).slice(0, 22)}...`
+                      : (contact.name)}
+                        
+                    </ListItemText>
+                    <ListItemText 
+                      sx={{textAlign: 'right'}}
+                      primaryTypographyProps={{ fontSize: 10.5, color: 'text.secondary' }}
+                    >{contact.created}</ListItemText>
+                  </ListItem>
+                ))}
+              </List>
+            </Paper>
+            <Paper variant="outlined" sx={{ height: '50%' , width: '100%', minHeight: 400, p: 1.5, borderRadius: 3, borderColor: 'divider'}}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, pb: 1, mb: 0.5, borderBottom: '1px solid', borderColor: 'divider' }}>
+                <AccessTimeIcon sx={{ fontSize: 18, color: 'primary.main' }} />
+                <Typography variant="h6" fontWeight={700} sx={{ fontSize: 14.5 }}>Recently Added</Typography>
               </Box>
-              Delete contacts?
-            </DialogTitle>
+              <List dense disablePadding sx={{ overflowY: 'auto', height: 'calc(100% - 36px)' }}>
+                {recentContactsList.length === 0 ? (
+                  <Typography sx={{ fontSize: 12.5, color: 'text.secondary', textAlign: 'center', mt: 3 }}>
+                    No contacts yet
+                  </Typography>
+                ) : recentContactsList.map((contact) => (
+                  <ListItem key={contact.id} onClick={() => navigate(`/app/contacts/${contact.id}`)} sx={{
+                        cursor: 'pointer',
+                        py: 0.75,
+                        px: 0.75,
+                        borderRadius: 2,
+                        '&:hover': {
+                          bgcolor: (theme) =>
+                          alpha(theme.palette.text.primary, 0.06),
+                        },}}>
+                    <ListItemAvatar sx={{ minWidth: 32 }}>
+                      <Avatar sx={{ width: 26, height: 26, fontSize: 10.5, fontWeight: 700, bgcolor: stringToAvatarColor(contact.name) }}>
+                        {getInitials(contact.name)}
+                      </Avatar>
+                    </ListItemAvatar>
+                    <ListItemText
+                      primary={contact.name.length > 22
+                      ? `${(contact.name).slice(0, 22)}...`
+                      : (contact.name)}
+                      primaryTypographyProps={{color: "text.primary", fontSize: 13, fontWeight: 600 }}
+                      sx={{textAlign: 'left'}}
+                    />
+                    <ListItemText
+                      sx={{textAlign: 'right'}}
+                      primaryTypographyProps={{ fontSize: 10.5, color: 'text.secondary' }}
+                      primary={contact.created}
+                    />
+                  </ListItem>
+                ))}
+              </List>
+            </Paper>
+          </Box>
+        </Box>
+        
+        <Dialog
+          open={confirmOpen}
+          onClose={() => setConfirmOpen(false)}
+          maxWidth="xs"
+          fullWidth
+          PaperProps={{ sx: { borderRadius: 3 } }}
+        >
+          <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1.5, fontWeight: 700, pb: 1 }}>
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 44,
+                height: 44,
+                borderRadius: '50%',
+                bgcolor: (theme) => alpha(theme.palette.error.main, 0.1),
+                color: 'error.main',
+                flexShrink: 0,
+              }}
+            >
+              <WarningAmberRoundedIcon />
+            </Box>
+            Delete contacts?
+          </DialogTitle>
 
-            <DialogContent>
-              <DialogContentText sx={{ fontSize: '0.9rem' }}>
-                Are you sure you want to delete{' '}
-                <Box component="span" sx={{ fontWeight: 700, color: 'text.primary' }}>
-                  {selectedRows.ids.size === 0 || selectedRows.type === "exclude" ? 'all' : selectedRows.ids.size}
-                </Box>{' '}
-                selected contact(s)? This can't be undone.
-              </DialogContentText>
-            </DialogContent>
+          <DialogContent>
+            <DialogContentText sx={{ fontSize: '0.9rem' }}>
+              Are you sure you want to delete{' '}
+              <Box component="span" sx={{ fontWeight: 700, color: 'text.primary' }}>
+                {selectedRows.ids.size === 0 || selectedRows.type === "exclude" ? 'all' : selectedRows.ids.size}
+              </Box>{' '}
+              selected contact(s)? This can't be undone.
+            </DialogContentText>
+          </DialogContent>
 
-            <DialogActions sx={{ px: 3, pb: 2.5 }}>
-              <Button onClick={() => setConfirmOpen(false)} color="inherit" sx={{ textTransform: 'none', fontWeight: 600 }}>
-                Cancel
-              </Button>
+          <DialogActions sx={{ px: 3, pb: 2.5 }}>
+            <Button onClick={() => setConfirmOpen(false)} color="inherit" sx={{ textTransform: 'none', fontWeight: 600 }}>
+              Cancel
+            </Button>
 
-              <Button
-                variant="contained"
-                color="error"
-                disableElevation
-                sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 2 }}
-                onClick={async () => {
-                  if (loading) return;
-                  // setConfirmOpen(false);
-                  try {
-                    const ids = Array.from(selectedRows.ids).map(id => String(id));
+            <Button
+              variant="contained"
+              color="error"
+              disableElevation
+              sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 2 }}
+              onClick={async () => {
+                if (loading) return;
+                // setConfirmOpen(false);
+                try {
+                  const ids = Array.from(selectedRows.ids).map(id => String(id));
 
-                    await dispatch(deleteBulkContacts(ids)).unwrap();
+                  await dispatch(deleteBulkContacts(ids)).unwrap();
 
-                    setSelectedRows({
-                      type: "include",
-                      ids: new Set(),
-                    });
+                  setSelectedRows({
+                    type: "include",
+                    ids: new Set(),
+                  });
 
-                    setConfirmOpen(false);
-                  } catch {
-                    // Error in state
-                  }
-                }}
-              >
-                Delete
-              </Button>
-            </DialogActions>
-          </Dialog>
+                  setConfirmOpen(false);
+                } catch {
+                  // Error in state
+                }
+              }}
+            >
+              Delete
+            </Button>
+          </DialogActions>
+        </Dialog>
       </Box>
     );
 }

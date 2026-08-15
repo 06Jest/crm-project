@@ -61,7 +61,8 @@ import type { Priority } from '../../../types/global';
 import ErrorAlert from '../../../components/Error';
 import { formatCurrency } from '../../../utils/formatCurrency';
 import { calculateAge } from '../../../utils/calculateAge';
-
+import RefreshIcon from "@mui/icons-material/Refresh";
+import CircularProgress from "@mui/material/CircularProgress";
 import { fetchContactsLists } from '../../../store/contactsSlice';
 import { formatName, formatTitle } from '../../../utils/formatText';
 
@@ -516,6 +517,15 @@ export default function Deals() {
       setDeleteOpen(true);
       };
 
+  const refreshDeals = async () => {
+    try {
+      await dispatch(fetchDealsLists()).unwrap();
+    } catch {
+      // Error handled by Redux state
+    }
+  }
+
+
   
   const handleDragEnd = async (result: DropResult) => {
   
@@ -655,7 +665,7 @@ export default function Deals() {
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          width: { xs: '92%', sm: '85vw', md: '80vw' },
+          width: { xs: '92%', sm: '85vw' },
           justifySelf: 'center'
         }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
@@ -665,7 +675,7 @@ export default function Deals() {
               <Skeleton variant="text" width={170} height={16} />
             </Box>
           </Box>
-          <Skeleton variant="rounded" width={118} height={36} sx={{ borderRadius: 2 }} />
+          <Skeleton variant="rounded" width={40} height={40} sx={{ borderRadius: 10 }} />
         </Box>
         <Box sx={{
           overflow: 'auto',
@@ -691,6 +701,11 @@ export default function Deals() {
               >
                 <Skeleton variant="rectangular" height={78} />
                 <Box sx={{ p: 1 }}>
+                  <Skeleton variant="rounded" height={92} sx={{ mb: 1, borderRadius: 2.5 }} />
+                  <Skeleton variant="rounded" height={92} sx={{ mb: 1, borderRadius: 2.5 }} />
+                  <Skeleton variant="rounded" height={92} sx={{ mb: 1, borderRadius: 2.5 }} />
+                  <Skeleton variant="rounded" height={92} sx={{ mb: 1, borderRadius: 2.5 }} />
+                  <Skeleton variant="rounded" height={92} sx={{ mb: 1, borderRadius: 2.5 }} />
                   <Skeleton variant="rounded" height={92} sx={{ mb: 1, borderRadius: 2.5 }} />
                   <Skeleton variant="rounded" height={92} sx={{ mb: 1, borderRadius: 2.5 }} />
                   <Skeleton variant="rounded" height={92} sx={{ borderRadius: 2.5 }} />
@@ -794,36 +809,57 @@ export default function Deals() {
           </Box>
         </Box>
 
-        
-        <IconButton
-          onClick={() => navigate(`/app/deals/adddeal`)}
-          sx={{
-            width: { xs: 36, sm: 40 },
-            height: { xs: 36, sm: 40 },
-            backgroundColor: 'primary.main',
-            borderRadius: "50%",
-            flexShrink: 0,
-            p: 0,
-            color: 'white',
+        <Box>
+          <IconButton
+            onClick={() => navigate(`/app/deals/adddeal`)}
+            sx={{
+              width: { xs: 36, sm: 40 },
+              height: { xs: 36, sm: 40 },
+              backgroundColor: 'primary.main',
+              borderRadius: "50%",
+              flexShrink: 0,
+              p: 0,
+              color: 'white',
 
-            "& svg": {
-              fontSize: { xs: 20, sm: 22 },
-            },
+              "& svg": {
+                fontSize: { xs: 20, sm: 22 },
+              },
 
-            transition: "transform 0.15s ease, box-shadow 0.15s ease",
+              transition: "transform 0.15s ease, box-shadow 0.15s ease",
 
-            "&:hover": {
-              transform: "translateY(-1px)",
-              boxShadow: "0 6px 14px rgba(0,0,0,0.12)",
-            },
+              "&:hover": {
+                transform: "translateY(-1px)",
+                boxShadow: "0 6px 14px rgba(0,0,0,0.12)",
+              },
 
-            "&:active": {
-              transform: "scale(0.96)",
-            },
-          }}
-        >
-          <AddIcon />
-        </IconButton>
+              "&:active": {
+                transform: "scale(0.96)",
+              },
+            }}
+          >
+            <AddIcon />
+          </IconButton>
+          <IconButton
+            onClick={refreshDeals}
+            disabled={loading}
+            size="small"
+            sx={{
+              width: { xs: 32, sm: 36 },
+              height: { xs: 32, sm: 36 },
+              color: "text.secondary",
+
+              "&:hover": {
+                backgroundColor: "action.hover",
+              },
+            }}
+          >
+            {loading ? (
+              <CircularProgress size={17} />
+            ) : (
+              <RefreshIcon fontSize="small" />
+            )}
+          </IconButton>
+        </Box>
       </Box>
       <Box 
         ref={boardScrollRef}

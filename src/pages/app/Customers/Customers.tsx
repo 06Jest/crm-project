@@ -1,3 +1,4 @@
+
 import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "../../../store/store";
 import { DataGrid, type GridColDef, useGridApiRef, type GridRowSelectionModel } from '@mui/x-data-grid';
@@ -14,13 +15,11 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  CircularProgress,
   Typography,
   IconButton,
+  Tooltip,
 } from "@mui/material";
-//import LockIcon from '@mui/icons-material/Lock';
 import DeleteIcon from '@mui/icons-material/Delete';
-// import SearchIcon from '@mui/icons-material/Search';
 import GroupsIcon from '@mui/icons-material/Groups';
 import { useState } from "react";
 import ErrorAlert from "../../../components/Error";
@@ -30,7 +29,9 @@ import type { CustomerStatus } from "../../../types/customer";
 import { fetchContactsLists } from "../../../store/contactsSlice";
 import { deleteBulkCustomers, fetchCustomersLists } from "../../../store/customersSlice";
 import { fetchDealsLists } from "../../../store/dealsSlice";
-
+import CustomersSkeleton from "../../../components/CustomersSkeleton";
+import RefreshIcon from "@mui/icons-material/Refresh";
+import CircularProgress from "@mui/material/CircularProgress";
 
 const STATUS_COLORS: Record<CustomerStatus, string> = {
   Active: '#84e77c',
@@ -221,196 +222,229 @@ useEffect(() => {
   dispatch,
 ]);
 
+const refreshCustomers = async () => {
+  if (loading) return;
+
+  try {
+    await Promise.all([
+      dispatch(fetchCustomersLists()).unwrap(),
+      dispatch(fetchContactsLists()).unwrap(),
+      dispatch(fetchDealsLists()).unwrap(),
+    ]);
+  } catch {
+    // Error handled by Redux state
+  }
+};
 
 const hasSelection =
   selectedRows.type === "exclude" ||
   selectedRows.ids.size > 0;
 
-  if (loading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 20, height: 850 }}>
-        <CircularProgress />
-      </Box>
-    );
+  if (needsLoading) {
+    return <CustomersSkeleton />;
   }
-    return (
-      <Box sx={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        flexDirection: 'rows',
-        flex: 1,
-        minWidth: 300,
-        p: {
-          sm: 0,
-          md: 2
-        },
-        mx: {
-          sm: 0.5,
-          md: 2
-        },
-        height: 850}}>
-          <Paper
-            variant="outlined"
-            sx={(theme) => ({
-              justifyContent: 'center',
-              p: 1,
-              pt: 0,
-              width: '50vw',
-              transition: 'width 0.3s ease',
-              maxHeight:  1000,
-              display: 'flex',
-              flex: 1,
-              borderRadius: 3,
-              flexDirection: 'column',
-              overflow: 'auto',
-              border: `1px solid ${theme.palette.mode === 'dark' ? '#3a3a3a' : '#e3e3e3'}`,
-            })}
-          >
-            <Box sx={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 2,}}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
-                <Box sx={(theme) => ({
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  width: 40,
-                  height: 40,
-                  borderRadius: 2,
-                  bgcolor: theme.palette.mode === 'dark' ? '#2a2a2a' : '#eef1f6',
-                  color: 'primary.main',
-                })}>
-                  <GroupsIcon />
-                </Box>
-                <Box>
-                  <Typography sx={{ lineHeight: 1.2, fontSize: {md: 20, sm: 18, xs: 16}}} fontWeight={800} letterSpacing={-0.3}>
-                    Customers
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {rows.length}
-                  </Typography>
-                </Box>
-              </Box>
-              <Box sx={{
-                display: 'flex',
-                width: '50%',
-              }}>
-                <Box sx={{width: '100%'}}>
-                  {error  && (
-                  <ErrorAlert
-                    message={error}
-                  />
-                )}
-                </Box>
-                
-              </Box>
-              <Box>
-                <IconButton
-                  onClick={() => setConfirmOpen(true)}
-                  disabled={!hasSelection}
-                  title="Delete selected"
-                  sx={{
-                    borderRadius: 2,
-                    border: '1px solid',
-                    borderColor: hasSelection ? '#e9585866' : 'transparent',
-                    transition: 'border-color 0.15s ease, background-color 0.15s ease',
-                    '&:hover': {
-                      backgroundColor: hasSelection ? '#e9585818' : 'transparent',
-                    },
-                  }}
-                >
-                  <DeleteIcon
-                    sx={{
-                      opacity: hasSelection ? 1 : 0,
-                      color: '#e95858'
-                    }}
-                    fontSize="medium"
-                  />
-                </IconButton>
-              </Box>
-            </Box>
-            
-            <DataGrid
-              sx={(theme) => ({
-                flex: 1,
-                minHeight: 0,
-                minWidth: 1000,
-                border: 'none',
-                borderTop: `1px solid ${theme.palette.mode === 'dark' ? '#3a3a3a' : '#e3e3e3'}`,
-                borderRadius: '0 0 12px 12px',
-                fontSize: '0.85rem',
-                cursor: 'pointer',
-                overflow: 'auto',
-                '& .MuiDataGrid-columnHeaders': {
-                  backgroundColor: theme.palette.mode === 'dark' ? '#242424' : '#f7f8fa',
-                  fontWeight: 700,
-                },
-                '& .MuiDataGrid-columnHeaderTitle': {
-                  fontWeight: 700,
-                },
-                '& .MuiDataGrid-row:hover': {
-                  backgroundColor: theme.palette.mode === 'dark' ? '#2a2a2a' : '#f4f6f9',
-                },
-                '& .MuiDataGrid-cell:focus, & .MuiDataGrid-cell:focus-within': {
-                  outline: 'none',
-                },
-              })}
-              rows={rows}
-              columns={columns}
-              initialState={{ pagination: { paginationModel } }}
-              pageSizeOptions={[30, 50]}
-              rowHeight={30}
-              checkboxSelection
-              apiRef={apiRef}
-              disableRowSelectionOnClick
-              onRowSelectionModelChange={(ids) => {
-                setSelectedRows(ids);
-              }}
+  return (
+    <Box sx={{ 
+      display: 'flex', 
+      justifyContent: 'center',
+      alignItems: 'center',
+      flexDirection: 'column',
+      minWidth: 0,
+      minHeight: 0,
+      mx: 2,
+      overflow: 'auto',
+    }}>
+      <Box sx={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', pb: {xs: 1, sm: 1.25, md: 1.5}, width: '100%', px: {xs: 0.5, sm: 0.5, md: 2} }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+          <Box sx={(theme) => ({
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 40,
+            height: 40,
+            borderRadius: 2,
+            bgcolor: theme.palette.mode === 'dark' ? '#2a2a2a' : '#eef1f6',
+            color: 'primary.main',
+          })}>
+            <GroupsIcon />
+          </Box>
+          <Box>
+            <Typography sx={{ lineHeight: 1.2, fontSize: {md: 20, sm: 18, xs: 16}}} fontWeight={800} letterSpacing={-0.3}>
+              Customers
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              {rows.length}
+            </Typography>
+          </Box>
+        </Box>
+        <Box sx={{
+          display: 'flex',
+          width: '50%',
+        }}>
+          <Box sx={{width: '100%'}}>
+            {error  && (
+            <ErrorAlert
+              message={error}
             />
-            
-          </Paper>
-          <Dialog
-            PaperProps={{ sx: { borderRadius: 3 } }}
-            open={confirmOpen}
-            onClose={() => setConfirmOpen(false)}
+          )}
+          </Box>
+          
+        </Box>
+        <Box sx={{display: 'flex'}}>
+          <IconButton
+            onClick={() => setConfirmOpen(true)}
+            disabled={!hasSelection}
+            title="Delete selected"
+            sx={{
+              borderRadius: 2,
+              border: '1px solid',
+              borderColor: hasSelection ? '#e9585866' : 'transparent',
+              transition: 'border-color 0.15s ease, background-color 0.15s ease',
+              '&:hover': {
+                backgroundColor: hasSelection ? '#e9585818' : 'transparent',
+              },
+            }}
           >
-            <DialogTitle sx={{ fontWeight: 700 }}>Confirm delete</DialogTitle>
-
-            <DialogContent>
-              Are you sure you want to delete {selectedRows.ids.size === 0  || selectedRows.type === "exclude" ? 'all' : selectedRows.ids.size} selected contact(s)?
-            </DialogContent>
-
-            <DialogActions sx={{ pb: 2, px: 3 }}>
-              <Button onClick={() => setConfirmOpen(false)} sx={{ textTransform: 'none', fontWeight: 600 }}>
-                Cancel
-              </Button>
-
-              <Button
-                color="error"
-                variant="contained"
-                disableElevation
-                sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 2 }}
-                onClick={async () => {
-                  if (loading) return;
-                  // setConfirmOpen(false);
-                  try {
-                    const ids = Array.from(selectedRows.ids).map(id => String(id));
-
-                    await dispatch(deleteBulkCustomers(ids)).unwrap();
-
-                    setSelectedRows({
-                      type: "include",
-                      ids: new Set(), 
-                    });
-
-                    setConfirmOpen(false);
-                  } catch {
-                    // Error in state
-                  }
+            <DeleteIcon
+              sx={{
+                opacity: hasSelection ? 1 : 0,
+                color: '#e95858'
+              }}
+              fontSize="medium"
+            />
+          </IconButton>
+          <Tooltip title="Refresh Customers" >
+            <span
+              style={{
+                display: 'flex',
+                alignSelf: 'center',
+              }}
+            >
+              <IconButton
+                onClick={refreshCustomers}
+                disabled={loading}
+                sx={{
+                  alignSelf: 'center',
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  borderRadius: 2,
+                  py: { sm: 0.75, md: 1 },
+                  px: { sm: 0.75, md: 1 },
                 }}
               >
-                Delete
-              </Button>
-            </DialogActions>
-          </Dialog>
+                {loading ? (
+                  <CircularProgress
+                    size={16}
+                    sx={{ fontSize: { xs: 14, sm: 16, md: 18 } }}
+                  />
+                ) : (
+                  <RefreshIcon
+                    sx={{ fontSize: { xs: 15, sm: 17, md: 20 } }}
+                  />
+                )}
+              </IconButton>
+            </span>
+          </Tooltip>
+        </Box>
       </Box>
-    );
+      <Paper
+        variant="outlined"
+        sx={(theme) => ({
+          px: {md: 2, sm: 0.5},
+          pt: 0,
+          minWidth: 300,
+          width: '100%',
+          transition: 'width 0.3s ease',
+          display: 'flex',
+          flex: 1,
+          borderRadius: 3,
+          overflowX: 'auto',
+          border: `1px solid ${theme.palette.mode === 'dark' ? '#3a3a3a' : '#e3e3e3'}`,
+        })}
+      >
+        <DataGrid
+          sx={(theme) => ({
+            flex: 1,
+            minHeight:  800,
+            minWidth: 1000,
+            border: 'none',
+            borderTop: `1px solid ${theme.palette.mode === 'dark' ? '#3a3a3a' : '#e3e3e3'}`,
+            borderRadius: '0 0 12px 12px',
+            fontSize: '0.85rem',
+            cursor: 'pointer',
+            overflowY: 'auto',
+            '& .MuiDataGrid-columnHeaders': {
+              backgroundColor: theme.palette.mode === 'dark' ? '#242424' : '#f7f8fa',
+              fontWeight: 700,
+            },
+            '& .MuiDataGrid-columnHeaderTitle': {
+              fontWeight: 700,
+            },
+            '& .MuiDataGrid-row:hover': {
+              backgroundColor: theme.palette.mode === 'dark' ? '#2a2a2a' : '#f4f6f9',
+            },
+            '& .MuiDataGrid-cell:focus, & .MuiDataGrid-cell:focus-within': {
+              outline: 'none',
+            },
+          })}
+          rows={rows}
+          columns={columns}
+          initialState={{ pagination: { paginationModel } }}
+          pageSizeOptions={[30, 50]}
+          rowHeight={30}
+          checkboxSelection
+          apiRef={apiRef}
+          disableRowSelectionOnClick
+          onRowSelectionModelChange={(ids) => {
+            setSelectedRows(ids);
+          }}
+        />
+        
+      </Paper>
+      <Dialog
+        PaperProps={{ sx: { borderRadius: 3 } }}
+        open={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+      >
+        <DialogTitle sx={{ fontWeight: 700 }}>Confirm delete</DialogTitle>
+
+        <DialogContent>
+          Are you sure you want to delete {selectedRows.ids.size === 0  || selectedRows.type === "exclude" ? 'all' : selectedRows.ids.size} selected contact(s)?
+        </DialogContent>
+
+        <DialogActions sx={{ pb: 2, px: 3 }}>
+          <Button onClick={() => setConfirmOpen(false)} sx={{ textTransform: 'none', fontWeight: 600 }}>
+            Cancel
+          </Button>
+
+          <Button
+            color="error"
+            variant="contained"
+            disableElevation
+            sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 2 }}
+            onClick={async () => {
+              if (loading) return;
+              // setConfirmOpen(false);
+              try {
+                const ids = Array.from(selectedRows.ids).map(id => String(id));
+
+                await dispatch(deleteBulkCustomers(ids)).unwrap();
+
+                setSelectedRows({
+                  type: "include",
+                  ids: new Set(), 
+                });
+
+                setConfirmOpen(false);
+              } catch {
+                // Error in state
+              }
+            }}
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
+  );
 }

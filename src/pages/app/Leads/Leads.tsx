@@ -45,6 +45,7 @@ import {
   Stack,
   Tooltip,
   Skeleton,
+  CircularProgress,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import InfoIcon from '@mui/icons-material/Info';
@@ -63,6 +64,7 @@ import ShareIcon from '@mui/icons-material/Share';
 import NotesIcon from '@mui/icons-material/Notes';
 // import { useAuth } from "../../../hooks/useAuth";
 import ErrorAlert from "../../../components/Error";
+import RefreshIcon from "@mui/icons-material/Refresh";
 import { DEPARTMENTS, GENDERS, INDUSTRIES, PREFERRED_CONTACT_TIMES, PRIORITIES, SOURCES, SUFFIXES, type Gender, type PreferredTime, type Priority, type Source, type Suffix } from "../../../types/global";
 import { formatName, formatShortTitle } from "../../../utils/formatText";
 import { calculateAge } from "../../../utils/calculateAge";
@@ -555,6 +557,14 @@ const handleConfirmCloseLead = async () => {
     setHoveredLead(null);
   };
 
+  const refreshLeads = async () => {
+    try {
+      await dispatch(fetchLeadsLists()).unwrap();
+    } catch {
+      // Error handled by Redux state
+    }
+  };
+
   const handleAddContact = async (result: DropResult) => {
 
     if (!result.destination) return;
@@ -673,15 +683,15 @@ const handleConfirmCloseLead = async () => {
           mb: 1,
         }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
-            <Typography variant="h5" fontWeight={700}>
+            <Typography variant="h4" fontWeight={700}>
               Leads
             </Typography>
             <Skeleton
               variant="rounded"
-              width={120}
-              height={36}
+              width={40}
+              height={40}
               animation={prefersReducedMotion ? false : 'wave'}
-              sx={{ borderRadius: 2 }}
+              sx={{ borderRadius: 10 }}
             />
           </Box>
         </Box>
@@ -760,33 +770,39 @@ const handleConfirmCloseLead = async () => {
         mx: 'auto',
         mb: 1,
       }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
-          <Typography sx={{fontSize: {md: 30, sm: 15}}} fontWeight={700}>
-            Leads
-          </Typography>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: { xs: 0.75, sm: 1 },
+        }}
+      >
+        <Typography sx={{ fontSize: { xs: 18, sm: 21, md: 23, lg: 28 } }} fontWeight={700}>
+          Leads
+        </Typography>
 
+        <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 0.5, sm: 0.75 } }}>
           <IconButton
+            title="Add lead"
             onClick={() => navigate("/app/addlead")}
             sx={{
-              width: { xs: 36, sm: 40 },
-              height: { xs: 36, sm: 40 },
-              backgroundColor: 'primary.main',
+              width: { xs: 26, sm: 32 },
+              height: { xs: 26, sm: 32 },
+              backgroundColor: "primary.main",
               borderRadius: "50%",
               flexShrink: 0,
-              p: 0,
-              color: 'white',
-
+              color: "white",
               "& svg": {
                 fontSize: { xs: 20, sm: 22 },
               },
-
               transition: "transform 0.15s ease, box-shadow 0.15s ease",
-
               "&:hover": {
                 transform: "translateY(-1px)",
                 boxShadow: "0 6px 14px rgba(0,0,0,0.12)",
+                backgroundColor: "primary.light",
               },
-
               "&:active": {
                 transform: "scale(0.96)",
               },
@@ -794,7 +810,25 @@ const handleConfirmCloseLead = async () => {
           >
             <AddIcon />
           </IconButton>
+          <IconButton
+            title="Refresh leads"
+            onClick={refreshLeads}
+            disabled={loading}
+            size="small"
+            sx={{
+              "& svg": {
+                fontSize: { xs: 18, sm: 22 },
+              },
+            }}
+          >
+            {loading ? (
+              <CircularProgress size={16} />
+            ) : (
+              <RefreshIcon />
+            )}
+          </IconButton>
         </Box>
+      </Box>
 
         {(error || invalid) && (
           <Box sx={{ width: '100%', mt: 1 }}>
