@@ -7,8 +7,8 @@ export const getTheme = (mode: PaletteMode) =>
       mode,
       primary:{
         main: '#AD7450',
-        light: '#ebaa82',
-        dark: '#5f402d',
+        light: '#c98e6a',
+        dark: '#8b6045',
       },
 
       secondary: {
@@ -75,6 +75,11 @@ export const getTheme = (mode: PaletteMode) =>
        MuiDialog: {
         defaultProps: {
           disableScrollLock: true,
+        },
+        styleOverrides: {
+          root: {
+            zIndex: 3000,
+          },
         },
       },
       MuiCard: {

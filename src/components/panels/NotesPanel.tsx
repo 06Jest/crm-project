@@ -22,6 +22,7 @@ import {
   Button,
   DialogContentText,
   Chip,
+  Skeleton,
 } from "@mui/material";
 
 import AddIcon from "@mui/icons-material/Add";
@@ -75,6 +76,180 @@ const TARGET_META: Record<
   deal: { label: "Deal", color: "success", icon: <HandshakeIcon sx={{ width: 12, height: 12 }} /> },
   customer: { label: "Customer", color: "info", icon: <BadgeIcon sx={{ width: 12, height: 12 }} /> },
 };
+
+function NotesSkeleton() {
+  return (
+    <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
+      <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 1 }}>
+        <Skeleton
+          variant="circular"
+          width={32}
+          height={32}
+          sx={{ flexShrink: 0 }}
+        />
+
+        <Skeleton
+          variant="rounded"
+          height={40}
+          sx={{
+            flex: 1,
+            borderRadius: 2,
+          }}
+        />
+      </Box>
+
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 1.5,
+        }}
+      >
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Skeleton variant="circular" width={32} height={32} />
+
+          <Skeleton
+            variant="text"
+            width={65}
+            height={22}
+          />
+        </Box>
+
+        <Box sx={{ display: "flex", gap: 0.5 }}>
+          <Skeleton
+            variant="rounded"
+            width={80}
+            height={30}
+            sx={{ borderRadius: 2 }}
+          />
+
+          <Skeleton
+            variant="rounded"
+            width={100}
+            height={30}
+            sx={{ borderRadius: 2 }}
+          />
+        </Box>
+      </Box>
+
+      <List
+        disablePadding
+        dense
+        sx={{
+          overflow: "hidden",
+          height: 390,
+          pr: 0.5,
+        }}
+      >
+        {Array.from({ length: 4 }).map((_, index) => (
+          <Box
+            key={index}
+            sx={(theme) => ({
+              p: 1.25,
+              mb: 1,
+              borderRadius: 2,
+              border: "1px solid",
+              borderColor: theme.palette.divider,
+            })}
+          >
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 1,
+                mb: 1,
+              }}
+            >
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1,
+                  minWidth: 0,
+                  flex: 1,
+                }}
+              >
+                <Skeleton
+                  variant="circular"
+                  width={15}
+                  height={15}
+                  sx={{ flexShrink: 0 }}
+                />
+
+                <Skeleton
+                  variant="text"
+                  width={`${55 + (index % 3) * 15}%`}
+                  height={22}
+                />
+              </Box>
+
+              <Box
+                sx={{
+                  display: "flex",
+                  gap: 0.5,
+                  flexShrink: 0,
+                }}
+              >
+                <Skeleton
+                  variant="circular"
+                  width={24}
+                  height={24}
+                />
+
+                <Skeleton
+                  variant="circular"
+                  width={24}
+                  height={24}
+                />
+              </Box>
+            </Box>
+
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                gap: 1,
+              }}
+            >
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 0.75,
+                  minWidth: 0,
+                  flex: 1,
+                }}
+              >
+                <Skeleton
+                  variant="rounded"
+                  width={65}
+                  height={18}
+                  sx={{ borderRadius: 1 }}
+                />
+
+                <Skeleton
+                  variant="text"
+                  width={`${60 + (index % 2) * 25}px`}
+                  height={18}
+                />
+              </Box>
+
+              <Skeleton
+                variant="text"
+                width={115}
+                height={18}
+                sx={{ flexShrink: 0 }}
+              />
+            </Box>
+          </Box>
+        ))}
+      </List>
+    </Box>
+  );
+}
 
 export default function NotesPanel() {
   const dispatch = useDispatch<AppDispatch>();
@@ -410,6 +585,10 @@ const removeNote = async (note: NoteListItem) => {
     <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
       {view === "list" && (
         <>
+          {nL && !nLd ? (
+            <NotesSkeleton />
+          ) : (
+            <>
           {error && (
             <Box sx={{ width: "100%", my: 1 }}>
               <ErrorAlert message={error} />
@@ -439,7 +618,7 @@ const removeNote = async (note: NoteListItem) => {
               onChange={(e) => setQuery(e.target.value)}
               sx={(theme) => ({
                 bgcolor: alpha(theme.palette.text.primary, 0.04),
-                borderRadius: 2,
+                borderRadius: 5,
                 "& .MuiOutlinedInput-root": { borderRadius: 2 },
                 "& .MuiOutlinedInput-notchedOutline": { border: "none" },
                 "&:hover .MuiOutlinedInput-notchedOutline": { border: "none" },
@@ -561,9 +740,7 @@ const removeNote = async (note: NoteListItem) => {
             </Box>
 
             {nL && !nLd ? (
-              <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
-                <CircularProgress size={22} />
-              </Box>
+              <NotesSkeleton />
             ) : visibleNotes.length === 0 ? (
               <Box
                 sx={{
@@ -744,10 +921,11 @@ const removeNote = async (note: NoteListItem) => {
                 })}
               </List>
             )}
-            <Box sx={{height: 30}}>
-            </Box>
+            <Box sx={{height: 30}}></Box>
           </Box>
         </>
+        )}
+      </>
       )}
 
       {view === "editor" && (

@@ -1295,6 +1295,7 @@ export default function TasksPanel() {
       <Dialog
         open={openDelete}
         onClose={() => setOpenDelete(false)}
+        sx={{zIndex: 2500}}
         PaperProps={{ sx: { borderRadius: 3, minWidth: 320 } }}
       >
         <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
