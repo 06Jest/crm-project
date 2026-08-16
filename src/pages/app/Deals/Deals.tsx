@@ -722,19 +722,19 @@ export default function Deals() {
   return (
     <Box sx={{ pb: 2 }}>
       {(error || invalid) && (
-          <Box
-            sx={{
-              width: "100%",
-              minWidth: 0,
-              order: { xs: 3, sm: 2 },
-            }}
-          >
-            <ErrorAlert
-              message={
-                (error || invalid) ?? "An unknown error occurred."
-              }
-            />
-          </Box>
+        <Box
+          sx={{
+            width: "100%",
+            minWidth: 0,
+            order: { xs: 3, sm: 2 },
+          }}
+        >
+          <ErrorAlert
+            message={
+              (error || invalid) ?? "An unknown error occurred."
+            }
+          />
+        </Box>
         )}
       <Box
         sx={{

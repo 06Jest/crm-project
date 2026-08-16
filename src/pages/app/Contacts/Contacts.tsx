@@ -449,7 +449,7 @@ const selectionCount =
             sx={{
               justifyContent: 'center',
               p: 1,
-              pt: 0,
+              pt: 2,
               transition: 'width 0.3s ease',
               height: 850,
               minWidth: 300,

@@ -29,6 +29,7 @@ import { fetchLeadsLists } from '../../store/leadsSlice';
 import type { SmsListItem, CreateSms, SmsStatus } from '../../types/sms';
 import { formatName } from '../../utils/formatText';
 import ErrorAlert from '../Error';
+import RefreshIcon from '@mui/icons-material/Refresh';
 
 type ViewMode = 'list' | 'thread' | 'newThread';
 
@@ -278,6 +279,14 @@ export default function SmsPanel() {
     }
   }, [draft, selectedRecipient, dispatch]);
 
+  const refreshSms = useCallback(async () => {
+    try {
+      await dispatch(fetchSms()).unwrap();
+    } catch {
+      // Error handled by Redux state
+    }
+  }, [dispatch]);
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       {error && (
@@ -320,6 +329,31 @@ export default function SmsPanel() {
               >
                 <AddIcon fontSize="small" />
               </IconButton>
+            </Tooltip>
+            <Tooltip title={smsLoading ? "Refreshing..." : "Refresh messages"}>
+              <span>
+                <IconButton
+                  size="small"
+                  onClick={refreshSms}
+                  disabled={smsLoading}
+                  sx={{
+                    p: 1,
+                    color: 'text.secondary',
+                    bgcolor: (theme) => alpha(theme.palette.text.primary, 0.04),
+                    transition: 'background-color 0.15s ease, transform 0.15s ease',
+                    '&:hover': {
+                      bgcolor: (theme) => alpha(theme.palette.text.primary, 0.08),
+                      transform: 'rotate(30deg)',
+                    },
+                  }}
+                >
+                  {smsLoading ? (
+                    <CircularProgress size={16} />
+                  ) : (
+                    <RefreshIcon fontSize="small" />
+                  )}
+                </IconButton>
+              </span>
             </Tooltip>
           </Box>
 

@@ -82,6 +82,16 @@ export const getTheme = (mode: PaletteMode) =>
           },
         },
       },
+      MuiTooltip: {
+        defaultProps: {
+          arrow: true,
+        },
+        styleOverrides: {
+          popper: {
+            zIndex: 9999,
+          },
+        },
+      },
       MuiCard: {
         styleOverrides: {
           root: {

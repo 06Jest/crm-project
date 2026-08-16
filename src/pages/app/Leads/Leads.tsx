@@ -677,8 +677,8 @@ const handleConfirmCloseLead = async () => {
         <Box sx={{
           display: 'flex',
           flexDirection: 'column',
-          width: { xs: '92%', sm: '85vw', md: '80vw' },
-          maxWidth: 1400,
+          width: "100%",
+          minWidth: 0,
           mx: 'auto',
           mb: 1,
         }}>
@@ -761,7 +761,22 @@ const handleConfirmCloseLead = async () => {
   
 
   return (
-    <Box sx={{height: 1000}}>
+    <Box sx={{ pb: 2 }}>
+      {(error || invalid) && (
+          <Box
+            sx={{
+              width: "100%",
+              minWidth: 0,
+              order: { xs: 3, sm: 2 },
+            }}
+          >
+            <ErrorAlert
+              message={
+                (error || invalid) ?? "An unknown error occurred."
+              }
+            />
+          </Box>
+          )}
       <Box sx={{
         display: 'flex',
         flexDirection: 'column',
@@ -770,6 +785,7 @@ const handleConfirmCloseLead = async () => {
         mx: 'auto',
         mb: 1,
       }}>
+        
       <Box
         sx={{
           display: "flex",
@@ -830,13 +846,7 @@ const handleConfirmCloseLead = async () => {
         </Box>
       </Box>
 
-        {(error || invalid) && (
-          <Box sx={{ width: '100%', mt: 1 }}>
-            <ErrorAlert
-              message={(error || invalid) ?? "An unknown error occurred."}
-            />
-          </Box>
-        )}
+        
       </Box>
       <DragDropContext onDragEnd={handleDragEnd}>
         <Box

@@ -285,8 +285,7 @@ export default function NotesPanel() {
 
   const { user } = useAuth();
   const membership = user?.membership?.[0];
-  const userId = membership?.id;
-  console.log("iKlog:" + userId)
+  const memberId = membership?.id;
 
   const [query, setQuery] = useState("");
   const [view, setView] = useState<"list" | "editor">("list");
@@ -346,7 +345,7 @@ const [targetId, setTargetId] = useState("");
 
 
 const removeNote = async (note: NoteListItem) => {
-  const isAuthor = note.author_id === userId;
+  const isAuthor = note.author_id === memberId;
 
   try {
     if (!isAuthor) {
@@ -563,7 +562,7 @@ const removeNote = async (note: NoteListItem) => {
       });
   }, [notes, query, visibilityFilter, targetFilter,]);
 
-  const canEdit = !activeNote || activeNote?.author_id === userId;
+  const canEdit = !activeNote || activeNote?.author_id === memberId;
 
   const handleOpenDelete = (note: NoteListItem) => {
       setSelectedNote(note); 
@@ -582,7 +581,8 @@ const removeNote = async (note: NoteListItem) => {
   
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
+    <Box sx={{ display: "flex", flexDirection: "column", height: "100%" ,minHeight: 0,
+    overflow: "hidden",}}>
       {view === "list" && (
         <>
           {nL && !nLd ? (
@@ -596,20 +596,7 @@ const removeNote = async (note: NoteListItem) => {
           )}
 
           <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 1 }}>
-            <Tooltip title="Refresh">
-              <span>
-                {nLd &&
-                  (nL ? (
-                    <IconButton size="small" disabled={nL}>
-                      <CircularProgress size={15} />
-                    </IconButton>
-                  ) : (
-                    <IconButton size="small" onClick={refresh} disabled={nL}>
-                      <RefreshIcon fontSize="small" />
-                    </IconButton>
-                  ))}
-              </span>
-            </Tooltip>
+            
             <TextField
               size="small"
               fullWidth
@@ -635,6 +622,20 @@ const removeNote = async (note: NoteListItem) => {
                 ),
               }}
             />
+            <Tooltip title="Refresh">
+              <span>
+                {nLd &&
+                  (nL ? (
+                    <IconButton size="small" disabled={nL}>
+                      <CircularProgress size={15} />
+                    </IconButton>
+                  ) : (
+                    <IconButton size="small" onClick={refresh} disabled={nL}>
+                      <RefreshIcon fontSize="small" />
+                    </IconButton>
+                  ))}
+              </span>
+            </Tooltip>
           </Box>
 
           <Box>
@@ -644,6 +645,7 @@ const removeNote = async (note: NoteListItem) => {
                 justifyContent: "space-between",
                 alignItems: "center",
                 mb: 1.5,
+                flexShrink: 0,
               }}
             >
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -760,12 +762,22 @@ const removeNote = async (note: NoteListItem) => {
             ) : (
               <List
                 sx={(theme) => ({
+                  flex: 1,
+                  minHeight: 0,
+                  height: {lg: 300, md: '80%' },
                   overflowY: "auto",
-                  height: 390,
+                  overflowX: "hidden",
                   pr: 0.5,
-                  "&::-webkit-scrollbar": { width: 6 },
+                  pb: 2,
+                  "&::-webkit-scrollbar": {
+                    width: 6,
+                  },
+
                   "&::-webkit-scrollbar-thumb": {
-                    backgroundColor: alpha(theme.palette.text.primary, 0.15),
+                    backgroundColor: alpha(
+                      theme.palette.text.primary,
+                      0.15
+                    ),
                     borderRadius: 3,
                   },
                 })}
@@ -852,7 +864,7 @@ const removeNote = async (note: NoteListItem) => {
                                   <PushPinIcon  sx={{ fontSize: '15px', opacity: 0.4 }}/>
                                 )}
                               </IconButton>
-                              {note.author_id === userId && (
+                              {note.author_id === memberId && (
                               <IconButton
                                 title="Delete note"
                                 color="error"  sx={{p: '2px'}} onClick={(e) => {

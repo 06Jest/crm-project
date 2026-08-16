@@ -82,6 +82,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase, syncRealtimeAuth } from "../../services/supabase";
 import { fetchOrgMembers } from "../../store/organizationMemberSlice";
 import type { DisplayOrganizationMember } from "../../types/organization.member";
+import RefreshIcon from "@mui/icons-material/Refresh";
 
 
 type EntitySelectOption = { id: string; label: string };
@@ -686,6 +687,14 @@ useEffect(() => {
           age > -CLOCK_SKEW_TOLERANCE_MS;
   };
 
+  const refreshConversations = useCallback(async () => {
+    try {
+      await dispatch(fetchConversations()).unwrap();
+    } catch {
+      // Error handled by Redux state
+    }
+  }, [dispatch]);
+
   
 
   const renderConversationRow = (conversation: ConversationListItem) => {
@@ -815,69 +824,128 @@ useEffect(() => {
     <Box sx={{ display: "flex", flexDirection: "column", height: "100%", width: "100%" }}>
       {view === "list" && (
         <>
-          <Autocomplete
-            value={selectedProfile}
-            inputValue={searchText}
-            size="small"
-            options={[...members]
-            .filter((p) => p.id !== memberId)
-            .sort((a, b) =>
-              formatName(a.profile.first_name, a.profile.last_name).localeCompare(formatName(b.profile.first_name, b.profile.last_name))
-            )}
-            isOptionEqualToValue={(option, value) => option.id === value.id}
-            clearOnBlur
-            openOnFocus
-            getOptionLabel={(option) =>
-                `${formatName(option.profile.first_name, option.profile.last_name)}`
-              }
-            onChange={(_, profile) => {
-              setSelectedProfile(null);
-              setSearchText("");
-              if (!profile) return;
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Autocomplete
+                value={selectedProfile}
+                inputValue={searchText}
+                size="small"
+                options={[...members]
+                  .filter((p) => p.id !== memberId)
+                  .sort((a, b) =>
+                    formatName(
+                      a.profile.first_name,
+                      a.profile.last_name
+                    ).localeCompare(
+                      formatName(
+                        b.profile.first_name,
+                        b.profile.last_name
+                      )
+                    )
+                  )}
+                isOptionEqualToValue={(option, value) => option.id === value.id}
+                clearOnBlur
+                openOnFocus
+                getOptionLabel={(option) =>
+                  formatName(option.profile.first_name, option.profile.last_name)
+                }
+                onChange={(_, profile) => {
+                  setSelectedProfile(null);
+                  setSearchText("");
 
-              openOrCreateConversation(profile.id);
-            }}
-            renderOption={(props, option) => (
-                <Box component="li" {...props}>
+                  if (!profile) return;
+
+                  openOrCreateConversation(profile.id);
+                }}
+                renderOption={(props, option) => (
+                  <Box component="li" {...props}>
                     <Avatar
-                        src={option.profile.avatar_url ?? undefined}
-                        sx={{ mr: 1, width: 32, height: 32, bgcolor: stringToAvatarColor(option.profile.first_name), fontSize: 12 }}
+                      src={option.profile.avatar_url ?? undefined}
+                      sx={{
+                        mr: 1,
+                        width: 32,
+                        height: 32,
+                        bgcolor: stringToAvatarColor(option.profile.first_name),
+                        fontSize: 12,
+                      }}
                     >
-                        {!option.profile.avatar_url && getInitials(formatName(option.profile.first_name, option.profile.last_name))}
+                      {!option.profile.avatar_url &&
+                        getInitials(
+                          formatName(
+                            option.profile.first_name,
+                            option.profile.last_name
+                          )
+                        )}
                     </Avatar>
 
-                    {formatName(option.profile.first_name, option.profile.last_name)}
-                </Box>
-            )}
-            
-            renderInput={(params) => (
-                <TextField
+                    {formatName(
+                      option.profile.first_name,
+                      option.profile.last_name
+                    )}
+                  </Box>
+                )}
+                renderInput={(params) => (
+                  <TextField
                     {...params}
                     placeholder="Search people..."
                     sx={{
-                      px: 1,
-                      mb: 1.5,
                       "& .MuiOutlinedInput-root": {
                         borderRadius: 999,
                         bgcolor: "action.hover",
                       },
-                      "& .MuiOutlinedInput-notchedOutline": { border: "none" },
+                      "& .MuiOutlinedInput-notchedOutline": {
+                        border: "none",
+                      },
                     }}
                     InputProps={{
-                        ...params.InputProps,
-                        startAdornment: (
-                            <>
-                                <SearchIcon
-                                    fontSize="small"
-                                    sx={{ mr: 1, opacity: .5 }}
-                                />
-                                {params.InputProps.startAdornment}
-                            </>
-                        ),
+                      ...params.InputProps,
+                      startAdornment: (
+                        <>
+                          <SearchIcon
+                            fontSize="small"
+                            sx={{ mr: 1, opacity: 0.5 }}
+                          />
+                          {params.InputProps.startAdornment}
+                        </>
+                      ),
                     }}
-                />
-            )}
-        />
+                  />
+                )}
+              />
+            </Box>
+
+            <Tooltip
+              title={convLoading ? "Refreshing conversations..." : "Refresh conversations"}
+            >
+              <span>
+                <IconButton
+                  size="small"
+                  onClick={refreshConversations}
+                  disabled={convLoading}
+                  sx={{
+                    flexShrink: 0,
+                    color: "text.secondary",
+                    bgcolor: (theme) =>
+                      alpha(theme.palette.text.primary, 0.04),
+                    transition:
+                      "background-color 0.15s ease, transform 0.15s ease",
+
+                    "&:hover": {
+                      bgcolor: (theme) =>
+                        alpha(theme.palette.text.primary, 0.08),
+                      transform: "rotate(30deg)",
+                    },
+                  }}
+                >
+                  {convLoading ? (
+                    <CircularProgress size={16} />
+                  ) : (
+                    <RefreshIcon fontSize="small" />
+                  )}
+                </IconButton>
+              </span>
+            </Tooltip>
+          </Box>
 
           {convError && (
             <Box sx={{ px: 1, mb: 1 }}>
