@@ -351,7 +351,7 @@ const hasSelection =
         variant="outlined"
         sx={(theme) => ({
           px: {md: 2, sm: 0.5},
-          pt: 0,
+          pt: 1,
           minWidth: 300,
           width: '100%',
           transition: 'width 0.3s ease',

@@ -28,6 +28,7 @@ import {
 import {
   Call as CallIcon,
   CallEnd as CallEndIcon,
+  Refresh as RefreshIcon,
   Mic as MicIcon,
   MicOff as MicOffIcon,
   VolumeUp as VolumeUpIcon,
@@ -427,6 +428,14 @@ export default function CallsPanel() {
     }
   };
 
+  const refreshCalls = async () => {
+  try {
+    await dispatch(fetchCalls()).unwrap();
+  } catch {
+    // Error handled by Redux state
+  }
+};
+
   if (callStatus && activeCall) {
   const statusLabel =
     callStatus === 'dialing' ? 'Dialing…' : callStatus === 'ringing' ? 'Ringing…' : formatDuration(elapsed);
@@ -630,7 +639,7 @@ export default function CallsPanel() {
 }
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: { xs: '100%', md: 470 }, overflowY: 'auto' }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', overflowY: 'auto' }}>
       <Box>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}> 
           <TextField
@@ -656,7 +665,7 @@ export default function CallsPanel() {
             sx={(theme) => ({
               '& .MuiOutlinedInput-root': {
                 fontSize: '0.90rem',
-                borderRadius: 2,
+                borderRadius: 10,
                 bgcolor: alpha(theme.palette.text.primary, 0.04),
               },
               '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
@@ -674,17 +683,37 @@ export default function CallsPanel() {
                 bgcolor: 'primary.main',
                 color: '#fff',
                 borderRadius: 2,
-                p: '7px',
+                p: '5px',
                 '&:hover': { bgcolor: theme.palette.primary.dark },
               })}
             >
-              <AddCallIcon sx={{ fontSize: '1.4rem' }} />
+              <AddCallIcon sx={{ fontSize: '1.2rem' }} />
             </IconButton>
+          </Tooltip>
+          <Tooltip title="Refresh calls">
+            <span>
+              <IconButton
+                size="small"
+                onClick={refreshCalls}
+                disabled={caL}
+                sx={{
+                  border: "1px solid",
+                  borderColor: "divider",
+                  borderRadius: 2,
+                }}
+              >
+                {caL ? (
+                  <CircularProgress size={15} />
+                ) : (
+                  <RefreshIcon fontSize="small" />
+                )}
+              </IconButton>
+            </span>
           </Tooltip>
         </Box>
       </Box>
 
-      <Box sx={{ p: 0.8, display: 'flex', alignItems: 'center', gap: 1, flexWrap: { xs: 'wrap', sm: 'nowrap' }, overflowX: { xs: 'visible', sm: 'auto' }, pt: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
+      <Box sx={{ pb: 0.8, display: 'flex', alignItems: 'center', justifyContent: 'right', gap: 0.5, flexWrap: { xs: 'wrap', sm: 'nowrap' }, overflowX: { xs: 'visible', sm: 'auto' }, pt: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
          <FormControl size="small">
             <InputLabel sx={{ fontSize: "0.85rem", mt: "-5px" }}>
               Status
@@ -699,8 +728,9 @@ export default function CallsPanel() {
                   status: (e.target.value as CallStatus) || undefined,
                 })
               }
+              
               sx={(theme) => ({
-                width: { xs: 110, sm: 130 },
+                width: 100,
                 borderRadius: 2,
                 bgcolor: alpha(theme.palette.text.primary, 0.03),
                 "& .MuiInputBase-input": {
@@ -733,13 +763,13 @@ export default function CallsPanel() {
               </MenuItem>
             </Select>
           </FormControl>
-        <FormControl size="small" sx={{ minWidth: { xs: 100, sm: 120 } }}>
+        <FormControl size="small">
           <InputLabel sx={{fontSize: '0.85rem', mt: '-5px'}}>Type</InputLabel>
           <Select
             value={filters.type || ''}
             onChange={(e) => setFilters({ ...filters, type: (e.target.value as CallType) || undefined })}
             sx={(theme) => ({
-              width: { xs: 100, sm: 120 },
+              width: 100,
               borderRadius: 2,
               bgcolor: alpha(theme.palette.text.primary, 0.03),
               "& .MuiInputBase-input": { py: "3px", fontSize: 11, fontWeight: 700 },
@@ -761,7 +791,7 @@ export default function CallsPanel() {
             value={filters.priority || ''}
             onChange={(e) => setFilters({ ...filters, priority: (e.target.value as CallPriority) || undefined })}
             sx={(theme) => ({
-              width: { xs: 90, sm: 100 },
+              width: 100,
               borderRadius: 2,
               bgcolor: alpha(theme.palette.text.primary, 0.03),
               "& .MuiInputBase-input": { py: "3px", fontSize: 11, fontWeight: 700 },
@@ -792,7 +822,7 @@ export default function CallsPanel() {
 
         <Tooltip title="Clear filters">
           <IconButton
-            sx={{p: "6px"}}
+            sx={{p: "1px"}}
             onClick={() => setFilters({})}
           >
             <ClearAllIcon sx={{fontSize: '1.35rem', opacity: 0.6}}/>

@@ -17,7 +17,6 @@ function SkeletonCustomerTableRow() {
         borderColor: "divider",
       }}
     >
-      {/* Name */}
       <Box
         sx={{
           flex: 1,
@@ -35,7 +34,6 @@ function SkeletonCustomerTableRow() {
         />
       </Box>
 
-      {/* Email */}
       <Box sx={{ flex: 1, px: 1, minWidth: 0 }}>
         <Skeleton
           variant="text"
@@ -45,7 +43,7 @@ function SkeletonCustomerTableRow() {
         />
       </Box>
 
-      {/* Phone */}
+
       <Box sx={{ flex: 1, px: 1, minWidth: 0 }}>
         <Skeleton
           variant="text"
@@ -55,7 +53,7 @@ function SkeletonCustomerTableRow() {
         />
       </Box>
 
-      {/* Status */}
+
       <Box
         sx={{
           width: 120,
@@ -73,7 +71,7 @@ function SkeletonCustomerTableRow() {
         />
       </Box>
 
-      {/* Open Deals */}
+ 
       <Box
         sx={{
           width: 100,
@@ -90,7 +88,6 @@ function SkeletonCustomerTableRow() {
         />
       </Box>
 
-      {/* Preferred Time */}
       <Box sx={{ flex: 1, px: 1, minWidth: 0 }}>
         <Skeleton
           variant="text"
@@ -100,7 +97,7 @@ function SkeletonCustomerTableRow() {
         />
       </Box>
 
-      {/* Owner */}
+  
       <Box sx={{ flex: 1, px: 1, minWidth: 0 }}>
         <Skeleton
           variant="text"
@@ -110,7 +107,7 @@ function SkeletonCustomerTableRow() {
         />
       </Box>
 
-      {/* Since */}
+  
       <Box
         sx={{
           width: 100,
@@ -127,7 +124,7 @@ function SkeletonCustomerTableRow() {
         />
       </Box>
 
-      {/* Action */}
+  
       <Box
         sx={{
           flex: 1,

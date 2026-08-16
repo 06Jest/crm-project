@@ -211,6 +211,7 @@ export default function TasksPanel() {
 
   const { user } = useAuth();
   const userId = user?.id;
+  const memberId = user?.membership?.[0].id;
 
   const [query, setQuery] = useState("");
   const [view, setView] = useState<"list" | "editor">("list");
@@ -275,18 +276,18 @@ export default function TasksPanel() {
     setTaskType("other");
     setTargetId("");
     setView("editor");
-    setAssignedTo(userId);
+    setAssignedTo(memberId);
   };
 
   const openExistingTask = (task: TaskListItem) => {
     setActiveId(task.id);
     handleEditTask(task);
     setView("editor");
-    setAssignedTo(task.assigned_to ?? userId);
+    setAssignedTo(task.assigned_to ?? memberId);
   };
 
   const removeTask = async (task: TaskListItem) => {
-    const isAuthor = task.author_id === userId;
+    const isAuthor = task.author_id === memberId;
 
     if (!isAuthor) {
       return;
@@ -389,7 +390,7 @@ export default function TasksPanel() {
               target_type: targetType,
               task_type: taskType,
               target_id: targetType === "personal" ? null : targetId,
-              assigned_to: assignedTo || userId,
+              assigned_to: assignedTo || memberId,
             },
           })
         ).unwrap();
@@ -404,7 +405,7 @@ export default function TasksPanel() {
             target_type: targetType,
             task_type: taskType,
             target_id: targetType === "personal" ? null : targetId,
-            assigned_to: assignedTo || userId,
+            assigned_to: assignedTo || memberId,
           })
         ).unwrap();
       }
@@ -537,11 +538,11 @@ export default function TasksPanel() {
 
   const canEdit =
   !activeTask ||
-  (activeTask.author_id === userId &&
+  (activeTask.author_id === memberId &&
     activeTask.status !== "completed");
 
   const canComplete =
-    !activeTask || activeTask?.author_id === userId || activeTask?.assigned_to === userId;
+    !activeTask || activeTask?.author_id === memberId || activeTask?.assigned_to === memberId;
 
   const handleOpenDelete = (task: TaskListItem) => {
     setSelectedTask(task);
@@ -560,80 +561,66 @@ export default function TasksPanel() {
           )}
 
 
-          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1 }}>
-            <Stack direction="row" alignItems="center" spacing={1}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                Tasks
-              </Typography>
-              {tLd && (
-                <Chip
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1, width: '100%' }}>
+            <Stack direction="row" alignItems="center" spacing={0.5} sx={{width: '100%'}}>     
+              <TextField
                   size="small"
-                  label={visibleTasks.length}
-                  sx={{ height: 20, fontSize: 11, fontWeight: 700, bgcolor: "action.selected" }}
+                  placeholder="Search tasks..."
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <SearchIcon fontSize="small" sx={{ opacity: 0.5 }} />
+                      </InputAdornment>
+                    ),
+                  }}
+                  sx={{
+                    mb: 1,
+                    flex: 1,
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: 10,
+                      bgcolor: "action.hover",
+                      "& fieldset": { border: "none" },
+                    },
+                  }}
                 />
-              )}
-            </Stack>
-
-            <Stack direction="row" alignItems="center" spacing={0.5}>
-              <Tooltip title="Refresh">
-                <span>
-                  {tLd &&
-                    (tL ? (
-                      <IconButton size="small" disabled>
-                        <CircularProgress size={15} />
+                <Box sx={{display: 'flex'}}>
+                  <Tooltip title="Add task">
+                    <Paper elevation={0}
+                    sx={(theme) => ({
+                      borderRadius: "50%",
+                      bgcolor: alpha(theme.palette.primary.main, 0.1),
+                    })}>
+                      <IconButton
+                        color="primary"
+                        size="small"
+                        onClick={() => {
+                          dispatch(clearError());
+                          openNewTask();
+                        }}
+                      >
+                        <AddIcon fontSize="small" />
                       </IconButton>
-                    ) : (
-                      <IconButton size="small" onClick={refresh}>
-                        <RefreshIcon fontSize="small" />
-                      </IconButton>
-                    ))}
-                </span>
-              </Tooltip>
-
-              <Tooltip title="Add task">
-                <Paper elevation={0} sx={{ borderRadius: 5, bgcolor: "transparent" }}>
-                  <IconButton
-                    color="primary"
-                    size="small"
-                    onClick={() => {
-                      dispatch(clearError());
-                      openNewTask();
-                    }}
-                    sx={{
-                      bgcolor: "primary.main",
-                      color: "primary.contrastText",
-                      "&:hover": { bgcolor: "primary.dark" },
-                    }}
-                  >
-                    <AddIcon fontSize="small" />
-                  </IconButton>
-                </Paper>
-              </Tooltip>
+                    </Paper>
+                  </Tooltip>
+                  <Tooltip title="Refresh">
+                    <span>
+                      {tLd &&
+                        (tL ? (
+                          <IconButton size="small" disabled>
+                            <CircularProgress size={15} />
+                          </IconButton>
+                        ) : (
+                          <IconButton size="small" onClick={refresh}>
+                            <RefreshIcon fontSize="small" />
+                          </IconButton>
+                        ))}
+                    </span>
+                  </Tooltip>
+                </Box>
             </Stack>
           </Box>
-
-          <TextField
-            size="small"
-            fullWidth
-            placeholder="Search tasks..."
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon fontSize="small" sx={{ opacity: 0.5 }} />
-                </InputAdornment>
-              ),
-            }}
-            sx={{
-              mb: 1,
-              "& .MuiOutlinedInput-root": {
-                borderRadius: 3,
-                bgcolor: "action.hover",
-                "& fieldset": { border: "none" },
-              },
-            }}
-          />
 
           <Stack
             direction="row"
@@ -642,8 +629,9 @@ export default function TasksPanel() {
               width: "100%",
               maxWidth: "100%",
               overflowX: "auto",
+              // justifyContent: 'right',
               overflowY: "hidden",
-              pb: 1,
+              pb: 2,
               mb: 0.5,
               WebkitOverflowScrolling: "touch",
               scrollbarWidth: "thin",
@@ -755,7 +743,7 @@ export default function TasksPanel() {
               )}
             </Box>
           ) : (
-            <List sx={{ overflowY: "auto", height: 350, px: 0 }} dense disablePadding>
+            <List sx={{ overflowY: "auto", px: 0, flex: 1, }} dense disablePadding>
               {visibleTasks.map((task) => {
                 const isPublic = task.visibility === "public";
                 const isDone = task.status === "completed";
@@ -770,8 +758,10 @@ export default function TasksPanel() {
                     disableGutters
                     onClick={() => openExistingTask(task)}
                     sx={{
-                      p: 1.1,
-                      mb: 0.75,
+                      px: 0.75,
+                      py: 0,
+                      
+                      mb: 0.5,
                       alignItems: "flex-start",
                       cursor: "pointer",
                       borderRadius: 2,
@@ -788,7 +778,7 @@ export default function TasksPanel() {
                     <ListItemText
                       disableTypography
                       primary={
-                        <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1 }}>
+                        <Box sx={{ display: "flex", alignItems: "flex-start", gap: 0.75 }}>
                           <IconButton
                             title={"Mark as done?"}
                             onClick={(e) => {
@@ -796,31 +786,37 @@ export default function TasksPanel() {
                               if (isDone) return canComplete === false;
                               setOpenDone(true);
                               setSelectedTaskDone(task)
-                            } }
+                            }}
                             disabled={!canComplete}
                             size="small"
-                            sx={{ p: "2px", mt: "1px" }}
+                            sx={{ p: "1px", mt: "1px" }}
                           >
                             {isDone ? (
-                              <CheckCircleIcon sx={{ fontSize: 18, color: "success.main" }} />
+                              <CheckCircleIcon sx={{ fontSize: 16, color: "success.main" }} />
                             ) : isCancelled ? (
-                              <BlockIcon sx={{ fontSize: 18, opacity: 0.5 }} />
+                              <BlockIcon sx={{ fontSize: 16, opacity: 0.5 }} />
                             ) : (
-                              <RadioButtonUncheckedIcon sx={{ fontSize: 18, opacity: 0.45 }} />
+                              <RadioButtonUncheckedIcon sx={{ fontSize: 16, opacity: 0.45 }} />
                             )}
                           </IconButton>
 
                           <Box sx={{ flex: 1, minWidth: 0 }}>
                             <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, flexWrap: "wrap" }}>
+                              <Tooltip title={isPublic ? "Public" : "Private"}>
+                                {isPublic ? (
+                                  <PublicIcon sx={{ fontSize: 12, opacity: 0.4 }} />
+                                ) : (
+                                  <LockIcon sx={{ fontSize: 12, opacity: 0.4 }} />
+                                )}
+                              </Tooltip>
                               <Typography
                                 component="span"
                                 sx={{
-                                  fontSize: "0.85rem",
+                                  fontSize: "0.82rem",
                                   fontWeight: 600,
                                   overflow: "hidden",
-                                  textOverflow: "ellipsis",
                                   display: "-webkit-box",
-                                  WebkitLineClamp: 2,
+                                  WebkitLineClamp: 1,
                                   WebkitBoxOrient: "vertical",
                                   textDecoration: isDone ? "line-through" : "none",
                                   opacity: isDone ? 0.6 : 1,
@@ -828,48 +824,41 @@ export default function TasksPanel() {
                               >
                                 {formatShortTitle(task.title)}
                               </Typography>
-
-                              <Tooltip title={isPublic ? "Public" : "Private"}>
-                                {isPublic ? (
-                                  <PublicIcon sx={{ fontSize: 13, opacity: 0.4 }} />
-                                ) : (
-                                  <LockIcon sx={{ fontSize: 13, opacity: 0.4 }} />
-                                )}
-                              </Tooltip>
-
                               {(task.target_type === "customer" || task.target_type === "contact") && (
                                 <IconButton
                                   title={`View full details for ${getValue(task.target_type, task.target_id)}`}
                                   size="small"
-                                  sx={{ p: "2px" }}
+                                  sx={{ p: "1px" }}
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     navigate(`/app/${task.target_type}s/${task.target_id}`);
                                   }}
                                 >
-                                  <ExitToAppIcon sx={{ fontSize: 13, opacity: 0.45 }} />
+                                  <ExitToAppIcon sx={{ fontSize: 12, opacity: 0.45 }} />
                                 </IconButton>
                               )}
                             </Box>
 
-                            <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 0.6, mt: 0.5 }}>
+                            <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 0.5, mt: 0.35 }}>
                               <Chip
                                 size="small"
-                                icon={<StatusIcon style={{ fontSize: 14 }} />}
+                                icon={<StatusIcon style={{ fontSize: 12 }} />}
                                 label={STATUS_META[task.status].label}
                                 color={STATUS_META[task.status].color === "default" ? undefined : STATUS_META[task.status].color}
                                 variant={STATUS_META[task.status].color === "default" ? "outlined" : "filled"}
-                                sx={chipSx}
+                                sx={{ ...chipSx, height: 18, fontSize: "0.62rem" }}
                               />
 
                               <Tooltip title={`Priority: ${task.priority}`}>
                                 <Chip
                                   size="small"
-                                  icon={<FlagIcon style={{ fontSize: 13, color: PRIORITY_COLOR[task.priority] }} />}
+                                  icon={<FlagIcon style={{ fontSize: 11, color: PRIORITY_COLOR[task.priority] }} />}
                                   label={task.priority}
                                   variant="outlined"
                                   sx={{
                                     ...chipSx,
+                                    height: 18,
+                                    fontSize: "0.62rem",
                                     textTransform: "capitalize",
                                     borderColor: alpha(PRIORITY_COLOR[task.priority], 0.4),
                                   }}
@@ -879,43 +868,43 @@ export default function TasksPanel() {
                               {task.due_date && (
                                 <Chip
                                   size="small"
-                                  icon={<EventIcon style={{ fontSize: 13 }} />}
+                                  icon={<EventIcon style={{ fontSize: 11 }} />}
                                   label={new Date(task.due_date).toLocaleDateString([], { month: "short", day: "numeric" })}
                                   variant="outlined"
                                   color={overdue ? "error" : undefined}
-                                  sx={{ ...chipSx, fontWeight: overdue ? 700 : 500 }}
+                                  sx={{ ...chipSx, height: 18, fontSize: "0.62rem", fontWeight: overdue ? 700 : 500 }}
                                 />
                               )}
                             </Box>
                           </Box>
 
-                          {task.author_id === userId && (
+                          {task.author_id === memberId && (
                             <IconButton
                               className="task-delete-btn"
                               size="small"
-                              sx={{ p: "3px", opacity: 0, transition: "opacity .15s ease", flexShrink: 0 }}
+                              sx={{ p: "2px", opacity: 0, transition: "opacity .15s ease", flexShrink: 0 }}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleOpenDelete(task);
                               }}
                             >
-                              <DeleteOutlineIcon sx={{ fontSize: "16px" }} />
+                              <DeleteOutlineIcon sx={{ fontSize: "14px" }} />
                             </IconButton>
                           )}
                         </Box>
                       }
                       secondary={
-                        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 0.75, pl: 3.5 }}>
-                          <Stack direction="row" alignItems="center" spacing={0.6}>
-                            <Avatar sx={{ width: 16, height: 16, fontSize: 9, fontWeight: 700, bgcolor: "primary.main", color: "common.white" }}>
+                        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 0.5, pl: 3 }}>
+                          <Stack direction="row" alignItems="center" spacing={0.5}>
+                            <Avatar sx={{ width: 14, height: 14, fontSize: 8, fontWeight: 700, bgcolor: "primary.main", color: "common.white" }}>
                               {initials}
                             </Avatar>
-                            <Typography variant="caption" fontSize="0.68rem" sx={{ opacity: 0.75 }}>
+                            <Typography variant="caption" fontSize="0.65rem" sx={{ opacity: 0.75 }}>
                               {formatName(task.assignee.profile.first_name, task.assignee.profile.last_name)}
                             </Typography>
                           </Stack>
 
-                          <Typography variant="caption" fontSize="0.62rem" sx={{ opacity: 0.45 }}>
+                          <Typography variant="caption" fontSize="0.6rem" sx={{ opacity: 0.45 }}>
                             {formatName(task.author.profile.first_name, task.author.profile.last_name)}
                           </Typography>
                         </Box>
@@ -968,7 +957,7 @@ export default function TasksPanel() {
             </Stack>
 
             <Stack direction="row" alignItems="center" spacing={0.5}>
-              {activeTask && activeTask.author_id === userId && (
+              {activeTask && activeTask.author_id === memberId && (
                 <IconButton
                   size="small"
                   onClick={(e) => {
@@ -1026,7 +1015,7 @@ export default function TasksPanel() {
                 >
                   {members.map((member) => (
                     <MenuItem sx={{ fontSize: 11 }} key={member.id} value={member.id}>
-                      {member.id === userId ? 'Self' : `${formatName(member.profile.first_name, member.profile.last_name)}`}
+                      {member.id === memberId ? 'Self' : `${formatName(member.profile.first_name, member.profile.last_name)}`}
                     </MenuItem>
                   ))}
                 </Select>
@@ -1295,7 +1284,6 @@ export default function TasksPanel() {
       <Dialog
         open={openDelete}
         onClose={() => setOpenDelete(false)}
-        sx={{zIndex: 2500}}
         PaperProps={{ sx: { borderRadius: 3, minWidth: 320 } }}
       >
         <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>

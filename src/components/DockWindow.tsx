@@ -1,6 +1,7 @@
-import { Box, Collapse, Grow, IconButton, Paper, Typography } from '@mui/material';
+import { Box, Collapse, Grow, IconButton, Paper, Tooltip, Typography } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import RemoveIcon from '@mui/icons-material/Remove';
+import FullscreenIcon from '@mui/icons-material/Fullscreen';
 import { useSelector } from 'react-redux';
 import { type RootState } from '../store/store';
 import { type ElementType, type ReactNode } from 'react';
@@ -108,7 +109,7 @@ export default function DockWindow({
               </Typography>
             </Box>
 
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>  
               <IconButton
                 size="small"
                 onClick={(e) => {
@@ -119,6 +120,21 @@ export default function DockWindow({
               >
                 <RemoveIcon fontSize="small" />
               </IconButton>
+              <Tooltip title="Coming soon">
+                <span>
+                  <IconButton
+                    size="small"
+                    disabled
+                    sx={{
+                      color: "inherit",
+                      opacity: 0.6,
+                      position: "relative",
+                    }}
+                  >
+                    <FullscreenIcon fontSize="small" />
+                  </IconButton>
+                </span>
+              </Tooltip>
               <IconButton
                 size="small"
                 onClick={(e) => {
