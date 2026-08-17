@@ -3,7 +3,6 @@ import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "../store/store";
 import { 
   getCurrentUser,
-  refresh,
   changePassword,
   signOut,
   signUp,
@@ -24,7 +23,6 @@ export const useAuth = () => {
     isOwner: auth.user?.membership?.[0]?.role === "owner",
     isManager: auth.user?.membership?.[0]?.role === "manager",
     isAgent: auth.user?.membership?.[0]?.role === "agent",
-    refreshtoken: () => dispatch(refresh()),
     changePass: (dto: ChangePasswordDTO) =>
     dispatch(changePassword(dto)),
     logout: () => dispatch(signOut()),
