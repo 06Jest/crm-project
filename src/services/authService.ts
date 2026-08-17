@@ -25,12 +25,6 @@ export const getCurrentUserAPI = async () => {
 };
 
 
-export const refreshAPI = async () => {
-  return apiClient("/api/auth/refresh", {
-    method: "PATCH",
-  });
-};
-
 
 export const changePasswordAPI = async (
   dto: ChangePasswordDTO

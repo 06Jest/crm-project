@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
-import { signInAPI, changePasswordAPI, getCurrentUserAPI, refreshAPI, signOutAPI, signUpAPI } from '../services/authService';
+import { signInAPI, changePasswordAPI, getCurrentUserAPI,  signOutAPI, signUpAPI } from '../services/authService';
 import type { ChangePasswordDTO, SignInDTO, SignUpDTO, UserState } from '../types/auth';
 
 const initialState: UserState = {
@@ -100,23 +100,6 @@ export const signOut = createAsyncThunk(
   }
 );
 
-export const refresh = createAsyncThunk(
-  "auth/refresh",
-  async (_, thunkAPI) => {
-    try {
-      return await refreshAPI();
-
-    } catch (err) {
-      if (err instanceof Error) {
-        return thunkAPI.rejectWithValue(err.message);
-      }
-
-      return thunkAPI.rejectWithValue(
-        "Failed to refresh token"
-      );
-    }
-  }
-);
 
 const authSlice = createSlice({
   name: "auth",
@@ -197,24 +180,6 @@ const authSlice = createSlice({
         state.loading = false;
         state.error = action.payload as string;
       })
-
-
-      .addCase(refresh.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(refresh.fulfilled, (state) => {
-        state.loading = false;
-        state.loaded = true;
-        state.isAuthenticated = true;
-
-      })
-      .addCase(refresh.rejected, (state, action) => {
-        state.loading = false;
-        state.loaded = true;
-        state.isAuthenticated = false;
-        state.error = action.payload as string;
-      });
   },
 });
 

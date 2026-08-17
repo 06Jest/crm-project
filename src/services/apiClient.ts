@@ -36,7 +36,10 @@ export async function apiClient(
 
   let response = await request();
 
-  if (response.status === 401) {
+  if (
+    response.status === 401 &&
+    endpoint !== "/api/auth/refresh"
+  ) {
     const refreshed = await refreshSession();
 
     if (!refreshed) {
