@@ -123,13 +123,6 @@ const socialLinks: SocialLink[] = [
     color: '#000000',
     hoverColor: '#797979',
   },
-  {
-    name: 'GitHub Repo',
-    icon: <GitHubIcon />,
-    url: 'https://github.com/06Jest/crm-project',
-    color: '#e4e4e4',
-    hoverColor: '#797979',
-  },
 ];
 
 
@@ -190,7 +183,7 @@ export default function Footer() {
                       size="small"
                       onClick={() => handleLinkClick(social.url, true)}
                       sx={{
-                        color: (social.name === 'X' || social.name === 'GitHub') && themeMode === 'dark' ? 'white' : social.color,
+                        color: (social.name === 'X') && themeMode === 'dark' ? 'white' : social.color,
                         transition: 'all 0.3s ease',
                         '&:hover': {
                           color: social.hoverColor,
