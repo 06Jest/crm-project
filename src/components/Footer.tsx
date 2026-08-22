@@ -13,7 +13,6 @@ import {
 import {
   Facebook as FacebookIcon,
   LinkedIn as LinkedInIcon,
-  GitHub as GitHubIcon,
   Instagram as InstagramIcon,
   X as XIcon,
   Email as EmailIcon,
