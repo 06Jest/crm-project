@@ -4,6 +4,7 @@ import {
   Box, Button, TextField, Typography,
   Paper, CircularProgress, Divider, Dialog,
   DialogActions, DialogTitle, DialogContent, Grow,
+  Checkbox, FormControlLabel
 } from '@mui/material';
 import BusinessIcon from '@mui/icons-material/Business';
 import { useDispatch, useSelector } from 'react-redux';
@@ -178,20 +179,25 @@ export default function Register() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-  
+
     if (loading) return;
 
+    if (!agreedToPolicies) {
+      return;
+    }
+
     try {
-      await  dispatch(signUp(form)).unwrap();
+      await dispatch(signUp(form)).unwrap();
 
       setOpenRedirect(true);
-    } catch  {
-      //Error in State
-    };
-  }
+    } catch {
+      // Error in State
+    }
+  };
 
   const [tipIndex, setTipIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+  const [agreedToPolicies, setAgreedToPolicies] = useState(false);
 
   useEffect(() => {
     if (isPaused) return;
@@ -398,7 +404,6 @@ export default function Register() {
                     required
                     fullWidth
                     autoComplete="new-password"
-                    helperText="Password must be at least 12 characters that include uppercase letter, number, and symbol"
                     InputProps={{
                       endAdornment: (
                         <InputAdornment position="end">
@@ -413,13 +418,71 @@ export default function Register() {
                       ),
                     }}
                   />
+                  
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={agreedToPolicies}
+                        onChange={(e) => setAgreedToPolicies(e.target.checked)}
+                        color="primary"
+                        size="small"
+                      />
+                    }
+                    label={
+                      <Typography variant="body2" color="text.secondary">
+                        I agree to the{' '}
+                        <Link
+                          to="/terms"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ color: 'inherit', fontWeight: 600 }}
+                        >
+                          Terms of Service
+                        </Link>
+                        {', '}
+                        <Link
+                          to="/privacy"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ color: 'inherit', fontWeight: 600 }}
+                        >
+                          Privacy Policy
+                        </Link>
+                        {' and '}
+                        <Link
+                          to="/cookiepolicy"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ color: 'inherit', fontWeight: 600 }}
+                        >
+                          Cookie Policy
+                        </Link>
+                        .
+                      </Typography>
+                    }
+                    sx={{
+                      alignSelf: 'center',
+                      m: 0,
+                      width: '100%',
+                      '& .MuiCheckbox-root': {
+                        p: 0.2,
+                        mt: '-15px',
+                        mr: 0.75,
+                      },
+                    }}
+                  />
 
                   <Button
                     type="submit"
                     variant="contained"
                     fullWidth
                     size="medium"
-                    disabled={loading || !form.email  || !form.password}
+                    disabled={
+                      loading ||
+                      !form.email ||
+                      !form.password ||
+                      !agreedToPolicies
+                    }
                     sx={{
                       py: 1.1,
                       borderRadius: 2,
