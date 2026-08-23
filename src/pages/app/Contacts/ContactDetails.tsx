@@ -67,7 +67,6 @@ import type { RootState } from '../../../store/store';
 import { fixLeafletIcons } from '../../../utils/fixLeafletIcons';
 import { DEPARTMENTS, GENDERS, INDUSTRIES, PREFERRED_CONTACT_TIMES, SOURCES, SUFFIXES, type Gender, type PreferredTime, type Priority, type Source, type Suffix } from '../../../types/global';
 import ErrorAlert from '../../../components/Error';
-import SuccessAlert from '../../../components/Success';
 import { formatName } from '../../../utils/formatText';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 
@@ -286,7 +285,6 @@ export default function ContactDetail() {
   const [formSocials, setFormSocials] = useState<SocialsForm>({});
   const [formCareer, setFormCareer] = useState<CareerForm>({});
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
   const [newNotes, setNewNotes] = useState("");
   const [hoveredNotes, setHoveredNotes] = useState(false);
   const [isEditingNotes, setIsEditingNotes] = useState(false);
@@ -426,11 +424,6 @@ export default function ContactDetail() {
     setIsEditingCareer(true);
   };
 
-  const success = (msg: string) => {
-    setSuccessMessage(msg);
-    setTimeout(() => setSuccessMessage(''), 3000);
-  }
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormPersonal({ ...formPersonal, [e.target.name]: e.target.value });
   };
@@ -448,7 +441,6 @@ export default function ContactDetail() {
     try {
       await dispatch(updateContactPersonal({ id: contact.id, personal: formPersonal as ContactPersonal })).unwrap();
       setIsEditingPersonal(false);
-      success("Contact updated successfully")
     } catch {
       //Error in state
     }
@@ -461,8 +453,6 @@ export default function ContactDetail() {
       await dispatch(updateContactSocials({ id: contact.id, socials: formSocials as ContactSocials })).unwrap();
       setIsEditingSocials(false);
 
-      
-      success("Contact updated successfully")
     } catch {
       //Error in state
     }
@@ -474,7 +464,6 @@ export default function ContactDetail() {
     try {
       await dispatch(updateContactCareer({ id: contact.id, career: formCareer as ContactCareer })).unwrap();
       setIsEditingCareer(false);
-      success("Contact updated successfully")
     } catch {
       //Error in state
     }
@@ -550,14 +539,6 @@ export default function ContactDetail() {
 
   return (
     <Box sx={{ maxWidth: 800, mx: 'auto', pb: 4, px: { xs: 2, sm: 3, md: 0 } }}>
-
-      <Collapse in={!!successMessage} unmountOnExit>
-        <Box sx={{ my: 2, width: '100%' }}>
-          <SuccessAlert
-            message={successMessage}
-          />
-        </Box>
-      </Collapse>
 
       <Collapse in={!!error} unmountOnExit>
       {error && (

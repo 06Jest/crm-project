@@ -64,7 +64,6 @@ import type { RootState } from '../../../store/store';
 import { fixLeafletIcons } from '../../../utils/fixLeafletIcons';
 import { DEPARTMENTS, GENDERS, INDUSTRIES, PREFERRED_CONTACT_TIMES, SOURCES, SUFFIXES, type Gender, type PreferredTime, type Priority, type Source, type Suffix } from '../../../types/global';
 import ErrorAlert from '../../../components/Error';
-import SuccessAlert from '../../../components/Success';
 import { formatName } from '../../../utils/formatText';
 import type { LeadCareer, LeadPersonal, LeadSocials, LeadStatus } from '../../../types/lead';
 import { clearError, deleteLead, updateLeadCareer, updateLeadNotes, updateLeadPersonal, updateLeadPreferredTime, updateLeadSocials, updateLeadSource } from '../../../store/leadsSlice';
@@ -280,7 +279,6 @@ export default function LeadDetails() {
   const [formSocials, setFormSocials] = useState<SocialsForm>({});
   const [formCareer, setFormCareer] = useState<CareerForm>({});
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
   const [newNotes, setNewNotes] = useState("");
   const [hoveredNotes, setHoveredNotes] = useState(false);
   const [isEditingNotes, setIsEditingNotes] = useState(false);
@@ -374,11 +372,6 @@ export default function LeadDetails() {
     setIsEditingCareer(true);
   };
 
-  const success = (msg: string) => {
-    setSuccessMessage(msg);
-    setTimeout(() => setSuccessMessage(''), 3000);
-  }
-
   const handleChangePersonal = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormPersonal({ ...formPersonal, [e.target.name]: e.target.value });
   };
@@ -396,7 +389,6 @@ export default function LeadDetails() {
     try {
       await dispatch(updateLeadPersonal({ id: lead.id, personal: formPersonal as LeadPersonal })).unwrap();
       setIsEditingPersonal(false);
-      success("Lead updated successfully")
     } catch {
       //Error in state
     }
@@ -408,7 +400,6 @@ export default function LeadDetails() {
     try {
       await dispatch(updateLeadSocials({ id: lead.id, socials: formSocials as LeadSocials })).unwrap();
       setIsEditingSocials(false);
-      success("Lead updated successfully")
     } catch {
       //Error in state
     }
@@ -420,7 +411,6 @@ export default function LeadDetails() {
     try {
       await dispatch(updateLeadCareer({ id: lead.id, career: formCareer as LeadCareer })).unwrap();
       setIsEditingCareer(false);
-      success("Lead updated successfully")
     } catch {
       //Error in state
     }
@@ -543,14 +533,6 @@ export default function LeadDetails() {
 
   return (
     <Box sx={{ maxWidth: 800, mx: 'auto', pb: 4, px: { xs: 2, sm: 3, md: 0 } }}>
-
-      <Collapse in={!!successMessage} unmountOnExit>
-        <Box sx={{ my: 2, width: '100%' }}>
-          <SuccessAlert
-            message={successMessage}
-          />
-        </Box>
-      </Collapse>
 
       <Collapse in={!!error} unmountOnExit>
       {error && (
