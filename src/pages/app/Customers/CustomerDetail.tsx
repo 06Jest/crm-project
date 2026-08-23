@@ -36,7 +36,6 @@ import { formatName, formatTitle } from '../../../utils/formatText';
 import type { Priority } from '../../../types/global';
 import { clearError, deleteCustomer, fetchCustomersLists, updateCustomerNotes, updateCustomerStatus } from '../../../store/customersSlice';
 import { CUSTOMER_STATUSES, type CustomerStatus } from '../../../types/customer';
-import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { formattedDate } from '../../../utils/formatTime';
 import PaidIcon from '@mui/icons-material/Paid';
 import { formatCurrency, totalArrayValues } from '../../../utils/formatCurrency';
@@ -156,7 +155,7 @@ export default function CustomerDetail() {
             dispatch(clearError());
             navigate(-1)
           }}
-          sx={{ mt: 2, textTransform: 'none', fontWeight: 600 }}
+          sx={{ mt: 2, textTransform: 'none', fontWeight: 600, color: 'primary.main' }}
         >
           Go back
         </Button>
@@ -225,7 +224,6 @@ export default function CustomerDetail() {
 
   const handleNewNotes = async () => {
     if (!customer || !newNotes) return;
-
 
     try {
       await dispatch(
@@ -296,35 +294,29 @@ export default function CustomerDetail() {
         </Box>
       )}
 
-      <Box sx={{display: 'flex', justifyContent: 'space-between'}}>
+      <Box sx={{display: 'flex', justifyContent: 'left'}}>
         <Button 
           startIcon={<ArrowBackIcon/>}
           onClick={() => {
-            navigate(`/app/customers`);
             navigate(-1);
           } }
-          sx={{ alignSelf: 'start', textTransform: 'none', fontWeight: 600, color: 'text.secondary'}}>
+          sx={{ alignSelf: 'start', textTransform: 'none', fontWeight: 600, color: 'primary.main'}}>
           Back
-        </Button>
-        <Button 
-          endIcon={<ArrowForwardIcon/>}
-          onClick={() => {
-            navigate('/app/deals');
-            dispatch(clearError());
-          } }
-          sx={{ alignSelf: 'start', textTransform: 'none', fontWeight: 600, color: 'text.secondary'}}>
-          Deals
         </Button>
       </Box>
       <Paper
         variant="outlined"
         sx={(theme) => ({
+          pt: '10px !important',
           p: 4,
           borderRadius: 3,
           mt: 2,
           border: `1px solid ${theme.palette.mode === 'dark' ? '#3a3a3a' : '#e3e3e3'}`,
         })}
       >
+        <Box sx={{display: 'flex', justifyContent: 'center',mb: 2}}>
+          <Typography sx={{border: '1px solid #ccc', height: '100%', borderRadius: 10,px: 2, py: 0.5, fontSize: 10, fontWeight: 700, letterSpacing: '0.15em',}}>Customer</Typography>
+        </Box>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1, width: '100%' }}>
           <Box sx={{display: 'flex', width: 100, mr: 2, flexDirection: 'column', justifyContent: 'space-between', height: 185 }}>
             <Box sx={(theme) => ({
@@ -503,7 +495,9 @@ export default function CustomerDetail() {
                       backgroundColor: `${STATUS_COLORS[customer?.status as CustomerStatus]}55`,
                     }}
                   />
-                  <IconButton onClick={() => setUpdateStatus(true)} title='Update Status' sx={{p:'1px'}}>
+                  <IconButton onClick={() => {
+                    setIsUpdatingStatus(true)
+                  }} title='Update Status' sx={{p:'1px'}}>
                     <ModeEditIcon sx={{ fontSize: '13px', opacity: hovered ? 1 : 0,  transition: "all 0.3s ease", transform: hovered ? "translateX(0)" : "translateX(8px)",}}/>
                   </IconButton>
                 </Box>
@@ -537,7 +531,7 @@ export default function CustomerDetail() {
                         </MenuItem>
                       ))}
                     </TextField>
-                    <IconButton title='Confirm Update' onClick={handleUpdateStatus} sx={{p:'2px'}}>
+                    <IconButton title='Confirm Update' onClick={() => setUpdateStatus(true)} sx={{p:'2px'}}>
                       <CheckIcon sx={{fontSize: '13px'}}/>
                     </IconButton>
                     <IconButton title='Cancel' onClick={() => setIsUpdatingStatus(false)} sx={{p:'2px'}}>
@@ -728,8 +722,8 @@ export default function CustomerDetail() {
             disableElevation
             sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 2 }}
             onClick={() => {
+              handleUpdateStatus();
               setUpdateStatus(false);
-              setIsUpdatingStatus(true);
               handleEditStatus()
             }}
           >

@@ -4,12 +4,13 @@ import type {
   Contact,
   ContactCareer,
   ContactListItem,
+  ContactPersonal,
   ContactSocials,
-  UpdateContact,
 } from "../types/contact";
+import type { PreferredTime, Priority, Source } from "../types/global";
 
 export const fetchContactsAPI = async (): Promise<Contact[]> => {
-  const result = await apiClient("/api/contacts/show-contacts", {
+  const result = await apiClient("/api/contacts/show", {
     method: "GET",
   });
 
@@ -17,7 +18,7 @@ export const fetchContactsAPI = async (): Promise<Contact[]> => {
 };
 
 export const fetchContactsListsAPI = async (): Promise<ContactListItem[]> => {
-  const result = await apiClient("/api/contacts/show-contacts-lists", {
+  const result = await apiClient("/api/contacts/show-lists", {
     method: "GET",
   });
 
@@ -27,7 +28,7 @@ export const fetchContactsListsAPI = async (): Promise<ContactListItem[]> => {
 export const addContactAPI = async (
   contact: AddContact
 ): Promise<ContactListItem> => {
-  const result = await apiClient("/api/contacts/add-contact", {
+  const result = await apiClient("/api/contacts/add", {
     method: "POST",
     body: JSON.stringify(contact),
   });
@@ -38,7 +39,7 @@ export const addContactAPI = async (
 export const addContactFromLeadsAPI = async (
   contact: AddContact
 ): Promise<ContactListItem> => {
-  const result = await apiClient("/api/contacts/move-contact", {
+  const result = await apiClient("/api/contacts/move", {
     method: "POST",
     body: JSON.stringify(contact),
   });
@@ -46,23 +47,23 @@ export const addContactFromLeadsAPI = async (
   return result.data as ContactListItem;
 };
 
-export const updateContactAPI = async (
+export const updateContactPersonalAPI = async (
   id: string,
-  contact: UpdateContact
+  personal: ContactPersonal
 ): Promise<ContactListItem> => {
-  const result = await apiClient(`/api/contacts/update-contact/${id}`, {
+  const result = await apiClient(`/api/contacts/update/personal/${id}`, {
     method: "PATCH",
-    body: JSON.stringify(contact),
+    body: JSON.stringify(personal),
   });
 
   return result.data as ContactListItem;
 };
 
-export const updateSocialsAPI = async (
+export const updateContactSocialsAPI = async (
   id: string,
   socials: ContactSocials
 ): Promise<ContactListItem> => {
-  const result = await apiClient(`/api/contacts/update-socials/${id}`, {
+  const result = await apiClient(`/api/contacts/update/socials/${id}`, {
     method: "PATCH",
     body: JSON.stringify(socials),
   });
@@ -70,11 +71,11 @@ export const updateSocialsAPI = async (
   return result.data as ContactListItem;
 };
 
-export const updateCareerAPI = async (
+export const updateContactCareerAPI = async (
   id: string,
   career: ContactCareer
 ): Promise<ContactListItem> => {
-  const result = await apiClient(`/api/contacts/update-career/${id}`, {
+  const result = await apiClient(`/api/contacts/update/career/${id}`, {
     method: "PATCH",
     body: JSON.stringify(career),
   });
@@ -82,11 +83,64 @@ export const updateCareerAPI = async (
   return result.data as ContactListItem;
 };
 
+export const updateContactNotesAPI = async (
+  id: string,
+  notes: string
+): Promise<ContactListItem> => {
+  
+  const result = await apiClient(`/api/contacts/update/notes/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify({notes}),
+  });
+  
+  return result.data as ContactListItem;
+};
+
+export const updateContactSourceAPI = async (
+  id: string,
+  source: Source
+): Promise<ContactListItem> => {
+  
+  const result = await apiClient(`/api/contacts/update/source/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify({source}),
+  });
+  
+  return result.data as ContactListItem;
+};
+
+export const updateContactPriorityAPI = async (
+  id: string,
+  priority: Priority
+): Promise<ContactListItem> => {
+  
+  const result = await apiClient(`/api/contacts/update/priority/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify({priority}),
+  });
+  
+  return result.data as ContactListItem;
+};
+
+export const updateContactPreferredTimeAPI = async (
+  id: string,
+  preferredTime: PreferredTime
+): Promise<ContactListItem> => {
+  
+  const result = await apiClient(`/api/contacts/update/preferred-time/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify({preferredTime}),
+  });
+  
+  return result.data as ContactListItem;
+};
+
+
 
 export const deleteContactAPI = async (
   id: string
 ): Promise<string> => {
-  const result = await apiClient(`/api/contacts/delete-contact/${id}`, {
+  const result = await apiClient(`/api/contacts/delete/${id}`, {
     method: "DELETE",
   });
 
@@ -96,7 +150,7 @@ export const deleteContactAPI = async (
 export const deleteBulkContactsAPI = async (
   ids: string[]
 ): Promise<string> => {
-  const result = await apiClient(`/api/contacts/delete-contacts`, {
+  const result = await apiClient(`/api/contacts/delete/bulk`, {
     method: "DELETE",
     body: JSON.stringify({ids}),
   });

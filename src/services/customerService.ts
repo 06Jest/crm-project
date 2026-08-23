@@ -25,7 +25,6 @@ export const updateCustomerNotesAPI = async (
     method: "PATCH",
     body: JSON.stringify({notes}),
   });
-
   return result.data as CustomerListItem;
 };
 
