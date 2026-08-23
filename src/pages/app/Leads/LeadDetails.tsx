@@ -379,7 +379,7 @@ export default function LeadDetails() {
     setTimeout(() => setSuccessMessage(''), 3000);
   }
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChangePersonal = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormPersonal({ ...formPersonal, [e.target.name]: e.target.value });
   };
 
@@ -391,7 +391,7 @@ export default function LeadDetails() {
     setFormCareer({ ...formCareer, [e.target.name]: e.target.value });
   };
 
-  const handleSave = async () => {
+  const handleSavePersonal = async () => {
     if (loading) return;
     try {
       await dispatch(updateLeadPersonal({ id: lead.id, personal: formPersonal as LeadPersonal })).unwrap();
@@ -439,6 +439,7 @@ export default function LeadDetails() {
 
   const handleEditSource = () => {
       setSelectedSource(lead?.source ?? "");
+      setIsUpdatingSource(true);
     };
   
   
@@ -462,6 +463,7 @@ export default function LeadDetails() {
 
   const handleEditPreferredTime = () => {
     setSelectedPreferredTime(lead?.preferred_contact_time ?? "");
+    setIsUpdatingPreferredTime(true);
   };
   
   
@@ -636,45 +638,57 @@ export default function LeadDetails() {
             </Box>
             </Typography>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1.25, justifyContent: { xs: 'center', sm: 'flex-start' } }}>
-              <Chip
-                label={lead.status}
+              <Paper
                 title="Status"
-                size='small'
+                elevation={2}
                 sx={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                   px: 1,
-                  // fontWeight: 700,
-                  fontSize: 12,
+                  py: 0.5,
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  letterSpacing: '0.6px',
                   cursor: 'pointer',
                   transition: 'opacity 0.15s ease',
-                  '&:hover': { opacity: 0.85 },
-                  border: lead.status === 'Contacted' ? '1px solid #7a7a7a98' : 'none',
+                  border:
+                    lead.status === 'Contacted'
+                      ? '1px solid #7a7a7a98'
+                      : 'none',
                   backgroundColor: STATUS_COLORS[lead.status],
-                  color: lead.status === 'Contacted' ? 'black' : 'white'
+                  color: lead.status === 'Contacted' ? 'black' : 'white',
+                  borderRadius: 10,
                 }}
-              />
+              >
+                {lead.status}
+              </Paper>
               {!isUpdatingSource ? (
                 <Box
                   sx={{display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative'}}
                   onMouseEnter={() => setHoveredSource(true)}
                   onMouseLeave={() => setHoveredSource(false)}
                 >
-                  <Chip
-                    label={lead?.source}
+                  <Paper
                     title="Source"
-                    size='small'
+                    elevation={2}
                     sx={{
-                      px: '4px',
-                      py: '1px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      px: 1,
+                      py: 0.5,
                       fontSize: '11px',
                       fontWeight: 700,
-                      color: '#252525e7',
                       letterSpacing: '0.6px',
                       cursor: 'pointer',
                       borderRadius: 10,
                       opacity: hoveredSource ? 0.4 : 1,
                     }}
-                  />
-                  <IconButton onClick={() => setIsUpdatingSource(true)} title='Update Source' sx={{p:'1px', position: 'absolute'}}>
+                  >
+                    {lead?.source}
+                  </Paper>
+                  <IconButton onClick={handleEditSource} title='Update Source' sx={{p:'1px', position: 'absolute'}}>
                     <ModeEditIcon sx={{ fontSize: '15px', opacity: hoveredSource ? 1 : 0,  transition: "all 0.3s ease", transform: hoveredSource ? "translateX(0)" : "translateX(8px)",}}/>
                   </IconButton>
                 </Box>
@@ -722,23 +736,26 @@ export default function LeadDetails() {
                   onMouseEnter={() => setHoveredPreferredTime(true)}
                   onMouseLeave={() => setHoveredPreferredTime(false)}
                 >
-                  <Chip
-                    label={lead?.preferred_contact_time}
+                  <Paper
                     title="Preferred contact time"
-                    size='small'
+                    elevation={2}
                     sx={{
-                      px: '4px',
-                      py: '1px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      px: 1,
+                      py: 0.5,
                       fontSize: '11px',
                       fontWeight: 700,
-                      color: '#252525e7',
                       letterSpacing: '0.6px',
                       cursor: 'pointer',
                       borderRadius: 10,
                       opacity: hoveredPreferredTime ? 0.4 : 1,
                     }}
-                  />
-                  <IconButton onClick={() => setIsUpdatingPreferredTime(true)} title='Update Preferred contact time' sx={{p:'1px', position: 'absolute'}}>
+                  >
+                    {lead?.preferred_contact_time}
+                  </Paper>
+                  <IconButton onClick={handleEditPreferredTime} title='Update Preferred contact time' sx={{p:'1px', position: 'absolute'}}>
                     <ModeEditIcon sx={{ fontSize: '15px', opacity: hoveredPreferredTime ? 1 : 0,  transition: "all 0.3s ease", transform: hoveredPreferredTime ? "translateX(0)" : "translateX(8px)",}}/>
                   </IconButton>
                 </Box>
@@ -922,7 +939,7 @@ export default function LeadDetails() {
                 label="First Name"
                 name="first_name"
                 required
-                onChange={handleChange}
+                onChange={handleChangePersonal}
                 value={formPersonal.first_name || ''}
                 size="small"
                 fullWidth
@@ -932,7 +949,7 @@ export default function LeadDetails() {
                 label="Last Name"
                 name="last_name"
                 required
-                onChange={handleChange}
+                onChange={handleChangePersonal}
                 value={formPersonal.last_name || ''}
                 size="small"
                 fullWidth
@@ -945,7 +962,7 @@ export default function LeadDetails() {
                 select
                 label="Suffix"
                 name="suffix"
-                onChange={handleChange}
+                onChange={handleChangePersonal}
                 value={formPersonal.suffix || ''}
                 size="small"
                 fullWidth
@@ -971,7 +988,7 @@ export default function LeadDetails() {
                 name="phone"
                 placeholder='63+'
                 required
-                onChange={handleChange}
+                onChange={handleChangePersonal}
                 value={formPersonal.phone || ''}
                 size="small"
                 fullWidth
@@ -983,7 +1000,7 @@ export default function LeadDetails() {
               label="Email"
               name="email"
               required
-              onChange={handleChange}
+              onChange={handleChangePersonal}
               value={formPersonal.email || ''}
               size="small"
               fullWidth
@@ -995,7 +1012,7 @@ export default function LeadDetails() {
                 select
                 label="Gender"
                 name="gender"
-                onChange={handleChange}
+                onChange={handleChangePersonal}
                 value={formPersonal.gender || ''}
                 size="small"
                 fullWidth
@@ -1013,7 +1030,7 @@ export default function LeadDetails() {
                 name="birth_date"
                 type="date"
                 value={formPersonal.birth_date || ''}
-                onChange={handleChange}
+                onChange={handleChangePersonal}
                 slotProps={{ inputLabel: { shrink: true } }}
                 size="small"
                 fullWidth
@@ -1044,7 +1061,7 @@ export default function LeadDetails() {
               <Button
                 variant="contained"
                 disableElevation
-                onClick={handleSave}
+                onClick={handleSavePersonal}
                 disabled={!formPersonal.first_name || !formPersonal.email || !formPersonal.last_name || !formPersonal.phone || loading}
                 startIcon={loading ? <CircularProgress size={14} color="inherit" /> : undefined}
                 sx={saveBtnSx}
@@ -1436,11 +1453,7 @@ export default function LeadDetails() {
             variant="contained"
             disableElevation
             sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 2 }}
-            onClick={() => {
-              handleUpdateSource();
-              setUpdateSource(false);
-              handleEditSource()
-            }}
+            onClick={handleUpdateSource}
           >
             Yes
           </Button>
@@ -1466,11 +1479,7 @@ export default function LeadDetails() {
             variant="contained"
             disableElevation
             sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 2 }}
-            onClick={() => {
-              handleUpdatePreferredTime();
-              setUpdatePreferredTime(false);
-              handleEditPreferredTime()
-            }}
+            onClick={handleUpdatePreferredTime}
           >
             Yes
           </Button>

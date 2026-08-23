@@ -343,6 +343,7 @@ export default function ContactDetail() {
 
   const handleEditSource = () => {
         setSelectedSource(contact?.source ?? "");
+        setIsUpdatingSource(true);
       };
     
     
@@ -366,6 +367,7 @@ export default function ContactDetail() {
   
     const handleEditPreferredTime = () => {
       setSelectedPreferredTime(contact?.preferred_contact_time ?? "");
+      setIsUpdatingPreferredTime(true);
     };
     
     
@@ -683,45 +685,56 @@ export default function ContactDetail() {
             </Box>
             </Typography>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1.25, justifyContent: { xs: 'center', sm: 'flex-start' } }}>
-              <Chip
-                label={contact.status}
+              <Paper
                 title="Status"
-                size='small'
+                elevation={2}
                 sx={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                   px: 1,
+                  py: 0.5,
                   fontWeight: 700,
-                  fontSize: 12,
+                  fontSize: '11px',
                   cursor: 'pointer',
                   transition: 'opacity 0.15s ease',
-                  '&:hover': { opacity: 0.85 },
-                  border: contact.status === 'Contacted' ? '1px solid #7a7a7a98' : 'none',
+                  border:
+                    contact.status === 'Contacted'
+                      ? '1px solid #7a7a7a98'
+                      : 'none',
                   backgroundColor: STATUS_COLORS[contact.status],
-                  color: contact.status === 'Contacted' ? 'black' : 'white'
+                  color: contact.status === 'Contacted' ? 'black' : 'white',
+                  borderRadius: 10,
                 }}
-              />
+              >
+                {contact.status}
+              </Paper>
               {!isUpdatingSource ? (
                 <Box
                   sx={{display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative'}}
                   onMouseEnter={() => setHoveredSource(true)}
                   onMouseLeave={() => setHoveredSource(false)}
                 >
-                  <Chip
-                    label={contact?.source}
+                  <Paper
                     title="Source"
-                    size='small'
+                    elevation={2}
                     sx={{
-                      px: '4px',
-                      py: '1px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      px: 1,
+                      py: 0.5,
                       fontSize: '11px',
                       fontWeight: 700,
-                      color: '#252525e7',
                       letterSpacing: '0.6px',
                       cursor: 'pointer',
                       borderRadius: 10,
                       opacity: hoveredSource ? 0.4 : 1,
                     }}
-                  />
-                  <IconButton onClick={() => setIsUpdatingSource(true)} title='Update Source' sx={{p:'1px', position: 'absolute'}}>
+                  >
+                    {contact?.source}
+                  </Paper>
+                  <IconButton onClick={handleEditSource} title='Update Source' sx={{p:'1px', position: 'absolute'}}>
                     <ModeEditIcon sx={{ fontSize: '15px', opacity: hoveredSource ? 1 : 0,  transition: "all 0.3s ease", transform: hoveredSource ? "translateX(0)" : "translateX(8px)",}}/>
                   </IconButton>
                 </Box>
@@ -769,23 +782,26 @@ export default function ContactDetail() {
                   onMouseEnter={() => setHoveredPreferredTime(true)}
                   onMouseLeave={() => setHoveredPreferredTime(false)}
                 >
-                  <Chip
-                    label={contact?.preferred_contact_time}
+                  <Paper
                     title="Preferred contact time"
-                    size='small'
+                    elevation={2}
                     sx={{
-                      px: '4px',
-                      py: '1px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      px: 1,
+                      py: 0.5,
                       fontSize: '11px',
                       fontWeight: 700,
-                      color: '#252525e7',
                       letterSpacing: '0.6px',
                       cursor: 'pointer',
                       borderRadius: 10,
                       opacity: hoveredPreferredTime ? 0.4 : 1,
                     }}
-                  />
-                  <IconButton onClick={() => setIsUpdatingPreferredTime(true)} title='Update Preferred contact time' sx={{p:'1px', position: 'absolute'}}>
+                  >
+                    {contact?.preferred_contact_time}
+                  </Paper>
+                  <IconButton onClick={handleEditPreferredTime} title='Update Preferred contact time' sx={{p:'1px', position: 'absolute'}}>
                     <ModeEditIcon sx={{ fontSize: '15px', opacity: hoveredPreferredTime ? 1 : 0,  transition: "all 0.3s ease", transform: hoveredPreferredTime ? "translateX(0)" : "translateX(8px)",}}/>
                   </IconButton>
                 </Box>
@@ -1483,11 +1499,7 @@ export default function ContactDetail() {
             variant="contained"
             disableElevation
             sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 2 }}
-            onClick={() => {
-              handleUpdateSource();
-              setUpdateSource(false);
-              handleEditSource()
-            }}
+            onClick={handleUpdateSource}
           >
             Yes
           </Button>
@@ -1513,11 +1525,7 @@ export default function ContactDetail() {
             variant="contained"
             disableElevation
             sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 2 }}
-            onClick={() => {
-              handleUpdatePreferredTime();
-              setUpdatePreferredTime(false);
-              handleEditPreferredTime()
-            }}
+            onClick={handleUpdatePreferredTime}
           >
             Yes
           </Button>

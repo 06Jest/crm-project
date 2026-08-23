@@ -39,7 +39,7 @@ export const updateLeadCareerAPI = async (
   id: string,
   career: LeadCareer
 ): Promise<LeadListItem> => {
-  const result = await apiClient(`/api/leads/update/personal/${id}`, {
+  const result = await apiClient(`/api/leads/update/career/${id}`, {
     method: "PATCH",
     body: JSON.stringify(career),
   });
@@ -51,7 +51,7 @@ export const updateLeadSocialsAPI = async (
   id: string,
   socials: LeadSocials
 ): Promise<LeadListItem> => {
-  const result = await apiClient(`/api/leads/update/personal/${id}`, {
+  const result = await apiClient(`/api/leads/update/socials/${id}`, {
     method: "PATCH",
     body: JSON.stringify(socials),
   });
