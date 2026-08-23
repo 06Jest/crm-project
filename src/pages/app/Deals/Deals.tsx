@@ -456,10 +456,6 @@ export default function Deals() {
       'Closed Won': '',
       'Closed Lost': '',
     });
-
-  // UI-only additions: reduced-motion preference and the ref used as the
-  // IntersectionObserver root so each column lazy-mounts as it scrolls
-  // into view. Neither is read by, or affects, any business logic below.
   const reduceMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
   const boardScrollRef = useRef<HTMLDivElement>(null);
 

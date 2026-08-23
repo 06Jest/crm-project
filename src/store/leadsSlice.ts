@@ -1,12 +1,19 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import type  { AddLead, LeadsState, LeadStatus,UpdateLead } from "../types/lead"
+import type  { AddLead, LeadCareer, LeadPersonal, LeadSocials, LeadsState, LeadStatus } from "../types/lead"
 import {
   addLeadAPI,
-  updateLeadAPI,
+  updateLeadPersonalAPI,
   deleteLeadAPI,
   updateLeadStatusAPI,
   fetchLeadsListsAPI,
+  updateLeadCareerAPI,
+  updateLeadSocialsAPI,
+  updateLeadNotesAPI,
+  updateLeadSourceAPI,
+  updateLeadPriorityAPI,
+  updateLeadPreferredTimeAPI,
 } from '../services/leadService';
+import type { PreferredTime, Priority, Source } from "../types/global";
 
 
 const initialState: LeadsState = {
@@ -18,7 +25,7 @@ const initialState: LeadsState = {
 
 
 export const fetchLeadsLists = createAsyncThunk(
-  'leads/show-leads-lists',
+  'leads/show-lists',
   async (_, thunkAPI) => {
     try {
       return await fetchLeadsListsAPI();
@@ -35,7 +42,7 @@ export const fetchLeadsLists = createAsyncThunk(
 );
 
 export const addLead = createAsyncThunk(
-  'leads/add-lead',
+  'leads/add',
   async (
       lead: AddLead, 
       thunkAPI) => {
@@ -54,14 +61,54 @@ export const addLead = createAsyncThunk(
 );
 
 
-export const updateLead = createAsyncThunk(
-  'leads/update-lead',
-  async ({id, lead}:{
+export const updateLeadPersonal = createAsyncThunk(
+  'leads/update/personal',
+  async ({id, personal}:{
       id: string;
-      lead: UpdateLead
+      personal: LeadPersonal
     },thunkAPI) => {
     try {
-      return await updateLeadAPI( id, lead);
+      return await updateLeadPersonalAPI( id, personal);
+    } catch (err) {
+      if (err instanceof Error) {
+        return thunkAPI.rejectWithValue(err.message);
+      }
+      return thunkAPI
+        .rejectWithValue(
+          'Something went wrong'
+        );
+    }
+  }
+);
+
+export const updateLeadCareer = createAsyncThunk(
+  'leads/update/career',
+  async ({id, career}:{
+      id: string;
+      career: LeadCareer
+    },thunkAPI) => {
+    try {
+      return await updateLeadCareerAPI( id, career);
+    } catch (err) {
+      if (err instanceof Error) {
+        return thunkAPI.rejectWithValue(err.message);
+      }
+      return thunkAPI
+        .rejectWithValue(
+          'Something went wrong'
+        );
+    }
+  }
+);
+
+export const updateLeadSocials = createAsyncThunk(
+  'leads/update/socials',
+  async ({id, socials}:{
+      id: string;
+      socials: LeadSocials
+    },thunkAPI) => {
+    try {
+      return await updateLeadSocialsAPI( id, socials);
     } catch (err) {
       if (err instanceof Error) {
         return thunkAPI.rejectWithValue(err.message);
@@ -75,7 +122,7 @@ export const updateLead = createAsyncThunk(
 );
 
 export const updateLeadStatus = createAsyncThunk(
-  'leads/update-lead-status',
+  'leads/update/status',
   async ({ id, status }:{ id: string, status: LeadStatus}
     ,thunkAPI) => {
     try {
@@ -92,8 +139,80 @@ export const updateLeadStatus = createAsyncThunk(
   }
 );
 
+export const updateLeadNotes = createAsyncThunk(
+  'leads/update/notes',
+  async ({ id, notes }:{ id: string, notes: string}
+    ,thunkAPI) => {
+    try {
+      return await updateLeadNotesAPI( id, notes);
+    } catch (err) {
+      if (err instanceof Error) {
+        return thunkAPI.rejectWithValue(err.message);
+      }
+      return thunkAPI
+        .rejectWithValue(
+          'Something went wrong'
+        );
+    }
+  }
+);
+
+export const updateLeadSource = createAsyncThunk(
+  'leads/update/source',
+  async ({ id, source }:{ id: string, source: Source}
+    ,thunkAPI) => {
+    try {
+      return await updateLeadSourceAPI( id, source);
+    } catch (err) {
+      if (err instanceof Error) {
+        return thunkAPI.rejectWithValue(err.message);
+      }
+      return thunkAPI
+        .rejectWithValue(
+          'Something went wrong'
+        );
+    }
+  }
+);
+
+export const updateLeadPriority = createAsyncThunk(
+  'leads/update/priority',
+  async ({ id, priority }:{ id: string, priority: Priority}
+    ,thunkAPI) => {
+    try {
+      return await updateLeadPriorityAPI( id, priority);
+    } catch (err) {
+      if (err instanceof Error) {
+        return thunkAPI.rejectWithValue(err.message);
+      }
+      return thunkAPI
+        .rejectWithValue(
+          'Something went wrong'
+        );
+    }
+  }
+);
+
+export const updateLeadPreferredTime = createAsyncThunk(
+  'leads/update/preferred-time',
+  async ({ id, preferredTime }:{ id: string, preferredTime: PreferredTime}
+    ,thunkAPI) => {
+    try {
+      return await updateLeadPreferredTimeAPI( id, preferredTime);
+    } catch (err) {
+      if (err instanceof Error) {
+        return thunkAPI.rejectWithValue(err.message);
+      }
+      return thunkAPI
+        .rejectWithValue(
+          'Something went wrong'
+        );
+    }
+  }
+);
+
 export const deleteLead = createAsyncThunk(
-  'leads/delete-lead',
+  'leads/delete',
   async (id: string, thunkAPI) => {
     try {
       return await deleteLeadAPI(id);
@@ -161,17 +280,47 @@ const leadSlice = createSlice({
     });
     
 
-    builder.addCase(updateLead.pending, (state) => {
+    builder.addCase(updateLeadPersonal.pending, (state) => {
       state.error = null;
     });
 
-    builder.addCase(updateLead.fulfilled, (state, action) => {
+    builder.addCase(updateLeadPersonal.fulfilled, (state, action) => {
       const index = state.items.findIndex(l => l.id === action.payload.id);
       if(index !== -1) state.items[index] = action.payload;
       state.loading = false;
     });
 
-    builder.addCase(updateLead.rejected, (state, action) => {
+    builder.addCase(updateLeadPersonal.rejected, (state, action) => {
+      state.error = action.payload as string
+      state.loading = false;
+    });
+
+    builder.addCase(updateLeadSocials.pending, (state) => {
+      state.error = null;
+    });
+
+    builder.addCase(updateLeadSocials.fulfilled, (state, action) => {
+      const index = state.items.findIndex(l => l.id === action.payload.id);
+      if(index !== -1) state.items[index] = action.payload;
+      state.loading = false;
+    });
+
+    builder.addCase(updateLeadSocials.rejected, (state, action) => {
+      state.error = action.payload as string
+      state.loading = false;
+    });
+
+    builder.addCase(updateLeadCareer.pending, (state) => {
+      state.error = null;
+    });
+
+    builder.addCase(updateLeadCareer.fulfilled, (state, action) => {
+      const index = state.items.findIndex(l => l.id === action.payload.id);
+      if(index !== -1) state.items[index] = action.payload;
+      state.loading = false;
+    });
+
+    builder.addCase(updateLeadCareer.rejected, (state, action) => {
       state.error = action.payload as string
       state.loading = false;
     });
@@ -189,6 +338,70 @@ const leadSlice = createSlice({
     });
 
     builder.addCase(updateLeadStatus.rejected, (state, action) => {
+      state.error = action.payload as string
+      state.loading = false;
+    });
+
+    
+    builder.addCase(updateLeadNotes.pending, (state) => {
+      state.error = null;
+    });
+
+    builder.addCase(updateLeadNotes.fulfilled, (state, action) => {
+      const index = state.items.findIndex(l => l.id === action.payload.id);
+      if(index !== -1) state.items[index] = action.payload;
+      state.loading = false;
+    });
+
+    builder.addCase(updateLeadNotes.rejected, (state, action) => {
+      state.error = action.payload as string
+      state.loading = false;
+    });
+
+
+    builder.addCase(updateLeadSource.pending, (state) => {
+      state.error = null;
+    });
+
+    builder.addCase(updateLeadSource.fulfilled, (state, action) => {
+      const index = state.items.findIndex(l => l.id === action.payload.id);
+      if(index !== -1) state.items[index] = action.payload;
+      state.loading = false;
+    });
+
+    builder.addCase(updateLeadSource.rejected, (state, action) => {
+      state.error = action.payload as string
+      state.loading = false;
+    });
+
+
+    builder.addCase(updateLeadPriority.pending, (state) => {
+      state.error = null;
+    });
+
+    builder.addCase(updateLeadPriority.fulfilled, (state, action) => {
+      const index = state.items.findIndex(l => l.id === action.payload.id);
+      if(index !== -1) state.items[index] = action.payload;
+      state.loading = false;
+    });
+
+    builder.addCase(updateLeadPriority.rejected, (state, action) => {
+      state.error = action.payload as string
+      state.loading = false;
+    });
+
+
+    builder.addCase(updateLeadPreferredTime.pending, (state) => {
+      state.error = null;
+    });
+
+    builder.addCase(updateLeadPreferredTime.fulfilled, (state, action) => {
+      const index = state.items.findIndex(l => l.id === action.payload.id);
+      if(index !== -1) state.items[index] = action.payload;
+      state.loading = false;
+    });
+
+    builder.addCase(updateLeadPreferredTime.rejected, (state, action) => {
       state.error = action.payload as string
       state.loading = false;
     });

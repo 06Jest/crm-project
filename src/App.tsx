@@ -22,6 +22,7 @@ import Contacts from './pages/app/Contacts/Contacts';
 import AddContact from './pages/app/Contacts/AddContact';
 import ContactDetail from './pages/app/Contacts/ContactDetails';
 import Leads from './pages/app/Leads/Leads';
+import LeadDetail from './pages/app/Leads/LeadDetails';
 import Deals from './pages/app/Deals/Deals';
 import AddDeal from './pages/app/Deals/AddDeal'
 import AddLead from './pages/app/Leads/AddLead';
@@ -88,7 +89,8 @@ function AppRoutes() {
           <Route element={<AppLayout />}>
             <Route path="/app/dashboard" element={<Dashboard />} />
             <Route path="/app/leads" element={<Leads />} />
-            <Route path="/app/addlead" element={<AddLead />} />
+            <Route path="/app/leads/addlead" element={<AddLead />} />
+            <Route path="/app/leads/:id" element={<LeadDetail />} />
             <Route path="/app/contacts" element={<Contacts />} />
             <Route path="/app/contacts/addcontact" element={<AddContact />} />
             <Route path="/app/contacts/:id" element={<ContactDetail />} />

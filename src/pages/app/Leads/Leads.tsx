@@ -6,14 +6,13 @@ import type { AppDispatch, RootState } from "../../../store/store";
 
 
 import {
-  updateLead,
   deleteLead, 
   moveLeadLocally,
   updateLeadStatus,
   clearError,
   fetchLeadsLists,
 } from '../../../store/leadsSlice';
-import { LEAD_STATUSES, type Lead, type LeadStatus, type UpdateLead } from '../../../types/lead';
+import { LEAD_STATUSES, type Lead, type LeadStatus } from '../../../types/lead';
 
 import {
   DragDropContext,
@@ -34,13 +33,11 @@ import {
   DialogContent,
   DialogActions,
   TextField,
-  MenuItem,
   IconButton,
   Chip,
   Popover,
   InputAdornment,
   Divider,
-  Autocomplete,
   Avatar,
   Stack,
   Tooltip,
@@ -48,10 +45,7 @@ import {
   CircularProgress,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
-import InfoIcon from '@mui/icons-material/Info';
 import DeleteIcon from '@mui/icons-material/Delete';
-import EditIcon from '@mui/icons-material/Edit';
-import CloseIcon from '@mui/icons-material/Close';
 import EmailIcon from '@mui/icons-material/Email';
 import CallIcon from '@mui/icons-material/Call';
 import SmsIcon from '@mui/icons-material/Sms';
@@ -59,13 +53,9 @@ import PersonIcon from '@mui/icons-material/Person';
 import SearchIcon from '@mui/icons-material/Search';
 import PriorityIcon from '@mui/icons-material/PriorityHighRounded';
 import AddIcon from '@mui/icons-material/Add';
-import WorkIcon from '@mui/icons-material/Work';
-import ShareIcon from '@mui/icons-material/Share';
-import NotesIcon from '@mui/icons-material/Notes';
-// import { useAuth } from "../../../hooks/useAuth";
 import ErrorAlert from "../../../components/Error";
 import RefreshIcon from "@mui/icons-material/Refresh";
-import { DEPARTMENTS, GENDERS, INDUSTRIES, PREFERRED_CONTACT_TIMES, PRIORITIES, SOURCES, SUFFIXES, type Gender, type PreferredTime, type Priority, type Source, type Suffix } from "../../../types/global";
+import { type Priority } from "../../../types/global";
 import { formatName, formatShortTitle } from "../../../utils/formatText";
 import { calculateAge } from "../../../utils/calculateAge";
 
@@ -79,39 +69,6 @@ const LAZY_CHUNK = 8;
 const LOAD_MORE_DELAY = 220;
 const CARD_TRANSITION =
   'box-shadow 0.2s cubic-bezier(0.4,0,0.2,1), border-color 0.2s ease, opacity 0.2s ease';
-
-const fieldSx = {
-  '& .MuiOutlinedInput-root': {
-    borderRadius: 1.5,
-    transition: 'border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease',
-  },
-  '& .MuiInputBase-input': { py: '6px', fontSize: 14 },
-  '& .Mui-disabled': { opacity: 1 },
-  '& .MuiOutlinedInput-root.Mui-disabled': { backgroundColor: 'transparent' },
-  '& .MuiOutlinedInput-root.Mui-disabled .MuiOutlinedInput-notchedOutline': { borderColor: 'transparent' },
-  '& .MuiOutlinedInput-root.Mui-disabled .MuiInputBase-input': { color: 'text.secondary' },
-} as const;
-
-function SectionHeader({ icon, children }: { icon: ReactNode; children: ReactNode }) {
-  return (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 2, mb: 0.25 }}>
-      {icon}
-      <Typography
-        variant="caption"
-        sx={{
-          fontWeight: 700,
-          letterSpacing: '0.07em',
-          textTransform: 'uppercase',
-          color: 'text.secondary',
-          whiteSpace: 'nowrap',
-        }}
-      >
-        {children}
-      </Typography>
-      <Divider sx={{ flex: 1 }} />
-    </Box>
-  );
-}
 
 function PriorityBadge({ priority }: { priority: Priority }) {
   if (priority !== 'High' && priority !== 'Highest') return null;
@@ -268,22 +225,16 @@ function LeadCardSkeleton({ reducedMotion }: { reducedMotion: boolean }) {
 }
 
 export default function Leads() {
-  const themeMode = useSelector((state: RootState) => state.ui.themeMode);
   const {items: leads, loading, loaded,  error } = useSelector((state: RootState) => state.leads);
   const dispatch = useDispatch<AppDispatch>();
-  // const { user } = useAuth();
   const prefersReducedMotion = usePrefersReducedMotion();
-  const [isEditing, setIsEditing] = useState(false);
-  const [edit, setEdit] = useState(false);
   const [openCloseConfirmation, setOpenCloseConfirmation] = useState(false);
   const [dropResult, setDropResult] = useState<DropResult | null>(null)
   const [openDelete, setOpenDelete] = useState(false);
   const [invalid, setInvalid] = useState('');
   const [openAddContact, setOpenAddContact] = useState(false);
   const [openInvalid, setOpenInvalid] = useState(false);
-  const [openEditConfirmation, setOpenEditConfirmation] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
-  const [editingLead, setEditingLead] = useState<UpdateLead | null>();
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState<HTMLDivElement | null>(null);
   const [hoveredLead, setHoveredLead] = useState<Lead | null>(null);
@@ -335,39 +286,7 @@ export default function Leads() {
     Qualified: '',
     Closed: '',
   });
-  const [form, setForm] = useState<UpdateLead>({
-    id: "",
-    title: "",
-    first_name: "",
-    last_name: "",
-    suffix: null as Suffix,
-    email: null,
-    phone: null,
-    gender: "Prefer not to say" as Gender,
-    birth_date: null,
-    industry: "",
-    company_name: "",
-    department: "",
-    position: "",
-    website: "",
-    source: "Other" as Source,
-    priority: "Low" as Priority,
-    notes: "",
-    facebook: "",
-    x: "",
-    whatsapp: "",
-    linkedin: "",
-    instagram: "",
-    telegram: "",
-    tiktok: "",
-    viber: "",
-    preferred_contact_time: "Anytime" as PreferredTime,
-  });
 
-
-
-  
-  
   useEffect(() => {
     if (loading) return;
 
@@ -395,12 +314,6 @@ export default function Leads() {
   const handleCloseDelete = () => {
     setOpenDelete(false);
   }
-  const handleOpenEditConfirmation = () => {
-    setOpenEditConfirmation(true);
-  }
-  const handleCloseEditConfirmation = () => {
-    setOpenEditConfirmation(false);
-  } 
   const handleOpenAddContact = (result: DropResult) => {
     setOpenAddContact(true);
     if (!result.destination) return;
@@ -434,76 +347,6 @@ export default function Leads() {
 
   const handleDelete = async (id: string) => {
     await dispatch(deleteLead(id)).unwrap();
-  };
-
-  const handleOpenEdit = (lead: UpdateLead) => {
-    setForm({
-      id: lead.id,
-      title: lead.title,
-      first_name: lead.first_name,
-      last_name: lead.last_name,
-      suffix: lead.suffix as Suffix || null ,
-      gender: lead.gender as Gender,
-      birth_date: lead.birth_date || null ,
-      email: lead.email || null || '',
-      phone: lead.phone || null || '',
-      industry: lead.industry || '',
-      company_name: lead.company_name || '',
-      position: lead.position || '',
-      department: lead.department || '',
-      website: lead.website || '',
-      source: lead.source as Source,
-      priority: lead.priority as Priority,
-      notes: lead.notes || '',
-      preferred_contact_time: lead.preferred_contact_time as PreferredTime,
-      facebook: lead.facebook || '',
-      x: lead.x || '',
-      whatsapp: lead.whatsapp || '',
-      linkedin: lead.linkedin || '',
-      instagram: lead.instagram || '',
-      telegram: lead.telegram || '',
-      tiktok: lead.tiktok || '',
-      viber: lead.viber || '',
-    });
-    setEditingLead(lead);
-    setIsEditing(true);
-    setEdit(false);
-  };
-
-  const handleCloseEdit = () => {
-    dispatch(clearError());
-    setEdit(false);
-    setIsEditing(false);
-    setOpenEditConfirmation(false);
-  } 
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
-
-  const handleEditable = () => {
-    setEdit(true);
-  }
-  const handleNotEditable = () => {
-    setEdit(false);
-  }
-  const handleEdit = async () => {
-    if (loading) return;
-
-    try {
-      setEdit(false);
-    
-      if (!editingLead) return;
-
-      const leadId = editingLead.id;
-      await dispatch(updateLead({ id: leadId, lead: form as Lead })).unwrap();
-      setIsEditing(false);
-    } catch {
-      setIsEditing(true);
-      setEdit(true);
-      if (!editingLead) return;
-    }
-    
   };
 
   const handleOpenCloseConfirmation = () => {
@@ -795,14 +638,17 @@ const handleConfirmCloseLead = async () => {
           gap: { xs: 0.75, sm: 1 },
         }}
       >
-        <Typography sx={{ fontSize: { xs: 18, sm: 21, md: 23, lg: 28 } }} fontWeight={700}>
+        <Typography sx={{ fontSize: { sm: 16, md: 18, lg: 20 } }} fontWeight={700}>
           Leads
         </Typography>
 
         <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 0.5, sm: 0.75 } }}>
           <IconButton
             title="Add lead"
-            onClick={() => navigate("/app/addlead")}
+            onClick={() => {
+              clearError()
+              navigate("/app/leads/addlead")
+            }}
             sx={{
               width: { xs: 26, sm: 32 },
               height: { xs: 26, sm: 32 },
@@ -967,6 +813,7 @@ const handleConfirmCloseLead = async () => {
                       >
                         {(provided, snapshot) => (
                           <Card
+                            onClick={() => navigate(`/app/leads/${lead.id}`)}
                             ref={provided.innerRef}
                             {...provided.draggableProps}
                             {...provided.dragHandleProps}
@@ -1034,12 +881,6 @@ const handleConfirmCloseLead = async () => {
                                     title={`${lead.priority} Priority`}
                                    sx={{display: 'flex', alignItems: 'center', gap: 0.25, cursor: 'pointer', flexShrink: 0}}>
                                     <PriorityBadge priority={lead.priority} />
-                                     <IconButton
-                                      size="small"
-                                      onClick={() => handleOpenEdit(lead)}
-                                    >
-                                      <InfoIcon titleAccess="Full details" fontSize="small" />
-                                    </IconButton>
                                   </Box>
                                   
                                 </Box>
@@ -1097,17 +938,24 @@ const handleConfirmCloseLead = async () => {
                                 }}>
                                   <Stack direction="row" spacing={0.25}>
                                     <Tooltip title="Email lead">
-                                      <IconButton size="small" onClick={() => setOpenSnackbar(true)}>
+                                      <IconButton size="small" 
+                                        onClick={(e) => {
+                                          e.stopPropagation()
+                                          setOpenSnackbar(true)}}>
                                         <EmailIcon fontSize="small" sx={{ color: 'primary.main' }} />
                                       </IconButton>
                                     </Tooltip>
                                     <Tooltip title="Call lead">
-                                      <IconButton size="small" onClick={() => setOpenSnackbar(true)}>
+                                      <IconButton size="small" onClick={(e) => {
+                                          e.stopPropagation()
+                                          setOpenSnackbar(true)}}>
                                         <CallIcon fontSize="small" sx={{ color: 'primary.main' }} />
                                       </IconButton>
                                     </Tooltip>
                                     <Tooltip title="Message lead">
-                                      <IconButton size="small" onClick={() => setOpenSnackbar(true)}>
+                                      <IconButton size="small" onClick={(e) => {
+                                          e.stopPropagation()
+                                          setOpenSnackbar(true)}}>
                                         <SmsIcon fontSize="small" sx={{ color: 'primary.main' }} />
                                       </IconButton>
                                     </Tooltip>
@@ -1116,7 +964,10 @@ const handleConfirmCloseLead = async () => {
                                     <IconButton
                                       size="small"
                                       color="error"
-                                      onClick={() => handleOpenDelete(lead)}
+                                      onClick={(e) =>{
+                                        e.stopPropagation();
+                                         handleOpenDelete(lead)
+                                      }}
                                     >
                                       <DeleteIcon fontSize="small" />
                                     </IconButton>
@@ -1204,620 +1055,28 @@ const handleConfirmCloseLead = async () => {
                 Yes, delete
               </Button>
           </DialogActions>
-        </Dialog>
-        <Dialog  sx={{position: "absolute", maxHeight: 800, top: 100 }} maxWidth="md" open={isEditing} onClose={handleCloseEdit} PaperProps={{ sx: { borderRadius: 3, boxShadow: '0 24px 48px rgba(0,0,0,0.18)' } }}>
-          
-          <DialogActions sx={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            px: 2,
-            pt: 1.5,
-          }}>
-            <Tooltip title="Edit lead">
-              <IconButton
-                size="small"
-                onClick={handleEditable}
-                sx={{
-                  border: '1px solid',
-                  borderColor: 'primary.main',
-                  borderRadius: 2,
-                  transition: 'background-color 0.2s ease',
-                }}
-              >
-                <EditIcon titleAccess="Edit" color="primary" sx={{ fontSize: 16 }} />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Close">
-              <IconButton
-                size="small"
-                onClick={handleCloseEdit}
-                sx={{
-                  bgcolor: 'error.main',
-                  color: 'common.white',
-                  borderRadius: 1,
-                  transition: 'background-color 0.2s ease',
-                  '&:hover': { bgcolor: 'error.dark' },
-                }}
-              >
-                <CloseIcon titleAccess="Close" sx={{ fontSize: 16 }} />
-              </IconButton>
-            </Tooltip>
-          </DialogActions>
-          <Box sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            p: 2,
-            mx: { xs: 1, sm: 3, md: 5 },
-            mb: 1,
-          }}>
-          <DialogContent
-            sx = {{
-              display: "flex",
-              flexDirection: "column",
-              gap: 2,
-              mt: 1,
-              width: {
-                xs: 250,
-                sm: 300,
-                md: 400,
-                lg: 500
-              },
-            }}>
-            <Box sx={{
-              display: "flex",
-              width: '100%',
-              flexDirection: 'column',
-              overflow: 'auto',
-              justifyContent: "center",
-              gap: 1,
-              
-              '& .MuiTextField-root': {
-                  userSelect: edit === true ? 'auto' : 'none',
-                },
-            }}>
-              {isEditing && error && (
-                <ErrorAlert
-                  message={error}
-                />
-              )}
-              <SectionHeader icon={<PersonIcon fontSize="small" sx={{ opacity: 0.6 }} />}>
-                Personal Details
-              </SectionHeader>
-              <Box sx={{
-                display: "flex",
-                width: '100%',
-                justifyContent: "space-between",
-                gap: 1,
-                
-              }}>
-                <TextField
-                  disabled={!edit}
-                  label="First Name"
-                  name="first_name"
-                  required
-                  value={!edit && !form.first_name ? 'Not provided' : form.first_name}
-                  onChange={handleChange}
-                  size="small"
-                  sx={{
-                    width: '50%',
-                    ...fieldSx,
-                  }}
-                  slotProps={{
-                    inputLabel: {
-                      shrink: true,
-                    },
-                  }}
-                />
+      </Dialog>
+      <Dialog sx={{position: "absolute"}} open={openAddContact} onClose={handleCloseAddContact} PaperProps={{ sx: { borderRadius: 3, minWidth: 340, boxShadow: '0 20px 40px rgba(0,0,0,0.18)' } }}>
+        <DialogTitle sx={{fontWeight: 700}}>
+          Move to Qualified?
+        </DialogTitle>  
 
-                <TextField
-                  disabled={!edit}
-                  label="Last Name"
-                  name="last_name"
-                  value={!edit && !form.last_name ? 'Not provided' : form.last_name}
-                  onChange={handleChange}
-                  size="small"
-                  sx={{
-                    width: '50%',
-                    ...fieldSx,
-                  }}
-                  slotProps={{
-                    inputLabel: {
-                      shrink: true,
-                    },
-                  }}
-                />
-              </Box>
-              <Box sx={{
-                display: "flex",
-                width: '100%',
-                justifyContent: "space-between",
-                gap: 1,
-              }}>
-                <TextField
-                  select
-                  disabled={!edit}
-                  label="Suffix"
-                  name="suffix"
-                  onChange={handleChange}
-                  value={!edit && !form.suffix ? 'None' : form.suffix}
-                  size="small"
-                  sx={{
-                    width: '50%',
-                    ...fieldSx,
-                  }}
-                  slotProps={{
-                    inputLabel: {
-                      shrink: true,
-                    },
-                    select: {
-                      MenuProps: {
-                        PaperProps: {
-                          sx: {
-                            maxHeight: 250,
-                          },
-                        },
-                      },
-                    },
-                  }}
-                >
-                {SUFFIXES.map((suffix) => (
-                    <MenuItem key={suffix} value={suffix}>
-                      {suffix}
-                    </MenuItem>
-                  ))}
-                </TextField>
-
-                <TextField
-                  disabled={!edit}
-                  type="tel"
-                  label="Phone"
-                  name="phone"
-                  value={!edit && !form.phone ? 'Not provided' : form.phone}
-                  onChange={handleChange}
-                  size="small"
-                  sx={{
-                    width: '50%',
-                    ...fieldSx,
-                  }}
-                  slotProps={{
-                    inputLabel: {
-                      shrink: true,
-                    },
-                  }}
-                />
-              </Box>
-              
-              <TextField
-                disabled={!edit}
-                label="Email"
-                name="email"
-                value={!edit && !form.email ? 'Not provided' : form.email}
-                onChange={handleChange}
-                size="small"
-                sx={fieldSx}
-                slotProps={{
-                  inputLabel: {
-                    shrink: true,
-                  },
-                }}
-              />
-              <Box sx={{
-                display: "flex",
-                width: '100%',
-                justifyContent: "space-between",
-                gap: 1,
-              }}>
-                <TextField
-                  select
-                  disabled={!edit}
-                  label="Gender"
-                  name="gender"   
-                  onChange={handleChange}
-                  value={form.gender }
-                  size="small"
-                  sx={{
-                    width: '50%',
-                    ...fieldSx,
-                  }}
-                  slotProps={{
-                    inputLabel: {
-                      shrink: true,
-                    },
-                  }}
-                >
-                {GENDERS.map((gender) => (
-                  <MenuItem key={gender} value={gender}>
-                    {gender}
-                  </MenuItem>
-                ))}
-                </TextField>
-                <TextField
-                  disabled={!edit}
-                  label="Date of Birth"
-                  name="birth_date"
-                  type="date"
-                  value={form.birth_date}
-                  onChange={handleChange}
-                  slotProps={{ inputLabel: { shrink: true } }}
-                  size="small"
-                  sx={{
-                    width: '50%',
-                    '& input' : {
-                      colorScheme: themeMode === 'dark' ? 'dark' : 'light', 
-                    },
-                    ...fieldSx,
-                  }}
-                />
-              </Box>
-              <SectionHeader icon={<WorkIcon fontSize="small" sx={{ opacity: 0.6 }} />}>
-                Professional Details
-              </SectionHeader>
-              <Box sx={{
-                display: "flex",
-                width: '100%',
-                justifyContent: "space-between",
-                gap: 1,
-              }}>
-                <Autocomplete
-                  freeSolo
-                  disabled={!edit}
-                  sx={{ width: '50%',
-                    '& .MuiOutlinedInput-root': {
-                      height: 28 
-                    },
-                    }}
-                  options={DEPARTMENTS}
-                  value={!edit && !form.department ? 'Not provided' : form.department}
-                  onChange={(_, value) => {
-                    setForm(prev => ({
-                      ...prev,
-                      department: value ?? '',
-                    }));
-                  }}
-                  onInputChange={(_, value) => {
-                    setForm(prev => ({
-                      ...prev,
-                      department: value,
-                    }));
-                  }}
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      slotProps={{ inputLabel: { shrink: true } }}
-                      label="Department"
-                      size="small"
-                      sx={fieldSx}
-                    />
-                  )}
-                />
-                <Autocomplete
-                  freeSolo
-                  disabled={!edit}
-                  sx={{
-                    width: '50%',
-                    '& .MuiOutlinedInput-root': {
-                      height: 28 
-                    },
-                  }}
-                  options={INDUSTRIES}
-                  value={!edit && !form.industry ? 'Not provided' : form.industry}
-                  onChange={(_, value) => {
-                    setForm(prev => ({
-                      ...prev,
-                      industry: value ?? '',
-                    }));
-                  }}
-                  onInputChange={(_, value) => {
-                    setForm(prev => ({
-                      ...prev,
-                      industry: value,
-                    }));
-                  }}
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      slotProps={{ inputLabel: { shrink: true } }}
-                      label="Industry"
-                      size="small"
-                      sx={fieldSx}
-                    />
-                  )}
-                />
-              </Box>
-              <Box sx={{
-                display: "flex",
-                width: '100%',
-                justifyContent: "space-between",
-                gap: 1,
-              }}>
-                
-                <TextField
-                  disabled={!edit}
-                  label="Company"
-                  name="company_name"
-                  value={!edit && !form.company_name ? 'Not provided' : form.company_name}
-                  slotProps={{ inputLabel: { shrink: true } }}
-                  onChange={handleChange}
-                  size="small"
-                  sx={{
-                    width: '50%',
-                    ...fieldSx,
-                  }}
-              />
-                <TextField
-                  disabled={!edit}
-                  label="Position"
-                  name="position"
-                  value={!edit && !form.position ? 'Not provided' : form.position}
-                  onChange={handleChange}
-                  size="small"
-                  slotProps={{ inputLabel: { shrink: true } }}
-                  sx={{
-                    width: '50%',
-                    ...fieldSx,
-                  }}
-                />
-              </Box>
-              <TextField
-                  disabled={!edit}
-                  label="Website Url"
-                  name="website"
-                  value={!edit && !form.website ? 'Not provided' : form.website}
-                  onChange={handleChange}
-                  size="small"
-                  slotProps={{ inputLabel: { shrink: true } }}
-                  sx={{
-                    width: '100%',
-                    ...fieldSx,
-                  }}
-                />
-              <SectionHeader icon={<ShareIcon fontSize="small" sx={{ opacity: 0.6 }} />}>
-                Social and Messaging Accounts
-              </SectionHeader>
-              <Box sx={{
-                display: "flex",
-                width: '100%',
-                justifyContent: "space-between",
-                gap: 1,
-              }}>
-                <TextField
-                  disabled={!edit}
-                  label="Facebook"
-                  name="facebook"
-                  value={!edit && !form.facebook ? 'Not provided' : form.facebook}
-                  onChange={handleChange}
-                  size="small"
-                  slotProps={{ inputLabel: { shrink: true } }}
-                  sx={{
-                    width: '50%',
-                    ...fieldSx,
-                  }}
-                />
-                <TextField
-                  disabled={!edit}
-                  label="X/ Twitter"
-                  name="x"
-                  value={!edit && !form.x ? 'Not provided' : form.x}
-                  onChange={handleChange}
-                  size="small"
-                  slotProps={{ inputLabel: { shrink: true } }}
-                  sx={{
-                    width: '50%',
-                    ...fieldSx,
-                  }}
-                />
-              </Box>
-              <Box sx={{
-                display: "flex",
-                width: '100%',
-                justifyContent: "space-between",
-                gap: 1,
-              }}>
-                <TextField
-                  disabled={!edit}
-                  label="Instagram"
-                  name="instagram"
-                  value={!edit && !form.instagram ? 'Not provided' : form.instagram}
-                  slotProps={{ inputLabel: { shrink: true } }}
-                  onChange={handleChange}
-                  size="small"
-                  sx={{
-                    width: '50%',
-                    ...fieldSx,
-                  }}
-              />
-                <TextField
-                  disabled={!edit}
-                  label="Whatsapp"
-                  name="whatsapp"
-                  value={!edit && !form.whatsapp ? 'Not provided' : form.whatsapp}
-                  onChange={handleChange}
-                  size="small"
-                  slotProps={{ inputLabel: { shrink: true } }}
-                  sx={{
-                    width: '50%',
-                    ...fieldSx,
-                  }}
-                />
-              </Box>
-              <Box sx={{
-                display: "flex",
-                width: '100%',
-                justifyContent: "space-between",
-                gap: 1,
-              }}>
-                <TextField
-                  disabled={!edit}
-                  label="Tiktok"
-                  name="tiktok"
-                  value={!edit && !form.tiktok ? 'Not provided' : form.tiktok}
-                  slotProps={{ inputLabel: { shrink: true } }}
-                  onChange={handleChange}
-                  size="small"
-                  sx={{
-                    width: '50%',
-                    ...fieldSx,
-                  }}
-              />
-                <TextField
-                  disabled={!edit}
-                  label="Telegram"
-                  name="telegram"
-                  value={!edit && !form.telegram ? 'Not provided' : form.telegram}
-                  onChange={handleChange}
-                  size="small"
-                  slotProps={{ inputLabel: { shrink: true } }}
-                  sx={{
-                    width: '50%',
-                    ...fieldSx,
-                  }}
-                />
-              </Box>
-              <Box sx={{
-                display: "flex",
-                width: '100%',
-                justifyContent: "space-between",
-                gap: 1,
-              }}>
-                <TextField
-                  disabled={!edit}
-                  label="Linkedin"
-                  name="linkedin"
-                  value={!edit && !form.linkedin ? 'Not provided' : form.linkedin}
-                  slotProps={{ inputLabel: { shrink: true } }}
-                  onChange={handleChange}
-                  size="small"
-                  sx={{
-                    width: '50%',
-                    ...fieldSx,
-                  }}
-              />
-                <TextField
-                  disabled={!edit}
-                  label="Viber"
-                  name="viber"
-                  value={!edit && !form.viber ? 'Not provided' : form.viber}
-                  onChange={handleChange}
-                  size="small"
-                  slotProps={{ inputLabel: { shrink: true } }}
-                  sx={{
-                    width: '50%',
-                    ...fieldSx,
-                  }}
-                />
-              </Box>
-              <SectionHeader icon={<NotesIcon fontSize="small" sx={{ opacity: 0.6 }} />}>
-                Additional Details
-              </SectionHeader>
-              <TextField
-                disabled={!edit}
-                  label="Title"
-                  value={form.title}
-                  name="title"
-                  required
-                  onChange={handleChange}
-                  size="small"
-                  fullWidth
-                  rows={3}
-                  slotProps={{ inputLabel: { shrink: true } }}
-                  sx={fieldSx}
-                />
-              <Box sx={{
-                display: "flex",
-                width: '100%',
-                justifyContent: "space-between",
-                gap: 1,
-              }}>
-                <TextField
-                  select
-                  disabled={!edit}
-                  label="Source"
-                  name="source"
-                  value={form.source}
-                  onChange={handleChange}
-                  size="small"
-                  sx={{
-                    width: '50%',
-                    ...fieldSx,
-                  }}
-                  slotProps={{
-                    inputLabel: { shrink: true },
-                    select: {
-                      MenuProps: {
-                        PaperProps: {
-                          sx: {
-                            maxHeight: 250,
-                          },
-                        },
-                      },
-                    },
-                  }}
-                >
-                  {SOURCES.map((source) => (
-                    <MenuItem key={source} value={source}>
-                      {source}
-                    </MenuItem>
-                  ))}
-                </TextField>
-                <TextField
-                  select
-                  disabled={!edit}
-                  label="Preferred Time"
-                  name="preferred_contact_time"
-                  onChange={handleChange}
-                  value={form.preferred_contact_time}
-                  size="small"
-                  slotProps={{ inputLabel: { shrink: true } }}
-                  sx={{
-                    width: '25%',
-                    ...fieldSx,
-                  }}
-                >
-                  {PREFERRED_CONTACT_TIMES.map((time) => (
-                    <MenuItem key={time} value={time}>
-                      {time}
-                    </MenuItem>
-                  ))}
-                </TextField>
-                <TextField
-                  select
-                  disabled={!edit}
-                  label="Priority"
-                  name="priority"
-                  onChange={handleChange}
-                  value={form.priority}
-                  size="small"
-                  slotProps={{ inputLabel: { shrink: true } }}
-                  sx={{
-                    width: '25%',
-                    ...fieldSx,
-                  }}
-                >
-                  {PRIORITIES.map((prio) => (
-                    <MenuItem key={prio} value={prio}>
-                      {prio}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              </Box>
-              <TextField
-                label="Notes"
-                name="notes"
-                required
-                disabled={!edit}
-                value={form.notes}
-                onChange={handleChange}
-                size="small"
-                multiline
-                rows={3}
-                slotProps={{ inputLabel: { shrink: true } }}
-                sx={fieldSx}
-              />    
-          </Box > 
+        <DialogContent
+          sx = {{
+            display: "flex",
+            flexDirection: "column",
+            gap: 2,
+            mt: 1,
+            maxWidth: 600,
+          }}
+          >
+            Moving this to Qualified will automatically add it as a Contact.
           </DialogContent>
-          <DialogActions sx={{ display: edit === true ? 'flex' : 'none', px: 3, pb: 2 }}>
-            <Button onClick={handleNotEditable} sx={{ textTransform: 'none', borderRadius: 2 }}>
+          <DialogActions sx={{ px: 3, pb: 2 }}>
+            <Button sx={{ textTransform: 'none', borderRadius: 2 }} onClick={() => {
+                if (!dropResult) return;
+                handleCloseAddContact(dropResult);
+              }}>
               Cancel
             </Button>
             <Button 
@@ -1830,311 +1089,232 @@ const handleConfirmCloseLead = async () => {
                 '&:hover': { transform: 'translateY(-1px)' },
               }}
               onClick={() => {
-                handleOpenEditConfirmation();
+                if (!dropResult) return;
+                handleAddContact(dropResult);
               }}
-              >
-              Submit
-            </Button>
-          </DialogActions>
-          </Box>
-        </Dialog>
-        <Dialog sx={{position: "absolute"}} open={openAddContact} onClose={handleCloseAddContact} PaperProps={{ sx: { borderRadius: 3, minWidth: 340, boxShadow: '0 20px 40px rgba(0,0,0,0.18)' } }}>
-          <DialogTitle sx={{fontWeight: 700}}>
-            Move to Qualified?
-          </DialogTitle>  
-
-          <DialogContent
-            sx = {{
-              display: "flex",
-              flexDirection: "column",
-              gap: 2,
-              mt: 1,
-              maxWidth: 600,
-            }}
             >
-              Moving this to Qualified will automatically add it as a Contact.
-            </DialogContent>
-            <DialogActions sx={{ px: 3, pb: 2 }}>
-              <Button sx={{ textTransform: 'none', borderRadius: 2 }} onClick={() => {
-                  if (!dropResult) return;
-                  handleCloseAddContact(dropResult);
-                }}>
-                Cancel
-              </Button>
-              <Button 
-                variant="contained"
-                disableElevation
-                sx={{
-                  textTransform: 'none',
-                  borderRadius: 2,
-                  transition: 'transform 0.15s ease',
-                  '&:hover': { transform: 'translateY(-1px)' },
-                }}
-                onClick={() => {
-                  if (!dropResult) return;
-                  handleAddContact(dropResult);
-                }}
-              >
-                Proceed
-              </Button>
-          </DialogActions>
-        </Dialog>
-        <Dialog
-          sx={{ position: "absolute" }}
-          open={openCloseConfirmation}
-          onClose={handleCloseCloseConfirmation}
-          PaperProps={{
-            sx: {
-              borderRadius: 3,
-              minWidth: 340,
-              boxShadow: '0 20px 40px rgba(0,0,0,0.18)',
-            },
+              Proceed
+            </Button>
+        </DialogActions>
+      </Dialog>
+      <Dialog
+        sx={{ position: "absolute" }}
+        open={openCloseConfirmation}
+        onClose={handleCloseCloseConfirmation}
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            minWidth: 340,
+            boxShadow: '0 20px 40px rgba(0,0,0,0.18)',
+          },
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 700 }}>
+          Close this lead?
+        </DialogTitle>
+
+        <DialogContent
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 2,
+            mt: 1,
+            maxWidth: 600,
           }}
         >
-          <DialogTitle sx={{ fontWeight: 700 }}>
-            Close this lead?
-          </DialogTitle>
+          Are you sure you want to mark this lead as Closed?
+          This action indicates that the lead was lost and cannot
+          be moved back to an earlier stage.
+        </DialogContent>
 
-          <DialogContent
-            sx={{
-              display: "flex",
-              flexDirection: "column",
-              gap: 2,
-              mt: 1,
-              maxWidth: 600,
-            }}
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button
+            sx={{ textTransform: "none", borderRadius: 2 }}
+            onClick={handleCloseCloseConfirmation}
           >
-            Are you sure you want to mark this lead as Closed?
-            This action indicates that the lead was lost and cannot
-            be moved back to an earlier stage.
+            Cancel
+          </Button>
+
+          <Button
+            variant="contained"
+            color="error"
+            disableElevation
+            sx={{
+              textTransform: "none",
+              borderRadius: 2,
+              transition: 'transform 0.15s ease',
+              '&:hover': { transform: 'translateY(-1px)' },
+            }}
+            onClick={handleConfirmCloseLead}
+          >
+            Yes, close lead
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <Dialog sx={{position: "absolute"}} open={openInvalid} onClose={handleCloseInvalid} PaperProps={{ sx: { borderRadius: 3, minWidth: 340, boxShadow: '0 20px 40px rgba(0,0,0,0.18)' } }}>
+        <DialogTitle sx={{fontWeight: 700}}>
+          Unable to update as Qualified
+        </DialogTitle>  
+
+        <DialogContent
+          sx = {{
+            display: "flex",
+            flexDirection: "column",
+            gap: 2,
+            mt: 1,
+            maxWidth: 600,
+          }}
+          >
+            Please update the lead's contact details first before moving to Qualified (email or phone).
           </DialogContent>
-
           <DialogActions sx={{ px: 3, pb: 2 }}>
-            <Button
-              sx={{ textTransform: "none", borderRadius: 2 }}
-              onClick={handleCloseCloseConfirmation}
-            >
-              Cancel
-            </Button>
-
-            <Button
+            <Button 
               variant="contained"
-              color="error"
               disableElevation
               sx={{
-                textTransform: "none",
+                textTransform: 'none',
                 borderRadius: 2,
                 transition: 'transform 0.15s ease',
                 '&:hover': { transform: 'translateY(-1px)' },
               }}
-              onClick={handleConfirmCloseLead}
+              onClick={() => {
+                handleCloseInvalid();
+              }}
             >
-              Yes, close lead
+              OK
             </Button>
-          </DialogActions>
-        </Dialog>
-        <Dialog sx={{position: "absolute"}} open={openInvalid} onClose={handleCloseInvalid} PaperProps={{ sx: { borderRadius: 3, minWidth: 340, boxShadow: '0 20px 40px rgba(0,0,0,0.18)' } }}>
-          <DialogTitle sx={{fontWeight: 700}}>
-            Unable to update as Qualified
-          </DialogTitle>  
-
-          <DialogContent
-            sx = {{
-              display: "flex",
-              flexDirection: "column",
-              gap: 2,
-              mt: 1,
-              maxWidth: 600,
-            }}
-            >
-              Please update the lead's contact details first before moving to Qualified (email or phone).
-            </DialogContent>
-            <DialogActions sx={{ px: 3, pb: 2 }}>
-              <Button 
-                variant="contained"
-                disableElevation
-                sx={{
-                  textTransform: 'none',
-                  borderRadius: 2,
-                  transition: 'transform 0.15s ease',
-                  '&:hover': { transform: 'translateY(-1px)' },
-                }}
-                onClick={() => {
-                  handleCloseInvalid();
-                }}
-              >
-                OK
-              </Button>
-          </DialogActions>
-        </Dialog>
-        <Dialog sx={{position: "absolute"}} open={openEditConfirmation} onClose={handleCloseEditConfirmation} PaperProps={{ sx: { borderRadius: 3, minWidth: 340, boxShadow: '0 20px 40px rgba(0,0,0,0.18)' } }}>
-          <DialogTitle sx={{fontWeight: 700}}>
-            Confirm changes
-          </DialogTitle>  
-
-          <DialogContent
-            sx = {{
-              display: "flex",
-              flexDirection: "column",
-              gap: 2,
-              mt: 1,
-              maxWidth: 600,
-            }}
-            >
-              Are you sure you want to edit this lead?
-            </DialogContent>
-            <DialogActions sx={{ px: 3, pb: 2 }}>
-              <Button sx={{ textTransform: 'none', borderRadius: 2 }} onClick={handleCloseEditConfirmation}>
-                Cancel
-              </Button>
-              <Button 
-                variant="contained"
-                disableElevation
-                sx={{
-                  textTransform: 'none',
-                  borderRadius: 2,
-                  transition: 'transform 0.15s ease',
-                  '&:hover': { transform: 'translateY(-1px)' },
-                }}
-                onClick={() => {
-                  handleCloseEditConfirmation();
-                  handleEdit();
-                }}
-              >
-                Yes
-              </Button>
-          </DialogActions>
-        </Dialog>
-        <Popover
-          disableRestoreFocus
-          sx={{ pointerEvents: 'none' }}
-          open={Boolean(anchorEl)}
-          anchorEl={anchorEl}
-          onClose={handleMouseLeave}
-          anchorOrigin={{
-            vertical: 'bottom',
-            horizontal: 'left',
-          }}
-        >
-          <Card sx={{ p: 2, width: 340,
-                borderRadius: 3,
-                whiteSpace: 'normal',
-                overflowWrap: 'break-word',
-                boxShadow: '0 16px 32px rgba(0,0,0,0.14)',
-              }}>
-            <Stack alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
-              <Avatar sx={{ width: 64, height: 64, bgcolor: 'action.hover' }}>
-                <PersonIcon sx={{ fontSize: 32, opacity: 0.7, color: 'text.secondary' }}/>
-              </Avatar>
-              <Box sx={{ textAlign: 'center' }}>
-                <Typography variant="subtitle1" fontWeight={700} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.75 }}>
-                  {formatName(hoveredLead?.first_name, hoveredLead?.last_name)} {hoveredLead?.suffix}
-                  {hoveredLead && <PriorityBadge priority={hoveredLead.priority} />}
-                </Typography>
-              </Box>
-            </Stack>
+        </DialogActions>
+      </Dialog>
+      <Popover
+        disableRestoreFocus
+        sx={{ pointerEvents: 'none' }}
+        open={Boolean(anchorEl)}
+        anchorEl={anchorEl}
+        onClose={handleMouseLeave}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'left',
+        }}
+      >
+        <Card sx={{ p: 2, width: 340,
+              borderRadius: 3,
+              whiteSpace: 'normal',
+              overflowWrap: 'break-word',
+              boxShadow: '0 16px 32px rgba(0,0,0,0.14)',
+            }}>
+          <Stack alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
+            <Avatar sx={{ width: 64, height: 64, bgcolor: 'action.hover' }}>
+              <PersonIcon sx={{ fontSize: 32, opacity: 0.7, color: 'text.secondary' }}/>
+            </Avatar>
+            <Box sx={{ textAlign: 'center' }}>
+              <Typography variant="subtitle1" fontWeight={700} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.75 }}>
+                {formatName(hoveredLead?.first_name, hoveredLead?.last_name)} {hoveredLead?.suffix}
+                {hoveredLead && <PriorityBadge priority={hoveredLead.priority} />}
+              </Typography>
+            </Box>
+          </Stack>
+          <Box sx={{
+            display: 'flex',
+            justifyContent: 'space-between'
+          }}>
             <Box sx={{
               display: 'flex',
-              justifyContent: 'space-between'
+              flexDirection: 'column',
+              gap: 0.25,
             }}>
-              <Box sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 0.25,
-              }}>
-                {hoveredLead?.email && (
-                <Typography variant="body2" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                  <EmailIcon sx={{ fontSize: 14, opacity: 0.6 }} /> {hoveredLead?.email}
-                </Typography>
-                )}
-                {hoveredLead?.phone && (
-                <Typography variant="body2" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                  <CallIcon sx={{ fontSize: 14, opacity: 0.6 }} /> {hoveredLead?.phone}
-                </Typography>
-                )}
-              </Box>
-              <Box sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                textAlign: 'right',
-              }}>
-                {hoveredLead?.gender !== 'Prefer not to say' && (
-                <Typography variant="body2" color="text.secondary">
-                  {hoveredLead?.gender }
-                </Typography>
-                )}
-                {hoveredLead?.birth_date && (
-                <Typography variant="body2" color="text.secondary">
-                  Age: {!hoveredLead?.birth_date
-                  ? ''
-                  : calculateAge(hoveredLead.birth_date)}
-                </Typography>
-                )}
-              </Box>
+              {hoveredLead?.email && (
+              <Typography variant="body2" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <EmailIcon sx={{ fontSize: 14, opacity: 0.6 }} /> {hoveredLead?.email}
+              </Typography>
+              )}
+              {hoveredLead?.phone && (
+              <Typography variant="body2" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <CallIcon sx={{ fontSize: 14, opacity: 0.6 }} /> {hoveredLead?.phone}
+              </Typography>
+              )}
             </Box>
-            <Box 
-            sx={{
+            <Box sx={{
               display: 'flex',
               flexDirection: 'column',
-              mt: hoveredLead?.email || hoveredLead?.phone ? 1 : 0,
+              textAlign: 'right',
             }}>
-              {hoveredLead?.facebook && (
-                <Typography variant="body2" color="text.secondary">
-                  Facebook: facebook.com/{hoveredLead.facebook}
-                </Typography>
+              {hoveredLead?.gender !== 'Prefer not to say' && (
+              <Typography variant="body2" color="text.secondary">
+                {hoveredLead?.gender }
+              </Typography>
               )}
-              {hoveredLead?.instagram && (
-                <Typography variant="body2" color="text.secondary">
-                  Instagram: @{hoveredLead.instagram}
-                </Typography>
-              )}
-              {hoveredLead?.tiktok && (
-                <Typography variant="body2" color="text.secondary">
-                  TikTok: @{hoveredLead.tiktok}
-                </Typography>
-              )}
-              {hoveredLead?.x && (
-                <Typography variant="body2" color="text.secondary">
-                  X/Twitter: @{hoveredLead.x}
-                </Typography>
-              )}
-              {hoveredLead?.linkedin && (
-                <Typography variant="body2" color="text.secondary">
-                  LinkedIn: linkedin.com/in/{hoveredLead.linkedin}
-                </Typography>
-              )}
-              {hoveredLead?.telegram && (
-                <Typography variant="body2" color="text.secondary">
-                  Telegram: @{hoveredLead.telegram}
-                </Typography>
-              )}
-              {hoveredLead?.whatsapp && (
-                <Typography variant="body2" color="text.secondary">
-                  WhatsApp: {hoveredLead.whatsapp}
-                </Typography>
-              )}
-              {hoveredLead?.viber && (
-                <Typography variant="body2" color="text.secondary">
-                  Viber: {hoveredLead.viber}
-                </Typography>
+              {hoveredLead?.birth_date && (
+              <Typography variant="body2" color="text.secondary">
+                Age: {!hoveredLead?.birth_date
+                ? ''
+                : calculateAge(hoveredLead.birth_date)}
+              </Typography>
               )}
             </Box>
-            <Divider sx={{mt: 2, mb: 1}}></Divider>
-            <Typography marginBottom={1} variant="body1" fontWeight={700}>
-              {hoveredLead?.title.toUpperCase()}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {hoveredLead?.notes}
-            </Typography>
-          </Card>
-        </Popover>
-        <Snackbar
-          open={openSnackbar}
-          autoHideDuration={3000}
-          onClose={() => setOpenSnackbar(false)}
-          message="This feature is coming soon!"
-          ContentProps={{ sx: { borderRadius: 2 } }}
-        />
+          </Box>
+          <Box 
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            mt: hoveredLead?.email || hoveredLead?.phone ? 1 : 0,
+          }}>
+            {hoveredLead?.facebook && (
+              <Typography variant="body2" color="text.secondary">
+                Facebook: facebook.com/{hoveredLead.facebook}
+              </Typography>
+            )}
+            {hoveredLead?.instagram && (
+              <Typography variant="body2" color="text.secondary">
+                Instagram: @{hoveredLead.instagram}
+              </Typography>
+            )}
+            {hoveredLead?.tiktok && (
+              <Typography variant="body2" color="text.secondary">
+                TikTok: @{hoveredLead.tiktok}
+              </Typography>
+            )}
+            {hoveredLead?.x && (
+              <Typography variant="body2" color="text.secondary">
+                X/Twitter: @{hoveredLead.x}
+              </Typography>
+            )}
+            {hoveredLead?.linkedin && (
+              <Typography variant="body2" color="text.secondary">
+                LinkedIn: linkedin.com/in/{hoveredLead.linkedin}
+              </Typography>
+            )}
+            {hoveredLead?.telegram && (
+              <Typography variant="body2" color="text.secondary">
+                Telegram: @{hoveredLead.telegram}
+              </Typography>
+            )}
+            {hoveredLead?.whatsapp && (
+              <Typography variant="body2" color="text.secondary">
+                WhatsApp: {hoveredLead.whatsapp}
+              </Typography>
+            )}
+            {hoveredLead?.viber && (
+              <Typography variant="body2" color="text.secondary">
+                Viber: {hoveredLead.viber}
+              </Typography>
+            )}
+          </Box>
+          <Divider sx={{mt: 2, mb: 1}}></Divider>
+          <Typography marginBottom={1} variant="body1" fontWeight={700}>
+            {hoveredLead?.title.toUpperCase()}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            {hoveredLead?.notes}
+          </Typography>
+        </Card>
+      </Popover>
+      <Snackbar
+        open={openSnackbar}
+        autoHideDuration={3000}
+        onClose={() => setOpenSnackbar(false)}
+        message="This feature is coming soon!"
+        ContentProps={{ sx: { borderRadius: 2 } }}
+      />
     </Box>
   );
 }

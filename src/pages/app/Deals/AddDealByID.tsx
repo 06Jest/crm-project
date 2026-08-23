@@ -120,7 +120,7 @@ export default function AddDealByID() {
               dispatch(clearError())
               navigate(`/app/contacts/${id}`)
             }}
-            sx={{ alignSelf: 'start', ml: '-8px', textTransform: 'none', fontWeight: 600, color: 'text.secondary' }}>
+            sx={{ alignSelf: 'start', ml: '-8px', textTransform: 'none', fontWeight: 600, color: 'primary.main' }}>
             Back
           </Button>
           <Box sx={{width: '100%'}}>
