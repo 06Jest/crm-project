@@ -26,6 +26,7 @@ import {
   Collapse,
   Grow,
   CircularProgress,
+  InputAdornment,
 } from '@mui/material';
 import type { TransitionProps } from '@mui/material/transitions';
 import { alpha, keyframes, type Theme } from '@mui/material/styles';
@@ -58,6 +59,7 @@ import EditNoteIcon from '@mui/icons-material/EditNote';
 import ShareIcon from '@mui/icons-material/Share';
 import WorkOutlineIcon from '@mui/icons-material/WorkOutline';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
+import ClearIcon from '@mui/icons-material/Clear';
 
 import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
 import type { RootState } from '../../../store/store';
@@ -425,6 +427,13 @@ export default function LeadDetails() {
     } catch {
       //Error in State
     }
+  };
+
+  const clearSuffix = () => {
+    setFormPersonal(prev => ({
+      ...prev,
+      suffix: null,
+    }));
   };
 
   const handleEditSource = () => {
@@ -940,12 +949,12 @@ export default function LeadDetails() {
             </Box>
 
             <Box sx={twoFieldRowSx}>
-              <TextField
+             <TextField
                 select
                 label="Suffix"
                 name="suffix"
                 onChange={handleChangePersonal}
-                value={formPersonal.suffix || ''}
+                value={formPersonal.suffix ?? ''}
                 size="small"
                 fullWidth
                 sx={fieldSx}
@@ -955,6 +964,21 @@ export default function LeadDetails() {
                       PaperProps: { sx: { maxHeight: 250 } },
                     },
                   },
+                }}
+                InputProps={{
+                  endAdornment: formPersonal.suffix ? (
+                    <InputAdornment position="end">
+                      <IconButton
+                        title="clear suffix"
+                        size="small"
+                        sx={{ml: '-40px'}}
+                        onClick={clearSuffix}
+                        aria-label="Clear suffix"
+                      >
+                        <ClearIcon fontSize="small" />
+                      </IconButton>
+                    </InputAdornment>
+                  ) : null,
                 }}
               >
                 {SUFFIXES.map((suffix) => (

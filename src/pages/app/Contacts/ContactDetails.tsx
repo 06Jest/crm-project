@@ -28,6 +28,7 @@ import {
   Collapse,
   Grow,
   CircularProgress,
+  InputAdornment,
 } from '@mui/material';
 import type { TransitionProps } from '@mui/material/transitions';
 import { alpha, keyframes, type Theme } from '@mui/material/styles';
@@ -62,7 +63,7 @@ import CheckIcon from '@mui/icons-material/Check';
 import CancelIcon from '@mui/icons-material/Cancel';
 import ModeEditIcon from '@mui/icons-material/ModeEdit';
 import EditNoteIcon from '@mui/icons-material/EditNote';
-
+import ClearIcon from '@mui/icons-material/Clear';
 import type { RootState } from '../../../store/store';
 import { fixLeafletIcons } from '../../../utils/fixLeafletIcons';
 import { DEPARTMENTS, GENDERS, INDUSTRIES, PREFERRED_CONTACT_TIMES, SOURCES, SUFFIXES, type Gender, type PreferredTime, type Priority, type Source, type Suffix } from '../../../types/global';
@@ -990,16 +991,38 @@ export default function ContactDetail() {
                 label="Suffix"
                 name="suffix"
                 onChange={handleChange}
-                value={formPersonal.suffix || ''}
+                value={formPersonal.suffix ?? ''}
                 size="small"
                 fullWidth
                 sx={fieldSx}
                 slotProps={{
                   select: {
                     MenuProps: {
-                      PaperProps: { sx: { maxHeight: 250 } },
+                      PaperProps: {
+                        sx: {
+                          maxHeight: 250,
+                        },
+                      },
                     },
                   },
+                }}
+                InputProps={{
+                  endAdornment: formPersonal.suffix ? (
+                    <InputAdornment position="end">
+                      <IconButton
+                        size="small"
+                        onClick={() =>
+                          setFormPersonal(prev => ({
+                            ...prev,
+                            suffix: null,
+                          }))
+                        }
+                        aria-label="Clear suffix"
+                      >
+                        <ClearIcon fontSize="small" />
+                      </IconButton>
+                    </InputAdornment>
+                  ) : null,
                 }}
               >
                 {SUFFIXES.map((suffix) => (
