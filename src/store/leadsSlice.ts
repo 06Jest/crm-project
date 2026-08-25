@@ -12,6 +12,7 @@ import {
   updateLeadSourceAPI,
   updateLeadPriorityAPI,
   updateLeadPreferredTimeAPI,
+  fetchLeadListByIDAPI,
 } from '../services/leadService';
 import type { PreferredTime, Priority, Source } from "../types/global";
 
@@ -37,6 +38,21 @@ export const fetchLeadsLists = createAsyncThunk(
           .rejectWithValue(
             'Failed to fetch leads'
           );  
+    }
+  }
+);
+
+export const fetchLeadListByID = createAsyncThunk(
+  'leads/show-by-id',
+  async (id: string, thunkAPI) => {
+    try {
+      return await fetchLeadListByIDAPI(id);
+    } catch (err) {
+      if (err instanceof Error) {
+        return thunkAPI.rejectWithValue(err.message);
+      }
+
+      return thunkAPI.rejectWithValue('Failed to fetch lead');
     }
   }
 );
@@ -264,6 +280,30 @@ const leadSlice = createSlice({
       state.loaded = false;
     })
 
+
+    builder.addCase(fetchLeadListByID.pending, (state) => {
+      state.loading = true;
+      state.error = null;
+    });
+
+    builder.addCase(fetchLeadListByID.fulfilled, (state, action) => {
+      state.loading = false;
+
+      const index = state.items.findIndex(
+        (lead) => lead.id === action.payload.id
+      );
+
+      if (index !== -1) {
+        state.items[index] = action.payload;
+      } else {
+        state.items.push(action.payload);
+      }
+    });
+
+    builder.addCase(fetchLeadListByID.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.payload as string;
+    });
 
     builder.addCase(addLead.pending, (state) => {
       state.error = null;

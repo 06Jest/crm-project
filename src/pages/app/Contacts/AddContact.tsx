@@ -334,6 +334,7 @@ export default function AddContact() {
                       endAdornment: form.suffix ? (
                         <InputAdornment position="end">
                           <IconButton
+                            sx={{ml: '-40px'}}
                             size="small"
                             onClick={() =>
                               setForm(prev => ({

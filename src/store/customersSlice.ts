@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import type { CustomerState, CustomerStatus } from "../types/customer";
-import { deleteBulkCustomersAPI, deleteCustomerAPI, fetchCustomersListsAPI, updateCustomerNotesAPI, updateCustomerStatusAPI } from "../services/customerService";
+import { deleteBulkCustomersAPI, deleteCustomerAPI, fetchCustomerListByIDAPI, fetchCustomersListsAPI, updateCustomerNotesAPI, updateCustomerStatusAPI } from "../services/customerService";
 
 
 const initialState: CustomerState = {
@@ -23,6 +23,23 @@ export const fetchCustomersLists = createAsyncThunk(
           .rejectWithValue(
             'Failed to fetch customers'
           );  
+    }
+  }
+);
+
+export const fetchCustomerListByID = createAsyncThunk(
+  'customers/view-list',
+  async (id: string, thunkAPI) => {
+    try {
+      return await fetchCustomerListByIDAPI(id);
+    } catch (err) {
+      if (err instanceof Error) {
+        return thunkAPI.rejectWithValue(err.message);
+      }
+
+      return thunkAPI.rejectWithValue(
+        'Failed to fetch customer'
+      );
     }
   }
 );
@@ -131,6 +148,31 @@ const customersSlice = createSlice({
       state.error = action.payload as string;
       state.loaded = false;
     })
+
+
+    builder.addCase(fetchCustomerListByID.pending, (state) => {
+      state.loading = true;
+      state.error = null;
+    });
+
+    builder.addCase(fetchCustomerListByID.fulfilled, (state, action) => {
+      state.loading = false;
+
+      const index = state.items.findIndex(
+        contact => contact.id === action.payload.id
+      );
+
+      if (index !== -1) {
+        state.items[index] = action.payload;
+      } else {
+        state.items.push(action.payload);
+      }
+    });
+
+    builder.addCase(fetchCustomerListByID.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.payload as string;
+    });
 
 
 

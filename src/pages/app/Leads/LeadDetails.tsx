@@ -1,4 +1,4 @@
-import { forwardRef, useState } from 'react'
+import { forwardRef, useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector} from 'react-redux';
 import type { AppDispatch } from '../../../store/store';
@@ -68,7 +68,7 @@ import { DEPARTMENTS, GENDERS, INDUSTRIES, PREFERRED_CONTACT_TIMES, SOURCES, SUF
 import ErrorAlert from '../../../components/Error';
 import { formatName } from '../../../utils/formatText';
 import type { LeadCareer, LeadPersonal, LeadSocials, LeadStatus } from '../../../types/lead';
-import { clearError, deleteLead, updateLeadCareer, updateLeadNotes, updateLeadPersonal, updateLeadPreferredTime, updateLeadSocials, updateLeadSource } from '../../../store/leadsSlice';
+import { clearError, deleteLead, fetchLeadListByID, updateLeadCareer, updateLeadNotes, updateLeadPersonal, updateLeadPreferredTime, updateLeadSocials, updateLeadSource } from '../../../store/leadsSlice';
 
 fixLeafletIcons();
 
@@ -264,6 +264,13 @@ export default function LeadDetails() {
   const dispatch = useDispatch<AppDispatch>();
     
   const themeMode = useSelector((state: RootState) => state.ui.themeMode);
+
+  useEffect(() => {
+    if (!id) return;
+
+    dispatch(fetchLeadListByID(id));
+  }, [id, dispatch]);
+
   const lead = useSelector((state: RootState) =>
     state.leads.items.find((c) => c.id === id)
   );
@@ -293,10 +300,23 @@ export default function LeadDetails() {
   const [selectedPreferredTime, setSelectedPreferredTime] = useState<PreferredTime | "">("");
   const [updatePreferredTime, setUpdatePreferredTime] = useState(false);
   
-
+  if (!lead && loading) {
+    return (
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: 800
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
   if (!lead) {
     return (
-      <Box sx={{ textAlign: 'center', mt: 8, px: 2 }}>
+      <Box sx={{ textAlign: 'center', mt: 8, px: 2, height: 800}}>
         <Typography variant="h6" color="text.secondary">
           Lead not found
         </Typography>

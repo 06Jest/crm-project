@@ -298,6 +298,7 @@ export default function AddLead() {
                     endAdornment: form.suffix ? (
                       <InputAdornment position="end">
                         <IconButton
+                          sx={{ml: '-40px'}}
                           size="small"
                           onClick={clearSuffix}
                           aria-label="Clear suffix"

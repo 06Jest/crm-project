@@ -1,8 +1,8 @@
-import { forwardRef, useState } from 'react'
+import { forwardRef, useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector} from 'react-redux';
 import type { AppDispatch } from '../../../store/store';
-import {  deleteContact, clearError, updateContactPersonal, updateContactSocials, updateContactCareer, updateContactNotes, updateContactSource, updateContactPreferredTime, } from '../../../store/contactsSlice';
+import {  deleteContact, clearError, updateContactPersonal, updateContactSocials, updateContactCareer, updateContactNotes, updateContactSource, updateContactPreferredTime, fetchContactListByID, } from '../../../store/contactsSlice';
 import { type ContactCareer, type ContactPersonal, type ContactSocials, type ContactStatus, } from "../../../types/contact";
 import 'leaflet/dist/leaflet.css';
 
@@ -87,7 +87,6 @@ const PRIORITY_COLORS: Record<Priority, string> = {
   Low: '#ffffff00',
 }
 
-// ---- purely presentational helpers (no data/logic impact) ----
 const AVATAR_PALETTE = [
   "#4f5fce",
   "#0f8f7a",
@@ -267,6 +266,13 @@ export default function ContactDetail() {
   const dispatch = useDispatch<AppDispatch>();
     
   const themeMode = useSelector((state: RootState) => state.ui.themeMode);
+
+  useEffect(() => {
+    if (!id) return;
+
+    dispatch(fetchContactListByID(id));
+  }, [id, dispatch]);
+
   const contact = useSelector((state: RootState) =>
     state.contacts.items.find((c) => c.id === id)
   );
@@ -298,9 +304,24 @@ export default function ContactDetail() {
   const [selectedPreferredTime, setSelectedPreferredTime] = useState<PreferredTime | "">("");
   const [updatePreferredTime, setUpdatePreferredTime] = useState(false);
 
+  if (loading && !contact) {
+    return (
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: 800
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
+
   if (!contact) {
     return (
-      <Box sx={{ textAlign: 'center', mt: 8, px: 2 }}>
+      <Box sx={{ textAlign: 'center', mt: 8, px: 2, height: 800 }}>
         <Typography variant="h6" color="text.secondary">
           Contact not found
         </Typography>
@@ -1011,6 +1032,7 @@ export default function ContactDetail() {
                     <InputAdornment position="end">
                       <IconButton
                         size="small"
+                        sx={{ml: '-40px'}}
                         onClick={() =>
                           setFormPersonal(prev => ({
                             ...prev,

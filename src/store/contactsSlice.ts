@@ -13,6 +13,7 @@ import {
   updateContactSourceAPI,
   updateContactPriorityAPI,
   updateContactPreferredTimeAPI,
+  fetchContactListByIDAPI,
 } from '../services/contactService';
 import type { PreferredTime, Priority, Source } from "../types/global";
 
@@ -37,6 +38,23 @@ export const fetchContactsLists = createAsyncThunk(
           .rejectWithValue(
             'Failed to fetch contacts'
           );  
+    }
+  }
+);
+
+export const fetchContactListByID = createAsyncThunk(
+  'contacts/view-list',
+  async (id: string, thunkAPI) => {
+    try {
+      return await fetchContactListByIDAPI(id);
+    } catch (err) {
+      if (err instanceof Error) {
+        return thunkAPI.rejectWithValue(err.message);
+      }
+
+      return thunkAPI.rejectWithValue(
+        'Failed to fetch contact'
+      );
     }
   }
 );
@@ -272,6 +290,31 @@ const contactsSlice = createSlice({
       state.error = action.payload as string;
       state.loaded = false;
     })
+
+
+    builder.addCase(fetchContactListByID.pending, (state) => {
+      state.loading = true;
+      state.error = null;
+    });
+
+    builder.addCase(fetchContactListByID.fulfilled, (state, action) => {
+      state.loading = false;
+
+      const index = state.items.findIndex(
+        contact => contact.id === action.payload.id
+      );
+
+      if (index !== -1) {
+        state.items[index] = action.payload;
+      } else {
+        state.items.push(action.payload);
+      }
+    });
+
+    builder.addCase(fetchContactListByID.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.payload as string;
+    });
 
 
     builder.addCase(addContact.pending, (state) => {
