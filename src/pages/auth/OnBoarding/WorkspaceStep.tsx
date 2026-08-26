@@ -85,10 +85,13 @@ export default function WorkspaceStep({
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ): void => {
     const { name, value } = event.target;
+
     setFormData((prev) => ({
       ...prev,
       [name]: value,
     }));
+
+    setError(null);
 
     if (errors[name as keyof FormErrors]) {
       setErrors((prev) => ({
@@ -167,13 +170,11 @@ export default function WorkspaceStep({
 
   return (
     <Stack spacing={3}>
-      <Collapse in={!!error}>
-        <Box sx={{ width: '100%' }}>
-          <ErrorAlert
-            message={(error) ?? "Failed creating workspace, Try again."}
-          />
+      {error && (
+        <Box sx={{ width: '100%', mb: 2 }}>
+          <ErrorAlert message={error} />
         </Box>
-      </Collapse>
+      )}
 
       <Box>
         <Typography variant="h5" fontWeight={700} mb={0.75} letterSpacing="-0.01em">

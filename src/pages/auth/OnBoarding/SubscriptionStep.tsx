@@ -13,7 +13,6 @@ import {
   ListItem,
   ListItemIcon,
   ListItemText,
-  Collapse,
   Grow,
   Zoom,
   useMediaQuery,
@@ -168,11 +167,11 @@ export default function SubscriptionStep({
 
   return (
     <Stack spacing={3}>
-      <Collapse in={!!error}>
-        <Box sx={{ width: '100%' }}>
-          <ErrorAlert message={(error) as string} />
+      {error && (
+        <Box sx={{ width: '100%', mb: 2 }}>
+          <ErrorAlert message={error} />
         </Box>
-      </Collapse>
+      )}
 
       <Box>
         <Typography variant="h5" fontWeight={700} mb={0.75} letterSpacing="-0.01em">

@@ -17,6 +17,14 @@ export const signInAPI = async (dto: SignInDTO) => {
   });
 };
 
+export const oauthLoginAPI = async (accessToken: string) => {
+  return apiClient("/api/auth/oauth", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+};
 
 export const getCurrentUserAPI = async () => {
   return apiClient("/api/auth/me", {

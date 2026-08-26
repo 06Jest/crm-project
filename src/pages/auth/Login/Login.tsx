@@ -39,6 +39,7 @@ import { useSelector } from 'react-redux';
 import { useAuth } from '../../../hooks/useAuth';
 import type { RootState } from '../../../store/store';
 import ErrorAlert from '../../../components/Error';
+import { supabase } from '../../../services/supabase';
 
 interface CrmTip {
   eyebrow: string;
@@ -228,6 +229,19 @@ export default function Login() {
       );
     } catch {
       // Error is already stored in auth.error
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
+
+    if (error) {
+      console.error('Google login failed:', error);
     }
   };
 
@@ -462,6 +476,42 @@ export default function Login() {
                       : 'Sign in'
                     }
                   </Button>
+                  <Divider>
+                    or continue with
+                  </Divider>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <IconButton
+                      onClick={handleGoogleLogin}
+                      disabled={loading}
+                      sx={{
+                        width: 30,
+                        height: 30,
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        borderRadius: '50%',
+                        transition: 'transform 0.15s ease, background-color 0.15s ease',
+
+                        '&:hover': {
+                          backgroundColor: 'action.hover',
+                          transform: 'scale(1.15)',
+                        },
+
+                        '&:active': {
+                          transform: 'scale(0.98)',
+                        },
+                      }}
+                    >
+                      <Box
+                        component="img"
+                        src="/google.svg"
+                        alt="Continue with Google"
+                        sx={{
+                          width: 30,
+                          height: 30,
+                        }}
+                      />
+                    </IconButton>
+                  </Box>
                 </Box>
               </Box>
 

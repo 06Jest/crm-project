@@ -38,6 +38,7 @@ import type { SvgIconComponent } from '@mui/icons-material';
 import ErrorAlert from '../../../components/Error';
 import { useAuth } from '../../../hooks/useAuth';
 import { signUp } from '../../../store/userSlice';
+import { supabase } from '../../../services/supabase';
 
 interface CrmTip {
   eyebrow: string;
@@ -171,6 +172,19 @@ export default function Register() {
     navigate('/login')
   }
 
+  const handleGoogleSignUp = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/onboarding`,
+      },
+    });
+
+    if (error) {
+      console.error(error);
+    }
+  };
+
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -269,7 +283,7 @@ export default function Register() {
             <Typography
               sx={{
                 fontFamily: 'Fraunces, serif', fontWeight: 600,
-                fontSize: { md: 26, lg: 30 }, lineHeight: 1.25, mb: 1, maxWidth: 420,
+                fontSize: { md: 26, lg: 35 }, lineHeight: 1.25, mb: 1, maxWidth: 420,
               }}
             >
               Start building better customer relationships.
@@ -497,6 +511,42 @@ export default function Register() {
                       : 'Create account'
                     }
                   </Button>
+                  <Divider>
+                    or
+                  </Divider>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <IconButton
+                      onClick={handleGoogleSignUp}
+                      disabled={loading}
+                      sx={{
+                        width: 30,
+                        height: 30,
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        borderRadius: '50%',
+                        transition: 'transform 0.15s ease, background-color 0.15s ease',
+
+                        '&:hover': {
+                          backgroundColor: 'action.hover',
+                          transform: 'scale(1.15)',
+                        },
+
+                        '&:active': {
+                          transform: 'scale(0.98)',
+                        },
+                      }}
+                    >
+                      <Box
+                        component="img"
+                        src="/google.svg"
+                        alt="Continue with Google"
+                        sx={{
+                          width: 30,
+                          height: 30,
+                        }}
+                      />
+                    </IconButton>
+                  </Box>
                 </Box>
               </Box>
 

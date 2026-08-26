@@ -7,7 +7,6 @@ import {
   Typography,
   Avatar,
   Grid,
-  Collapse,
   useMediaQuery,
   useTheme,
   Autocomplete,
@@ -110,13 +109,11 @@ export default function ProfileStep({ onNext }: ProfileStepProps): ReactElement 
 
   return (
     <Stack spacing={3}>
-      <Collapse in={!!error}>
-        <Box sx={{ width: '100%' }}>
-          <ErrorAlert
-            message={(error) ?? "Failed creating profile, Try again."}
-          />
+      {error && (
+        <Box sx={{ width: '100%', mb: 2 }}>
+          <ErrorAlert message={error} />
         </Box>
-      </Collapse>
+      )}
 
       <Box>
         <Typography variant="h5" fontWeight={700} mb={0.75} letterSpacing="-0.01em">
