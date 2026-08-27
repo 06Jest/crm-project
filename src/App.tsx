@@ -82,6 +82,7 @@ function AppRoutes() {
           <Route path="/reset-password" element={<ResetPassword />} />
         </Route>
 
+        <Route path="/auth/callback" element={<AuthCallback />} />
         
         <Route element={<ProtectedRoute/>}>
           <Route path="/onboarding" element={<Onboarding />} />
