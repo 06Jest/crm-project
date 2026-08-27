@@ -80,10 +80,10 @@ function AppRoutes() {
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/auth/callback" element={<AuthCallback />} />
         </Route>
 
-        
+        <Route path="/auth/callback" element={<AuthCallback />} />
+
         <Route element={<ProtectedRoute/>}>
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/approval" element={<Approval />} />
