@@ -10,16 +10,19 @@ export default function AuthCallback() {
   useEffect(() => {
     const handleCallback = async () => {
       try {
-        const { data, error } =
-          await supabase.auth.getSession();
+        const {
+          data: { session },
+          error,
+        } = await supabase.auth.getSession();
 
-        if (error || !data.session) {
+        if (error || !session?.access_token) {
+          console.error("No Supabase OAuth session:", error);
           navigate("/login", { replace: true });
           return;
         }
 
         const result = await oauthLoginAPI(
-          data.session.access_token
+          session.access_token
         );
 
         navigate(
@@ -28,7 +31,6 @@ export default function AuthCallback() {
             : "/app/dashboard",
           { replace: true }
         );
-
       } catch (error) {
         console.error(
           "OAuth authentication failed:",
