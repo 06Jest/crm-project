@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { CircularProgress, Box } from "@mui/material";
 import { supabase } from "../../../services/supabase";
@@ -9,7 +9,15 @@ export default function AuthCallback() {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
 
+  const hasHandledCallback = useRef(false);
+
   useEffect(() => {
+    if (hasHandledCallback.current) {
+      return;
+    }
+
+    hasHandledCallback.current = true;
+
     const handleCallback = async () => {
       try {
         const {
@@ -21,27 +29,27 @@ export default function AuthCallback() {
           navigate("/login", { replace: true });
           return;
         }
-
-        const result = await oauthLoginAPI(session.access_token);
-
-        await currentUser().unwrap();
-
-        navigate(
-          result.needsOnboarding ? "/onboarding" : "/app/dashboard",
-          { replace: true }
-        );
-      } catch (err) {
-        console.error("OAuth authentication failed:", err);
+        await oauthLoginAPI(session.access_token);
+        await currentUser();
+        navigate("/app/dashboard", { replace: true });
+      } catch (error) {
+        console.error("OAuth authentication failed:", error);
         navigate("/login", { replace: true });
       }
     };
 
     handleCallback();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [navigate]);
+  }, [navigate, currentUser]);
 
   return (
-    <Box sx={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+    <Box
+      sx={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
       <CircularProgress />
     </Box>
   );
