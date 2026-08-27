@@ -13,7 +13,6 @@ import {
   ListItem,
   ListItemIcon,
   ListItemText,
-  Collapse,
   Grow,
   Zoom,
   useMediaQuery,
@@ -31,7 +30,6 @@ import type {
 import ErrorAlert from "../../../components/Error";
 
 interface SubscriptionStepProps {
-  onBack: () => void;
   onFinish: () => void;
 }
 
@@ -117,7 +115,6 @@ const SUBSCRIPTION_PLANS: SubscriptionPlanCard[] = [
 ];
 
 export default function SubscriptionStep({
-  onBack,
   onFinish,
 }: SubscriptionStepProps): ReactElement {
   const theme = useTheme();
@@ -168,11 +165,11 @@ export default function SubscriptionStep({
 
   return (
     <Stack spacing={3}>
-      <Collapse in={!!error}>
-        <Box sx={{ width: '100%' }}>
-          <ErrorAlert message={(error) as string} />
+      {error && (
+        <Box sx={{ width: '100%', mb: 2 }}>
+          <ErrorAlert message={error} />
         </Box>
-      </Collapse>
+      )}
 
       <Box>
         <Typography variant="h5" fontWeight={700} mb={0.75} letterSpacing="-0.01em">
@@ -328,15 +325,6 @@ export default function SubscriptionStep({
           flexDirection: isMobile ? "column-reverse" : "row",
         }}
       >
-        <Button
-          variant="outlined"
-          onClick={onBack}
-          fullWidth={isMobile}
-          disabled={loading}
-          sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
-        >
-          Back
-        </Button>
 
         <Button
           variant="contained"

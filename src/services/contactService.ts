@@ -21,8 +21,17 @@ export const fetchContactsListsAPI = async (): Promise<ContactListItem[]> => {
   const result = await apiClient("/api/contacts/show-lists", {
     method: "GET",
   });
-
   return result.data as ContactListItem[];
+};
+
+export const fetchContactListByIDAPI = async (
+  id: string
+): Promise<ContactListItem> => {
+  const result = await apiClient(`/api/contacts/view-list/${id}`, {
+    method: "GET",
+  });
+
+  return result.data as ContactListItem;
 };
 
 export const addContactAPI = async (

@@ -7,7 +7,6 @@ import {
   Typography,
   Avatar,
   Grid,
-  Collapse,
   useMediaQuery,
   useTheme,
   Autocomplete,
@@ -110,13 +109,11 @@ export default function ProfileStep({ onNext }: ProfileStepProps): ReactElement 
 
   return (
     <Stack spacing={3}>
-      <Collapse in={!!error}>
-        <Box sx={{ width: '100%' }}>
-          <ErrorAlert
-            message={(error) ?? "Failed creating profile, Try again."}
-          />
+      {error && (
+        <Box sx={{ width: '100%', mb: 2 }}>
+          <ErrorAlert message={error} />
         </Box>
-      </Collapse>
+      )}
 
       <Box>
         <Typography variant="h5" fontWeight={700} mb={0.75} letterSpacing="-0.01em">
@@ -211,14 +208,9 @@ export default function ProfileStep({ onNext }: ProfileStepProps): ReactElement 
         freeSolo
         clearOnBlur={false}
         options={JOB_TITLE_OPTIONS}
-        value={formData.job_title ?? ""}
+        value={null}
+        inputValue={formData.job_title ?? ""}
         disabled={loading}
-        onChange={(_, value) => {
-          setFormData((prev) => ({
-            ...prev,
-            job_title: value ?? "",
-          }));
-        }}
         onInputChange={(_, value) => {
           setFormData((prev) => ({
             ...prev,
@@ -244,14 +236,6 @@ export default function ProfileStep({ onNext }: ProfileStepProps): ReactElement 
           flexDirection: isMobile ? 'column-reverse' : 'row',
         }}
       >
-        <Button
-          variant="outlined"
-          disabled
-          fullWidth={isMobile}
-          sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
-        >
-          Back
-        </Button>
         <Button
           variant="contained"
           disableElevation

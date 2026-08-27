@@ -1,4 +1,4 @@
-import { forwardRef, useState } from 'react'
+import { forwardRef, useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector} from 'react-redux';
 import type { AppDispatch } from '../../../store/store';
@@ -26,6 +26,7 @@ import {
   Collapse,
   Grow,
   CircularProgress,
+  InputAdornment,
 } from '@mui/material';
 import type { TransitionProps } from '@mui/material/transitions';
 import { alpha, keyframes, type Theme } from '@mui/material/styles';
@@ -58,6 +59,7 @@ import EditNoteIcon from '@mui/icons-material/EditNote';
 import ShareIcon from '@mui/icons-material/Share';
 import WorkOutlineIcon from '@mui/icons-material/WorkOutline';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
+import ClearIcon from '@mui/icons-material/Clear';
 
 import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
 import type { RootState } from '../../../store/store';
@@ -66,7 +68,7 @@ import { DEPARTMENTS, GENDERS, INDUSTRIES, PREFERRED_CONTACT_TIMES, SOURCES, SUF
 import ErrorAlert from '../../../components/Error';
 import { formatName } from '../../../utils/formatText';
 import type { LeadCareer, LeadPersonal, LeadSocials, LeadStatus } from '../../../types/lead';
-import { clearError, deleteLead, updateLeadCareer, updateLeadNotes, updateLeadPersonal, updateLeadPreferredTime, updateLeadSocials, updateLeadSource } from '../../../store/leadsSlice';
+import { clearError, deleteLead, fetchLeadListByID, updateLeadCareer, updateLeadNotes, updateLeadPersonal, updateLeadPreferredTime, updateLeadSocials, updateLeadSource } from '../../../store/leadsSlice';
 
 fixLeafletIcons();
 
@@ -262,6 +264,13 @@ export default function LeadDetails() {
   const dispatch = useDispatch<AppDispatch>();
     
   const themeMode = useSelector((state: RootState) => state.ui.themeMode);
+
+  useEffect(() => {
+    if (!id) return;
+
+    dispatch(fetchLeadListByID(id));
+  }, [id, dispatch]);
+
   const lead = useSelector((state: RootState) =>
     state.leads.items.find((c) => c.id === id)
   );
@@ -291,10 +300,23 @@ export default function LeadDetails() {
   const [selectedPreferredTime, setSelectedPreferredTime] = useState<PreferredTime | "">("");
   const [updatePreferredTime, setUpdatePreferredTime] = useState(false);
   
-
+  if (!lead && loading) {
+    return (
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: 800
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
   if (!lead) {
     return (
-      <Box sx={{ textAlign: 'center', mt: 8, px: 2 }}>
+      <Box sx={{ textAlign: 'center', mt: 8, px: 2, height: 800}}>
         <Typography variant="h6" color="text.secondary">
           Lead not found
         </Typography>
@@ -425,6 +447,13 @@ export default function LeadDetails() {
     } catch {
       //Error in State
     }
+  };
+
+  const clearSuffix = () => {
+    setFormPersonal(prev => ({
+      ...prev,
+      suffix: null,
+    }));
   };
 
   const handleEditSource = () => {
@@ -940,12 +969,12 @@ export default function LeadDetails() {
             </Box>
 
             <Box sx={twoFieldRowSx}>
-              <TextField
+             <TextField
                 select
                 label="Suffix"
                 name="suffix"
                 onChange={handleChangePersonal}
-                value={formPersonal.suffix || ''}
+                value={formPersonal.suffix ?? ''}
                 size="small"
                 fullWidth
                 sx={fieldSx}
@@ -955,6 +984,21 @@ export default function LeadDetails() {
                       PaperProps: { sx: { maxHeight: 250 } },
                     },
                   },
+                }}
+                InputProps={{
+                  endAdornment: formPersonal.suffix ? (
+                    <InputAdornment position="end">
+                      <IconButton
+                        title="clear suffix"
+                        size="small"
+                        sx={{ml: '-40px'}}
+                        onClick={clearSuffix}
+                        aria-label="Clear suffix"
+                      >
+                        <ClearIcon fontSize="small" />
+                      </IconButton>
+                    </InputAdornment>
+                  ) : null,
                 }}
               >
                 {SUFFIXES.map((suffix) => (

@@ -7,6 +7,8 @@ import {
   deleteDealAPI,
   updateDealStageAPI,
   fetchDealsListsAPI,
+  fetchDealsListsByContactIDAPI,
+  fetchDealListByIDAPI,
 } from '../services/dealService';
 
 
@@ -30,6 +32,40 @@ export const fetchDealsLists = createAsyncThunk(
           .rejectWithValue(
             'Failed to fetch deals'
           );  
+    }
+  }
+);
+
+export const fetchDealsListsByContactID = createAsyncThunk(
+  'deals/show-by-id',
+  async (contactID: string, thunkAPI) => {
+    try {
+      return await fetchDealsListsByContactIDAPI(contactID);
+    } catch (err) {
+      if (err instanceof Error) {
+        return thunkAPI.rejectWithValue(err.message);
+      }
+
+      return thunkAPI.rejectWithValue(
+        'Failed to fetch deals for contact'
+      );
+    }
+  }
+);
+
+export const fetchDealListByID = createAsyncThunk(
+  'deals/view-list',
+  async (id: string, thunkAPI) => {
+    try {
+      return await fetchDealListByIDAPI(id);
+    } catch (err) {
+      if (err instanceof Error) {
+        return thunkAPI.rejectWithValue(err.message);
+      }
+
+      return thunkAPI.rejectWithValue(
+        'Failed to fetch deal'
+      );
     }
   }
 );
@@ -163,6 +199,57 @@ const dealSlice = createSlice({
       state.loading = false;
       state.loaded = false;
     })
+
+    builder.addCase(fetchDealsListsByContactID.pending,(state) => {
+        state.loading = true;
+        state.error = null;
+      });
+
+    builder.addCase(fetchDealsListsByContactID.fulfilled,(state, action) => {
+      for (const deal of action.payload) {
+        const index = state.items.findIndex(
+          existingDeal => existingDeal.id === deal.id
+        );
+
+        if (index !== -1) {
+          state.items[index] = deal;
+        } else {
+          state.items.push(deal);
+        }
+      }
+
+      state.loading = false;
+    });
+
+    builder.addCase(fetchDealsListsByContactID.rejected,(state, action) => {
+      state.loading = false;
+      state.error = action.payload as string;
+    });
+
+
+    builder.addCase(fetchDealListByID.pending, (state) => {
+      state.loading = true;
+      state.error = null;
+    });
+
+    builder.addCase(fetchDealListByID.fulfilled, (state, action) => {
+      state.loading = false;
+
+      const index = state.items.findIndex(
+        deal => deal.id === action.payload.id
+      );
+
+      if (index !== -1) {
+        state.items[index] = action.payload;
+      } else {
+        state.items.push(action.payload);
+      }
+    });
+
+    builder.addCase(fetchDealListByID.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.payload as string;
+    });
 
 
     builder.addCase(addDeal.pending, (state) => {

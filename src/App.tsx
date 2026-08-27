@@ -15,7 +15,7 @@ import Onboarding from "./pages/auth/OnBoarding/Onboarding";
 import Login from './pages/auth/Login/Login';
 import Register from './pages/auth/Register/Register';
 import ForgotPassword from './pages/auth/ForgotPassword/ForgotPassword';
-
+import AuthCallback from './pages/auth/AuthCallback/AuthCallback';
 
 import Dashboard from './pages/app/Dashboard/Dashboard';
 import Contacts from './pages/app/Contacts/Contacts';
@@ -80,12 +80,14 @@ function AppRoutes() {
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          
         </Route>
 
         
         <Route element={<ProtectedRoute/>}>
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/approval" element={<Approval />} />
+          <Route path="/auth/callback" element={<AuthCallback />} />
           <Route element={<AppLayout />}>
             <Route path="/app/dashboard" element={<Dashboard />} />
             <Route path="/app/leads" element={<Leads />} />

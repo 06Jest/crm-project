@@ -1,8 +1,8 @@
-import { forwardRef, useState } from 'react'
+import { forwardRef, useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector} from 'react-redux';
 import type { AppDispatch } from '../../../store/store';
-import {  deleteContact, clearError, updateContactPersonal, updateContactSocials, updateContactCareer, updateContactNotes, updateContactSource, updateContactPreferredTime, } from '../../../store/contactsSlice';
+import {  deleteContact, clearError, updateContactPersonal, updateContactSocials, updateContactCareer, updateContactNotes, updateContactSource, updateContactPreferredTime, fetchContactListByID, } from '../../../store/contactsSlice';
 import { type ContactCareer, type ContactPersonal, type ContactSocials, type ContactStatus, } from "../../../types/contact";
 import 'leaflet/dist/leaflet.css';
 
@@ -28,6 +28,7 @@ import {
   Collapse,
   Grow,
   CircularProgress,
+  InputAdornment,
 } from '@mui/material';
 import type { TransitionProps } from '@mui/material/transitions';
 import { alpha, keyframes, type Theme } from '@mui/material/styles';
@@ -62,7 +63,7 @@ import CheckIcon from '@mui/icons-material/Check';
 import CancelIcon from '@mui/icons-material/Cancel';
 import ModeEditIcon from '@mui/icons-material/ModeEdit';
 import EditNoteIcon from '@mui/icons-material/EditNote';
-
+import ClearIcon from '@mui/icons-material/Clear';
 import type { RootState } from '../../../store/store';
 import { fixLeafletIcons } from '../../../utils/fixLeafletIcons';
 import { DEPARTMENTS, GENDERS, INDUSTRIES, PREFERRED_CONTACT_TIMES, SOURCES, SUFFIXES, type Gender, type PreferredTime, type Priority, type Source, type Suffix } from '../../../types/global';
@@ -86,7 +87,6 @@ const PRIORITY_COLORS: Record<Priority, string> = {
   Low: '#ffffff00',
 }
 
-// ---- purely presentational helpers (no data/logic impact) ----
 const AVATAR_PALETTE = [
   "#4f5fce",
   "#0f8f7a",
@@ -266,6 +266,13 @@ export default function ContactDetail() {
   const dispatch = useDispatch<AppDispatch>();
     
   const themeMode = useSelector((state: RootState) => state.ui.themeMode);
+
+  useEffect(() => {
+    if (!id) return;
+
+    dispatch(fetchContactListByID(id));
+  }, [id, dispatch]);
+
   const contact = useSelector((state: RootState) =>
     state.contacts.items.find((c) => c.id === id)
   );
@@ -297,9 +304,24 @@ export default function ContactDetail() {
   const [selectedPreferredTime, setSelectedPreferredTime] = useState<PreferredTime | "">("");
   const [updatePreferredTime, setUpdatePreferredTime] = useState(false);
 
+  if (loading && !contact) {
+    return (
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: 800
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
+
   if (!contact) {
     return (
-      <Box sx={{ textAlign: 'center', mt: 8, px: 2 }}>
+      <Box sx={{ textAlign: 'center', mt: 8, px: 2, height: 800 }}>
         <Typography variant="h6" color="text.secondary">
           Contact not found
         </Typography>
@@ -990,16 +1012,39 @@ export default function ContactDetail() {
                 label="Suffix"
                 name="suffix"
                 onChange={handleChange}
-                value={formPersonal.suffix || ''}
+                value={formPersonal.suffix ?? ''}
                 size="small"
                 fullWidth
                 sx={fieldSx}
                 slotProps={{
                   select: {
                     MenuProps: {
-                      PaperProps: { sx: { maxHeight: 250 } },
+                      PaperProps: {
+                        sx: {
+                          maxHeight: 250,
+                        },
+                      },
                     },
                   },
+                }}
+                InputProps={{
+                  endAdornment: formPersonal.suffix ? (
+                    <InputAdornment position="end">
+                      <IconButton
+                        size="small"
+                        sx={{ml: '-40px'}}
+                        onClick={() =>
+                          setFormPersonal(prev => ({
+                            ...prev,
+                            suffix: null,
+                          }))
+                        }
+                        aria-label="Clear suffix"
+                      >
+                        <ClearIcon fontSize="small" />
+                      </IconButton>
+                    </InputAdornment>
+                  ) : null,
                 }}
               >
                 {SUFFIXES.map((suffix) => (

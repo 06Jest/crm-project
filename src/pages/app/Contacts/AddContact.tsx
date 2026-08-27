@@ -16,6 +16,8 @@ import {
   Avatar,
   Fade,
   Collapse,
+  InputAdornment,
+  IconButton,
 } from "@mui/material";
 import { alpha, type Theme } from "@mui/material/styles";
 
@@ -25,6 +27,7 @@ import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import WorkOutlineIcon from '@mui/icons-material/WorkOutline';
 import ShareIcon from '@mui/icons-material/Share';
 import NotesIcon from '@mui/icons-material/Notes';
+import ClearIcon from '@mui/icons-material/Clear';
 import PersonAddAlt1Icon from '@mui/icons-material/PersonAddAlt1';
 import { type AddContact, type ContactStatus} from "../../../types/contact";
 import { DEPARTMENTS, GENDERS, INDUSTRIES, PREFERRED_CONTACT_TIMES, PRIORITIES, SOURCES, SUFFIXES, type Gender,  type PreferredTime,  type Priority, type Source, type Suffix } from "../../../types/global";
@@ -176,8 +179,6 @@ export default function AddContact() {
       })
   };
 
-
-
   const handleSubmit = async () => {
     if (isSubmitting || loading) return;
 
@@ -315,7 +316,7 @@ export default function AddContact() {
                     label="Suffix"
                     name="suffix"
                     onChange={handleChange}
-                    value={form.suffix}
+                    value={form.suffix ?? ''}
                     size="small"
                     sx={{ ...fieldSx, flex: "1 1 200px", minWidth: 0 }}
                     slotProps={{
@@ -329,8 +330,27 @@ export default function AddContact() {
                         },
                       },
                     }}
+                    InputProps={{
+                      endAdornment: form.suffix ? (
+                        <InputAdornment position="end">
+                          <IconButton
+                            sx={{ml: '-40px'}}
+                            size="small"
+                            onClick={() =>
+                              setForm(prev => ({
+                                ...prev,
+                                suffix: null,
+                              }))
+                            }
+                            aria-label="Clear suffix"
+                          >
+                            <ClearIcon fontSize="small" />
+                          </IconButton>
+                        </InputAdornment>
+                      ) : null,
+                    }}
                   >
-                  {SUFFIXES.map((suffix) => (
+                    {SUFFIXES.map((suffix) => (
                       <MenuItem key={suffix} value={suffix}>
                         {suffix}
                       </MenuItem>

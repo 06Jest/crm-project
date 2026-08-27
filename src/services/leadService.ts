@@ -7,8 +7,17 @@ export const fetchLeadsListsAPI = async (): Promise<LeadListItem[]> => {
   const result = await apiClient('/api/leads/show-lists', {
     method: "GET",
   });
-
   return result.data as LeadListItem[];
+};
+
+export const fetchLeadListByIDAPI = async (
+  id: string
+): Promise<LeadListItem> => {
+  const result = await apiClient(`/api/leads/view-list/${id}`, {
+    method: "GET",
+  });
+
+  return result.data as LeadListItem;
 };
 
 

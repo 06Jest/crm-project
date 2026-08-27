@@ -18,7 +18,8 @@ import {
   Paper,
   IconButton,
   TextField,
-  MenuItem,  
+  MenuItem,
+  CircularProgress,  
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 // import EditIcon from '@mui/icons-material/Edit';
@@ -34,7 +35,7 @@ import type { RootState } from '../../../store/store';
 import ErrorAlert from '../../../components/Error';
 import { formatName, formatTitle } from '../../../utils/formatText';
 import type { Priority } from '../../../types/global';
-import { clearError, deleteCustomer, fetchCustomersLists, updateCustomerNotes, updateCustomerStatus } from '../../../store/customersSlice';
+import { clearError, deleteCustomer, fetchCustomerListByID, fetchCustomersLists, updateCustomerNotes, updateCustomerStatus } from '../../../store/customersSlice';
 import { CUSTOMER_STATUSES, type CustomerStatus } from '../../../types/customer';
 import { formattedDate } from '../../../utils/formatTime';
 import PaidIcon from '@mui/icons-material/Paid';
@@ -44,8 +45,8 @@ import ModeEditIcon from '@mui/icons-material/ModeEdit';
 import CheckIcon from '@mui/icons-material/Check';
 import CancelIcon from '@mui/icons-material/Cancel';
 import { DataGrid, type GridColDef } from '@mui/x-data-grid';
-import { fetchContactsLists } from '../../../store/contactsSlice';
-import { fetchDealsLists } from '../../../store/dealsSlice';
+import { fetchContactListByID, fetchContactsLists } from '../../../store/contactsSlice';
+import { fetchDealsLists, fetchDealsListsByContactID } from '../../../store/dealsSlice';
 import { fetchOrgMembers } from '../../../store/organizationMemberSlice';
 
 
@@ -87,6 +88,7 @@ const columns: GridColDef[] = [
 export default function CustomerDetail() {
   
   const { id } = useParams<{id: string }>();
+  const { contact_id } = useParams<{contact_id: string }>();
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
   const [hoveredNotes, setHoveredNotes] = useState(false);
@@ -96,13 +98,23 @@ export default function CustomerDetail() {
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<CustomerStatus | "">("");
   const [updateStatus, setUpdateStatus] = useState(false);
-  const { loaded: contactsLoaded } = useSelector((state: RootState) => state.contacts)
-  const { loaded: dealsLoaded } = useSelector((state: RootState) => state.deals)
-  const { error, loaded: customersLoaded } = useSelector((state: RootState) => state.customers)
+
+  useEffect(() => {
+    if (!id || !contact_id) return;
+    dispatch(fetchContactListByID(contact_id));
+    dispatch(fetchCustomerListByID(id));
+    dispatch(fetchDealsListsByContactID(contact_id))
+  }, [id, dispatch, contact_id]);
+
+  const { loaded: contactsLoaded, loading: contactsLoading } = useSelector((state: RootState) => state.contacts)
+  const { loaded: dealsLoaded, } = useSelector((state: RootState) => state.deals)
+  const { error, loaded: customersLoaded, loading:customersLoading } = useSelector((state: RootState) => state.customers)
   const {items: members, loaded: profilesLoaded} = useSelector((state: RootState) => state.orgmembers)
   const customer = useSelector((state: RootState) =>
     state.customers.items.find((c) => c.id === id)
   );
+
+  
   
   const contact = useSelector((state: RootState) =>
     state.contacts.items.find((c) => c.id === customer?.contact_id)
@@ -141,11 +153,27 @@ export default function CustomerDetail() {
   // const [successMessage, setSuccessMessage] = useState('');
 
 
-
-
-  if (!contact) {
+  if (
+    (!customer || !contact) &&
+    (customersLoading || contactsLoading)
+  ) {
     return (
-      <Box sx={{ textAlign: 'center', mt: 8 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: 800
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (!customer || !contact) {
+    return (
+      <Box sx={{ textAlign: 'center', mt: 8, height: 800 }}>
         <Typography variant="h6" color="text.secondary">
           Customer not found
         </Typography>
@@ -269,11 +297,11 @@ export default function CustomerDetail() {
       new Date(a.created_at).getTime()
   )
   .slice(0, (allDeals.length));
-  const wonPercent = allDeals
-  ? Math.round((wonDeals.length / allDeals.length) * 100)
-  : 0;
+  const wonPercent = allDeals.length
+    ? Math.round((wonDeals.length / allDeals.length) * 100)
+    : 0;
 
-  const lostPercent= allDeals
+  const lostPercent = allDeals.length
     ? Math.round((lostDeals.length / allDeals.length) * 100)
     : 0;
 
@@ -652,7 +680,11 @@ export default function CustomerDetail() {
                 </Typography>
               </Box>
               <Box sx={{height: 15, display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'text.secondary'}}>
-                <Box>{formattedDate(biggestWonDeal.close_date) ?? '???'}</Box>
+                <Box>
+                  {biggestWonDeal?.close_date
+                    ? formattedDate(biggestWonDeal.close_date)
+                    : '???'}
+                </Box>
                 <Box sx={{cursor: 'pointer'}} title={`Won by: ${formatName(wonBy?.profile.first_name, wonBy?.profile.last_name)}`}>{formatName(wonBy?.profile.first_name, wonBy?.profile.last_name) ?? '???'}</Box>
               </Box>
             </Paper>

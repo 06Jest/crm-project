@@ -24,7 +24,6 @@ import ErrorAlert from '../../../components/Error';
 import { COMPANY_SIZES, INDUSTRIES, PRODUCT_TYPES } from '../../../types/global';
 
 interface WorkspaceStepProps {
-  onBack: () => void;
   onNext: () => void;
   onFinish: () => void;
 }
@@ -35,7 +34,6 @@ interface FormErrors {
 }
 
 export default function WorkspaceStep({
-  onBack,
   onNext,
   onFinish,
 }: WorkspaceStepProps): ReactElement {
@@ -85,10 +83,13 @@ export default function WorkspaceStep({
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ): void => {
     const { name, value } = event.target;
+
     setFormData((prev) => ({
       ...prev,
       [name]: value,
     }));
+
+    setError(null);
 
     if (errors[name as keyof FormErrors]) {
       setErrors((prev) => ({
@@ -167,13 +168,11 @@ export default function WorkspaceStep({
 
   return (
     <Stack spacing={3}>
-      <Collapse in={!!error}>
-        <Box sx={{ width: '100%' }}>
-          <ErrorAlert
-            message={(error) ?? "Failed creating workspace, Try again."}
-          />
+      {error && (
+        <Box sx={{ width: '100%', mb: 2 }}>
+          <ErrorAlert message={error} />
         </Box>
-      </Collapse>
+      )}
 
       <Box>
         <Typography variant="h5" fontWeight={700} mb={0.75} letterSpacing="-0.01em">
@@ -297,13 +296,16 @@ export default function WorkspaceStep({
           />
 
           <Autocomplete
+            freeSolo
             options={INDUSTRIES}
-            value={formData.industry || null}
+            clearOnBlur={false}
+            value={null}
+            inputValue={formData.industry ?? ""}
             disabled={loading}
-            onChange={(_, value) => {
+            onInputChange={(_, value) => {
               setFormData((prev) => ({
                 ...prev,
-                industry: value ?? '',
+                industry: value,
               }));
             }}
             renderInput={(params) => (
@@ -317,13 +319,16 @@ export default function WorkspaceStep({
           />
 
           <Autocomplete
+            freeSolo
             options={PRODUCT_TYPES}
-            value={formData.product_type || null}
+            clearOnBlur={false}
+            value={null}
+            inputValue={formData.product_type ?? ""}
             disabled={loading}
-            onChange={(_, value) => {
+            onInputChange={(_, value) => {
               setFormData((prev) => ({
                 ...prev,
-                product_type: value ?? '',
+                product_type: value,
               }));
             }}
             renderInput={(params) => (
@@ -378,13 +383,16 @@ export default function WorkspaceStep({
             required
           />
           <Autocomplete
+            freeSolo
             options={INDUSTRIES}
-            value={formData.industry || null}
+            clearOnBlur={false}
+            value={null}
+            inputValue={formData.industry ?? ""}
             disabled={loading}
-            onChange={(_, value) => {
+            onInputChange={(_, value) => {
               setFormData((prev) => ({
                 ...prev,
-                industry: value ?? '',
+                industry: value,
               }));
             }}
             renderInput={(params) => (
@@ -397,13 +405,16 @@ export default function WorkspaceStep({
             )}
           />
           <Autocomplete
+            freeSolo
             options={PRODUCT_TYPES}
-            value={formData.product_type || null}
+            clearOnBlur={false}
+            value={null}
+            inputValue={formData.product_type ?? ""}
             disabled={loading}
-            onChange={(_, value) => {
+            onInputChange={(_, value) => {
               setFormData((prev) => ({
                 ...prev,
-                product_type: value ?? '',
+                product_type: value,
               }));
             }}
             renderInput={(params) => (
@@ -456,14 +467,6 @@ export default function WorkspaceStep({
           flexDirection: isMobile ? 'column-reverse' : 'row',
         }}
       >
-        <Button
-          variant="outlined"
-          onClick={onBack}
-          fullWidth={isMobile}
-          sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
-        >
-          Back
-        </Button>
         <Button
           variant="contained"
           disableElevation
