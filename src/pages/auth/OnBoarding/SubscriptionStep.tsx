@@ -30,7 +30,6 @@ import type {
 import ErrorAlert from "../../../components/Error";
 
 interface SubscriptionStepProps {
-  onBack: () => void;
   onFinish: () => void;
 }
 
@@ -116,7 +115,6 @@ const SUBSCRIPTION_PLANS: SubscriptionPlanCard[] = [
 ];
 
 export default function SubscriptionStep({
-  onBack,
   onFinish,
 }: SubscriptionStepProps): ReactElement {
   const theme = useTheme();
@@ -327,15 +325,6 @@ export default function SubscriptionStep({
           flexDirection: isMobile ? "column-reverse" : "row",
         }}
       >
-        <Button
-          variant="outlined"
-          onClick={onBack}
-          fullWidth={isMobile}
-          disabled={loading}
-          sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
-        >
-          Back
-        </Button>
 
         <Button
           variant="contained"

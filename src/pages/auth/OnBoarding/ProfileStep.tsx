@@ -242,14 +242,6 @@ export default function ProfileStep({ onNext }: ProfileStepProps): ReactElement 
         }}
       >
         <Button
-          variant="outlined"
-          disabled
-          fullWidth={isMobile}
-          sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
-        >
-          Back
-        </Button>
-        <Button
           variant="contained"
           disableElevation
           onClick={handleContinue}

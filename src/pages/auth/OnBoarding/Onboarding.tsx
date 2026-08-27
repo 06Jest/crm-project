@@ -2,8 +2,8 @@
 import { useState, Suspense, lazy, type ReactElement, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Box, Paper, Stepper, Step, StepLabel, StepConnector, stepConnectorClasses,
-  Container, Fade, CircularProgress, useMediaQuery, useTheme, styled,
+  Box, Paper, Stepper, Step, StepLabel, 
+  Container, Fade, CircularProgress, useMediaQuery, useTheme,
 } from '@mui/material';
 import CheckRoundedIcon from '@mui/icons-material/CheckRounded';
 import { useDispatch } from 'react-redux';
@@ -18,16 +18,16 @@ const SubscriptionStep = lazy(() => import('./SubscriptionStep'));
 
 type OnboardingStep = 1 | 2 | 3;
 
-const MinimalConnector = styled(StepConnector)(({ theme }) => ({
-  [`&.${stepConnectorClasses.alternativeLabel}`]: { top: 12 },
-  [`& .${stepConnectorClasses.line}`]: {
-    borderColor: theme.palette.divider,
-    borderTopWidth: 2,
-    transition: 'border-color 0.3s ease',
-  },
-  [`&.${stepConnectorClasses.active} .${stepConnectorClasses.line}`]: { borderColor: theme.palette.primary.main },
-  [`&.${stepConnectorClasses.completed} .${stepConnectorClasses.line}`]: { borderColor: theme.palette.primary.main },
-}));
+// const MinimalConnector = styled(StepConnector)(({ theme }) => ({
+//   [`&.${stepConnectorClasses.alternativeLabel}`]: { top: 12 },
+//   [`& .${stepConnectorClasses.line}`]: {
+//     borderColor: theme.palette.divider,
+//     borderTopWidth: 2,
+//     transition: 'border-color 0.3s ease',
+//   },
+//   [`&.${stepConnectorClasses.active} .${stepConnectorClasses.line}`]: { borderColor: theme.palette.primary.main },
+//   [`&.${stepConnectorClasses.completed} .${stepConnectorClasses.line}`]: { borderColor: theme.palette.primary.main },
+// }));
 
 function MinimalStepIcon({ active, completed, icon }: { active?: boolean; completed?: boolean; icon: ReactNode }) {
   return (
@@ -79,17 +79,11 @@ function OnboardingWizard({ user }: { user: DisplayProfile }): ReactElement {
     navigate("/approval", { replace: true });
   };
 
-  const handleBack = (): void => {
-    if (currentStep > 1) {
-      setCurrentStep((prev) => (prev - 1) as OnboardingStep);
-    }
-  };
-
   const renderStepContent = (): ReactElement => {
     switch (currentStep) {
       case 1: return <ProfileStep onNext={handleNext} />;
-      case 2: return <WorkspaceStep onBack={handleBack} onNext={handleNext} onFinish={handleFinish} />;
-      case 3: return <SubscriptionStep onBack={handleBack} onFinish={handleFinish} />;
+      case 2: return <WorkspaceStep onNext={handleNext} onFinish={handleFinish} />;
+      case 3: return <SubscriptionStep onFinish={handleFinish} />;
       default: return <ProfileStep onNext={handleNext} />;
     }
   };
@@ -100,7 +94,7 @@ function OnboardingWizard({ user }: { user: DisplayProfile }): ReactElement {
       minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
       backgroundColor: 'background.default', py: isMobile ? 3 : 5, px: isMobile ? 1.5 : 2,
     }}>
-      <Container maxWidth="sm" disableGutters>
+      <Container maxWidth="md" disableGutters>
         <Paper elevation={0} sx={{
           p: isMobile ? 3 : 5, borderRadius: 3, maxWidth: 680, mx: 'auto',
           border: '1px solid', borderColor: 'divider',
@@ -108,17 +102,25 @@ function OnboardingWizard({ user }: { user: DisplayProfile }): ReactElement {
         }}>
           
           <Stepper
-            activeStep={currentStep - 1}
-            connector={<MinimalConnector />}
+            activeStep={0}
             sx={{
               mb: { xs: 3, sm: 5 },
-              '& .MuiStepLabel-label': { fontSize: isMobile ? '0.7rem' : '0.875rem', fontWeight: 500, mt: '6px !important' },
-              '& .MuiStepLabel-label.Mui-active': { fontWeight: 700, color: 'text.primary' },
+              '& .MuiStepConnector-root': {
+                display: 'none',
+              },
+              '& .MuiStepLabel-label': {
+                fontSize: isMobile ? '0.7rem' : '0.875rem',
+                fontWeight: 700,
+                color: 'text.primary',
+                mt: '6px !important',
+              },
             }}
           >
-            {steps.map((label) => (
-              <Step key={label}><StepLabel StepIconComponent={MinimalStepIcon}>{label}</StepLabel></Step>
-            ))}
+            <Step>
+              <StepLabel StepIconComponent={MinimalStepIcon}>
+                {steps[currentStep - 1]}
+              </StepLabel>
+            </Step>
           </Stepper>
 
           <Suspense fallback={

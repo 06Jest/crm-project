@@ -24,7 +24,6 @@ import ErrorAlert from '../../../components/Error';
 import { COMPANY_SIZES, INDUSTRIES, PRODUCT_TYPES } from '../../../types/global';
 
 interface WorkspaceStepProps {
-  onBack: () => void;
   onNext: () => void;
   onFinish: () => void;
 }
@@ -35,7 +34,6 @@ interface FormErrors {
 }
 
 export default function WorkspaceStep({
-  onBack,
   onNext,
   onFinish,
 }: WorkspaceStepProps): ReactElement {
@@ -457,14 +455,6 @@ export default function WorkspaceStep({
           flexDirection: isMobile ? 'column-reverse' : 'row',
         }}
       >
-        <Button
-          variant="outlined"
-          onClick={onBack}
-          fullWidth={isMobile}
-          sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
-        >
-          Back
-        </Button>
         <Button
           variant="contained"
           disableElevation
