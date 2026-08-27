@@ -7,42 +7,51 @@ import { oauthLoginAPI } from "../../../services/authService";
 export default function AuthCallback() {
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const handleCallback = async () => {
-      try {
-        const {
-          data: { session },
-          error,
-        } = await supabase.auth.getSession();
+useEffect(() => {
+  const handleCallback = async () => {
+    console.log("🔥 AUTH CALLBACK STARTED");
 
-        if (error || !session?.access_token) {
-          console.error("No Supabase OAuth session:", error);
-          navigate("/login", { replace: true });
-          return;
-        }
+    try {
+      const {
+        data: { session },
+        error,
+      } = await supabase.auth.getSession();
 
-        const result = await oauthLoginAPI(
-          session.access_token
-        );
+      console.log("🔥 SUPABASE SESSION:", session);
+      console.log("🔥 SUPABASE ERROR:", error);
 
-        navigate(
-          result.needsOnboarding
-            ? "/onboarding"
-            : "/app/dashboard",
-          { replace: true }
-        );
-      } catch (error) {
-        console.error(
-          "OAuth authentication failed:",
-          error
-        );
-
+      if (error || !session?.access_token) {
+        console.log("🔥 NO SESSION, REDIRECTING TO LOGIN");
         navigate("/login", { replace: true });
+        return;
       }
-    };
 
-    handleCallback();
-  }, [navigate]);
+      console.log("🔥 CALLING BACKEND OAUTH");
+
+      const result = await oauthLoginAPI(
+        session.access_token
+      );
+
+      console.log("🔥 BACKEND OAUTH RESULT:", result);
+
+      navigate(
+        result.needsOnboarding
+          ? "/onboarding"
+          : "/app/dashboard",
+        { replace: true }
+      );
+    } catch (error) {
+      console.error(
+        "🔥 OAuth authentication failed:",
+        error
+      );
+
+      navigate("/login", { replace: true });
+    }
+  };
+
+  handleCallback();
+}, [navigate]);
 
   return (
     <Box
