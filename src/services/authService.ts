@@ -27,17 +27,25 @@ export const signInAPI = async (dto: SignInDTO) => {
 // };
 
 export const oauthLoginAPI = async (accessToken: string) => {
-  console.log("🔥 OAUTH TOKEN EXISTS:", !!accessToken);
-  console.log(
-    "🔥 OAUTH TOKEN LENGTH:",
-    accessToken?.length
-  );
-
-  return apiClient("/api/auth/oauth", {
+  return fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/oauth`, {
     method: "POST",
+    credentials: "include",
     headers: {
+      "Content-Type": "application/json",
       Authorization: `Bearer ${accessToken}`,
     },
+  }).then(async (response) => {
+    const data = await response.json().catch(() => null);
+
+    if (!response.ok) {
+      throw new Error(
+        data?.error ??
+        data?.message ??
+        `API Error: ${response.status}`
+      );
+    }
+
+    return data;
   });
 };
 
