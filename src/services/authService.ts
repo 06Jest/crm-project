@@ -17,7 +17,22 @@ export const signInAPI = async (dto: SignInDTO) => {
   });
 };
 
+// export const oauthLoginAPI = async (accessToken: string) => {
+//   return apiClient("/api/auth/oauth", {
+//     method: "POST",
+//     headers: {
+//       Authorization: `Bearer ${accessToken}`,
+//     },
+//   });
+// };
+
 export const oauthLoginAPI = async (accessToken: string) => {
+  console.log("🔥 OAUTH TOKEN EXISTS:", !!accessToken);
+  console.log(
+    "🔥 OAUTH TOKEN LENGTH:",
+    accessToken?.length
+  );
+
   return apiClient("/api/auth/oauth", {
     method: "POST",
     headers: {
