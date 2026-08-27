@@ -296,13 +296,16 @@ export default function WorkspaceStep({
           />
 
           <Autocomplete
+            freeSolo
             options={INDUSTRIES}
-            value={formData.industry || null}
+            clearOnBlur={false}
+            value={null}
+            inputValue={formData.industry ?? ""}
             disabled={loading}
-            onChange={(_, value) => {
+            onInputChange={(_, value) => {
               setFormData((prev) => ({
                 ...prev,
-                industry: value ?? '',
+                industry: value,
               }));
             }}
             renderInput={(params) => (
@@ -316,13 +319,16 @@ export default function WorkspaceStep({
           />
 
           <Autocomplete
+            freeSolo
             options={PRODUCT_TYPES}
-            value={formData.product_type || null}
+            clearOnBlur={false}
+            value={null}
+            inputValue={formData.product_type ?? ""}
             disabled={loading}
-            onChange={(_, value) => {
+            onInputChange={(_, value) => {
               setFormData((prev) => ({
                 ...prev,
-                product_type: value ?? '',
+                product_type: value,
               }));
             }}
             renderInput={(params) => (
@@ -377,13 +383,16 @@ export default function WorkspaceStep({
             required
           />
           <Autocomplete
+            freeSolo
             options={INDUSTRIES}
-            value={formData.industry || null}
+            clearOnBlur={false}
+            value={null}
+            inputValue={formData.industry ?? ""}
             disabled={loading}
-            onChange={(_, value) => {
+            onInputChange={(_, value) => {
               setFormData((prev) => ({
                 ...prev,
-                industry: value ?? '',
+                industry: value,
               }));
             }}
             renderInput={(params) => (
@@ -396,13 +405,16 @@ export default function WorkspaceStep({
             )}
           />
           <Autocomplete
+            freeSolo
             options={PRODUCT_TYPES}
-            value={formData.product_type || null}
+            clearOnBlur={false}
+            value={null}
+            inputValue={formData.product_type ?? ""}
             disabled={loading}
-            onChange={(_, value) => {
+            onInputChange={(_, value) => {
               setFormData((prev) => ({
                 ...prev,
-                product_type: value ?? '',
+                product_type: value,
               }));
             }}
             renderInput={(params) => (

@@ -208,14 +208,9 @@ export default function ProfileStep({ onNext }: ProfileStepProps): ReactElement 
         freeSolo
         clearOnBlur={false}
         options={JOB_TITLE_OPTIONS}
-        value={formData.job_title ?? ""}
+        value={null}
+        inputValue={formData.job_title ?? ""}
         disabled={loading}
-        onChange={(_, value) => {
-          setFormData((prev) => ({
-            ...prev,
-            job_title: value ?? "",
-          }));
-        }}
         onInputChange={(_, value) => {
           setFormData((prev) => ({
             ...prev,
