@@ -7,40 +7,41 @@ import { oauthLoginAPI } from "../../../services/authService";
 export default function AuthCallback() {
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const handleCallback = async () => {
-      try {
-        const { data, error } =
-          await supabase.auth.getSession();
+useEffect(() => {
+  const handleCallback = async () => {
+    try {
+      const {
+        data: { session },
+        error,
+      } = await supabase.auth.getSession();
 
-        if (error || !data.session) {
-          navigate("/login", { replace: true });
-          return;
-        }
-
-        const result = await oauthLoginAPI(
-          data.session.access_token
-        );
-
-        navigate(
-          result.needsOnboarding
-            ? "/onboarding"
-            : "/app/dashboard",
-          { replace: true }
-        );
-
-      } catch (error) {
-        console.error(
-          "OAuth authentication failed:",
-          error
-        );
-
+      if (error || !session?.access_token) {
         navigate("/login", { replace: true });
+        return;
       }
-    };
 
-    handleCallback();
-  }, [navigate]);
+
+      const result = await oauthLoginAPI(
+        session.access_token
+      );
+
+      navigate(
+        result.needsOnboarding
+          ? "/onboarding"
+          : "/app/dashboard",
+        { replace: true }
+      );
+    } catch (error) {
+      console.error(
+        "OAuth authentication failed:",
+        error
+      );
+      navigate("/login", { replace: true });
+    }
+  };
+
+  handleCallback();
+}, [navigate]);
 
   return (
     <Box
