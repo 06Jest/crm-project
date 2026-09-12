@@ -1841,7 +1841,7 @@ The project grew alongside the developer's journey from learning software develo
 
 Hi, I'm Jest the developer.,
 
-UniThread is my first ever software project. I built uniThread as a training ground for learning software development beyond individual features, with a particular focus on designing and implementing maintainable, scalable, and enterprise-grade architectural principles.
+UniThread is my first ever software project. I built uniThread as a training ground for learning software development especially in Enterprise grade level architecture. For me, exposing myself such thing is the best way to learn and to prepare myself in real production environments. 
 
 The project continues to evolve alongside my development journey. I regularly revisit its architecture, experiment with modern technologies, improve existing implementations, fix bugs, and work on performance and optimization.
 
