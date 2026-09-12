@@ -1,9 +1,5 @@
 # uniThread CRM
-![alt text](image.png)
 ![alt text](image-1.png)
-![alt text](image-2.png)
-![alt text](image-3.png)
-![alt text](image-4.png)
 
 > **One thread. One workspace. Connected relationships.**
 
