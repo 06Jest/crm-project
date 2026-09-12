@@ -1837,6 +1837,20 @@ The project grew alongside the developer's journey from learning software develo
 
 ---
 
+# A Note from the Developer
+
+Hi, I'm Jest the developer.,
+
+UniThread is my first ever software project. I built uniThread as a training ground for learning software development beyond individual features, with a particular focus on designing and implementing maintainable, scalable, and enterprise-grade architectural principles.
+
+The project continues to evolve alongside my development journey. I regularly revisit its architecture, experiment with modern technologies, improve existing implementations, fix bugs, and work on performance and optimization.
+
+It's not a finished product or a representation of everything I know. It's a record of what I've learned, what I'm building, and how I'm growing as a developer.
+
+I scale up, just as my works does.
+
+---
+
 # Final Note
 
 uniThread is more than a collection of CRUD interfaces.
