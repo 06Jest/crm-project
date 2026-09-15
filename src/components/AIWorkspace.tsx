@@ -836,7 +836,7 @@ const handleConfirm = () => {
                       textOverflow: "ellipsis",
                     }}
                   >
-                    uniThread AI
+                    {selectedAgent.name}
                   </div>
 
                   <div
