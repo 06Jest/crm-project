@@ -19,6 +19,7 @@ export interface AIState {
   conversations: AIConversation[];
   loading: boolean;
   conversationsLoading: boolean;
+  conversationLoading: boolean;
   error: string | null;
   confirmation: AIConfirmation | null;
   sources: AIResponseSource[];

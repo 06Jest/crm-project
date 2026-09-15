@@ -27,6 +27,7 @@ const initialState: AIState = {
   agentId: null,
   loading: false,
   conversationsLoading: false,
+  conversationLoading: false,
   error: null,
   confirmation: null,
   sources: [],
@@ -307,7 +308,7 @@ const aiSlice = createSlice({
     );
 
     builder.addCase(loadAIConversation.pending, (state) => {
-      state.loading = true;
+      state.conversationLoading = true;
       state.error = null;
     });
 
@@ -316,7 +317,7 @@ const aiSlice = createSlice({
       (state, action) => {
         const { conversation, messages } = action.payload;
 
-        state.loading = false;
+        state.conversationLoading = false;
         state.conversationId = conversation.id;
         state.agentId = conversation.agent_id;
         state.messages = messages;
@@ -329,7 +330,7 @@ const aiSlice = createSlice({
     builder.addCase(
       loadAIConversation.rejected,
       (state, action) => {
-        state.loading = false;
+        state.conversationLoading = false;
         state.error =
           action.payload ?? "Failed to load AI conversation";
       }

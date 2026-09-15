@@ -13,6 +13,7 @@ import {
 } from "../store/aiSlice";
 
 import {
+  useCallback,
   useEffect,
   useRef,
   useState,
@@ -70,6 +71,7 @@ const SUGGESTED_PROMPTS: Record<AIAgentId, string[]> = {
   ],
 };
 
+
 export default function AIWorkspace() {
   const dispatch = useDispatch<AppDispatch>();
   const theme = useTheme();
@@ -83,6 +85,7 @@ export default function AIWorkspace() {
     loading,
     conversations,
     conversationsLoading,
+    conversationLoading,
     error,
     confirmation,
     sources,
@@ -98,13 +101,29 @@ export default function AIWorkspace() {
     (state: RootState) => state.ui.isAIWorkspaceOpen
   );
 
-  
+  const isDarkMode = theme.palette.mode === "dark";
+
+  const glassBackground = isDarkMode
+    ? "rgba(24, 24, 28, 0.35)"
+    : "rgba(246, 239, 234, 0.35)";
+
+  const glassSurface = isDarkMode
+    ? "rgba(255, 255, 255, 0.025)"
+    : "rgba(255, 255, 255, 0.25)";
+
+  const glassSurfaceStrong = isDarkMode
+    ? "rgba(255, 255, 255, 0.05)"
+    : "rgba(255, 255, 255, 0.20)";
+
+  const glassBorder = isDarkMode
+    ? "rgba(255, 255, 255, 0.13)"
+    : "rgba(120, 85, 60, 0.18)";
 
 
   const [input, setInput] = useState("");
   const [position, setPosition] = useState({
-    x: mode === "public" ? window.innerWidth - 444 : 100,
-    y: mode === "public" ? window.innerHeight - 624 : 100,
+    x: Math.max(24, window.innerWidth - 420 - 24),
+    y: Math.max(24, window.innerHeight - 600 - 24),
   });
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
@@ -138,7 +157,14 @@ export default function AIWorkspace() {
   });
 
   const handleDragStart = (event: React.PointerEvent<HTMLElement>) => {
-    if (isMobile) {
+    if (isMobile || isResizing) {
+      return;
+    }
+
+    const target = event.target as HTMLElement;
+
+    // Do not start dragging when interacting with controls.
+    if (target.closest("button, select, textarea, input, a")) {
       return;
     }
 
@@ -154,7 +180,8 @@ export default function AIWorkspace() {
     setIsDragging(true);
   };
 
-  const handleDragMove = (event: React.PointerEvent<HTMLElement>) => {
+const handleDragMove = useCallback(
+  (event: PointerEvent) => {
     if (!isDragging) {
       return;
     }
@@ -165,25 +192,38 @@ export default function AIWorkspace() {
     const nextX = dragStart.current.positionX + deltaX;
     const nextY = dragStart.current.positionY + deltaY;
 
-    const maxX = Math.max(
-      24,
-      window.innerWidth - size.width - 24
-    );
-
-    const maxY = Math.max(
-      24,
-      window.innerHeight - size.height - 24
-    );
+    const maxX = Math.max(24, window.innerWidth - size.width - 24);
+    const maxY = Math.max(24, window.innerHeight - size.height - 24);
 
     setPosition({
       x: Math.min(Math.max(24, nextX), maxX),
       y: Math.min(Math.max(24, nextY), maxY),
     });
-  };
+  },
+  [isDragging, size.width, size.height]
+);
 
-  const handleDragEnd = () => {
-    setIsDragging(false);
+const handleDragEnd = useCallback(() => {
+  setIsDragging(false);
+}, []);
+
+useEffect(() => {
+  if (!isDragging) {
+    return;
+  }
+
+  window.addEventListener("pointermove", handleDragMove);
+  window.addEventListener("pointerup", handleDragEnd);
+  window.addEventListener("pointercancel", handleDragEnd);
+
+  return () => {
+    window.removeEventListener("pointermove", handleDragMove);
+    window.removeEventListener("pointerup", handleDragEnd);
+    window.removeEventListener("pointercancel", handleDragEnd);
   };
+}, [isDragging, handleDragMove, handleDragEnd]);
+
+
   const handleResizeStart = (
   event: React.PointerEvent<HTMLDivElement>,
   direction: string
@@ -414,10 +454,11 @@ const handleCancel = () => {
           style={{
             position: "fixed",
             zIndex: 5000,
-            left: isMobile ? 0 : "auto",
-            top: isMobile ? 0 : "auto",
-            right: isMobile ? "auto" : 24,
-            bottom: isMobile ? "auto" : 24,
+            isolation: "isolate",
+            left: isMobile ? 0 : position.x,
+            top: isMobile ? 0 : position.y,
+            right: "auto",
+            bottom: "auto",
             width: isMobile ? "100%" : size.width,
             height: isMobile ? "100%" : size.height,
             minWidth: isMobile ? 0 : 320,
@@ -426,32 +467,39 @@ const handleCancel = () => {
             overflow: "hidden",
             resize: "none",
             color: theme.palette.text.primary,
-            border: `1px solid ${theme.palette.divider}`,
-            borderRadius: isMobile ? 0 : 24,
-            background: theme.palette.background.paper,
-            backdropFilter: "blur(28px) saturate(150%)",
-            WebkitBackdropFilter: "blur(28px) saturate(150%)",
-            boxShadow:
-              theme.palette.mode === "dark"
-                ? "0 24px 80px rgba(0, 0, 0, 0.55)"
-                : "0 24px 80px rgba(0, 0, 0, 0.20)",
+            border: `1px solid ${glassBorder}`,
+            borderRadius: isMobile ? 0 : 28,
+            background: glassBackground,
+            backdropFilter: "blur(24px) saturate(160%)",
+            WebkitBackdropFilter: "blur(24px) saturate(160%)",
+            boxShadow: isDarkMode
+              ? `
+                  0 24px 80px rgba(0, 0, 0, 0.52),
+                  inset 0 1px 0 rgba(255, 255, 255, 0.10),
+                  inset 0 0 0 1px rgba(255, 255, 255, 0.025)
+                `
+              : `
+                  0 24px 80px rgba(70, 52, 35, 0.18),
+                  inset 0 1px 0 rgba(255, 255, 255, 0.85),
+                  inset 0 0 0 1px rgba(255, 255, 255, 0.30)
+                `,
           }}
         >
           {mode === "authenticated" &&
               isSidebarOpen &&
               isSidebarAllowed && (
             <aside
-              className="ai-conversation-sidebar"
+              className="ai-conversation-sidebar ai-conversation-scroll"
               style={{
                 width: 220,
                 minWidth: 220,
                 display: "flex",
+                paddingBottom: 16,
                 flexDirection: "column",
-                borderRight: `1px solid ${theme.palette.divider}`,
-                background:
-                  theme.palette.mode === "dark"
-                    ? "rgba(255, 255, 255, 0.035)"
-                    : "rgba(0, 0, 0, 0.025)",
+                background: glassSurface,
+                backdropFilter: "blur(24px) saturate(160%)",
+                WebkitBackdropFilter: "blur(24px) saturate(160%)",
+                borderRight: `1px solid ${glassBorder}`,
               }}
             >
               <div
@@ -485,7 +533,7 @@ const handleCancel = () => {
 
               <div
                 style={{
-                  padding: "0 12px",
+                  paddingLeft: "12px",
                   overflowY: "auto",
                   flex: 1,
                 }}
@@ -516,7 +564,8 @@ const handleCancel = () => {
                     style={{
                       display: "flex",
                       flexDirection: "column",
-                      gap: 6,
+                      borderTop: `1px solid ${glassBorder}`,
+                      borderBottom: `1px solid ${glassBorder}`,
                     }}
                   >
                     {conversations.map((conversation) => {
@@ -530,22 +579,23 @@ const handleCancel = () => {
                             dispatch(loadAIConversation(conversation.id));
                           }}
                           style={{
-                            width: "100%",
-                            padding: "11px 12px",
-                            border: isActive
-                              ? `1px solid ${theme.palette.primary.main}55`
-                              : "1px solid transparent",
-                            borderRadius: 10,
-                            background: isActive
-                              ? theme.palette.mode === "dark"
-                                ? "rgba(173, 116, 80, 0.20)"
-                                : "rgba(173, 116, 80, 0.10)"
-                              : "transparent",
-                            color: theme.palette.text.primary,
-                            textAlign: "left",
-                            cursor: "pointer",
-                            overflow: "hidden",
-                          }}
+                          width: "100%",
+                          padding: "11px 12px",
+                          border: "none",
+                          borderBottom: `1px solid ${glassBorder}`,
+                          boxShadow: isActive
+                            ? `inset 0 0 0 1px ${theme.palette.primary.main}55`
+                            : "none",
+                          background: isActive
+                            ? theme.palette.mode === "dark"
+                              ? "rgba(173, 116, 80, 0.20)"
+                              : "rgba(173, 116, 80, 0.10)"
+                            : "transparent",
+                          color: theme.palette.text.primary,
+                          textAlign: "left",
+                          cursor: "pointer",
+                          overflow: "hidden",
+                        }}
                           title={conversation.title ?? "Untitled conversation"}
                         >
                           <div
@@ -596,7 +646,6 @@ const handleCancel = () => {
             </aside>
           )}
 
-          {/* Main content */}
           <div
             style={{
               minWidth: 0,
@@ -605,10 +654,9 @@ const handleCancel = () => {
               flexDirection: "column",
             }}
           >
-            {/* Window header */}
+
             <header
               onPointerDown={handleDragStart}
-              onPointerMove={handleDragMove}
               onPointerUp={handleDragEnd}
               onPointerCancel={handleDragEnd}
               style={{
@@ -617,9 +665,13 @@ const handleCancel = () => {
                 justifyContent: "space-between",
                 gap: 12,
                 padding: "14px 18px",
-                borderBottom: `1px solid ${theme.palette.divider}`,
                 cursor: isDragging ? "grabbing" : isMobile ? "default" : "grab",
                 userSelect: "none",
+                touchAction: "none",
+                background: glassSurface,
+                backdropFilter: "blur(20px) saturate(160%)",
+                WebkitBackdropFilter: "blur(20px) saturate(160%)",
+                borderBottom: `1px solid ${glassBorder}`,
               }}
             >
               <div
@@ -689,7 +741,7 @@ const handleCancel = () => {
                       textOverflow: "ellipsis",
                     }}
                   >
-                    {selectedAgent.name} · {selectedAgent.description}
+                    {selectedAgent.description}
                   </div>
                 </div>
               </div>
@@ -731,6 +783,9 @@ const handleCancel = () => {
                 gap: 8,
                 padding: "12px 18px",
                 borderBottom: `1px solid ${theme.palette.divider}`,
+                background: glassSurface,
+                backdropFilter: "blur(18px) saturate(150%)",
+                WebkitBackdropFilter: "blur(18px) saturate(150%)",
               }}
             >
               <label
@@ -755,7 +810,9 @@ const handleCancel = () => {
                   border: `1px solid ${theme.palette.divider}`,
                   borderRadius: 10,
                   padding: "7px 10px",
-                  background: theme.palette.background.paper,
+                  background: glassSurfaceStrong,
+                  backdropFilter: "blur(16px) saturate(150%)",
+                  WebkitBackdropFilter: "blur(16px) saturate(150%)",
                   color: theme.palette.text.primary,
                   outline: "none",
                   cursor: "pointer",
@@ -835,7 +892,7 @@ const handleCancel = () => {
                         opacity: 0.62,
                       }}
                     >
-                      {selectedAgent.description}. Ask a question to begin your conversation.
+                      Ask a question to begin your conversation.
                     </p>
 
                     <div
@@ -861,7 +918,9 @@ const handleCancel = () => {
                             background:
                               theme.palette.mode === "dark"
                                 ? "rgba(255, 255, 255, 0.06)"
-                                : "rgba(255, 255, 255, 0.7)",
+                                : "rgba(255, 255, 255, 0.38)",
+                            backdropFilter: "blur(14px) saturate(140%)",
+                            WebkitBackdropFilter: "blur(14px) saturate(140%)",
                             color: theme.palette.text.primary,
                             cursor: "pointer",
                             fontSize: 12,
@@ -878,7 +937,7 @@ const handleCancel = () => {
                             event.currentTarget.style.background =
                               theme.palette.mode === "dark"
                                 ? "rgba(255, 255, 255, 0.06)"
-                                : "rgba(255, 255, 255, 0.7)";
+                                : "rgba(255, 255, 255, 0.38)";
                           }}
                         >
                           {prompt}
@@ -886,6 +945,17 @@ const handleCancel = () => {
                       ))}
                     </div>
                   </div>
+                </div>
+              )}
+              {conversationLoading && (
+                <div
+                  style={{
+                    alignSelf: "center",
+                    color: theme.palette.text.secondary,
+                    fontSize: 12,
+                  }}
+                >
+                  Loading conversation...
                 </div>
               )}
 
@@ -909,9 +979,12 @@ const handleCancel = () => {
                           : "16px 16px 16px 4px",
                         background: isUser
                           ? theme.palette.primary.main
-                          : theme.palette.mode === "dark"
-                            ? "rgba(255, 255, 255, 0.09)"
-                            : "rgba(0, 0, 0, 0.06)",
+                          : glassSurfaceStrong,
+                        border: `1px solid ${
+                          isUser ? "transparent" : glassBorder
+                        }`,
+                        backdropFilter: "blur(18px) saturate(150%)",
+                        WebkitBackdropFilter: "blur(18px) saturate(150%)",
                         color: isUser ? "#fff" : theme.palette.text.primary,
                         fontSize: 14,
                         lineHeight: 1.6,
@@ -931,10 +1004,10 @@ const handleCancel = () => {
                     alignSelf: "flex-start",
                     padding: "11px 14px",
                     borderRadius: "16px 16px 16px 4px",
-                    background:
-                      theme.palette.mode === "dark"
-                        ? "rgba(173, 116, 80, 0.20)"
-                        : "rgba(173, 116, 80, 0.12)",
+                    background: glassSurfaceStrong,
+                    border: `1px solid ${glassBorder}`,
+                    backdropFilter: "blur(18px) saturate(150%)",
+                    WebkitBackdropFilter: "blur(18px) saturate(150%)",
                     fontSize: 13,
                   }}
                 >
@@ -1089,7 +1162,6 @@ const handleCancel = () => {
               )}
             </div>
 
-            {/* Input */}
             <form
               onSubmit={handleSubmit}
               style={{
@@ -1097,7 +1169,10 @@ const handleCancel = () => {
                 alignItems: "flex-end",
                 gap: 10,
                 padding: "14px 18px 18px",
-                border: `1px solid ${theme.palette.divider}`,
+                borderTop: `1px solid ${glassBorder}`,
+                background: glassSurface,
+                backdropFilter: "blur(20px) saturate(160%)",
+                WebkitBackdropFilter: "blur(20px) saturate(160%)",
               }}
             >
               <textarea
@@ -1112,13 +1187,12 @@ const handleCancel = () => {
                   minWidth: 0,
                   maxHeight: 120,
                   resize: "none",
-                  border: `1px solid ${theme.palette.divider}`,
-                  borderRadius: 14,
+                  border: `1px solid ${glassBorder}`,
+                  borderRadius: 16,
                   padding: "11px 13px",
-                  background:
-                    theme.palette.mode === "dark"
-                      ? "rgba(173, 116, 80, 0.20)"
-                      : "rgba(173, 116, 80, 0.12)",
+                  background: glassSurfaceStrong,
+                  backdropFilter: "blur(16px) saturate(150%)",
+                  WebkitBackdropFilter: "blur(16px) saturate(150%)",
                   color: theme.palette.text.primary,
                   outline: "none",
                   font: "inherit",
@@ -1277,6 +1351,39 @@ const handleCancel = () => {
               inset: 0 auto 0 0;
               height: 100%;
             }
+          }
+          .ai-conversation-scroll {
+            scrollbar-width: thin;
+            scrollbar-color: ${
+              isDarkMode
+                ? "rgba(255, 255, 255, 0.22) transparent"
+                : "rgba(120, 85, 60, 0.22) transparent"
+            };
+          }
+
+          .ai-conversation-scroll::-webkit-scrollbar {
+            width: 6px;
+          }
+
+          .ai-conversation-scroll::-webkit-scrollbar-track {
+            background: transparent;
+          }
+
+          .ai-conversation-scroll::-webkit-scrollbar-thumb {
+            background: ${
+              isDarkMode
+                ? "rgba(255, 255, 255, 0.22)"
+                : "rgba(120, 85, 60, 0.22)"
+            };
+            border-radius: 999px;
+          }
+
+          .ai-conversation-scroll::-webkit-scrollbar-thumb:hover {
+            background: ${
+              isDarkMode
+                ? "rgba(255, 255, 255, 0.35)"
+                : "rgba(120, 85, 60, 0.35)"
+            };
           }
         `}
       </style>
