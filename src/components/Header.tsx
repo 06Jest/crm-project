@@ -23,7 +23,11 @@ import {
   useTheme,
   useMediaQuery,
 } from "@mui/material";
-import { toggleTheme } from '../store/uiSlice';
+import {
+  toggleTheme,
+  openAIWorkspace,
+  closeAIWorkspace,
+} from "../store/uiSlice";
 import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '../store/store';
 import logo from '../assets/logobrown.svg'
@@ -37,6 +41,7 @@ import MenuIcon from '@mui/icons-material/Menu';
 import HomeRoundedIcon from '@mui/icons-material/HomeRounded';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import LightModeIcon from '@mui/icons-material/LightMode';
+import SmartToyRoundedIcon from "@mui/icons-material/SmartToyRounded";
 
 const NAV_LINKS = [
   { label: 'Overview', path: '/overview' },
@@ -50,6 +55,9 @@ export default function Header() {
   const themeMode = useSelector((state: RootState) => state.ui.themeMode);
   const { logout } = useAuth();
   const dispatch = useDispatch<AppDispatch>();
+  const isAIWorkspaceOpen = useSelector(
+    (state: RootState) => state.ui.isAIWorkspaceOpen
+  );
   const navigate = useNavigate();
   const theme = useTheme();
   const isXs = useMediaQuery(theme.breakpoints.down('sm'));
@@ -229,6 +237,30 @@ export default function Header() {
                 
               </Box>
             </>
+          )}
+          {user && (
+            <IconButton
+              onClick={() =>
+                dispatch(
+                  isAIWorkspaceOpen
+                    ? closeAIWorkspace()
+                    : openAIWorkspace()
+                )
+              }
+              color="primary"
+              aria-label={
+                isAIWorkspaceOpen
+                  ? "Close AI assistant"
+                  : "Open AI assistant"
+              }
+              title={
+                isAIWorkspaceOpen
+                  ? "Close AI assistant"
+                  : "Open AI assistant"
+              }
+            >
+              <SmartToyRoundedIcon />
+            </IconButton>
           )}
           {user && (
             <>
@@ -437,6 +469,7 @@ export default function Header() {
           </Button>
         </DialogActions>
       </Dialog>
+      
     </AppBar>
   )
 };

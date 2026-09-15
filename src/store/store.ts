@@ -19,9 +19,11 @@ import tasksReducer from './tasksSlice'
 import conversatiosReducer from './conversationsSlice'
 import messagesReducer from './messagesSlice'
 import smsReducer from './smsSlice'
+import aiReducer from "./aiSlice";
 
 export const store = configureStore({
   reducer: {
+    ai: aiReducer,
     user: userReducer, 
     profile: profileReducer,
     organization: organizationReducer,
