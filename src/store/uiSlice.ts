@@ -5,6 +5,7 @@ type ThemeMode = 'light' | 'dark';
 
 interface UIState {
   themeMode: ThemeMode;
+  isAIWorkspaceOpen: boolean;
 }
 
 const getSavedTheme = (): ThemeMode => {
@@ -19,6 +20,7 @@ const getSavedTheme = (): ThemeMode => {
 
 const initialState: UIState = {
   themeMode: getSavedTheme(),
+  isAIWorkspaceOpen: false,
 };
 
 const uiSlice = createSlice({
@@ -34,8 +36,23 @@ const uiSlice = createSlice({
       state.themeMode = action.payload;
       localStorage.setItem('crm_theme', action.payload);
     },
+
+    openAIWorkspace: (state) => {
+      state.isAIWorkspaceOpen = true;
+    },
+
+    closeAIWorkspace: (state) => {
+      state.isAIWorkspaceOpen = false;
+    },
+    
   },
 });
 
-export const { toggleTheme, setTheme } = uiSlice.actions;
+export const {
+  toggleTheme,
+  setTheme,
+  openAIWorkspace,
+  closeAIWorkspace,
+} = uiSlice.actions;
+
 export default uiSlice.reducer;

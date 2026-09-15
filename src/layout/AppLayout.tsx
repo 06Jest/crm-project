@@ -8,11 +8,19 @@ import Sidebar, {
   MOBILE_BOTTOM_NAV_HEIGHT,
 } from "../components/Sidebar";
 import AIWorkspace from "../components/AIWorkspace";
-
+import { useDispatch } from "react-redux";
+import { useEffect } from "react";
+import { setMode } from "../store/aiSlice";
+import type { AppDispatch } from "../store/store";
 import { useSidebar } from "../hooks/useSidebar";
 
 function AppLayout() {
   const { collapsed } = useSidebar();
+  const dispatch = useDispatch<AppDispatch>();
+
+  useEffect(() => {
+    dispatch(setMode("authenticated"));
+  }, [dispatch]);
 
   return (
     <Box
@@ -67,8 +75,6 @@ function AppLayout() {
       </Box>
 
       <Footer />
-
-      {/* Global authenticated AI assistant */}
       <AIWorkspace />
     </Box>
   );

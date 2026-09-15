@@ -6,20 +6,29 @@ import {
   clearConfirmation,
   setAgentId,
   sendAIChat,
+  sendPublicAIChat,
   confirmAIAction,
+  loadAIConversations,
+  loadAIConversation,
 } from "../store/aiSlice";
 
 import {
+  useEffect,
+  useRef,
   useState,
   type FormEvent,
   type KeyboardEvent,
 } from "react";
+
 import SendIcon from '@mui/icons-material/Send';
 import { useTheme, useMediaQuery } from "@mui/material";
-
 import type { RootState, AppDispatch } from "../store/store";
-
 import type { AIAgentId } from "../types/ai";
+import { useAuth } from "../hooks/useAuth";
+import {
+  closeAIWorkspace,
+  openAIWorkspace,
+} from "../store/uiSlice";
 
 const AGENTS: {
   id: AIAgentId;
@@ -38,14 +47,33 @@ const AGENTS: {
   },
   {
     id: "crm-assistant",
-    name: "Uno AI",
+    name: "uniThread AI",
     description: "Your uniThread knowledge assistant",
   },
 ];
 
+const SUGGESTED_PROMPTS: Record<AIAgentId, string[]> = {
+  "personal-assistant": [
+    "What tasks do I have?",
+    "Create a note for me",
+    "Help me organize my priorities",
+  ],
+  "organization-assistant": [
+    "Show me our recent leads",
+    "What contacts do we have?",
+    "Give me an overview of our CRM",
+  ],
+  "crm-assistant": [
+    "What is uniThread CRM?",
+    "What features does uniThread offer?",
+    "How can I use uniThread to manage leads?",
+  ],
+};
+
 export default function AIWorkspace() {
   const dispatch = useDispatch<AppDispatch>();
   const theme = useTheme();
+  const { user } = useAuth();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const {
     mode,
@@ -53,29 +81,238 @@ export default function AIWorkspace() {
     agentId,
     conversationId,
     loading,
+    conversations,
+    conversationsLoading,
     error,
     confirmation,
     sources,
   } = useSelector((state: RootState) => state.ai);
 
-  const [isOpen, setIsOpen] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [isExpanded, setIsExpanded] = useState(false);
+  useEffect(() => {
+    if (mode === "authenticated" && user) {
+      dispatch(loadAIConversations());
+    }
+  }, [dispatch, mode, user]);
+
+  const isOpen = useSelector(
+    (state: RootState) => state.ui.isAIWorkspaceOpen
+  );
+
+  
+
+
   const [input, setInput] = useState("");
+  const [position, setPosition] = useState({
+    x: mode === "public" ? window.innerWidth - 444 : 100,
+    y: mode === "public" ? window.innerHeight - 624 : 100,
+  });
+  const [isDragging, setIsDragging] = useState(false);
+  const [isResizing, setIsResizing] = useState(false);
+  const [size, setSize] = useState({
+    width: 420,
+    height: 600,
+  });
+
+  const SIDEBAR_BREAKPOINT = 700;
+  const isSidebarAllowed =
+  isMobile || size.width >= SIDEBAR_BREAKPOINT;
+
+  const [isSidebarOpen, setIsSidebarOpen] = useState(
+    mode === "authenticated"
+  );
+
+  const dragStart = useRef({
+    mouseX: 0,
+    mouseY: 0,
+    positionX: 0,
+    positionY: 0,
+  });
+  const resizeStart = useRef({
+    mouseX: 0,
+    mouseY: 0,
+    width: 0,
+    height: 0,
+    positionX: 0,
+    positionY: 0,
+    direction: "",
+  });
+
+  const handleDragStart = (event: React.PointerEvent<HTMLElement>) => {
+    if (isMobile) {
+      return;
+    }
+
+    event.preventDefault();
+
+    dragStart.current = {
+      mouseX: event.clientX,
+      mouseY: event.clientY,
+      positionX: position.x,
+      positionY: position.y,
+    };
+
+    setIsDragging(true);
+  };
+
+  const handleDragMove = (event: React.PointerEvent<HTMLElement>) => {
+    if (!isDragging) {
+      return;
+    }
+
+    const deltaX = event.clientX - dragStart.current.mouseX;
+    const deltaY = event.clientY - dragStart.current.mouseY;
+
+    const nextX = dragStart.current.positionX + deltaX;
+    const nextY = dragStart.current.positionY + deltaY;
+
+    const maxX = Math.max(
+      24,
+      window.innerWidth - size.width - 24
+    );
+
+    const maxY = Math.max(
+      24,
+      window.innerHeight - size.height - 24
+    );
+
+    setPosition({
+      x: Math.min(Math.max(24, nextX), maxX),
+      y: Math.min(Math.max(24, nextY), maxY),
+    });
+  };
+
+  const handleDragEnd = () => {
+    setIsDragging(false);
+  };
+  const handleResizeStart = (
+  event: React.PointerEvent<HTMLDivElement>,
+  direction: string
+) => {
+  if (isMobile) {
+    return;
+  }
+
+  event.preventDefault();
+  event.stopPropagation();
+
+  event.currentTarget.setPointerCapture(event.pointerId);
+
+  resizeStart.current = {
+    mouseX: event.clientX,
+    mouseY: event.clientY,
+    width: size.width,
+    height: size.height,
+    positionX: position.x,
+    positionY: position.y,
+    direction,
+  };
+
+  setIsResizing(true);
+};
+
+const handleResizeMove = (
+  event: React.PointerEvent<HTMLDivElement>
+) => {
+  if (!isResizing) {
+    return;
+  }
+
+  const start = resizeStart.current;
+  const deltaX = event.clientX - start.mouseX;
+  const deltaY = event.clientY - start.mouseY;
+
+  const minWidth = 320;
+  const minHeight = 460;
+
+  let nextWidth = start.width;
+  let nextHeight = start.height;
+  let nextX = start.positionX;
+  let nextY = start.positionY;
+
+  if (start.direction.includes("right")) {
+    nextWidth = start.width + deltaX;
+  }
+
+  if (start.direction.includes("left")) {
+    nextWidth = start.width - deltaX;
+    nextX = start.positionX + deltaX;
+  }
+
+  if (start.direction.includes("bottom")) {
+    nextHeight = start.height + deltaY;
+  }
+
+  if (start.direction.includes("top")) {
+    nextHeight = start.height - deltaY;
+    nextY = start.positionY + deltaY;
+  }
+
+  if (nextWidth < minWidth) {
+    nextWidth = minWidth;
+
+    if (start.direction.includes("left")) {
+      nextX = start.positionX + (start.width - minWidth);
+    }
+  }
+
+  if (nextHeight < minHeight) {
+    nextHeight = minHeight;
+
+    if (start.direction.includes("top")) {
+      nextY = start.positionY + (start.height - minHeight);
+    }
+  }
+
+  const maxWidth = window.innerWidth - 48;
+  const maxHeight = window.innerHeight - 120;
+
+  nextWidth = Math.min(nextWidth, maxWidth);
+  nextHeight = Math.min(nextHeight, maxHeight);
+
+  setSize({
+    width: nextWidth,
+    height: nextHeight,
+  });
+
+  setPosition({
+    x: Math.max(24, nextX),
+    y: Math.max(24, nextY),
+  });
+};
+
+const handleResizeEnd = (
+  event?: React.PointerEvent<HTMLDivElement>
+) => {
+  if (
+    event &&
+    event.currentTarget.hasPointerCapture(event.pointerId)
+  ) {
+    event.currentTarget.releasePointerCapture(event.pointerId);
+  }
+
+  setIsResizing(false);
+};
+
+
+
+  const defaultAgentId: AIAgentId =
+    mode === "public"
+      ? "crm-assistant"
+      : "organization-assistant";
 
   const selectedAgent =
-    AGENTS.find((agent) => agent.id === agentId) ?? AGENTS[1];
+    AGENTS.find((agent) => agent.id === (agentId ?? defaultAgentId)) ??
+    AGENTS[0];
 
-  const handleOpen = () => {
-    setIsOpen(true);
+  const suggestedPrompts =
+    SUGGESTED_PROMPTS[selectedAgent.id] ?? [];
 
-    if (!agentId) {
-      dispatch(setAgentId("organization-assistant"));
-    }
+  const getAgentName = (agentId: AIAgentId) => {
+    return AGENTS.find((agent) => agent.id === agentId)?.name ?? agentId;
   };
 
   const handleClose = () => {
-    setIsOpen(false);
+    dispatch(closeAIWorkspace());
   };
 
   const handleNewConversation = () => {
@@ -91,18 +328,41 @@ export default function AIWorkspace() {
     event.preventDefault();
 
     const message = input.trim();
+    const activeAgentId = agentId ?? defaultAgentId;
 
-    if (!message || loading || !agentId) {
+    if (!message || loading) {
       return;
     }
 
-    dispatch(
-      sendAIChat({
-        agentId,
-        message,
-        ...(conversationId ? { conversationId } : {}),
-      })
-    );
+    if (mode === "public") {
+      dispatch(
+        sendPublicAIChat({
+          message,
+        })
+      )
+        .unwrap()
+        .then((result) => {
+          console.log("Public AI chat result:", result);
+        })
+        .catch((error) => {
+          console.error("Public AI chat failed:", error);
+        });
+    } else {
+      dispatch(
+        sendAIChat({
+          agentId: activeAgentId,
+          message,
+          ...(conversationId ? { conversationId } : {}),
+        })
+      )
+        .unwrap()
+        .then((result) => {
+          console.log("Authenticated AI chat result:", result);
+        })
+        .catch((error) => {
+          console.error("Authenticated AI chat failed:", error);
+        });
+    }
 
     setInput("");
   };
@@ -121,7 +381,7 @@ export default function AIWorkspace() {
     }
   };
 
-  const handleConfirm = () => {
+const handleConfirm = () => {
   console.log("Confirmation state:", confirmation);
   console.log(
     "Confirmation ID being sent:",
@@ -132,7 +392,14 @@ export default function AIWorkspace() {
     return;
   }
 
-  dispatch(confirmAIAction(confirmation.confirmationId));
+  dispatch(confirmAIAction(confirmation.confirmationId))
+    .unwrap()
+    .then((result) => {
+      console.log("Confirmation result:", result);
+    })
+    .catch((error) => {
+      console.error("Confirmation failed:", error);
+    });
 };
 
 const handleCancel = () => {
@@ -141,54 +408,23 @@ const handleCancel = () => {
 
   return (
     <>
-      {/* Header launcher */}
-      <button
-        type="button"
-        onClick={isOpen ? handleClose : handleOpen}
-        aria-label={isOpen ? "Close AI assistant" : "Open AI assistant"}
-        style={{
-          position: "fixed",
-          right: 24,
-          bottom: 24,
-          zIndex: 1300,
-          width: 52,
-          height: 52,
-          border: "1px solid rgba(173, 116, 80, 0.35)",
-          borderRadius: "50%",
-          background: theme.palette.primary.main,
-          color: "#fff",
-          cursor: "pointer",
-          fontSize: 20,
-          boxShadow: "0 8px 24px rgba(0, 0, 0, 0.16)",
-        }}
-      >
-        {isOpen ? "×" : "✦"}
-      </button>
-
-      {/* AI window */}
       {isOpen && (
         <section
           aria-label="uniThread AI workspace"
           style={{
             position: "fixed",
-            zIndex: 1250,
-            right: isMobile ? 0 : 24,
-            bottom: isMobile ? 0 : 88,
-            width: isMobile
-              ? "100%"
-              : isExpanded
-                ? "min(1100px, calc(100vw - 48px))"
-                : "min(860px, calc(100vw - 48px))",
-            height: isMobile
-              ? "100%"
-              : isExpanded
-                ? "min(780px, calc(100vh - 120px))"
-                : "min(650px, calc(100vh - 120px))",
+            zIndex: 5000,
+            left: isMobile ? 0 : "auto",
+            top: isMobile ? 0 : "auto",
+            right: isMobile ? "auto" : 24,
+            bottom: isMobile ? "auto" : 24,
+            width: isMobile ? "100%" : size.width,
+            height: isMobile ? "100%" : size.height,
             minWidth: isMobile ? 0 : 320,
             minHeight: isMobile ? 0 : 460,
             display: "flex",
             overflow: "hidden",
-            resize: isMobile ? "none" : "both",
+            resize: "none",
             color: theme.palette.text.primary,
             border: `1px solid ${theme.palette.divider}`,
             borderRadius: isMobile ? 0 : 24,
@@ -201,9 +437,11 @@ const handleCancel = () => {
                 : "0 24px 80px rgba(0, 0, 0, 0.20)",
           }}
         >
-          {/* Sidebar */}
-          {mode === "authenticated" && isSidebarOpen && (
+          {mode === "authenticated" &&
+              isSidebarOpen &&
+              isSidebarAllowed && (
             <aside
+              className="ai-conversation-sidebar"
               style={{
                 width: 220,
                 minWidth: 220,
@@ -252,26 +490,17 @@ const handleCancel = () => {
                   flex: 1,
                 }}
               >
-                {conversationId ? (
-                  <button
-                    type="button"
+                {conversationsLoading ? (
+                  <p
                     style={{
-                      width: "100%",
-                      padding: "11px 12px",
-                      border: `1px solid ${theme.palette.primary.main}55`,
-                      background:
-                        theme.palette.mode === "dark"
-                          ? "rgba(173, 116, 80, 0.20)"
-                          : "rgba(173, 116, 80, 0.10)",
-                      color: theme.palette.text.primary,
-                      textAlign: "left",
-                      cursor: "pointer",
-                      fontSize: 13,
+                      margin: 8,
+                      color: theme.palette.text.secondary,
+                      fontSize: 12,
                     }}
                   >
-                    Current conversation
-                  </button>
-                ) : (
+                    Loading conversations...
+                  </p>
+                ) : conversations.length === 0 ? (
                   <p
                     style={{
                       margin: 8,
@@ -280,9 +509,88 @@ const handleCancel = () => {
                       lineHeight: 1.5,
                     }}
                   >
-                    Your saved conversations will appear here once
-                    conversation history endpoints are connected.
+                    No saved conversations yet.
                   </p>
+                ) : (
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 6,
+                    }}
+                  >
+                    {conversations.map((conversation) => {
+                      const isActive = conversation.id === conversationId;
+
+                      return (
+                        <button
+                          key={conversation.id}
+                          type="button"
+                          onClick={() => {
+                            dispatch(loadAIConversation(conversation.id));
+                          }}
+                          style={{
+                            width: "100%",
+                            padding: "11px 12px",
+                            border: isActive
+                              ? `1px solid ${theme.palette.primary.main}55`
+                              : "1px solid transparent",
+                            borderRadius: 10,
+                            background: isActive
+                              ? theme.palette.mode === "dark"
+                                ? "rgba(173, 116, 80, 0.20)"
+                                : "rgba(173, 116, 80, 0.10)"
+                              : "transparent",
+                            color: theme.palette.text.primary,
+                            textAlign: "left",
+                            cursor: "pointer",
+                            overflow: "hidden",
+                          }}
+                          title={conversation.title ?? "Untitled conversation"}
+                        >
+                          <div
+                            style={{
+                              fontSize: 13,
+                              fontWeight: 600,
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {conversation.title ?? "Untitled conversation"}
+                          </div>
+
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 6,
+                              marginTop: 1,
+                              color: theme.palette.text.secondary,
+                              fontSize: 9,
+                              overflow: "hidden",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            <span
+                              style={{
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                              }}
+                            >
+                              {getAgentName(conversation.agent_id as AIAgentId)}
+                            </span>
+
+                            <span>·</span>
+
+                            <span>
+                              {new Date(conversation.created_at).toLocaleDateString()}
+                            </span>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
                 )}
               </div>
             </aside>
@@ -299,6 +607,10 @@ const handleCancel = () => {
           >
             {/* Window header */}
             <header
+              onPointerDown={handleDragStart}
+              onPointerMove={handleDragMove}
+              onPointerUp={handleDragEnd}
+              onPointerCancel={handleDragEnd}
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -306,6 +618,8 @@ const handleCancel = () => {
                 gap: 12,
                 padding: "14px 18px",
                 borderBottom: `1px solid ${theme.palette.divider}`,
+                cursor: isDragging ? "grabbing" : isMobile ? "default" : "grab",
+                userSelect: "none",
               }}
             >
               <div
@@ -316,7 +630,7 @@ const handleCancel = () => {
                   minWidth: 0,
                 }}
               >
-                {mode === "authenticated" && (
+                {mode === "authenticated" && isSidebarAllowed && (
                   <button
                     type="button"
                     onClick={() => setIsSidebarOpen((current) => !current)}
@@ -348,7 +662,7 @@ const handleCancel = () => {
                     fontSize: 14,
                   }}
                 >
-                  {selectedAgent.name === "Uno AI"
+                  {selectedAgent.name === "uniThread AI"
                     ? "U"
                     : selectedAgent.name.charAt(0)}
                 </div>
@@ -388,21 +702,6 @@ const handleCancel = () => {
                   flexShrink: 0,
                 }}
               >
-                <button
-                  type="button"
-                  onClick={() => setIsExpanded((current) => !current)}
-                  title={isExpanded ? "Restore window" : "Expand window"}
-                  style={{
-                    border: "none",
-                    background: "transparent",
-                    color: "inherit",
-                    cursor: "pointer",
-                    fontSize: 16,
-                    padding: 7,
-                  }}
-                >
-                  {isExpanded ? "⤢" : "□"}
-                </button>
 
                 <button
                   type="button"
@@ -423,7 +722,8 @@ const handleCancel = () => {
               </div>
             </header>
 
-            {/* Agent selector */}
+            {mode === "authenticated" && (
+              <>
             <div
               style={{
                 display: "flex",
@@ -476,8 +776,9 @@ const handleCancel = () => {
                 ))}
               </select>
             </div>
-
-            {/* Messages */}
+            </>
+            )}
+            
             <div
               style={{
                 flex: 1,
@@ -534,9 +835,56 @@ const handleCancel = () => {
                         opacity: 0.62,
                       }}
                     >
-                      {selectedAgent.description}. Ask a question to begin
-                      your conversation.
+                      {selectedAgent.description}. Ask a question to begin your conversation.
                     </p>
+
+                    <div
+                      style={{
+                        display: "flex",
+                        flexWrap: "wrap",
+                        justifyContent: "center",
+                        gap: 8,
+                        marginTop: 20,
+                      }}
+                    >
+                      {suggestedPrompts.map((prompt) => (
+                        <button
+                          key={prompt}
+                          type="button"
+                          onClick={() => {
+                            setInput(prompt);
+                          }}
+                          style={{
+                            border: `1px solid ${theme.palette.divider}`,
+                            borderRadius: 999,
+                            padding: "9px 13px",
+                            background:
+                              theme.palette.mode === "dark"
+                                ? "rgba(255, 255, 255, 0.06)"
+                                : "rgba(255, 255, 255, 0.7)",
+                            color: theme.palette.text.primary,
+                            cursor: "pointer",
+                            fontSize: 12,
+                            lineHeight: 1.35,
+                            transition: "background 0.2s ease, transform 0.2s ease",
+                          }}
+                          onMouseEnter={(event) => {
+                            event.currentTarget.style.background =
+                              theme.palette.mode === "dark"
+                                ? "rgba(255, 255, 255, 0.12)"
+                                : "rgba(173, 116, 80, 0.10)";
+                          }}
+                          onMouseLeave={(event) => {
+                            event.currentTarget.style.background =
+                              theme.palette.mode === "dark"
+                                ? "rgba(255, 255, 255, 0.06)"
+                                : "rgba(255, 255, 255, 0.7)";
+                          }}
+                        >
+                          {prompt}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
               )}
@@ -800,6 +1148,110 @@ const handleCancel = () => {
               </button>
             </form>
           </div>
+          {!isMobile  && (
+            <>
+              {[
+                {
+                  direction: "top",
+                  cursor: "ns-resize",
+                  style: {
+                    top: -4,
+                    left: 16,
+                    right: 16,
+                    height: 10,
+                  },
+                },
+                {
+                  direction: "bottom",
+                  cursor: "ns-resize",
+                  style: {
+                    bottom: -4,
+                    left: 16,
+                    right: 16,
+                    height: 10,
+                  },
+                },
+                {
+                  direction: "left",
+                  cursor: "ew-resize",
+                  style: {
+                    left: -4,
+                    top: 16,
+                    bottom: 16,
+                    width: 10,
+                  },
+                },
+                {
+                  direction: "right",
+                  cursor: "ew-resize",
+                  style: {
+                    right: -4,
+                    top: 16,
+                    bottom: 16,
+                    width: 10,
+                  },
+                },
+                {
+                  direction: "top-left",
+                  cursor: "nwse-resize",
+                  style: {
+                    top: -4,
+                    left: -4,
+                    width: 18,
+                    height: 18,
+                  },
+                },
+                {
+                  direction: "top-right",
+                  cursor: "nesw-resize",
+                  style: {
+                    top: -4,
+                    right: -4,
+                    width: 18,
+                    height: 18,
+                  },
+                },
+                {
+                  direction: "bottom-left",
+                  cursor: "nesw-resize",
+                  style: {
+                    bottom: -4,
+                    left: -4,
+                    width: 18,
+                    height: 18,
+                  },
+                },
+                {
+                  direction: "bottom-right",
+                  cursor: "nwse-resize",
+                  style: {
+                    right: -4,
+                    bottom: -4,
+                    width: 18,
+                    height: 18,
+                  },
+                },
+              ].map((handle) => (
+                <div
+                  key={handle.direction}
+                  onPointerDown={(event) =>
+                    handleResizeStart(event, handle.direction)
+                  }
+                  onPointerMove={handleResizeMove}
+                  onPointerUp={handleResizeEnd}
+                  onPointerCancel={handleResizeEnd}
+                  style={{
+                    position: "absolute",
+                    zIndex: 20,
+                    cursor: handle.cursor,
+                    touchAction: "none",
+                    userSelect: "none",
+                    ...handle.style,
+                  }}
+                />
+              ))}
+            </>
+          )}
         </section>
       )}
 
@@ -809,8 +1261,8 @@ const handleCancel = () => {
           @media (max-width: 768px) {
             section[aria-label="uniThread AI workspace"] {
               inset: 0 !important;
-              right: 0 !important;
-              bottom: 0 !important;
+              left: 0 !important;
+              top: 0 !important;
               width: 100% !important;
               height: 100% !important;
               min-width: 0 !important;
@@ -819,7 +1271,7 @@ const handleCancel = () => {
               resize: none !important;
             }
 
-            section[aria-label="uniThread AI workspace"] aside {
+            section[aria-label="uniThread AI workspace"] aside.ai-conversation-sidebar {
               position: absolute;
               z-index: 2;
               inset: 0 auto 0 0;
@@ -828,6 +1280,38 @@ const handleCancel = () => {
           }
         `}
       </style>
+      {mode === "public" && !isOpen && (
+        <button
+          type="button"
+          onClick={() => {
+            // Replace this with your existing action for opening the AI workspace
+            dispatch(openAIWorkspace());
+          }}
+          title="Open uniThread AI"
+          aria-label="Open uniThread AI"
+          style={{
+            position: "fixed",
+            right: 24,
+            bottom: 24,
+            zIndex: 5000,
+            width: 45,
+            height: 45,
+            display: "grid",
+            placeItems: "center",
+            border: "none",
+            borderRadius: "50%",
+            background: theme.palette.primary.main,
+            color: "#fff",
+            cursor: "pointer",
+            boxShadow:
+              theme.palette.mode === "dark"
+                ? "0 10px 30px rgba(0, 0, 0, 0.4)"
+                : "0 10px 30px rgba(0, 0, 0, 0.18)",
+          }}
+        >
+          <span style={{ fontSize: 24 }}>✦</span>
+        </button>
+      )}
     </>
   );
 }

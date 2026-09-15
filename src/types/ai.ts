@@ -1,9 +1,24 @@
+// export interface AIState {
+//   mode: "authenticated" | "public";
+//   agentId: AIAgentId | null;
+//   messages: AIChatMessage[];
+//   conversationId: string | null;
+//   loading: boolean;
+//   error: string | null;
+//   confirmation: AIConfirmation | null;
+//   sources: AIResponseSource[];
+//   citations: AICitation[];
+//   quota: AIQuota | null;
+// }
+
 export interface AIState {
   mode: "authenticated" | "public";
   agentId: AIAgentId | null;
   messages: AIChatMessage[];
   conversationId: string | null;
+  conversations: AIConversation[];
   loading: boolean;
+  conversationsLoading: boolean;
   error: string | null;
   confirmation: AIConfirmation | null;
   sources: AIResponseSource[];
@@ -82,4 +97,18 @@ export interface AIChatResponse {
 export interface ConfirmAIActionResponse {
   success: boolean;
   result: unknown;
+}
+export interface AIConversation {
+  id: string;
+  profile_id: string;
+  org_id: string | null;
+  agent_id: AIAgentId;
+  title: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AIConversationWithMessages {
+  conversation: AIConversation;
+  messages: AIChatMessage[];
 }

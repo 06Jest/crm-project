@@ -1,10 +1,13 @@
 import { apiClient } from "./apiClient";
 import type {
   AIChatResponse,
+  AIConversation,
+  AIConversationWithMessages,
   ConfirmAIActionResponse,
   SendAIChatRequest,
   SendPublicAIChatRequest,
 } from "../types/ai";
+
 
 export const sendAIChatAPI = async (
   request: SendAIChatRequest
@@ -39,4 +42,47 @@ export const confirmAIActionAPI = async (
   );
 
   return result as ConfirmAIActionResponse;
+};
+
+// export const getAIConversationsAPI = async (): Promise<
+//   AIConversation[]
+// > => {
+//   const result = await apiClient("/api/ai/conversations", {
+//     method: "GET",
+//   });
+
+//   return result.conversations;
+// };
+
+
+
+export const getAIConversationAPI = async (
+  conversationId: string
+): Promise<AIConversationWithMessages> => {
+  const result = await apiClient(
+    `/api/ai/conversations/${conversationId}`,
+    {
+      method: "GET",
+    }
+  );
+
+  return result;
+};
+
+export const getAIConversationsAPI = async (): Promise<
+  AIConversation[]
+> => {
+  const result = await apiClient("/api/ai/conversations", {
+    method: "GET",
+  });
+
+  console.log(
+    "Conversation titles:",
+    result.conversations.map((conversation: AIConversation) => ({
+      id: conversation.id,
+      title: conversation.title,
+    }))
+  );
+
+  return result.conversations;
 };
