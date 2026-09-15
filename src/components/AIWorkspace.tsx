@@ -71,6 +71,94 @@ const SUGGESTED_PROMPTS: Record<AIAgentId, string[]> = {
   ],
 };
 
+type ConfirmationArguments = Record<string, unknown>;
+
+const formatConfirmationLabel = (key: string): string => {
+  const labels: Record<string, string> = {
+    title: "Title",
+    description: "Description",
+    content: "Content",
+    body: "Details",
+    note: "Note",
+    dueDate: "Due date",
+    due_date: "Due date",
+    priority: "Priority",
+    contactId: "Contact",
+    contact_id: "Contact",
+    leadId: "Lead",
+    lead_id: "Lead",
+    dealId: "Deal",
+    deal_id: "Deal",
+    customerId: "Customer",
+    customer_id: "Customer",
+  };
+
+  if (labels[key]) {
+    return labels[key];
+  }
+
+  return key
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/[_-]/g, " ")
+    .replace(/\b\w/g, (character) => character.toUpperCase());
+};
+
+const formatConfirmationValue = (value: unknown): string => {
+  if (value === null || value === undefined) {
+    return "Not specified";
+  }
+
+  if (typeof value === "boolean") {
+    return value ? "Yes" : "No";
+  }
+
+  if (Array.isArray(value)) {
+    return value.map(formatConfirmationValue).join(", ");
+  }
+
+  if (typeof value === "object") {
+    return "Additional details provided";
+  }
+
+  return String(value);
+};
+
+const getConfirmationActionLabel = (toolName: string): string => {
+  const labels: Record<string, string> = {
+    create_note: "Create note",
+    create_task: "Create task",
+    update_task: "Update task",
+    update_note: "Update note",
+    delete_task: "Delete task",
+    delete_note: "Delete note",
+  };
+
+  return (
+    labels[toolName] ??
+    toolName
+      .replace(/[_-]/g, " ")
+      .replace(/\b\w/g, (character) => character.toUpperCase())
+  );
+};
+
+const formatConfirmationDate = (value: unknown): string => {
+  if (typeof value !== "string") {
+    return formatConfirmationValue(value);
+  }
+
+  const parsedDate = new Date(value);
+
+  if (Number.isNaN(parsedDate.getTime())) {
+    return value;
+  }
+
+  return parsedDate.toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+};
+
 
 export default function AIWorkspace() {
   const dispatch = useDispatch<AppDispatch>();
@@ -344,6 +432,12 @@ const handleResizeEnd = (
     AGENTS.find((agent) => agent.id === (agentId ?? defaultAgentId)) ??
     AGENTS[0];
 
+  const uniqueSources = Array.from(
+    new Map(
+      sources.map((source) => [source.sourceId, source])
+    ).values()
+  );
+
   const suggestedPrompts =
     SUGGESTED_PROMPTS[selectedAgent.id] ?? [];
 
@@ -442,9 +536,22 @@ const handleConfirm = () => {
     });
 };
 
-const handleCancel = () => {
-  dispatch(clearConfirmation());
-};
+  const handleCancel = () => {
+    dispatch(clearConfirmation());
+  };
+
+  const confirmationArguments = confirmation?.toolCall.arguments as
+    | ConfirmationArguments
+    | undefined;
+
+  const confirmationEntries = confirmationArguments
+    ? Object.entries(confirmationArguments).filter(
+        ([, value]) =>
+          value !== undefined &&
+          value !== null &&
+          value !== ""
+      )
+    : [];
 
   return (
     <>
@@ -1028,47 +1135,107 @@ const handleCancel = () => {
             >
               <strong>Confirmation required</strong>
 
-              <p style={{ margin: "6px 0 0", opacity: 0.72 }}>
-                This assistant wants to execute an action:
-              </p>
-
-              <code
+              <p
                 style={{
-                  display: "block",
-                  marginTop: 8,
-                  overflowWrap: "anywhere",
+                  margin: "6px 0 0",
+                  opacity: 0.72,
                 }}
               >
-                {confirmation.toolCall.name}
-              </code>
+                Please review the following action before it is executed.
+              </p>
 
-              {Object.keys(confirmation.toolCall.arguments).length > 0 && (
-                <pre
-                  style={{
-                    marginTop: 10,
-                    padding: 10,
-                    borderRadius: 8,
-                    background:
-                      theme.palette.mode === "dark"
-                        ? "rgba(0, 0, 0, 0.25)"
-                        : "rgba(0, 0, 0, 0.05)",
-                    fontSize: 12,
-                    whiteSpace: "pre-wrap",
-                    overflowWrap: "anywhere",
-                    overflowX: "auto",
-                  }}
-                >
-                  {JSON.stringify(
-                    confirmation.toolCall.arguments,
-                    null,
-                    2
-                  )}
-                </pre>
-              )}
+              <div
+                style={{
+                  fontSize: 14,
+                  fontWeight: 700,
+                  marginTop: 8,
+                }}
+              >
+                {getConfirmationActionLabel(confirmation.toolCall.name)}
+              </div>
+
+              <div
+                style={{
+                  marginTop: 12,
+                  padding: 12,
+                  borderRadius: 10,
+                  background:
+                    theme.palette.mode === "dark"
+                      ? "rgba(0, 0, 0, 0.18)"
+                      : "rgba(255, 255, 255, 0.35)",
+                  border: `1px solid ${glassBorder}`,
+                }}
+              >
+                {confirmationEntries.length > 0 ? (
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 8,
+                    }}
+                  >
+                    {confirmationEntries.map(([key, value]) => {
+                      const isDateField =
+                        key === "dueDate" ||
+                        key === "due_date" ||
+                        key === "startDate" ||
+                        key === "start_date" ||
+                        key === "endDate" ||
+                        key === "end_date";
+
+                      return (
+                        <div
+                          key={key}
+                          style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 2,
+                          }}
+                        >
+                          <span
+                            style={{
+                              fontSize: 11,
+                              fontWeight: 600,
+                              opacity: 0.58,
+                            }}
+                          >
+                            {formatConfirmationLabel(key)}
+                          </span>
+
+                          <span
+                            style={{
+                              overflowWrap: "anywhere",
+                              whiteSpace: "pre-wrap",
+                            }}
+                          >
+                            {isDateField
+                              ? formatConfirmationDate(value)
+                              : formatConfirmationValue(value)}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div style={{ opacity: 0.7 }}>
+                    No additional details were provided.
+                  </div>
+                )}
+              </div>
+               <p
+                style={{
+                  margin: "10px 0 0",
+                  fontSize: 12,
+                  opacity: 0.62,
+                }}
+              >
+                This action will only proceed after you confirm it.
+              </p>
 
               <div
                 style={{
                   display: "flex",
+                  flexWrap: "wrap",
                   gap: 8,
                   marginTop: 14,
                 }}
@@ -1113,15 +1280,15 @@ const handleCancel = () => {
             </div>
           )}
 
-              {sources.length > 0 && (
+              {uniqueSources.length > 0 && (
                 <details style={{ fontSize: 12, opacity: 0.72 }}>
                   <summary style={{ cursor: "pointer" }}>
-                    Sources ({sources.length})
+                    Sources ({uniqueSources.length})
                   </summary>
 
                   <ul style={{ marginTop: 8, paddingLeft: 18 }}>
-                    {sources.map((source) => (
-                      <li key={`${source.sourceId}-${source.chunkIndex}`}>
+                    {uniqueSources.map((source) => (
+                      <li key={source.sourceId}>
                         {source.title ?? source.sourceId}
                       </li>
                     ))}
