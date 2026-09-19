@@ -68,6 +68,22 @@ export const updateLeadSocialsAPI = async (
   return result.data as LeadListItem;
 };
 
+export const updateLeadAvatarAPI = async (
+  id: string,
+  avatarFileId: string | null,
+  avatarUrl: string | null
+): Promise<LeadListItem> => {
+  const result = await apiClient(`/api/leads/update/avatar/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify({
+      avatar_file_id: avatarFileId,
+      avatar_url: avatarUrl,
+    }),
+  });
+
+  return result.data as LeadListItem;
+};
+
 export const updateLeadStatusAPI = async (
   id: string,
   status: LeadStatus

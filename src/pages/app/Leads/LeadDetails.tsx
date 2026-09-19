@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector} from 'react-redux';
 import type { AppDispatch } from '../../../store/store';
 import 'leaflet/dist/leaflet.css';
-
+import { uploadImageToImageKit } from '../../../services/imageKitService';
 
 import {
   Box,
@@ -43,7 +43,7 @@ import CakeIcon from '@mui/icons-material/Cake';
 import BusinessIcon from '@mui/icons-material/Business';
 import WorkIcon from '@mui/icons-material/Work';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
-import PriorityIcon from '@mui/icons-material/PriorityHighRounded';
+import FlagIcon from '@mui/icons-material/Flag';
 import FacebookIcon from '@mui/icons-material/Facebook';
 import InstagramIcon from '@mui/icons-material/Instagram';
 import XIcon from '@mui/icons-material/X';
@@ -68,7 +68,7 @@ import { DEPARTMENTS, GENDERS, INDUSTRIES, PREFERRED_CONTACT_TIMES, SOURCES, SUF
 import ErrorAlert from '../../../components/Error';
 import { formatName } from '../../../utils/formatText';
 import type { LeadCareer, LeadPersonal, LeadSocials, LeadStatus } from '../../../types/lead';
-import { clearError, deleteLead, fetchLeadListByID, updateLeadCareer, updateLeadNotes, updateLeadPersonal, updateLeadPreferredTime, updateLeadSocials, updateLeadSource } from '../../../store/leadsSlice';
+import { clearError, deleteLead, fetchLeadListByID, updateLeadAvatar, updateLeadCareer, updateLeadNotes, updateLeadPersonal, updateLeadPreferredTime, updateLeadSocials, updateLeadSource } from '../../../store/leadsSlice';
 
 fixLeafletIcons();
 
@@ -299,6 +299,15 @@ export default function LeadDetails() {
   const [isUpdatingPreferredTime, setIsUpdatingPreferredTime] = useState(false);
   const [selectedPreferredTime, setSelectedPreferredTime] = useState<PreferredTime | "">("");
   const [updatePreferredTime, setUpdatePreferredTime] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (avatarPreview) {
+        URL.revokeObjectURL(avatarPreview);
+      }
+    };
+  }, [avatarPreview]);
   
   if (!lead && loading) {
     return (
@@ -333,6 +342,32 @@ export default function LeadDetails() {
       </Box>
     );
   }
+
+  
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+
+    if (!file) return;
+
+    setAvatarPreview(URL.createObjectURL(file));
+
+    try {
+      const uploaded = await uploadImageToImageKit(file);
+
+      await dispatch(
+        updateLeadAvatar({
+          id: lead.id,
+          avatarFileId: uploaded.fileId,
+          avatarUrl: uploaded.url,
+        })
+      ).unwrap();
+
+      setAvatarPreview(null);
+    } catch {
+      // Error in state
+    }
+  };
 
     const handleEditNotes = () => {
       setNewNotes(lead?.notes ?? "");
@@ -514,14 +549,14 @@ export default function LeadDetails() {
 
   const priorityIcon = (priority: Priority) => {
     if (priority === 'High') {
-      return <PriorityIcon sx={{
+      return <FlagIcon sx={{
         color: PRIORITY_COLORS['High'],
         border: `1px solid ${PRIORITY_COLORS['High']}`,
         borderRadius: 20,
       }} fontSize='large' />
     }
     if (priority === 'Highest') {
-      return <PriorityIcon sx={{
+      return <FlagIcon sx={{
         color: PRIORITY_COLORS['Highest'],
         border: `1px solid ${PRIORITY_COLORS['Highest']}`,
         borderRadius: 20,
@@ -619,6 +654,7 @@ export default function LeadDetails() {
         >
           <Box sx={{ display: 'flex', flexShrink: 0, flexDirection: 'column', alignItems: 'center' }}>
             <Avatar
+              src={avatarPreview ?? lead.avatar_url ?? undefined}
               sx={{
                 width: { xs: 84, sm: 100 },
                 height: { xs: 84, sm: 100 },
@@ -627,9 +663,55 @@ export default function LeadDetails() {
                 bgcolor: stringToAvatarColor(fullName),
               }}
             >
-              {getInitials(fullName)}
+              {!avatarPreview && !lead.avatar_url && getInitials(fullName)}
             </Avatar>
-            <Box sx={{ display: 'flex', justifyContent: 'center'}}>
+            <Box sx={{ display: 'flex', justifyContent: 'center', gap: 0.5, mt: 0.5 }}>
+              <Button
+                component="label"
+                size="small"
+                sx={{
+                  textTransform: 'none',
+                  fontSize: 11,
+                  minWidth: 0,
+                }}
+              >
+                {lead.avatar_url ? 'Change' : 'Upload'}
+                <input
+                  hidden
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarChange}
+                />
+              </Button>
+
+              {lead.avatar_url && (
+                <Button
+                  size="small"
+                  color="error"
+                  onClick={async () => {
+                    try {
+                      await dispatch(
+                        updateLeadAvatar({
+                          id: lead.id,
+                          avatarFileId: null,
+                          avatarUrl: null,
+                        })
+                      ).unwrap();
+
+                      setAvatarPreview(null);
+                    } catch {
+                      // Error in state
+                    }
+                  }}
+                  sx={{
+                    textTransform: 'none',
+                    fontSize: 11,
+                    minWidth: 0,
+                  }}
+                >
+                  Delete
+                </Button>
+              )}
             </Box>
           </Box>
           <Box sx={{ flex: 1, minWidth: 0, width: '100%', overflowWrap: "anywhere", wordBreak: "break-word", textAlign: { xs: 'center', sm: 'left' } }}>

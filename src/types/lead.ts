@@ -20,7 +20,7 @@ export type LeadStatus = typeof LEAD_STATUSES[number];
 
 export interface Lead {
   id: string;
-  title: string;
+  display_id: string;
   source: Source;
   first_name: string;
   last_name: string;
@@ -35,6 +35,8 @@ export interface Lead {
   department?: string;
   website?: string;
   priority: Priority;
+  avatar_file_id?: string | null;
+  avatar_url?: string | null;
   notes?: string;
   status: LeadStatus;
   preferred_contact_time: PreferredTime;
@@ -68,7 +70,6 @@ export interface LeadListItem extends Lead{
 
 
 export interface AddLead {
-  title: string;
   source: Source;
   first_name: string;
   last_name: string;
@@ -102,6 +103,8 @@ export interface LeadPersonal {
   birth_date?: string | null;
   email?: string;
   phone?: string;
+  avatar_file_id?: string | null;
+  avatar_url?: string | null;
 }
 
 export interface LeadCareer {

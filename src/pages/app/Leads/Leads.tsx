@@ -51,12 +51,12 @@ import CallIcon from '@mui/icons-material/Call';
 import SmsIcon from '@mui/icons-material/Sms';
 import PersonIcon from '@mui/icons-material/Person';
 import SearchIcon from '@mui/icons-material/Search';
-import PriorityIcon from '@mui/icons-material/PriorityHighRounded';
+import FlagIcon from '@mui/icons-material/Flag';
 import AddIcon from '@mui/icons-material/Add';
 import ErrorAlert from "../../../components/Error";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import { type Priority } from "../../../types/global";
-import { formatName, formatShortTitle } from "../../../utils/formatText";
+import { formatName } from "../../../utils/formatText";
 import { calculateAge } from "../../../utils/calculateAge";
 
 const PRIORITY_COLORS: Record<Priority, string> = {
@@ -74,22 +74,25 @@ function PriorityBadge({ priority }: { priority: Priority }) {
   if (priority !== 'High' && priority !== 'Highest') return null;
   const color = PRIORITY_COLORS[priority];
   return (
-    <Chip
-      size="small"
-      icon={<PriorityIcon style={{ fontSize: 12, color }} />}
-      label={priority}
-      variant="outlined"
+    <Box
+      title={`${priority} Priority`}
       sx={{
-        height: 18,
-        fontSize: 9,
-        fontWeight: 700,
-        color,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: 20,
+        height: 20,
+        borderRadius: '50%',
         bgcolor: alpha(color, 0.08),
-        borderColor: alpha(color, 0.5),
-        transition: 'background-color 0.2s ease',
-        "& .MuiChip-label": { px: 0.5 },
       }}
-    />
+    >
+      <FlagIcon
+        sx={{
+          fontSize: 14,
+          color,
+        }}
+      />
+    </Box>
   );
 }
 
@@ -504,7 +507,6 @@ const handleConfirmCloseLead = async () => {
           lead.suffix,
           lead.email,
           lead.phone,
-          lead.title,
           lead.notes
         ]
           .join(' ')
@@ -844,51 +846,82 @@ const handleConfirmCloseLead = async () => {
                               disabled={prefersReducedMotion}
                             >
                             <CardContent sx={{ p: 1.25, '&:last-child': { pb: 1.25 }, display: 'flex', gap: 1.25 }}>
-                              <Avatar
-                                onMouseEnter={(e) => handleMouseEnter(e, lead)}
-                                onMouseLeave={handleMouseLeave}
-                                sx={{
-                                  width: 38,
-                                  height: 38,
-                                  mt: '2px',
-                                  cursor: 'pointer',
-                                  bgcolor: 'action.hover',
-                                  flexShrink: 0,
-                                  transition: 'transform 0.2s ease, background-color 0.2s ease',
-                                  '&:hover': { transform: 'scale(1.06)', bgcolor: 'action.selected' },
-                                }}
-                              >
-                                <PersonIcon sx={{ opacity: 0.65, color: 'text.secondary' }}/>
-                              </Avatar>
-                              <Box flex={1} minWidth={0}>
-                                <Box sx={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 0.5}}>
-                                  <Typography
-                                  title="Lead Title"
+                              <Box sx={{display: 'flex', flexDirection: 'column',
+                                justifyContent: "space-between", alignItems: 'center',
+                              }}>
+                                <Avatar
+                                  src={lead.avatar_url ?? undefined}
+                                  onMouseEnter={(e) => handleMouseEnter(e, lead)}
+                                  onMouseLeave={handleMouseLeave}
                                   sx={{
+                                    width: 38,
+                                    height: 38,
+                                    mt: '2px',
                                     cursor: 'pointer',
-                                    fontSize: 13,
-                                    fontWeight: 700,
-                                    letterSpacing: '0.01em',
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis',
-                                    display: '-webkit-box',
-                                    WebkitLineClamp: 2,
-                                    WebkitBoxOrient: 'vertical',
-                                  }}>
-                                  {formatShortTitle(lead.title).toUpperCase()}
-                                  </Typography>
-                                  <Box
+                                    bgcolor: 'action.hover',
+                                    flexShrink: 0,
+                                    transition: 'transform 0.2s ease, background-color 0.2s ease',
+                                    '&:hover': {
+                                      transform: 'scale(1.06)',
+                                      bgcolor: 'action.selected',
+                                    },
+                                  }}
+                                >
+                                  {!lead.avatar_url && (
+                                    <PersonIcon sx={{ opacity: 0.65, color: 'text.secondary' }} />
+                                  )}
+                                </Avatar>
+                                <Box
                                     title={`${lead.priority} Priority`}
-                                   sx={{display: 'flex', alignItems: 'center', gap: 0.25, cursor: 'pointer', flexShrink: 0}}>
+                                    sx={{
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: 0.25,
+                                      cursor: 'pointer',
+                                      flexShrink: 0,
+                                      pb: 0.7
+                                    }}
+                                  >
                                     <PriorityBadge priority={lead.priority} />
                                   </Box>
-                                  
-                                </Box>
+                              </Box>
+                              
+                              <Box flex={1} minWidth={0}>
                                 <Box
-                                  title="Lead full name"
-                                  sx={{ display: 'flex', cursor: 'pointer'}}>
-                                    <Typography sx={{fontSize: '11px', fontWeight: 600, opacity: 0.75}}>
-                                    {formatName(lead.first_name, lead.last_name)} {lead.suffix} 
+                                  sx={{
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'flex-start',
+                                    gap: 0.5,
+                                  }}
+                                >
+                                  <Typography
+                                    title="Lead full name"
+                                    sx={{
+                                      cursor: 'pointer',
+                                      fontSize: 13,
+                                      fontWeight: 700,
+                                      letterSpacing: '0.01em',
+                                      overflow: 'hidden',
+                                      textOverflow: 'ellipsis',
+                                      whiteSpace: 'nowrap',
+                                    }}
+                                  >
+                                    {formatName(lead.first_name, lead.last_name)} {lead.suffix}
+                                  </Typography>
+
+                                    <Typography
+                                      title="Lead Notes"
+                                      variant="caption"
+                                      color="text.secondary"
+                                      display="block"
+                                      sx={{
+                                        fontStyle: 'italic',
+                                        fontSize: 9,
+                                        cursor: 'pointer'
+                                      }}
+                                    >
+                                      {lead.display_id}
                                   </Typography>
                                 </Box>
                                 {lead.notes && (
@@ -1209,7 +1242,7 @@ const handleConfirmCloseLead = async () => {
             <Box sx={{ textAlign: 'center' }}>
               <Typography variant="subtitle1" fontWeight={700} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.75 }}>
                 {formatName(hoveredLead?.first_name, hoveredLead?.last_name)} {hoveredLead?.suffix}
-                {hoveredLead && <PriorityBadge priority={hoveredLead.priority} />}
+                
               </Typography>
             </Box>
           </Stack>
@@ -1300,9 +1333,6 @@ const handleConfirmCloseLead = async () => {
             )}
           </Box>
           <Divider sx={{mt: 2, mb: 1}}></Divider>
-          <Typography marginBottom={1} variant="body1" fontWeight={700}>
-            {hoveredLead?.title.toUpperCase()}
-          </Typography>
           <Typography variant="body2" color="text.secondary">
             {hoveredLead?.notes}
           </Typography>

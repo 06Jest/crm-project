@@ -18,6 +18,7 @@ export type CustomerStatus = typeof CUSTOMER_STATUSES[number];
 
 export interface Customer {
   id: string;
+  display_id: string;
   contact_id: string;
   notes?: string;
   status: CustomerStatus;

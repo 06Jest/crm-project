@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch } from "../../../store/store";
 import { useNavigate } from "react-router-dom";
 import { type RootState } from "../../../store/store";
-
+import { uploadImageToImageKit } from "../../../services/imageKitService";
 
 import {
   Box,
@@ -59,11 +59,12 @@ export default function AddLead() {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const themeMode = useSelector((state: RootState) => state.ui.themeMode);
   const { loading, error} = useSelector((state:RootState) => state.leads);
 
   const [form, setForm] = useState({
-    title: "",
     first_name: "",
     last_name: "",
     suffix: null as Suffix,
@@ -106,48 +107,85 @@ export default function AddLead() {
     }));
   };
 
+  
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+
+    if (!file) return;
+
+    setAvatarFile(file);
+    setAvatarPreview(URL.createObjectURL(file));
+  };
+
+  useEffect(() => {
+    return () => {
+      if (avatarPreview) {
+        URL.revokeObjectURL(avatarPreview);
+      }
+    };
+  }, [avatarPreview]);
+
 
   const handleSubmit = async () => {
     if (isSubmitting || loading) return;
     if (!form) return;
+
     setIsSubmitting(true);
+
     try {
+      let avatar_file_id: string | null = null;
+      let avatar_url: string | null = null;
+
+      if (avatarFile) {
+        const uploaded = await uploadImageToImageKit(avatarFile);
+
+        avatar_file_id = uploaded.fileId;
+        avatar_url = uploaded.url;
+      }
+
       const newLead = {
-      title: form.title,
-      source: form.source,
-      first_name: form.first_name,
-      last_name: form.last_name,
-      suffix: form.suffix || null,
-      gender: form.gender,
-      email: form.email || null,
-      phone: form.phone || null,
-      birth_date: form.birth_date || null,
-      industry: form.industry,
-      company_name: form.company_name,
-      department: form.department,
-      position: form.position,
-      website: form.website,
-      priority: form.priority,
-      preferred_contact_time: form.preferred_contact_time,
-      notes: form.notes,
-      facebook: form.facebook,
-      x: form.x,
-      whatsapp: form.whatsapp,
-      linkedin: form.linkedin,
-      instagram: form.instagram,
-      telegram: form.telegram,
-      tiktok: form.tiktok,
-      viber: form.viber,
-    };
-    await dispatch(addLead(newLead)).unwrap();
-    dispatch(clearError());
-    navigate(`/app/leads`);
+        avatar_file_id,
+        avatar_url,
+
+        source: form.source,
+        first_name: form.first_name,
+        last_name: form.last_name,
+        suffix: form.suffix || null,
+        gender: form.gender,
+        email: form.email || null,
+        phone: form.phone || null,
+        birth_date: form.birth_date || null,
+        industry: form.industry,
+        company_name: form.company_name,
+        department: form.department,
+        position: form.position,
+        website: form.website,
+        priority: form.priority,
+        preferred_contact_time: form.preferred_contact_time,
+        notes: form.notes,
+        facebook: form.facebook,
+        x: form.x,
+        whatsapp: form.whatsapp,
+        linkedin: form.linkedin,
+        instagram: form.instagram,
+        telegram: form.telegram,
+        tiktok: form.tiktok,
+        viber: form.viber,
+      };
+
+      await dispatch(addLead(newLead)).unwrap();
+
+      dispatch(clearError());
+      navigate(`/app/leads`);
     } catch {
-      //Error from state
-    }finally { setIsSubmitting(false); }
+      // Error from state
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const canSubmit = !!form.first_name && !!form.last_name && !!form.title && !!form.notes;
+  const canSubmit = !!form.first_name && !!form.last_name && !!form.notes;
 
   const fieldSx = {
     fontSize: 13,
@@ -236,22 +274,74 @@ export default function AddLead() {
               <Box
                 sx={{
                   display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Avatar
+                  src={avatarPreview ?? undefined}
+                  sx={{
+                    width: 96,
+                    height: 96,
+                    fontSize: 28,
+                    fontWeight: 700,
+                    
+                  }}
+                >
+                  {!avatarPreview && (
+                    <PersonOutlineIcon sx={{ fontSize: 42 }} />
+                  )}
+                </Avatar>
+
+                <Button
+                  component="label"
+                  variant="outlined"
+                  size="small"
+                  sx={{
+                    textTransform: "none",
+                    borderRadius: 2,
+                    fontWeight: 600,
+                    my: 0.5
+                  }}
+                >
+                  Upload Avatar
+                  <input
+                    hidden
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarChange}
+                  />
+                </Button>
+
+                <Typography
+                  sx={{
+                    fontSize: 9,
+                    color: "text.secondary",
+                  }}
+                >
+                  JPG, PNG, or WebP
+                </Typography>
+              </Box>
+              <Box
+                sx={{
+                  display: "flex",
                   flexWrap: "wrap",
                   gap: 1.5,
                 }}
               >
-                  <TextField
-                    label="First Name"
-                    name="first_name"
-                    required
-                    onChange={handleChange}
-                    size="small"
-                    sx={{
-                      ...fieldSx,
-                      flex: "1 1 200px",
-                      minWidth: 0,
-                    }}
-                  />
+                <TextField
+                  label="First Name"
+                  name="first_name"
+                  required
+                  onChange={handleChange}
+                  size="small"
+                  sx={{
+                    ...fieldSx,
+                    flex: "1 1 200px",
+                    minWidth: 0,
+                  }}
+                />
 
                 <TextField
                   label="Last Name"
@@ -618,16 +708,6 @@ export default function AddLead() {
             <SectionHeader icon={<NotesIcon fontSize="small" />} title="Additional Details" />
 
             <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
-              <TextField
-                  label="Title"
-                  name="title"
-                  required
-                  onChange={handleChange}
-                  size="small"
-                  fullWidth
-                  rows={3}
-                  sx={fieldSx}
-                />
               <Box
                 sx={{
                   display: "flex",
@@ -742,7 +822,7 @@ export default function AddLead() {
               pl: { xs: 0.5, sm: 1 },
               textAlign: { xs: "center", sm: "left" },
             }}>
-              {canSubmit ? "Ready to add this lead." : "First name, Last name, title, and notes are required."}
+              {canSubmit ? "Ready to add this lead." : "First name, Last name, and notes are required."}
             </Typography>
             <Button
               variant="contained"

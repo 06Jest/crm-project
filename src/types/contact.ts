@@ -21,6 +21,7 @@ export type ContactStatus = typeof CONTACT_STATUSES[number];
 
 export interface Contact {
   id: string;
+  display_id: string;
   lead_id?:string;
   owner_id: string;
   org_id: string;
