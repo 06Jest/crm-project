@@ -47,6 +47,7 @@ function MinimalStepIcon({ active, completed, icon }: { active?: boolean; comple
 
 export default function Onboarding(): ReactElement {
   const { user, loading: userLoading } = useAuth();
+  console.log("Onboarding user:", user);
 
   if (userLoading || !user) {
     return (
@@ -81,10 +82,20 @@ function OnboardingWizard({ user }: { user: DisplayProfile }): ReactElement {
 
   const renderStepContent = (): ReactElement => {
     switch (currentStep) {
-      case 1: return <ProfileStep onNext={handleNext} />;
+      case 1: return (
+        <ProfileStep
+          onNext={handleNext}
+          initialProfile={user}
+        />
+      );
       case 2: return <WorkspaceStep onNext={handleNext} onFinish={handleFinish} />;
       case 3: return <SubscriptionStep onFinish={handleFinish} />;
-      default: return <ProfileStep onNext={handleNext} />;
+      default: return (
+        <ProfileStep
+          onNext={handleNext}
+          initialProfile={user}
+        />
+      );
     }
   };
 

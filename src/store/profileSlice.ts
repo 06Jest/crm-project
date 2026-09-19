@@ -82,12 +82,19 @@ export const updateProfile = createAsyncThunk(
 export const updateProfileAvatar = createAsyncThunk(
   "profile/update-avatar",
   async (
-    avatar_url: string | null,
+    {
+      avatar_url,
+      avatar_file_id,
+    }: {
+      avatar_url: string | null;
+      avatar_file_id: string | null;
+    },
     thunkAPI
   ) => {
     try {
       return await updateProfileAvatarAPI(
-        avatar_url
+        avatar_url,
+        avatar_file_id
       );
     } catch (err) {
       if (err instanceof Error) {
@@ -221,6 +228,9 @@ const profileSlice = createSlice({
 
       state.profile.avatar_url =
         action.payload.avatar_url ?? undefined;
+
+      state.profile.avatar_file_id =
+        action.payload.avatar_file_id ?? undefined;
     });
 
     builder.addCase(updateProfileAvatar.rejected, (state, action) => {

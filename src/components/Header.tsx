@@ -89,7 +89,7 @@ export default function Header() {
       .join(' ') || user?.email || '';
 
   const avatarLetter = displayName[0]?.toUpperCase() || '?';
-  const avatarSrc = undefined;
+  const avatarSrc = user?.avatar_url ?? undefined;
 
   const goHome = () => {
     setNavOpen(false);

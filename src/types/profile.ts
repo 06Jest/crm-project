@@ -28,7 +28,8 @@ export interface Profile {
   onboarding_completed: boolean;
   job_title?: string; 
   status: ProfileStatus;
-  avatar_url?: string;  
+  avatar_url?: string | null;
+  avatar_file_id?: string | null; 
   created_at?: string;
   deleted_at?: string;
   last_login?: string;
@@ -36,7 +37,8 @@ export interface Profile {
 
 export interface DisplayProfile {
     id: string;
-    avatar_url?: string;
+    avatar_url?: string | null;
+    avatar_file_id?: string | null;
     first_name: string;
     last_name: string;
     display_name?: string;

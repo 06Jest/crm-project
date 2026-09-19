@@ -1,5 +1,10 @@
+import React, {
+  useMemo,
+  useState,
+  useEffect,
+  useRef,
+} from "react";
 
-import React, { useMemo, useState, useEffect } from "react";
 import {
   Box,
   Paper,
@@ -7,7 +12,6 @@ import {
   Divider,
   Typography,
   Button,
-  Chip,
   Avatar,
   Snackbar,
   Alert,
@@ -22,10 +26,15 @@ import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import type { ProfileStatus } from "../../../types/profile";
 import type { AppDispatch, RootState } from "../../../store/store";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchProfile, updateProfile } from "../../../store/profileSlice";
+import {
+  fetchProfile,
+  updateProfile,
+  updateProfileAvatar,
+} from "../../../store/profileSlice";
 import ErrorAlert from "../../../components/Error";
 import FormField from "./Formfield";
 import { useNavigate } from "react-router-dom";
+import { uploadImageToImageKit } from "../../../services/imageKitService";
 
 export interface ProfilePageProps {
   saving?: boolean;
@@ -323,12 +332,14 @@ export default function Profile({
     job_title: "",
   });
 
-  const [avatarUrl, setAvatarUrl] = useState<string | undefined>(
-    undefined
-  );
-
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarRemoved, setAvatarRemoved] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | undefined>(
+    undefined
+  );
 
   useEffect(() => {
     if (!profile) return;
@@ -340,7 +351,7 @@ export default function Profile({
       job_title: profile.job_title ?? "",
     });
 
-    setAvatarUrl(profile.avatar_url);
+    setAvatarPreview(profile.avatar_url ?? undefined);
   }, [profile]);
 
   useEffect(() => {
@@ -363,7 +374,9 @@ export default function Profile({
     form.first_name !== baseline.first_name ||
     form.last_name !== baseline.last_name ||
     form.display_name !== baseline.display_name ||
-    form.job_title !== baseline.job_title;
+    form.job_title !== baseline.job_title ||
+    avatarFile !== null ||
+    avatarRemoved;
 
   if (loading && !profile) {
     return <ProfileSkeleton />;
@@ -387,8 +400,42 @@ export default function Profile({
   const membership = profile.membership?.[0];
 
   const handleSave = async () => {
+    console.log("Profile update payload:", {
+      first_name: form.first_name,
+      last_name: form.last_name,
+      display_name: form.display_name,
+      job_title: form.job_title,
+    });
     try {
       setIsSaving(true);
+
+      let avatarUrl = profile.avatar_url;
+      let avatarFileId = profile.avatar_file_id;
+
+      if (avatarFile) {
+        const uploadedAvatar =
+          await uploadImageToImageKit(avatarFile);
+
+        avatarUrl = uploadedAvatar.url;
+        avatarFileId = uploadedAvatar.fileId;
+
+        await dispatch(
+          updateProfileAvatar({
+            avatar_url: avatarUrl,
+            avatar_file_id: avatarFileId,
+          })
+        ).unwrap();
+      } else if (avatarRemoved) {
+        avatarUrl = null;
+        avatarFileId = null;
+
+        await dispatch(
+          updateProfileAvatar({
+            avatar_url: null,
+            avatar_file_id: null,
+          })
+        ).unwrap();
+      }
 
       await dispatch(
         updateProfile({
@@ -399,7 +446,17 @@ export default function Profile({
         })
       ).unwrap();
 
+      setAvatarFile(null);
+      setAvatarRemoved(false);
+      setAvatarPreview(avatarUrl ?? undefined);
+
       setToast("Profile updated.");
+    } catch (err) {
+      setToast(
+        err instanceof Error
+          ? err.message
+          : "Failed to update profile."
+      );
     } finally {
       setIsSaving(false);
     }
@@ -409,6 +466,38 @@ export default function Profile({
     !isDirty || isSaving || loading;
 
   const isBusy = isSaving || saving;
+
+  const handleAvatarChange = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setToast("Please select an image file.");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setToast("Image must be smaller than 5MB.");
+      return;
+    }
+
+    setAvatarFile(file);
+    setAvatarRemoved(false);
+
+    const previewUrl = URL.createObjectURL(file);
+    setAvatarPreview(previewUrl);
+
+    event.target.value = "";
+  };
+
+  const handleAvatarRemove = () => {
+    setAvatarFile(null);
+    setAvatarPreview(undefined);
+    setAvatarRemoved(true);
+  };
 
   return (
     <Box
@@ -550,8 +639,16 @@ export default function Profile({
                     },
                   }}
                 >
+                  <input
+                    ref={avatarInputRef}
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    hidden
+                    onChange={handleAvatarChange}
+                  />
                   <Avatar
-                    src={avatarUrl}
+                    src={avatarPreview || undefined}
+                    alt={fullName}
                     imgProps={{
                       loading: "lazy",
                     }}
@@ -573,7 +670,7 @@ export default function Profile({
                       borderColor: "divider",
                     }}
                   >
-                    {initials}
+                    {!avatarPreview && initials}
                   </Avatar>
 
                   <Stack
@@ -584,22 +681,24 @@ export default function Profile({
                     }}
                   >
                     <Button
-                      disabled
                       size="small"
                       startIcon={
                         <CloudUploadOutlinedIcon fontSize="small" />
                       }
+                      onClick={() => avatarInputRef.current?.click()}
+                      disabled={isBusy}
                       sx={{ px: 1 }}
                     >
                       Upload avatar
                     </Button>
-
-                    <Chip
-                      sx={{ opacity: 0.4 }}
-                      label="Coming soon"
+                    <Button
                       size="small"
-                      variant="outlined"
-                    />
+                      color="error"
+                      onClick={handleAvatarRemove}
+                      disabled={isBusy}
+                    >
+                      Remove avatar
+                    </Button>
                   </Stack>
                 </Box>
 
