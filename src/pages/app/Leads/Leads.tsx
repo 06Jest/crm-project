@@ -3,7 +3,9 @@ import type { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "../../../store/store";
-
+import { DataGrid, type GridColDef } from '@mui/x-data-grid';
+import ViewKanbanIcon from '@mui/icons-material/ViewKanban';
+import TableRowsIcon from '@mui/icons-material/TableRows';
 
 import {
   deleteLead, 
@@ -43,6 +45,8 @@ import {
   Tooltip,
   Skeleton,
   CircularProgress,
+  Menu,
+  MenuItem,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -242,6 +246,9 @@ export default function Leads() {
   const [anchorEl, setAnchorEl] = useState<HTMLDivElement | null>(null);
   const [hoveredLead, setHoveredLead] = useState<Lead | null>(null);
   const [openSnackbar, setOpenSnackbar] = useState(false);
+  const [view, setView] = useState<'kanban' | 'table'>('kanban');
+  const [statusAnchorEl, setStatusAnchorEl] =
+    useState<null | HTMLElement>(null);
 
   const [visibleCounts, setVisibleCounts] = useState<Record<LeadStatus, number>>({
     New: LAZY_CHUNK,
@@ -516,6 +523,284 @@ const handleConfirmCloseLead = async () => {
       });
   };
 
+  const handleStatusChange = async (status: LeadStatus) => {
+    if (!selectedLead) return;
+
+    const lead = selectedLead;
+    const oldStatus = lead.status;
+
+    setStatusAnchorEl(null);
+
+    if (status === oldStatus) return;
+
+    if (
+      oldStatus === 'Qualified' &&
+      ['New', 'Contacted', 'Closed'].includes(status)
+    ) {
+      const message =
+        status === 'Closed'
+          ? `This lead is already in Contacts. Unable to change the status to '${status}'. Please change the status in Contacts instead.`
+          : `This lead is already in Contacts. Unable to change the status back to '${status}'.`;
+
+      setInvalid(message);
+      setTimeout(() => setInvalid(''), 3000);
+      setSelectedLead(null);
+      return;
+    }
+
+    if (
+      oldStatus === 'Closed' &&
+      ['New', 'Contacted', 'Qualified'].includes(status)
+    ) {
+      setInvalid(
+        `This lead already exists. Unable to change the status back to '${status}'.`
+      );
+      setTimeout(() => setInvalid(''), 3000);
+      setSelectedLead(null);
+      return;
+    }
+
+    if (status === 'Qualified') {
+      if (!lead.email?.trim() && !lead.phone?.trim()) {
+        setOpenInvalid(true);
+        setSelectedLead(null);
+        return;
+      }
+
+      setSelectedLead(null);
+      setDropResult({
+        draggableId: lead.id,
+        source: {
+          droppableId: oldStatus,
+          index: 0,
+        },
+        destination: {
+          droppableId: status,
+          index: 0,
+        },
+        combine: null,
+        reason: 'DROP',
+        type: 'DEFAULT',
+        mode: 'FLUID',
+      });
+
+      setOpenAddContact(true);
+      return;
+    }
+
+    if (status === 'Closed') {
+      setSelectedLead(null);
+      setDropResult({
+        draggableId: lead.id,
+        source: {
+          droppableId: oldStatus,
+          index: 0,
+        },
+        destination: {
+          droppableId: status,
+          index: 0,
+        },
+        combine: null,
+        reason: 'DROP',
+        type: 'DEFAULT',
+        mode: 'FLUID',
+      });
+
+      setOpenCloseConfirmation(true);
+      return;
+    }
+
+    try {
+      dispatch(
+        moveLeadLocally({
+          id: lead.id,
+          newStatus: status,
+        })
+      );
+
+      await dispatch(
+        updateLeadStatus({
+          id: lead.id,
+          status,
+        })
+      ).unwrap();
+
+      setSelectedLead(null);
+    } catch {
+      // Error in state
+    }
+  };
+
+  const AVATAR_PALETTE = [
+    "#4f5fce",
+    "#0f8f7a",
+    "#c4577a",
+    "#c17d2a",
+    "#7965d1",
+    "#2c8fb0",
+    "#b1544a",
+    "#4a935a",
+  ];
+
+  function getInitials(input: string) {
+    const trimmed = input.trim();
+    if (!trimmed) return "?";
+    const parts = trimmed.split(/\s+/).filter(Boolean);
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  }
+
+  function stringToAvatarColor(input: string) {
+    let hash = 0;
+    for (let i = 0; i < input.length; i++) hash = input.charCodeAt(i) + ((hash << 5) - hash);
+    return AVATAR_PALETTE[Math.abs(hash) % AVATAR_PALETTE.length];
+  }
+
+  const columns: GridColDef[] = [
+    {
+      field: 'display_id',
+      headerName: 'ID',
+      width: 70,
+      cellClassName: 'display-id-cell',
+    },
+    {
+      field: 'name',
+      headerName: 'Name',
+      sortable: true,
+      flex: 1,
+      renderCell: (params) => (
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            height: '100%',
+            gap: 1,
+          }}
+        >
+          <Avatar
+            src={params.row.avatar_url ?? undefined}
+            sx={{
+              width: 24,
+              height: 24,
+              fontSize: 10.5,
+              fontWeight: 700,
+              bgcolor: stringToAvatarColor(params.value ?? ""),
+            }}
+          >
+            {!params.row.avatar_url && getInitials(params.value ?? "")}
+          </Avatar>
+
+          <Typography
+            sx={{
+              fontSize: '0.82rem',
+              fontWeight: 600,
+            }}
+            color="primary"
+          >
+            {params.value}
+          </Typography>
+        </Box>
+      ),
+    },
+    {
+      field: 'email',
+      headerName: 'Email',
+      flex: 1,
+    },
+    {
+      field: 'phone',
+      headerName: 'Phone',
+      width: 150,
+    },
+    {
+      field: 'status',
+      headerName: 'Status',
+      width: 180,
+      display: 'flex',
+      align: 'left',
+      renderCell: ({ value }) => (
+        <Chip
+          label={value}
+          size="small"
+          sx={{
+            height: 22,
+            fontSize: '0.72rem',
+            fontWeight: 700,
+            borderRadius: 1.5,
+            border: value === 'New'
+              ? '1px solid #888888c2'
+              : 'none',
+            color: value === 'New'
+              ? '#303030'
+              : '#f7f6f6',
+            backgroundColor:
+              value === 'New'
+                ? '#ffffff'
+                : value === 'Contacted'
+                  ? '#ffbb29'
+                  : value === 'Qualified'
+                    ? '#AD7450'
+                    : '#7a0000',
+          }}
+        />
+      ),
+    },
+    {
+      field: 'priority',
+      headerName: 'Priority',
+      width: 100,
+    },
+    {
+      field: 'preferred_contact_time',
+      headerName: 'Preferred Time',
+      flex: 1,
+      minWidth: 130,
+    },
+    {
+      field: 'actions',
+      headerName: 'Action',
+      width: 150,
+      align: 'center',
+      headerAlign: 'center',
+      sortable: false,
+      filterable: false,
+      renderCell: (params) => (
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            paddingTop: '4px',
+          }}
+        >
+          <Button
+            size="small"
+            onClick={(e) => {
+              setStatusAnchorEl(e.currentTarget);
+              setSelectedLead(params.row);
+            }}
+            disableElevation
+            sx={{
+              py: '2px',
+              px: 1.75,
+              borderRadius: 999,
+              textTransform: 'none',
+              backgroundColor: 'primary.main',
+              color: 'white',
+              fontSize: '11px',
+              fontWeight: 700,
+              '&:hover': {
+                backgroundColor: 'primary.dark',
+              },
+            }}
+          >
+            Change Status
+          </Button>
+        </Box>
+      ),
+    },
+  ];
+
   if (loading) {
     return (
       <Box sx={{height: 1000}}>
@@ -603,7 +888,17 @@ const handleConfirmCloseLead = async () => {
     );
   }
 
-  
+  const tableRows = leads.map((lead) => ({
+    id: lead.id,
+    display_id: lead.display_id,
+    name: `${formatName(lead.first_name, lead.last_name)} ${lead.suffix || ''}`,
+    avatar_url: lead.avatar_url,
+    email: lead.email || '',
+    phone: lead.phone || '',
+    status: lead.status,
+    priority: lead.priority,
+    preferred_contact_time: lead.preferred_contact_time,
+  }));
 
   return (
     <Box sx={{ pb: 2 }}>
@@ -645,6 +940,29 @@ const handleConfirmCloseLead = async () => {
         </Typography>
 
         <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 0.5, sm: 0.75 } }}>
+          <IconButton
+            title="Kanban view"
+            onClick={() => setView('kanban')}
+            size="small"
+            sx={{
+              color: view === 'kanban' ? 'primary.main' : 'text.secondary',
+              backgroundColor: view === 'kanban' ? 'action.selected' : 'transparent',
+            }}
+          >
+            <ViewKanbanIcon />
+          </IconButton>
+
+          <IconButton
+            title="Table view"
+            onClick={() => setView('table')}
+            size="small"
+            sx={{
+              color: view === 'table' ? 'primary.main' : 'text.secondary',
+              backgroundColor: view === 'table' ? 'action.selected' : 'transparent',
+            }}
+          >
+            <TableRowsIcon />
+          </IconButton>
           <IconButton
             title="Add lead"
             onClick={() => {
@@ -696,6 +1014,7 @@ const handleConfirmCloseLead = async () => {
 
         
       </Box>
+      {view === 'kanban' ? (
       <DragDropContext onDragEnd={handleDragEnd}>
         <Box
           sx={{
@@ -1035,6 +1354,82 @@ const handleConfirmCloseLead = async () => {
           })}
         </Box>
       </DragDropContext>
+      ) : (
+        <Box
+          sx={{
+            width: { md: '85vw', sm: '90vw', xs: '98vw' },
+            maxWidth: 1400,
+            minHeight: 700,
+            mx: 'auto',
+          }}
+        >
+          <DataGrid
+            sx={{
+              minHeight: 800,
+              minWidth: 1200,
+              mx: 1,
+              mb: 1,
+              border: 'none',
+              borderRadius: 3,
+              fontSize: '0.85rem',
+              overflow: 'auto',
+              '& .MuiDataGrid-columnHeaders': {
+                bgcolor: (theme) =>
+                  alpha(theme.palette.text.primary, 0.03),
+                borderRadius: 2,
+              },
+              '& .MuiDataGrid-columnHeaderTitle': {
+                fontWeight: 700,
+                fontSize: '0.75rem',
+                textTransform: 'uppercase',
+                letterSpacing: 0.3,
+                opacity: 0.7,
+              },
+              '& .MuiDataGrid-row:hover': {
+                bgcolor: (theme) =>
+                  alpha(theme.palette.primary.main, 0.05),
+              },
+              '& .display-id-cell': {
+                fontSize: '11px',
+              },
+              '& .MuiDataGrid-cell:focus, & .MuiDataGrid-cell:focus-within': {
+                outline: 'none',
+              },
+            }}
+            rows={tableRows}
+            columns={columns}
+            initialState={{
+              pagination: {
+                paginationModel: {
+                  page: 0,
+                  pageSize: 10,
+                },
+              },
+            }}
+            pageSizeOptions={[30, 50]}
+            rowHeight={30}
+            disableRowSelectionOnClick
+          />
+        </Box>
+      )}
+      <Menu
+        anchorEl={statusAnchorEl}
+        open={Boolean(statusAnchorEl)}
+        onClose={() => {
+          setStatusAnchorEl(null);
+          setSelectedLead(null);
+        }}
+      >
+        {LEAD_STATUSES.map((status) => (
+         <MenuItem
+            key={status}
+            disabled={status === selectedLead?.status}
+            onClick={() => handleStatusChange(status)}
+          >
+            {status}
+          </MenuItem>
+        ))}
+      </Menu>
       <Dialog
         PaperProps={{
           sx: {
