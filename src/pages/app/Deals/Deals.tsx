@@ -347,21 +347,32 @@ function LazyColumnBody({
                                 <Box sx={{
                                   display: 'flex', 
                                   alignItems: 'center', 
-                                  
-                                  }}>
-                                  <Typography 
-                                  title="Deal Owner"
-                                  color="text.secondary"
-                                  sx={{ px: 1, py: '1px', 
-                                    border: `1px solid`,
-                                    borderColor: 'primary.main',
-                                    color: 'primary.main',
-                                    borderRadius: 10,
-                                    fontSize: 10,
-                                    fontWeight: 600,
-                                    cursor: 'pointer'
-                                  }}
-                                  >{formatName(deal.owner.profile.first_name, deal.owner.profile.last_name) ?? "unknown"}</Typography>
+                                }}>
+                                  <Tooltip title={deal.assigned ? "Assigned To" : "Deal Owner"} arrow>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                                      <Typography
+                                        color="text.secondary"
+                                        sx={{
+                                          px: 1,
+                                          py: '1px',
+                                          border: `1px solid`,
+                                          borderColor: 'primary.main',
+                                          color: 'primary.main',
+                                          borderRadius: 10,
+                                          fontSize: 10,
+                                          fontWeight: 600,
+                                          cursor: 'pointer'
+                                        }}
+                                      >
+                                        {formatName(
+                                          deal.assigned?.profile.first_name ??
+                                            deal.owner.profile.first_name,
+                                          deal.assigned?.profile.last_name ??
+                                            deal.owner.profile.last_name
+                                        ) ?? "unknown"}
+                                      </Typography>
+                                    </Box>
+                                  </Tooltip>
                                 </Box>
                                 <Box sx={{
                                   display: 'flex',

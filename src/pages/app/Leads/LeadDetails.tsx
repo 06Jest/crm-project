@@ -891,8 +891,20 @@ export default function LeadDetails() {
                   </Box>
               )}
               <Chip
-                label={formatName(lead.owner.profile.first_name, lead.owner.profile.last_name)}
-                title="Lead owner"
+                label={
+                  lead.assigned
+                    ? formatName(
+                        lead.assigned.profile.first_name,
+                        lead.assigned.profile.last_name
+                      )
+                    : lead.owner
+                      ? formatName(
+                          lead.owner.profile.first_name,
+                          lead.owner.profile.last_name
+                        )
+                      : "Unassigned"
+                }
+                title={lead.assigned ? "Assigned to" : "Lead owner"}
                 size='small'
                 sx={{
                   px: 1,

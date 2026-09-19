@@ -1264,15 +1264,25 @@ const handleConfirmCloseLead = async () => {
                                 )}
                                 <Stack direction="row" spacing={0.75} sx={{ mt: 0.75, flexWrap: 'wrap', rowGap: 0.5 }}>
                                   <Chip
-                                    title="Deal Owner"
+                                    title={lead.assigned_to ? "Assigned To" : "Deal Owner"}
                                     label={formatName(
-                                      lead.owner?.profile?.first_name ?? "Unknown",
-                                      lead.owner?.profile?.last_name ?? "Owner"
+                                      lead.assigned?.profile?.first_name ??
+                                        lead.owner?.profile?.first_name ??
+                                        "Unknown",
+                                      lead.assigned?.profile?.last_name ??
+                                        lead.owner?.profile?.last_name ??
+                                        "Owner"
                                     )}
                                     size="small"
                                     variant="outlined"
                                     color="primary"
-                                    sx={{ height: 18, fontSize: 9, fontWeight: 700, cursor: 'pointer', "& .MuiChip-label": { px: 0.75 } }}
+                                    sx={{
+                                      height: 18,
+                                      fontSize: 9,
+                                      fontWeight: 700,
+                                      cursor: 'pointer',
+                                      "& .MuiChip-label": { px: 0.75 }
+                                    }}
                                   />
                                   <Chip
                                     title="Preferred Time to contact"

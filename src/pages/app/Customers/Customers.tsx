@@ -125,7 +125,7 @@ const getColumns = (
   },
   { field: 'open_deals', headerName: 'Open Deals', width: 100 },
   { field: 'preferred_contact_time', headerName: 'Preferred time', flex: 1 },
-  { field: 'owner_name', headerName: 'Owner',  flex: 1 },
+  { field: 'assigned', headerName: 'Assigned',  flex: 1 },
   {
     field: 'created_at',
     headerName: 'Since',
@@ -211,9 +211,17 @@ export default function Customers() {
       status: customer.status,
       open_deals: dealsOpen,
       preferred_contact_time: c.preferred_contact_time,
-      owner_name: customer.owner
-        ? formatName(customer.owner.profile.first_name, customer.owner.profile.last_name)
-        : "Unassigned",
+      assigned: customer.assigned
+        ? formatName(
+            customer.assigned.profile.first_name,
+            customer.assigned.profile.last_name
+          )
+        : customer.owner
+          ? formatName(
+              customer.owner.profile.first_name,
+              customer.owner.profile.last_name
+            )
+          : "Unassigned",
       created_at: customer.created_at,
       action: customer.id
     }

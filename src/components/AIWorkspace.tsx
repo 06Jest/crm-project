@@ -553,6 +553,21 @@ const handleConfirm = () => {
       )
     : [];
 
+ const getAgentDescription = (agentId: AIAgentId) => {
+  const descriptions: Record<AIAgentId, string> = {
+    "personal-assistant":
+      "Helps with your daily work and can access your personal data such as creating personal notes and creating personal tasks (more tools to be added soon).",
+
+   "organization-assistant":
+  "Helps with daily work, career growth, and teamwork, with access to organization CRM data such as leads, contacts, customers, notes, and other organization records as tools become available(to be updated).",
+
+    "crm-assistant":
+      "Answers general questions about uniThread CRM, including features, pricing, policies, terms, and how the CRM works.",
+  };
+
+  return descriptions[agentId];
+};
+
   return (
     <>
       {isOpen && (
@@ -999,7 +1014,7 @@ const handleConfirm = () => {
                         opacity: 0.62,
                       }}
                     >
-                      Ask a question to begin your conversation.
+                      {getAgentDescription(selectedAgent.id)}
                     </p>
 
                     <div

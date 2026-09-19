@@ -139,11 +139,20 @@ const getColumns = (
       />
     ),
   },
-  { field: 'owner_name', 
-    headerName: 'Owner', 
+  {
+    field: 'assigned', 
+    headerName: 'Assigned', 
     flex: 1,
     align: 'left',
-    
+    renderCell: (params) => (
+      <Tooltip title={params.row.assigned ? "Assigned To" : "Deal Owner"}>
+        <Box sx={{ display: 'flex', alignItems: 'center', height: '100%', gap: 0.75 }}>
+          <Typography sx={{ fontSize: '0.8rem' }}>
+            {params.value}
+          </Typography>
+        </Box>
+      </Tooltip>
+    ),
   },
   {
     field: 'created_at',
@@ -212,7 +221,12 @@ export default function Contacts() {
     email: contact.email,
     phone: contact.phone,
     status: contact.status,
-    owner_name: formatName(contact.owner.profile.first_name, contact.owner.profile.last_name),
+    assigned: formatName(
+      contact.assigned?.profile.first_name ??
+        contact.owner.profile.first_name,
+      contact.assigned?.profile.last_name ??
+        contact.owner.profile.last_name
+    ),
     created_at: contact.created_at,
     action: contact.id
   }));

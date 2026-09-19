@@ -3,13 +3,15 @@ import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch } from "../../../store/store";
 import { useNavigate, useParams } from "react-router-dom";
 import { type RootState } from "../../../store/store";
-
+import { fetchOrgMembers } from "../../../store/organizationMemberSlice";
 import {
   Box,
   Paper,
   TextField,
   Button,
   Typography,
+  MenuItem,
+  Avatar,
 } from "@mui/material";
 
 import { fetchContactsLists } from "../../../store/contactsSlice";
@@ -17,7 +19,6 @@ import {  type DealStage } from '../../../types/deal';
 import { addDeal, clearError } from "../../../store/dealsSlice";
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import HandshakeIcon from '@mui/icons-material/Handshake';
-import PersonIcon from '@mui/icons-material/Person';
 import ErrorAlert from "../../../components/Error";
 import { useAuth } from "../../../hooks/useAuth";
 import { formatName } from "../../../utils/formatText";
@@ -28,6 +29,10 @@ export default function AddDealByID() {
   const contact = useSelector((state: RootState) =>
     state.contacts.items.find((c) => c.id === id)
   );
+  const {
+    items: members,
+    loaded: mLd,
+  } = useSelector((state: RootState) => state.orgmembers);
   const { loading, error} = useSelector((state:RootState) => state.deals);
   const { user, loading: userLoading } = useAuth();
   const dispatch = useDispatch<AppDispatch>();
@@ -39,21 +44,26 @@ export default function AddDealByID() {
     title: "",
     stage: 'Prospecting' as DealStage,
     notes: "",
+    assigned_to: "",
     value: 0,
   });
    
 
   useEffect(() => {
-    if (userLoading ) return;
+    if (userLoading) return;
 
     const loadData = async () => {
 
-      if (user ) {
+      if (user) {
         await dispatch(fetchContactsLists()).unwrap();
+      }
+
+      if (user && !mLd) {
+        await dispatch(fetchOrgMembers()).unwrap();
       }
     };
     loadData();
-  }, [userLoading, user, dispatch]);
+  }, [userLoading, user, mLd, dispatch]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -71,6 +81,7 @@ export default function AddDealByID() {
     try {
        const newDeal = {
         contact_id: id,
+        assigned_to: form.assigned_to || null,
         title: form.title,
         stage: form.stage,
         notes: form.notes,
@@ -85,6 +96,31 @@ export default function AddDealByID() {
     }
    
   };
+
+  const AVATAR_PALETTE = [
+    "#4f5fce",
+    "#0f8f7a",
+    "#c4577a",
+    "#c17d2a",
+    "#7965d1",
+    "#2c8fb0",
+    "#b1544a",
+    "#4a935a",
+  ];
+
+  function stringToAvatarColor(input: string) {
+    let hash = 0;
+    for (let i = 0; i < input.length; i++) hash = input.charCodeAt(i) + ((hash << 5) - hash);
+    return AVATAR_PALETTE[Math.abs(hash) % AVATAR_PALETTE.length];
+  }
+
+  function getInitials(input: string) {
+    const trimmed = input.trim();
+    if (!trimmed) return "?";
+    const parts = trimmed.split(/\s+/).filter(Boolean);
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  }
     
 
   return (
@@ -163,7 +199,23 @@ export default function AddDealByID() {
             bgcolor: theme.palette.mode === 'dark' ? '#242424' : '#f4f5f7',
             border: `1px solid ${theme.palette.mode === 'dark' ? '#3a3a3a' : '#e3e3e3'}`,
           })}>
-            <PersonIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
+            <Avatar
+              src={contact?.avatar_url ?? undefined}
+              sx={{
+                width: 24,
+                height: 24,
+                fontSize: 10.5,
+                fontWeight: 700,
+                bgcolor: stringToAvatarColor(
+                  `${contact?.first_name} ${contact?.last_name}`
+                ),
+              }}
+            >
+              {!contact?.avatar_url &&
+                getInitials(
+                  `${contact?.first_name} ${contact?.last_name}`
+                )}
+            </Avatar>
             <Box>
               <Typography variant="caption" color="text.secondary" display="block" lineHeight={1.2}>
                 Contact
@@ -179,31 +231,43 @@ export default function AddDealByID() {
             width: '100%',
             justifyContent: "space-between",
             gap: 1.5,
-          }}>        
+          }}>
             <TextField
-              disabled
-              label= {formatName(contact?.first_name, contact?.last_name)}
-              name="contact_id"
+              select
+              label="Assigned To"
+              name="assigned_to"
+              value={form.assigned_to}
+              onChange={handleChange}
               size="small"
+              fullWidth
               sx={{
                 fontSize: 13,
-                width: '50%',
-                display: 'none',
+                '& .MuiOutlinedInput-root': { borderRadius: 2 },
+              }}
+            >
+              <MenuItem value="">
+                Unassigned
+              </MenuItem>
+
+              {members.map((member) => (
+                <MenuItem key={member.id} value={member.id}>
+                  {member.profile.first_name} {member.profile.last_name}
+                </MenuItem>
+              ))}
+            </TextField>
+
+            <TextField
+              required
+              label="Value"
+              name="value"
+              onChange={handleChange}
+              size="small"
+              fullWidth
+              sx={{
+                fontSize: 13,
+                '& .MuiOutlinedInput-root': { borderRadius: 2 },
               }}
             />
-            <TextField
-                required
-                label="Value"
-                name="value"
-                onChange={handleChange}
-                size="small"
-                fullWidth
-                sx={{
-                  fontSize: 13,
-                  '& .MuiOutlinedInput-root': { borderRadius: 2 },
-                }}
-              />
-            
           </Box>
           <Box sx={{
             display: "flex",

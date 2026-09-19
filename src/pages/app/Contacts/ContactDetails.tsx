@@ -912,8 +912,20 @@ export default function ContactDetail() {
                   </Box>
               )}
               <Chip
-                label={formatName(contact.owner.profile.first_name, contact.owner.profile.last_name)}
-                title="Contact owner"
+                label={
+                  contact.assigned
+                    ? formatName(
+                        contact.assigned.profile.first_name,
+                        contact.assigned.profile.last_name
+                      )
+                    : contact.owner
+                      ? formatName(
+                          contact.owner.profile.first_name,
+                          contact.owner.profile.last_name
+                        )
+                      : "Unassigned"
+                }
+                title="Assigned to"
                 size='small'
                 sx={{
                   px: 1,

@@ -4,6 +4,7 @@ import type { AppDispatch } from "../../../store/store";
 import { useNavigate } from "react-router-dom";
 import { type RootState } from "../../../store/store";
 import { uploadImageToImageKit } from "../../../services/imageKitService";
+import { fetchOrgMembers } from "../../../store/organizationMemberSlice";
 
 import {
   Box,
@@ -63,6 +64,15 @@ export default function AddLead() {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const themeMode = useSelector((state: RootState) => state.ui.themeMode);
   const { loading, error} = useSelector((state:RootState) => state.leads);
+  const { items: members, loaded: mLd } = useSelector(
+    (state: RootState) => state.orgmembers
+  );
+
+  useEffect(() => {
+  if (!mLd) {
+    dispatch(fetchOrgMembers());
+  }
+}, [mLd, dispatch]);
 
   const [form, setForm] = useState({
     first_name: "",
@@ -89,6 +99,7 @@ export default function AddLead() {
     tiktok: "",
     viber: "",
     preferred_contact_time: "Anytime" as PreferredTime,
+    assigned_to: "",
   });
 
   const handleChange = (
@@ -147,7 +158,7 @@ export default function AddLead() {
       const newLead = {
         avatar_file_id,
         avatar_url,
-
+        assigned_to: form.assigned_to || null,
         source: form.source,
         first_name: form.first_name,
         last_name: form.last_name,
@@ -707,7 +718,7 @@ export default function AddLead() {
           <Paper variant="outlined" sx={{ p: { xs: 2, sm: 2.5 }, borderRadius: 3, borderColor: "divider" }}>
             <SectionHeader icon={<NotesIcon fontSize="small" />} title="Additional Details" />
 
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+            <Box sx={{ display: "flex", flexDirection: "column" }}>
               <Box
                 sx={{
                   display: "flex",
@@ -727,17 +738,6 @@ export default function AddLead() {
                     flex: "1 1 180px",
                     minWidth: 0,
                   }}
-                  slotProps={{
-                    select: {
-                      MenuProps: {
-                        PaperProps: {
-                          sx: {
-                            maxHeight: 250,
-                          },
-                        },
-                      },
-                    },
-                  }}
                 >
                   {SOURCES.map((source) => (
                     <MenuItem key={source} value={source}>
@@ -745,6 +745,7 @@ export default function AddLead() {
                     </MenuItem>
                   ))}
                 </TextField>
+
                 <TextField
                   select
                   label="Preferred Time"
@@ -754,7 +755,7 @@ export default function AddLead() {
                   size="small"
                   sx={{
                     ...fieldSx,
-                    flex: "1 1 150px",
+                    flex: "1 1 180px",
                     minWidth: 0,
                   }}
                 >
@@ -764,6 +765,40 @@ export default function AddLead() {
                     </MenuItem>
                   ))}
                 </TextField>
+              </Box>
+
+              <Box
+                sx={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: 1.5,
+                  my: 1.5,
+                }}
+              >
+                <TextField
+                  select
+                  label="Assigned To"
+                  name="assigned_to"
+                  value={form.assigned_to}
+                  onChange={handleChange}
+                  size="small"
+                  sx={{
+                    ...fieldSx,
+                    flex: "1 1 180px",
+                    minWidth: 0,
+                  }}
+                >
+                  <MenuItem value="">
+                    Unassigned
+                  </MenuItem>
+
+                  {members.map((member) => (
+                    <MenuItem key={member.id} value={member.id}>
+                      {member.profile.first_name} {member.profile.last_name}
+                    </MenuItem>
+                  ))}
+                </TextField>
+
                 <TextField
                   select
                   label="Priority"
@@ -773,13 +808,13 @@ export default function AddLead() {
                   size="small"
                   sx={{
                     ...fieldSx,
-                    flex: "1 1 150px",
+                    flex: "1 1 180px",
                     minWidth: 0,
                   }}
                 >
-                  {PRIORITIES.map((prio) => (
-                    <MenuItem key={prio} value={prio}>
-                      {prio}
+                  {PRIORITIES.map((priority) => (
+                    <MenuItem key={priority} value={priority}>
+                      {priority}
                     </MenuItem>
                   ))}
                 </TextField>

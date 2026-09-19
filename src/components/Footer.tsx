@@ -52,24 +52,24 @@ const footerSections: FooterSection[] = [
   {
     title: 'Product',
     links: [
-      { label: 'Pricing', href: '/pricing' },
-      { label: 'Security', href: '/security' },
-      { label: 'Roadmap', href: '/roadmap' },
+      { label: 'Pricing', href: '/pricing', external: true  },
+      { label: 'Security', href: '/security', external: true  },
+      { label: 'Roadmap', href: '/roadmap', external: true  },
       { label: 'Status', href: '/health', external: true },
     ],
   },
   {
     title: 'Company',
     links: [
-      { label: 'About Us', href: '/aboutus' },
-      { label: 'Contact Us', href: '/contact' },
+      { label: 'About Us', href: '/aboutus', external: true  },
+      { label: 'Contact Us', href: '/contact', external: true  },
     ],
   },
   {
     title: 'Resources',
     links: [
       { label: 'Product Overview', href: '/overview', external: true },
-      { label: 'Help Center', href: '/help' },
+      { label: 'Help Center', href: '/help' , external: true},
       { label: 'Report Bug', href: '/feedback', external: true },
     ],
   },
@@ -85,9 +85,9 @@ const footerSections: FooterSection[] = [
   {
     title: 'Legal',
     links: [
-      { label: 'Terms of Service', href: '/terms' },
-      { label: 'Privacy Policy', href: '/privacy' },
-      { label: 'Cookie Policy', href: '/cookiepolicy' },
+      { label: 'Terms of Service', href: '/terms', external: true  },
+      { label: 'Privacy Policy', href: '/privacy', external: true  },
+      { label: 'Cookie Policy', href: '/cookiepolicy', external: true  },
     ],
   },
 ];
@@ -126,7 +126,7 @@ const socialLinks: SocialLink[] = [
 
 
 const contactInfo = {
-  email: 'silvanojestony27@gmail.com',
+  email: 'uni.mailer1@gmail.com',
   phone: '+63 968 768 0777',
   address: 'Rodriguez, Rizal, Philippines',
 };
@@ -253,7 +253,12 @@ export default function Footer() {
                     color: 'primary.main',
                   },
                 }}
-                onClick={() => window.location.href = `mailto:${contactInfo.email}`}
+                onClick={() =>
+                  window.open(
+                    `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(contactInfo.email)}`,
+                    '_blank'
+                  )
+                }
               >
                 <EmailIcon sx={{ fontSize: 18, mt: 0.3, flexShrink: 0 }} />
                 <Box>

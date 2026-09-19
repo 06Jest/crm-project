@@ -19,7 +19,8 @@ import {
   IconButton,
   TextField,
   MenuItem,
-  CircularProgress,  
+  CircularProgress,
+  Avatar,  
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 // import EditIcon from '@mui/icons-material/Edit';
@@ -347,18 +348,19 @@ export default function CustomerDetail() {
         </Box>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1, width: '100%' }}>
           <Box sx={{display: 'flex', width: 100, mr: 2, flexDirection: 'column', justifyContent: 'space-between', height: 185 }}>
-            <Box sx={(theme) => ({
-              width: 100,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              height:100,
-              border: '1px solid #ccccccd8',
-              bgcolor: theme.palette.mode === 'dark' ? '#2c2c2c' : '#f4f5f7',
-              borderRadius: 100,
-            })}>
-              <PersonIcon sx={{fontSize: '80px', color: '#686868b0'}}/>
-            </Box>
+            <Avatar
+              src={contact.avatar_url ?? undefined}
+              sx={(theme) => ({
+                width: 100,
+                height: 100,
+                border: '1px solid #ccccccd8',
+                bgcolor: theme.palette.mode === 'dark' ? '#2c2c2c' : '#f4f5f7',
+              })}
+            >
+              {!contact.avatar_url && (
+                <PersonIcon sx={{fontSize: '80px', color: '#686868b0'}}/>
+              )}
+            </Avatar>
             <Box sx={{ display: 'flex', flexDirection: 'column', justifySelf: 'end'}}>
               <Button 
                 title='View Full Contact Details'
@@ -410,62 +412,7 @@ export default function CustomerDetail() {
               </Box>
             </Box>
             <Divider sx={{my: '10px'}}/>
-            {!isEditingNotes ? (
-            <Box
-              onMouseEnter={() => setHoveredNotes(true)}
-              onMouseLeave={() => setHoveredNotes(false)}
-              sx={(theme) => ({
-                display: 'flex',
-                borderRadius: 2,
-                bgcolor: theme.palette.mode === 'dark' ? '#242424' : '#f7f8fa',
-                p: '8px 10px',
-              })}>
-              <Typography title="Notes" fontWeight={500} fontSize={12} color="text.secondary" sx={{cursor: 'pointer', minHeight: 40, width: '95%' }}>
-                {customer?.notes}
-              </Typography>
-              <Box width={'5%'} >
-                <IconButton onClick={() => {
-                  setIsEditingNotes(true)
-                  handleEditNotes()
-                }}
-                title='Edit Notes' sx={{opacity: hoveredNotes ? 1 : 0, p: '2px',  transition: "all 0.3s ease", transform: hoveredNotes ? "translateX(0)" : "translateX(8px)",}}>
-                  <EditNoteIcon fontSize="small" />
-                </IconButton>
-              </Box>
-            </Box>
-            ) : (
-              <Box sx={{display: 'flex'}}>
-                <TextField
-                  value={newNotes}
-                  onChange={(e) => setNewNotes(e.target.value)}
-                  size="small"
-                  multiline
-                  fullWidth
-                  rows={3}
-                  sx={{ 
-                    '& .MuiInputBase-input': {
-                        fontSize: '12px',
-                      },
-                      "& .MuiInputBase-inputMultiline": {
-                        lineHeight: 1.1,
-                      },
-                      "& .MuiOutlinedInput-root": {
-                        padding: "5px 10px",
-                        borderRadius: 2,
-                      },
-                   }}
-                />
-                <Box sx={{display: 'flex', flexDirection: 'column'}}>
-                   <IconButton title='Confirm Update' onClick={handleNewNotes} sx={{p:'2px'}}>
-                      <CheckIcon sx={{fontSize: '13px'}}/>
-                    </IconButton>
-                    <IconButton title='Cancel' onClick={() => setIsEditingNotes(false)} sx={{p:'2px'}}>
-                      <CancelIcon sx={{fontSize: '13px'}}/>
-                    </IconButton>
-                </Box>
-              </Box>
-              )}
-            <Box sx={{display: 'flex', mt: 1}}>
+            <Box sx={{display: 'flex', mb: 1}}>
               <Chip
                 label={contact.preferred_contact_time}
                 title="Preferred contact time"
@@ -484,8 +431,20 @@ export default function CustomerDetail() {
                 }}
               />
               <Chip
-                label={formatName(contact.owner.profile.first_name, contact.owner.profile.last_name)}
-                title="Contact owner"
+                label={
+                  customer.assigned
+                    ? formatName(
+                        customer.assigned.profile.first_name,
+                        customer.assigned.profile.last_name
+                      )
+                    : customer.owner
+                      ? formatName(
+                          customer.owner.profile.first_name,
+                          customer.owner.profile.last_name
+                        )
+                      : "Unassigned"
+                }
+                title="Assigned to"
                 size='small'
                 sx={{
                   px: '4px',
@@ -568,6 +527,62 @@ export default function CustomerDetail() {
                   </Box>
                 )}
             </Box>
+            {!isEditingNotes ? (
+            <Box
+              onMouseEnter={() => setHoveredNotes(true)}
+              onMouseLeave={() => setHoveredNotes(false)}
+              sx={(theme) => ({
+                display: 'flex',
+                borderRadius: 2,
+                bgcolor: theme.palette.mode === 'dark' ? '#242424' : '#f7f8fa',
+                p: '8px 10px',
+              })}>
+              <Typography title="Notes" fontWeight={500} fontSize={12} color="text.secondary" sx={{cursor: 'pointer', minHeight: 40, width: '95%' }}>
+                {customer?.notes}
+              </Typography>
+              <Box width={'5%'} >
+                <IconButton onClick={() => {
+                  setIsEditingNotes(true)
+                  handleEditNotes()
+                }}
+                title='Edit Notes' sx={{opacity: hoveredNotes ? 1 : 0, p: '2px',  transition: "all 0.3s ease", transform: hoveredNotes ? "translateX(0)" : "translateX(8px)",}}>
+                  <EditNoteIcon fontSize="small" />
+                </IconButton>
+              </Box>
+            </Box>
+            ) : (
+              <Box sx={{display: 'flex'}}>
+                <TextField
+                  value={newNotes}
+                  onChange={(e) => setNewNotes(e.target.value)}
+                  size="small"
+                  multiline
+                  fullWidth
+                  rows={3}
+                  sx={{ 
+                    '& .MuiInputBase-input': {
+                        fontSize: '12px',
+                      },
+                      "& .MuiInputBase-inputMultiline": {
+                        lineHeight: 1.1,
+                      },
+                      "& .MuiOutlinedInput-root": {
+                        padding: "5px 10px",
+                        borderRadius: 2,
+                      },
+                   }}
+                />
+                <Box sx={{display: 'flex', flexDirection: 'column'}}>
+                   <IconButton title='Confirm Update' onClick={handleNewNotes} sx={{p:'2px'}}>
+                      <CheckIcon sx={{fontSize: '13px'}}/>
+                    </IconButton>
+                    <IconButton title='Cancel' onClick={() => setIsEditingNotes(false)} sx={{p:'2px'}}>
+                      <CancelIcon sx={{fontSize: '13px'}}/>
+                    </IconButton>
+                </Box>
+              </Box>
+              )}
+            
           </Box>
             
           <Box sx={{ display: 'flex', width: 30,ml: 1, flexDirection: 'column', position: 'relative' }}>

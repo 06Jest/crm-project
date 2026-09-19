@@ -4,6 +4,7 @@ import type { AppDispatch } from "../../../store/store";
 import { useNavigate } from "react-router-dom";
 import { type RootState } from "../../../store/store";
 import { uploadImageToImageKit } from "../../../services/imageKitService";
+import { fetchOrgMembers } from "../../../store/organizationMemberSlice";
 
 import {
   Box,
@@ -143,6 +144,11 @@ export default function AddContact() {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const themeMode = useSelector((state: RootState) => state.ui.themeMode);
   const { loading, error} = useSelector((state:RootState) => state.contacts);
+  const {
+    items: members,
+    loaded: mLd,
+  } = useSelector((state: RootState) => state.orgmembers);
+  
 
   useEffect(() => {
     return () => {
@@ -152,11 +158,18 @@ export default function AddContact() {
     };
   }, [avatarPreview]);
 
+  useEffect(() => {
+    if (!mLd) {
+      dispatch(fetchOrgMembers());
+    }
+  }, [mLd, dispatch]);
+
   const [form, setForm] = useState({
     first_name: "",
     last_name: "",
     suffix: null as Suffix,
     email: null,
+    assigned_to: "",
     phone: null,
     gender: "Prefer not to say" as Gender,
     birth_date: null,
@@ -207,7 +220,7 @@ export default function AddContact() {
   const newContact = {
     avatar_file_id,
     avatar_url,
-
+    assigned_to: form.assigned_to || null,
     first_name: form.first_name,
     last_name: form.last_name,
     suffix: form.suffix,
@@ -703,6 +716,7 @@ export default function AddContact() {
                       </MenuItem>
                     ))}
                   </TextField>
+
                   <TextField
                     select
                     label="Preferred Time"
@@ -718,6 +732,29 @@ export default function AddContact() {
                       </MenuItem>
                     ))}
                   </TextField>
+                </Box>
+
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.5 }}>
+                  <TextField
+                    select
+                    label="Assigned To"
+                    name="assigned_to"
+                    value={form.assigned_to}
+                    onChange={handleChange}
+                    size="small"
+                    sx={{ ...fieldSx, flex: "1 1 180px", minWidth: 0 }}
+                  >
+                    <MenuItem value="">
+                      Unassigned
+                    </MenuItem>
+
+                    {members.map((member) => (
+                      <MenuItem key={member.id} value={member.id}>
+                        {member.profile.first_name} {member.profile.last_name}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+
                   <TextField
                     select
                     label="Priority"

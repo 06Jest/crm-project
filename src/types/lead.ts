@@ -21,6 +21,7 @@ export type LeadStatus = typeof LEAD_STATUSES[number];
 export interface Lead {
   id: string;
   display_id: string;
+  assigned_to?: string | null;
   source: Source;
   first_name: string;
   last_name: string;
@@ -56,21 +57,30 @@ export interface Lead {
   updated_by: string | null;
 }
 
-export interface LeadListItem extends Lead{
-
+export interface LeadListItem extends Lead {
   owner: {
-      id: string;
-      profile: {
-        first_name: string,
-        last_name: string,
-        avatar_url: string | null,
-      }
+    id: string;
+    profile: {
+      first_name: string;
+      last_name: string;
+      avatar_url?: string | null;
+    };
   };
+  assigned?: {
+    id: string;
+    profile: {
+      first_name: string;
+      last_name: string;
+      avatar_url?: string | null;
+    };
+  } | null;
 }
+
 
 
 export interface AddLead {
   source: Source;
+  assigned_to?: string | null;
   first_name: string;
   last_name: string;
   suffix?: Suffix;
