@@ -43,6 +43,7 @@ import {
   Grow,
   Tooltip,
   useMediaQuery,
+  Avatar,
 } from '@mui/material';
 
 import EditIcon from '@mui/icons-material/Edit';
@@ -266,7 +267,17 @@ function LazyColumnBody({
                                     transition: reduceMotion ? 'none' : 'border-color 0.15s ease',
                                     '&:hover': { borderColor: stageColor },
                                   })}>
-                                  <PersonIcon sx={{width: '62%', height: '62%', opacity: 0.75}}/>
+                                  {contact.avatar_url ? (
+                                    <Avatar
+                                      src={contact.avatar_url}
+                                      sx={{
+                                        width: '100%',
+                                        height: '100%',
+                                      }}
+                                    />
+                                  ) : (
+                                    <PersonIcon sx={{width: '62%', height: '62%', opacity: 0.75}}/>
+                                  )}
                                 </Box>
                               </Box>
                               
@@ -280,6 +291,16 @@ function LazyColumnBody({
                                     </Typography>
                                     <Typography sx={{cursor: 'pointer'}} title="Contact name" variant="body2" color="text.secondary">
                                       {formatName(contact.first_name, contact.last_name)} {contact.suffix}
+                                    </Typography>
+                                    <Typography
+                                      sx={{
+                                        fontSize: 10,
+                                        color: 'text.secondary',
+                                        fontWeight: 400,
+                                        letterSpacing: '0.06em',
+                                      }}
+                                    >
+                                      ID: {deal.display_id}
                                     </Typography>
                                   </Box>
                                   <Box sx={{display: 'flex', width: '10%', flexDirection: 'column'}}>
@@ -1286,7 +1307,17 @@ export default function Deals() {
               bgcolor: theme.palette.mode === 'dark' ? '#2c2c2c' : '#f4f5f7',
               borderRadius: 50,
             })}>
-              <PersonIcon sx={{width: '55%', height: '55%', opacity: 0.8}}/>
+              {showDetails?.avatar_url ? (
+                <Avatar
+                  src={showDetails.avatar_url}
+                  sx={{
+                    width: '100%',
+                    height: '100%',
+                  }}
+                />
+              ) : (
+                <PersonIcon sx={{width: '55%', height: '55%', opacity: 0.8}}/>
+              )}
             </Box>
           </Box>
           <Box sx={{
@@ -1300,24 +1331,40 @@ export default function Deals() {
               <Typography variant="h6" fontWeight={700}>
                 {showDetails?.first_name} {showDetails?.last_name} {showDetails?.suffix}
                 {showDetails?.priority === 'High' ? (
-                <PriorityIcon 
-                sx={{
-                  fontSize: '15px',
-                  ml: 1, 
-                  color: PRIORITY_COLORS['High'],
-                  border: `1px solid ${PRIORITY_COLORS['High']}`,
-                  borderRadius: 20,
-                }}/>
-              ) : showDetails?.priority === 'Highest' ? (
-                <PriorityIcon sx={{
-                  fontSize: '15px',
-                  ml: 1, 
-                  color: PRIORITY_COLORS['Highest'],
-                  border: `1px solid ${PRIORITY_COLORS['Highest']}`,
-                  borderRadius: 20,
-                }} />
-              ) : null}
+                  <PriorityIcon 
+                    sx={{
+                      fontSize: '15px',
+                      ml: 1, 
+                      color: PRIORITY_COLORS['High'],
+                      border: `1px solid ${PRIORITY_COLORS['High']}`,
+                      borderRadius: 20,
+                    }}
+                  />
+                ) : showDetails?.priority === 'Highest' ? (
+                  <PriorityIcon
+                    sx={{
+                      fontSize: '15px',
+                      ml: 1, 
+                      color: PRIORITY_COLORS['Highest'],
+                      border: `1px solid ${PRIORITY_COLORS['Highest']}`,
+                      borderRadius: 20,
+                    }}
+                  />
+                ) : null}
               </Typography>
+
+              <Typography
+                sx={{
+                  fontSize: 11,
+                  color: 'text.secondary',
+                  fontWeight: 600,
+                  mt: 0.25,
+                  letterSpacing: '0.06em',
+                }}
+              >
+                ID: {showDetails?.display_id}
+              </Typography>
+
               {showDetails?.email && (
               <Typography variant="body2" color="text.secondary">
                 Email: {showDetails?.email}

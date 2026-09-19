@@ -18,6 +18,7 @@ import {
   Typography,
   IconButton,
   Tooltip,
+  Avatar,
 } from "@mui/material";
 import DeleteIcon from '@mui/icons-material/Delete';
 import GroupsIcon from '@mui/icons-material/Groups';
@@ -32,6 +33,7 @@ import { fetchDealsLists } from "../../../store/dealsSlice";
 import CustomersSkeleton from "../../../components/CustomersSkeleton";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import CircularProgress from "@mui/material/CircularProgress";
+import PersonIcon from '@mui/icons-material/Person';
 
 const STATUS_COLORS: Record<CustomerStatus, string> = {
   Active: '#84e77c',
@@ -43,17 +45,49 @@ const STATUS_COLORS: Record<CustomerStatus, string> = {
 const getColumns = (
   navigate: ReturnType<typeof useNavigate>
 ): GridColDef[] => [
+  { field: 'display_id', headerName: 'ID', width: 80,cellClassName: 'display-id-cell',},
   {
-    field: 'name',
-    headerName: 'Name',
-    sortable: true,
-    flex: 1,
-    renderCell: (params) => (
-    <Typography sx={{display: 'flex', alignItems: 'center', height: '100%', fontWeight: 600}} color="primary">
-      {params.value}
-    </Typography>
-    ),
-  },
+  field: 'name',
+  headerName: 'Name',
+  sortable: true,
+  flex: 1,
+  renderCell: (params) => (
+    <Box
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        height: '100%',
+        gap: 1,
+      }}
+    >
+      <Avatar
+        src={params.row.avatar_url ?? undefined}
+        sx={{
+          width: 24,
+          height: 24,
+        }}
+      >
+        {!params.row.avatar_url && (
+          <PersonIcon
+            sx={{
+              fontSize: 16,
+              opacity: 0.7,
+            }}
+          />
+        )}
+      </Avatar>
+      <Typography
+        sx={{
+          fontWeight: 600,
+          lineHeight: 1.1,
+        }}
+        color="primary"
+      >
+        {params.value}
+      </Typography>
+    </Box>
+  ),
+},
   { field: 'email', headerName: 'Email', flex: 1,},
   { field: 'phone', headerName: 'Phone', flex: 1, },
   { field: 'status', 
@@ -170,6 +204,8 @@ export default function Customers() {
     return {
       id: customer.id,
       name: `${formatName(c.first_name, c.last_name)} ${c.suffix || ''}`,
+      display_id: customer.display_id,
+      avatar_url: c.avatar_url,
       email: c.email,
       phone: c.phone,
       status: customer.status,
@@ -379,6 +415,9 @@ const hasSelection =
             },
             '& .MuiDataGrid-columnHeaderTitle': {
               fontWeight: 700,
+            },
+            '& .display-id-cell': {
+              fontSize: '11px',
             },
             '& .MuiDataGrid-row:hover': {
               backgroundColor: theme.palette.mode === 'dark' ? '#2a2a2a' : '#f4f6f9',

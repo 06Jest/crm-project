@@ -1236,8 +1236,19 @@ const handleConfirmCloseLead = async () => {
               boxShadow: '0 16px 32px rgba(0,0,0,0.14)',
             }}>
           <Stack alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
-            <Avatar sx={{ width: 64, height: 64, bgcolor: 'action.hover' }}>
-              <PersonIcon sx={{ fontSize: 32, opacity: 0.7, color: 'text.secondary' }}/>
+           <Avatar
+              src={hoveredLead?.avatar_url ?? undefined}
+              sx={{ width: 64, height: 64, bgcolor: 'action.hover' }}
+            >
+              {!hoveredLead?.avatar_url && (
+                <PersonIcon
+                  sx={{
+                    fontSize: 32,
+                    opacity: 0.7,
+                    color: 'text.secondary'
+                  }}
+                />
+              )}
             </Avatar>
             <Box sx={{ textAlign: 'center' }}>
               <Typography variant="subtitle1" fontWeight={700} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.75 }}>

@@ -2,8 +2,9 @@ import { forwardRef, useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector} from 'react-redux';
 import type { AppDispatch } from '../../../store/store';
-import {  deleteContact, clearError, updateContactPersonal, updateContactSocials, updateContactCareer, updateContactNotes, updateContactSource, updateContactPreferredTime, fetchContactListByID, } from '../../../store/contactsSlice';
+import {  deleteContact, clearError, updateContactPersonal, updateContactSocials, updateContactCareer, updateContactNotes, updateContactSource, updateContactPreferredTime, fetchContactListByID, updateContactAvatar, } from '../../../store/contactsSlice';
 import { type ContactCareer, type ContactPersonal, type ContactSocials, type ContactStatus, } from "../../../types/contact";
+import { uploadImageToImageKit } from '../../../services/imageKitService';
 import 'leaflet/dist/leaflet.css';
 
 
@@ -55,7 +56,6 @@ import LinkedInIcon from '@mui/icons-material/LinkedIn';
 import MusicNoteIcon from '@mui/icons-material/MusicNote';
 import LanguageIcon from '@mui/icons-material/Language';
 import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
-import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import ShareIcon from '@mui/icons-material/Share';
 import WorkOutlineIcon from '@mui/icons-material/WorkOutline';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
@@ -70,6 +70,7 @@ import { DEPARTMENTS, GENDERS, INDUSTRIES, PREFERRED_CONTACT_TIMES, SOURCES, SUF
 import ErrorAlert from '../../../components/Error';
 import { formatName } from '../../../utils/formatText';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import AddCircleIcon from '@mui/icons-material/AddCircle';
 
 fixLeafletIcons();
 
@@ -303,6 +304,15 @@ export default function ContactDetail() {
   const [isUpdatingPreferredTime, setIsUpdatingPreferredTime] = useState(false);
   const [selectedPreferredTime, setSelectedPreferredTime] = useState<PreferredTime | "">("");
   const [updatePreferredTime, setUpdatePreferredTime] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (avatarPreview) {
+        URL.revokeObjectURL(avatarPreview);
+      }
+    };
+  }, [avatarPreview]);
 
   if (loading && !contact) {
     return (
@@ -338,6 +348,46 @@ export default function ContactDetail() {
       </Box>
     );
   }
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+
+    if (!file) return;
+
+    setAvatarPreview(URL.createObjectURL(file));
+
+    try {
+      const uploaded = await uploadImageToImageKit(file);
+
+      await dispatch(
+        updateContactAvatar({
+          id: contact.id,
+          avatarFileId: uploaded.fileId,
+          avatarUrl: uploaded.url,
+        })
+      ).unwrap();
+
+      setAvatarPreview(null);
+    } catch {
+      // Error in state
+    }
+  };
+
+  const handleAvatarDelete = async () => {
+    try {
+      await dispatch(
+        updateContactAvatar({
+          id: contact.id,
+          avatarFileId: null,
+          avatarUrl: null,
+        })
+      ).unwrap();
+
+      setAvatarPreview(null);
+    } catch {
+      // Error in state
+    }
+  };
 
   const handleEditNotes = () => {
     setNewNotes(contact?.notes ?? "");
@@ -636,40 +686,55 @@ export default function ContactDetail() {
         >
           <Box sx={{ display: 'flex', flexShrink: 0, flexDirection: 'column', alignItems: 'center' }}>
             <Avatar
+              src={avatarPreview ?? contact.avatar_url ?? undefined}
               sx={{
                 width: { xs: 84, sm: 100 },
                 height: { xs: 84, sm: 100 },
                 fontSize: { xs: 26, sm: 32 },
-                fontWeight: 700,  
+                fontWeight: 700,
                 bgcolor: stringToAvatarColor(fullName),
               }}
             >
-              {getInitials(fullName)}
+              {!avatarPreview && !contact.avatar_url && getInitials(fullName)}
             </Avatar>
-            <Box sx={{ display: 'flex', justifyContent: 'center'}}>
-              <Button 
-              title="Add new Deal for this contact"
-              startIcon={<AddCircleOutlineIcon sx={{ fontSize: '14px !important' }} />}
-              onClick={()=> navigate(`/app/deals/adddeal/${contact.id}`)}
-              sx={{
-                border: '1px solid',
-                borderColor: 'primary.main',
-                color: 'primary.main',
-                fontWeight: 700,
-                p: '3px 10px',
-                mt: 1,
-                fontSize: '10px',
-                borderRadius: 999,
-                textTransform: 'none',
-                whiteSpace: 'nowrap',
-                transition: 'background-color 0.2s ease',
-                '&:hover': {
-                  bgcolor: (theme: Theme) => alpha(theme.palette.primary.main, 0.08),
-                },
-              }}>
-                Add deal
+
+            <Box sx={{ display: 'flex', justifyContent: 'center', gap: 0.5, mt: 0.5 }}>
+              <Button
+                component="label"
+                size="small"
+                sx={{
+                  textTransform: 'none',
+                  fontSize: 11,
+                  minWidth: 0,
+                }}
+              >
+                {contact.avatar_url ? 'Change' : 'Upload'}
+
+                <input
+                  hidden
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarChange}
+                />
               </Button>
+
+              {contact.avatar_url && (
+                <Button
+                  size="small"
+                  color="error"
+                  onClick={handleAvatarDelete}
+                  sx={{
+                    textTransform: 'none',
+                    fontSize: 11,
+                    minWidth: 0,
+                  }}
+                >
+                  Delete
+                </Button>
+              )}
+              
             </Box>
+            
           </Box>
           <Box sx={{ flex: 1, minWidth: 0, width: '100%', overflowWrap: "anywhere", wordBreak: "break-word", textAlign: { xs: 'center', sm: 'left' } }}>
             <Typography
@@ -921,7 +986,41 @@ export default function ContactDetail() {
                 </Box>
                 )}
           </Box>
-          <Box sx={{ display: 'flex', flexShrink: 0, width: { xs: '100%', sm: 'auto' }, justifyContent: { xs: 'center', sm: 'flex-end' } }}>
+          <Box sx={{ display: 'flex', flexShrink: 0, width: { xs: '100%', sm: 'auto' }, flexDirection: 'column', justifyContent: { xs: 'center', sm: 'flex-end' } }}>
+            <Typography
+              sx={{
+                fontSize: 11,
+                color: 'text.secondary',
+                fontWeight: 600,
+                letterSpacing: '0.08em',
+                mt: 0.5,
+                mb: 1,
+              }}
+            >
+              ID: {contact.display_id}
+            </Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 0.5 }}>
+              <Button
+                variant='outlined'
+                size="small"
+                startIcon={<AddCircleIcon />}
+                onClick={() => navigate(`/app/deals/adddeal/${contact.id}`)}
+                sx={{
+                  fontSize: '10px',
+                  fontWeight: 700,
+                  borderRadius: 2,
+                  mb: 1,
+                  textTransform: 'none',
+                  p: '6px 10px',
+                  transition: 'background-color 0.2s ease',
+                  '&:hover': {
+                    bgcolor: (theme: Theme) => alpha(theme.palette.error.main, 0.06),
+                  },
+                }}
+              >
+                Add Deal
+              </Button>
+            </Box>
             {!isEditingPersonal && (
               <Button
                 variant='outlined'

@@ -21,6 +21,8 @@ export type ContactStatus = typeof CONTACT_STATUSES[number];
 
 export interface Contact {
   id: string;
+  avatar_file_id?: string | null;
+  avatar_url?: string | null;
   display_id: string;
   lead_id?:string;
   owner_id: string;
@@ -69,6 +71,8 @@ export interface ContactListItem extends Contact {
 
 export interface AddContact {
   lead_id?:string;
+  avatar_file_id?: string | null;
+  avatar_url?: string | null;
   first_name: string;
   last_name: string;
   suffix?: Suffix;

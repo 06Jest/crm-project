@@ -14,6 +14,7 @@ import {
   updateContactPriorityAPI,
   updateContactPreferredTimeAPI,
   fetchContactListByIDAPI,
+  updateContactAvatarAPI,
 } from '../services/contactService';
 import type { PreferredTime, Priority, Source } from "../types/global";
 
@@ -143,6 +144,32 @@ export const updateContactCareer = createAsyncThunk(
     },thunkAPI) => {
     try {
       return await updateContactCareerAPI( id, career);
+    } catch (err) {
+      if (err instanceof Error) {
+        return thunkAPI.rejectWithValue(err.message);
+      }
+      return thunkAPI
+        .rejectWithValue(
+          'Something went wrong'
+        );
+    }
+  }
+);
+
+
+export const updateContactAvatar = createAsyncThunk(
+  'contacts/update/avatar',
+  async ({ id, avatarFileId, avatarUrl }:{
+      id: string;
+      avatarFileId: string | null;
+      avatarUrl: string | null;
+    },thunkAPI) => {
+    try {
+      return await updateContactAvatarAPI(
+        id,
+        avatarFileId,
+        avatarUrl
+      );
     } catch (err) {
       if (err instanceof Error) {
         return thunkAPI.rejectWithValue(err.message);
@@ -392,6 +419,23 @@ const contactsSlice = createSlice({
     });
 
     builder.addCase(updateContactCareer.rejected, (state, action) => {
+      state.error = action.payload as string
+      state.loading = false;
+    });
+
+
+
+    builder.addCase(updateContactAvatar.pending, (state) => {
+      state.error = null;
+    });
+
+    builder.addCase(updateContactAvatar.fulfilled, (state, action) => {
+      const index = state.items.findIndex(c => c.id === action.payload.id);
+      if(index !== -1) state.items[index] = action.payload;
+      state.loading = false;
+    });
+
+    builder.addCase(updateContactAvatar.rejected, (state, action) => {
       state.error = action.payload as string
       state.loading = false;
     });

@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch } from "../../../store/store";
 import { useNavigate } from "react-router-dom";
 import { type RootState } from "../../../store/store";
-
+import { uploadImageToImageKit } from "../../../services/imageKitService";
 
 import {
   Box,
@@ -139,8 +139,18 @@ export default function AddContact() {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const themeMode = useSelector((state: RootState) => state.ui.themeMode);
-   const { loading, error} = useSelector((state:RootState) => state.contacts);
+  const { loading, error} = useSelector((state:RootState) => state.contacts);
+
+  useEffect(() => {
+    return () => {
+      if (avatarPreview) {
+        URL.revokeObjectURL(avatarPreview);
+      }
+    };
+  }, [avatarPreview]);
 
   const [form, setForm] = useState({
     first_name: "",
@@ -184,42 +194,65 @@ export default function AddContact() {
 
     setIsSubmitting(true);
     try {
-      const newContact = {
-        first_name: form.first_name,
-        last_name: form.last_name,
-        suffix: form.suffix,
-        email: form.email!,
-        phone: form.phone!,
-        gender: form.gender,
-        birth_date: form.birth_date || null,
-        industry: form.industry,
-        department: form.department,
-        company_name: form.company_name,
-        position: form.position,
-        website: form.website,
-        source: form.source,
-        status: form.status,
-        priority: form.priority,
-        preferred_contact_time: form.preferred_contact_time,
-        notes: form.notes,
-        facebook: form.facebook,
-        x: form.x,
-        whatsapp: form.whatsapp,
-        linkedin: form.linkedin,
-        instagram: form.instagram,
-        telegram: form.telegram,
-        tiktok: form.tiktok,
-      viber: form.viber,
-      };
+  let avatar_file_id: string | null = null;
+  let avatar_url: string | null = null;
 
-      await dispatch(addContact(newContact)).unwrap();
+  if (avatarFile) {
+    const uploaded = await uploadImageToImageKit(avatarFile);
 
-      navigate("/app/contacts");
-    } catch  {
+    avatar_file_id = uploaded.fileId;
+    avatar_url = uploaded.url;
+  }
+
+  const newContact = {
+    avatar_file_id,
+    avatar_url,
+
+    first_name: form.first_name,
+    last_name: form.last_name,
+    suffix: form.suffix,
+    email: form.email!,
+    phone: form.phone!,
+    gender: form.gender,
+    birth_date: form.birth_date || null,
+    industry: form.industry,
+    department: form.department,
+    company_name: form.company_name,
+    position: form.position,
+    website: form.website,
+    source: form.source,
+    status: form.status,
+    priority: form.priority,
+    preferred_contact_time: form.preferred_contact_time,
+    notes: form.notes,
+    facebook: form.facebook,
+    x: form.x,
+    whatsapp: form.whatsapp,
+    linkedin: form.linkedin,
+    instagram: form.instagram,
+    telegram: form.telegram,
+    tiktok: form.tiktok,
+    viber: form.viber,
+  };
+
+  await dispatch(addContact(newContact)).unwrap();
+
+  navigate("/app/contacts");
+}
+ catch  {
       //Error in state
     } finally {
     setIsSubmitting(false);
   }
+  };
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+
+    if (!file) return;
+
+    setAvatarFile(file);
+    setAvatarPreview(URL.createObjectURL(file));
   };
 
   const canSubmit = !!form.first_name && !!form.email && !!form.last_name && !!form.phone;
@@ -291,6 +324,58 @@ export default function AddContact() {
               <SectionHeader icon={<PersonOutlineIcon fontSize="small" />} title="Personal Details" />
 
               <Box sx={{ display: "flex", flexDirection: "column", gap: 1.75 }}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    mb: 1,
+                  }}
+                >
+                  <Avatar
+                    src={avatarPreview ?? undefined}
+                    sx={{
+                      width: 96,
+                      height: 96,
+                      fontSize: 28,
+                      fontWeight: 700,
+                    }}
+                  >
+                    {!avatarPreview && (
+                      <PersonOutlineIcon sx={{ fontSize: 42 }} />
+                    )}
+                  </Avatar>
+
+                  <Button
+                    component="label"
+                    variant="outlined"
+                    size="small"
+                    sx={{
+                      textTransform: "none",
+                      borderRadius: 2,
+                      fontWeight: 600,
+                      my: 0.5,
+                    }}
+                  >
+                    Upload Avatar
+                    <input
+                      hidden
+                      type="file"
+                      accept="image/*"
+                      onChange={handleAvatarChange}
+                    />
+                  </Button>
+
+                  <Typography
+                    sx={{
+                      fontSize: 9,
+                      color: "text.secondary",
+                    }}
+                  >
+                    JPG, PNG, or WebP
+                  </Typography>
+                </Box>
                 <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.5 }}>
                     <TextField
                     label="First Name"

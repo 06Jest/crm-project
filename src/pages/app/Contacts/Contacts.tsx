@@ -90,6 +90,7 @@ function getInitials(input: string) {
 const getColumns = (
   navigate: ReturnType<typeof useNavigate>
 ): GridColDef[] => [
+  { field: 'display_id', headerName: 'ID', width: 70,cellClassName: 'display-id-cell',},
   {
     field: 'name',
     headerName: 'Name',
@@ -98,6 +99,7 @@ const getColumns = (
     renderCell: (params) => (
       <Box sx={{ display: 'flex', alignItems: 'center', height: '100%', gap: 1 }}>
         <Avatar
+          src={params.row.avatar_url ?? undefined}
           sx={{
             width: 24,
             height: 24,
@@ -106,7 +108,7 @@ const getColumns = (
             bgcolor: stringToAvatarColor(params.value ?? ""),
           }}
         >
-          {getInitials(params.value ?? "")}
+          {!params.row.avatar_url && getInitials(params.value ?? "")}
         </Avatar>
         <Typography sx={{ fontSize: '0.82rem', fontWeight: 600 }} color="primary">
           {params.value}
@@ -204,7 +206,9 @@ export default function Contacts() {
   
   const rows = contacts.map(contact => ({
     id: contact.id,
+    display_id: contact.display_id,
     name: fullname(contact),
+    avatar_url: contact.avatar_url,
     email: contact.email,
     phone: contact.phone,
     status: contact.status,
@@ -251,6 +255,7 @@ const recentContacts = [...contacts]
 const recentContactsList = recentContacts.map(contact => ({
   name: `${fullname(contact)}`,
   id: contact.id,
+  avatar_url: contact.avatar_url,
   created: contact.created_at
         ? formatRelativeTime(new Date(contact.created_at))
         : '',
@@ -486,6 +491,9 @@ const selectionCount =
                 '& .MuiDataGrid-row:hover': {
                   bgcolor: (theme) => alpha(theme.palette.primary.main, 0.05),
                 },
+                '& .display-id-cell': {
+                  fontSize: '11px',
+                },
                 '& .MuiDataGrid-cell:focus, & .MuiDataGrid-cell:focus-within': {
                   outline: 'none',
                 },
@@ -564,8 +572,17 @@ const selectionCount =
                           alpha(theme.palette.text.primary, 0.06),
                         },}}>
                     <ListItemAvatar sx={{ minWidth: 32 }}>
-                      <Avatar sx={{ width: 26, height: 26, fontSize: 10.5, fontWeight: 700, bgcolor: stringToAvatarColor(contact.name) }}>
-                        {getInitials(contact.name)}
+                      <Avatar
+                        src={contact.avatar_url ?? undefined}
+                        sx={{
+                          width: 26,
+                          height: 26,
+                          fontSize: 10.5,
+                          fontWeight: 700,
+                          bgcolor: stringToAvatarColor(contact.name),
+                        }}
+                      >
+                        {!contact.avatar_url && getInitials(contact.name)}
                       </Avatar>
                     </ListItemAvatar>
                     <ListItemText
@@ -635,9 +652,11 @@ const selectionCount =
               sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 2 }}
               onClick={async () => {
                 if (loading) return;
-                // setConfirmOpen(false);
+
                 try {
-                  const ids = Array.from(selectedRows.ids).map(id => String(id));
+                  const ids = Array.from(selectedRows.ids).map(String);
+
+                  console.log("SELECTED IDS:", ids);
 
                   await dispatch(deleteBulkContacts(ids)).unwrap();
 

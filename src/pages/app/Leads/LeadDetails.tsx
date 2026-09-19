@@ -965,7 +965,20 @@ export default function LeadDetails() {
                 </Box>
                 )}
           </Box>
-          <Box sx={{ display: 'flex', flexShrink: 0, width: { xs: '100%', sm: 'auto' }, justifyContent: { xs: 'center', sm: 'flex-end' } }}>
+          <Box sx={{ display: 'flex', flexShrink: 0, width: { xs: '100%', sm: 'auto' },
+          flexDirection: 'column', justifyContent: { xs: 'center', sm: 'flex-end' } }}>
+            <Typography
+              sx={{
+                fontSize: 11,
+                color: 'text.secondary',
+                fontWeight: 600,
+                letterSpacing: '0.08em',
+                mt: 0.5,
+                mb: 1,
+              }}
+            >
+              ID: {lead.display_id}
+            </Typography>
             {!isEditingPersonal && (
               <Button
                 variant='outlined'

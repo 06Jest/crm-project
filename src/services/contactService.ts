@@ -92,6 +92,22 @@ export const updateContactCareerAPI = async (
   return result.data as ContactListItem;
 };
 
+export const updateContactAvatarAPI = async (
+  id: string,
+  avatarFileId: string | null,
+  avatarUrl: string | null
+): Promise<ContactListItem> => {
+  const result = await apiClient(`/api/contacts/update/avatar/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify({
+      avatar_file_id: avatarFileId,
+      avatar_url: avatarUrl,
+    }),
+  });
+
+  return result.data as ContactListItem;
+};
+
 export const updateContactNotesAPI = async (
   id: string,
   notes: string
