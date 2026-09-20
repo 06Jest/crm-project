@@ -32,7 +32,11 @@ export const getCurrentUserAPI = async () => {
   });
 };
 
-
+export const demoLoginAPI = async () => {
+  return apiClient("/api/auth/demo-login", {
+    method: "POST",
+  });
+};
 
 export const changePasswordAPI = async (
   dto: ChangePasswordDTO

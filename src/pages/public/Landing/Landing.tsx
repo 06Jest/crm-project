@@ -15,6 +15,7 @@ import {
   Tabs,
   Tab,
   GlobalStyles,
+  Tooltip,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
@@ -45,6 +46,7 @@ import FactCheckIcon from "@mui/icons-material/FactCheck";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import EastIcon from "@mui/icons-material/East";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import { demoLoginAPI } from "../../../services/authService";
 
 
 type StatusKey = "available" | "simulated" | "planned" | "beta";
@@ -604,6 +606,9 @@ function ProductTour() {
 
 
 function Hero() {
+  const handleDemoLogin = async () => {
+    await demoLoginAPI();
+  };
   return (
     <Box component="section" id="top" sx={{ pt: { xs: 8, md: 12 }, pb: { xs: 8, md: 10 }, scrollMarginTop: 80 }}>
       <Container maxWidth="lg">
@@ -636,14 +641,21 @@ function Hero() {
               >
                 Get Started
               </Button>
-              <Button
-                href="#overview"
-                variant="outlined"
-                size="large"
-                sx={{ textTransform: "none", fontWeight: 700, borderRadius: 2, px: 3.5 }}
-              >
-                Explore uniThread
-              </Button>
+              <Tooltip title="Try the uniThread CRM now without creating an account" arrow>
+                <Button
+                  onClick={handleDemoLogin}
+                  variant="outlined"
+                  size="large"
+                  sx={{
+                    textTransform: "none",
+                    fontWeight: 700,
+                    borderRadius: 2,
+                    px: 3.5,
+                  }}
+                >
+                  Try Demo
+                </Button>
+            </Tooltip>
             </Stack>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 2.5 }}>
               Free during Beta. No credit card required.
@@ -1375,6 +1387,8 @@ function WhySection() {
     </Section>
   );
 }
+
+
 
 function FinalCTASection() {
   return (
