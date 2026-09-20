@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import type { ReactNode } from "react";
-import { Link as RouterLink } from "react-router-dom";
+import { Link as RouterLink, useNavigate } from "react-router-dom";
 import {
   Container,
   Box,
@@ -47,6 +47,7 @@ import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import EastIcon from "@mui/icons-material/East";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import { demoLoginAPI } from "../../../services/authService";
+import { useAuth } from "../../../hooks/useAuth";
 
 
 type StatusKey = "available" | "simulated" | "planned" | "beta";
@@ -606,9 +607,23 @@ function ProductTour() {
 
 
 function Hero() {
-  const handleDemoLogin = async () => {
-    await demoLoginAPI();
-  };
+  const navigate = useNavigate();
+
+    const {
+      loading,
+      currentUser,
+    } = useAuth();
+
+    const handleDemoLogin = async () => {
+      try {
+        await demoLoginAPI();
+        await currentUser().unwrap();
+
+        navigate("/app/dashboard", { replace: true });
+      } catch (error) {
+        console.error("Demo login failed:", error);
+      }
+    };
   return (
     <Box component="section" id="top" sx={{ pt: { xs: 8, md: 12 }, pb: { xs: 8, md: 10 }, scrollMarginTop: 80 }}>
       <Container maxWidth="lg">
@@ -641,21 +656,24 @@ function Hero() {
               >
                 Get Started
               </Button>
-              <Tooltip title="Try the uniThread CRM now without creating an account" arrow>
-                <Button
-                  onClick={handleDemoLogin}
-                  variant="outlined"
-                  size="large"
-                  sx={{
-                    textTransform: "none",
-                    fontWeight: 700,
-                    borderRadius: 2,
-                    px: 3.5,
-                  }}
-                >
-                  Try Demo
-                </Button>
-            </Tooltip>
+              <Tooltip title="Try the CRM without creating an account" arrow>
+                <span>
+                  <Button
+                    onClick={handleDemoLogin}
+                    variant="outlined"
+                    size="large"
+                    disabled={loading}
+                    sx={{
+                      textTransform: "none",
+                      fontWeight: 700,
+                      borderRadius: 2,
+                      px: 3.5,
+                    }}
+                  >
+                    {loading ? "Loading demo..." : "Try Demo"}
+                  </Button>
+                </span>
+              </Tooltip>
             </Stack>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 2.5 }}>
               Free during Beta. No credit card required.
