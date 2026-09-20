@@ -98,6 +98,7 @@ const getColumns = (
     headerName: 'Name',
     sortable: true,
     flex: 1,
+    minWidth: 180,
     renderCell: (params) => (
       <Box sx={{ display: 'flex', alignItems: 'center', height: '100%', gap: 1 }}>
         <Avatar
@@ -118,11 +119,12 @@ const getColumns = (
       </Box>
     ),
   },
-  { field: 'email', headerName: 'Email', flex: 1,},
-  { field: 'phone', headerName: 'Phone', width: 150, },
+  { field: 'email', headerName: 'Email', flex: 1, minWidth: 180,},
+  { field: 'phone', headerName: 'Phone',flex: 1, minWidth: 120, },
   { field: 'status', 
     headerName: 'Status', 
-    width: 180,
+    minWidth: 120,
+    flex: 1,
     display: 'flex',
     align: 'left',
     renderCell: ({ value }) => (
@@ -145,6 +147,7 @@ const getColumns = (
     field: 'assigned', 
     headerName: 'Assigned', 
     flex: 1,
+    minWidth: 180,
     align: 'left',
     renderCell: (params) => (
       <Tooltip title={params.row.assigned ? "Assigned To" : "Deal Owner"}>

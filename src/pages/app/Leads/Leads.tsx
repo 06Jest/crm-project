@@ -54,6 +54,7 @@ import {
   CircularProgress,
   Menu,
   MenuItem,
+  Paper,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -864,6 +865,7 @@ const handleConfirmCloseLead = async () => {
       headerName: 'Name',
       sortable: true,
       flex: 1,
+      minWidth: 200,
       renderCell: (params) => (
         <Box
           sx={{
@@ -902,16 +904,19 @@ const handleConfirmCloseLead = async () => {
       field: 'email',
       headerName: 'Email',
       flex: 1,
+      minWidth: 100,
     },
     {
       field: 'phone',
       headerName: 'Phone',
-      width: 150,
+      flex: 1,
+      minWidth: 100,
     },
     {
       field: 'status',
       headerName: 'Status',
-      width: 180,
+      minWidth: 100,
+      flex: 1,
       display: 'flex',
       align: 'left',
       renderCell: ({ value }) => (
@@ -944,7 +949,8 @@ const handleConfirmCloseLead = async () => {
     {
       field: 'priority',
       headerName: 'Priority',
-      width: 100,
+      flex: 1,
+      minWidth: 100,
     },
     {
       field: 'preferred_contact_time',
@@ -955,7 +961,8 @@ const handleConfirmCloseLead = async () => {
     {
       field: 'actions',
       headerName: 'Action',
-      width: 150,
+      minWidth: 200,
+      flex: 1,
       align: 'center',
       headerAlign: 'center',
       sortable: false,
@@ -1699,70 +1706,87 @@ const handleConfirmCloseLead = async () => {
         </Box>
       </DragDropContext>
       ) : (
-        <Box
+      <Box
+        sx={{
+          display: 'flex',
+          height: 700,
+          width: '100%',
+          minWidth: 0,
+          overflow: 'auto',
+          mb: 5,
+        }}
+      >
+        <Paper
+          variant="outlined"
           sx={{
-            width: { md: '85vw', sm: '90vw', xs: '98vw' },
-            maxWidth: 1400,
-            minHeight: 700,
-            mx: 'auto',
+            justifyContent: 'center',
+            p: 1,
+            pt: 2,
+            height: 700,
+            minWidth: 300,
+            display: 'flex',
+            flex: 1,
+            borderRadius: 3,
+            borderColor: 'divider',
+            flexDirection: 'column',
+            overflow: 'auto',
           }}
         >
           <DataGrid
-              sx={{
-                minHeight: 800,
-                minWidth: 1200,
-                mx: 1,
-                mb: 1,
-                border: 'none',
-                borderRadius: 3,
-                fontSize: '0.85rem',
-                overflow: 'auto',
-                '& .MuiDataGrid-columnHeaders': {
-                  bgcolor: (theme) =>
-                    alpha(theme.palette.text.primary, 0.03),
-                  borderRadius: 2,
+            sx={{
+              border: 'none',
+              borderRadius: 3,
+              minWidth: 700,
+              fontSize: '0.85rem',
+              cursor: 'pointer',
+              overflow: 'auto',
+              '& .MuiDataGrid-columnHeaders': {
+                bgcolor: (theme) =>
+                  alpha(theme.palette.text.primary, 0.03),
+                borderRadius: 2,
+              },
+              '& .MuiDataGrid-columnHeaderTitle': {
+                fontWeight: 700,
+                fontSize: '0.75rem',
+                textTransform: 'uppercase',
+                letterSpacing: 0.3,
+                opacity: 0.7,
+              },
+              '& .MuiDataGrid-row:hover': {
+                bgcolor: (theme) =>
+                  alpha(theme.palette.primary.main, 0.05),
+              },
+              '& .display-id-cell': {
+                fontSize: '11px',
+              },
+              '& .MuiDataGrid-cell:focus, & .MuiDataGrid-cell:focus-within': {
+                outline: 'none',
+              },
+            }}
+            rows={tableRows}
+            columns={columns}
+            checkboxSelection
+            disableRowSelectionOnClick
+            rowSelectionModel={selectedLeadIds}
+            onRowSelectionModelChange={(newSelection) => {
+              setSelectedLeadIds(newSelection);
+            }}
+            onRowClick={(params) => {
+              navigate(`/app/leads/${params.row.id}`);
+            }}
+            initialState={{
+              pagination: {
+                paginationModel: {
+                  page: 0,
+                  pageSize: 10,
                 },
-                '& .MuiDataGrid-columnHeaderTitle': {
-                  fontWeight: 700,
-                  fontSize: '0.75rem',
-                  textTransform: 'uppercase',
-                  letterSpacing: 0.3,
-                  opacity: 0.7,
-                },
-                '& .MuiDataGrid-row:hover': {
-                  bgcolor: (theme) =>
-                    alpha(theme.palette.primary.main, 0.05),
-                },
-                '& .display-id-cell': {
-                  fontSize: '11px',
-                },
-                '& .MuiDataGrid-cell:focus, & .MuiDataGrid-cell:focus-within': {
-                  outline: 'none',
-                },
-              }}
-              rows={tableRows}
-              columns={columns}
-              checkboxSelection
-              disableRowSelectionOnClick
-              rowSelectionModel={selectedLeadIds}
-              onRowSelectionModelChange={(newSelection) => {
-                setSelectedLeadIds(newSelection);
-              }}
-              onRowClick={(params) => {
-                navigate(`/app/leads/${params.row.id}`);
-              }}
-              initialState={{
-                pagination: {
-                  paginationModel: {
-                    page: 0,
-                    pageSize: 10,
-                  },
-                },
-              }}
-              pageSizeOptions={[30, 50]}
-              rowHeight={30}
-            />
-        </Box>
+              },
+            }}
+            pageSizeOptions={[30, 50]}
+            rowHeight={30}
+          />
+        </Paper>
+      </Box>
       )}
       <Menu
         anchorEl={statusAnchorEl}
