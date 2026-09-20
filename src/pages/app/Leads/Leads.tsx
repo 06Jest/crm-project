@@ -3,14 +3,23 @@ import type { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "../../../store/store";
-
+import {
+  DataGrid,
+  type GridColDef,
+  type GridRowSelectionModel,
+} from '@mui/x-data-grid';
+import ViewKanbanIcon from '@mui/icons-material/ViewKanban';
+import TableRowsIcon from '@mui/icons-material/TableRows';
 
 import {
-  deleteLead, 
+  deleteLead,
+  deleteBulkLeads,
+  archiveBulkLeads,
   moveLeadLocally,
   updateLeadStatus,
   clearError,
   fetchLeadsLists,
+  archiveLead,
 } from '../../../store/leadsSlice';
 import { LEAD_STATUSES, type Lead, type LeadStatus } from '../../../types/lead';
 
@@ -43,6 +52,9 @@ import {
   Tooltip,
   Skeleton,
   CircularProgress,
+  Menu,
+  MenuItem,
+  Paper,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -51,13 +63,14 @@ import CallIcon from '@mui/icons-material/Call';
 import SmsIcon from '@mui/icons-material/Sms';
 import PersonIcon from '@mui/icons-material/Person';
 import SearchIcon from '@mui/icons-material/Search';
-import PriorityIcon from '@mui/icons-material/PriorityHighRounded';
+import FlagIcon from '@mui/icons-material/Flag';
 import AddIcon from '@mui/icons-material/Add';
 import ErrorAlert from "../../../components/Error";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import { type Priority } from "../../../types/global";
-import { formatName, formatShortTitle } from "../../../utils/formatText";
+import { formatName } from "../../../utils/formatText";
 import { calculateAge } from "../../../utils/calculateAge";
+import ArchiveIcon from "@mui/icons-material/Archive";
 
 const PRIORITY_COLORS: Record<Priority, string> = {
   Highest: '#df3232',
@@ -74,22 +87,25 @@ function PriorityBadge({ priority }: { priority: Priority }) {
   if (priority !== 'High' && priority !== 'Highest') return null;
   const color = PRIORITY_COLORS[priority];
   return (
-    <Chip
-      size="small"
-      icon={<PriorityIcon style={{ fontSize: 12, color }} />}
-      label={priority}
-      variant="outlined"
+    <Box
+      title={`${priority} Priority`}
       sx={{
-        height: 18,
-        fontSize: 9,
-        fontWeight: 700,
-        color,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: 20,
+        height: 20,
+        borderRadius: '50%',
         bgcolor: alpha(color, 0.08),
-        borderColor: alpha(color, 0.5),
-        transition: 'background-color 0.2s ease',
-        "& .MuiChip-label": { px: 0.5 },
       }}
-    />
+    >
+      <FlagIcon
+        sx={{
+          fontSize: 14,
+          color,
+        }}
+      />
+    </Box>
   );
 }
 
@@ -185,6 +201,7 @@ function LoadMoreSentinel({ onVisible }: { onVisible: () => void }) {
 
 function LeadCardSkeleton({ reducedMotion }: { reducedMotion: boolean }) {
   const anim = reducedMotion ? false : 'wave';
+
   return (
     <Card
       sx={{
@@ -195,28 +212,145 @@ function LeadCardSkeleton({ reducedMotion }: { reducedMotion: boolean }) {
         boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
       }}
     >
-      <CardContent sx={{ p: 1.25, '&:last-child': { pb: 1.25 }, display: 'flex', gap: 1.25 }}>
-        <Skeleton
-          variant="circular"
-          width={38}
-          height={38}
-          animation={anim}
-          sx={{ flexShrink: 0, mt: '2px' }}
-        />
+      <CardContent
+        sx={{
+          p: 1.25,
+          '&:last-child': { pb: 1.25 },
+          display: 'flex',
+          gap: 1.25,
+        }}
+      >
+        {/* Avatar + priority */}
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
+          <Skeleton
+            variant="circular"
+            width={38}
+            height={38}
+            animation={anim}
+            sx={{ flexShrink: 0, mt: '2px' }}
+          />
+
+          <Skeleton
+            variant="circular"
+            width={20}
+            height={20}
+            animation={anim}
+            sx={{ mb: 0.7 }}
+          />
+        </Box>
+
+        {/* Lead content */}
         <Box flex={1} minWidth={0}>
-          <Skeleton variant="text" width="65%" height={18} animation={anim} />
-          <Skeleton variant="text" width="40%" height={14} animation={anim} sx={{ mt: 0.5 }} />
-          <Stack direction="row" spacing={0.75} sx={{ mt: 0.75 }}>
-            <Skeleton variant="rounded" width={58} height={18} animation={anim} />
-            <Skeleton variant="rounded" width={68} height={18} animation={anim} />
+          {/* Name + ID */}
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              gap: 1,
+            }}
+          >
+            <Skeleton
+              variant="text"
+              width="58%"
+              height={20}
+              animation={anim}
+            />
+
+            <Skeleton
+              variant="text"
+              width={42}
+              height={14}
+              animation={anim}
+            />
+          </Box>
+
+          {/* Notes */}
+          <Skeleton
+            variant="text"
+            width="88%"
+            height={15}
+            animation={anim}
+            sx={{ mt: 0.25 }}
+          />
+
+          {/* Chips */}
+          <Stack
+            direction="row"
+            spacing={0.75}
+            sx={{
+              mt: 0.5,
+              flexWrap: 'wrap',
+            }}
+          >
+            <Skeleton
+              variant="rounded"
+              width={82}
+              height={18}
+              animation={anim}
+              sx={{ borderRadius: 1.5 }}
+            />
+
+            <Skeleton
+              variant="rounded"
+              width={96}
+              height={18}
+              animation={anim}
+              sx={{ borderRadius: 1.5 }}
+            />
           </Stack>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 0.75 }}>
-            <Stack direction="row" spacing={0.5}>
-              <Skeleton variant="circular" width={22} height={22} animation={anim} />
-              <Skeleton variant="circular" width={22} height={22} animation={anim} />
-              <Skeleton variant="circular" width={22} height={22} animation={anim} />
+
+          {/* Bottom actions */}
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              mt: 0.5,
+            }}
+          >
+            <Stack direction="row" spacing={0.25}>
+              <Skeleton
+                variant="circular"
+                width={28}
+                height={28}
+                animation={anim}
+              />
+              <Skeleton
+                variant="circular"
+                width={28}
+                height={28}
+                animation={anim}
+              />
+              <Skeleton
+                variant="circular"
+                width={28}
+                height={28}
+                animation={anim}
+              />
             </Stack>
-            <Skeleton variant="circular" width={22} height={22} animation={anim} />
+
+            <Stack direction="row" spacing={0.25}>
+              <Skeleton
+                variant="circular"
+                width={24}
+                height={24}
+                animation={anim}
+              />
+              <Skeleton
+                variant="circular"
+                width={24}
+                height={24}
+                animation={anim}
+              />
+            </Stack>
           </Box>
         </Box>
       </CardContent>
@@ -231,6 +365,8 @@ export default function Leads() {
   const [openCloseConfirmation, setOpenCloseConfirmation] = useState(false);
   const [dropResult, setDropResult] = useState<DropResult | null>(null)
   const [openDelete, setOpenDelete] = useState(false);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [bulkArchiveOpen, setBulkArchiveOpen] = useState(false);
   const [invalid, setInvalid] = useState('');
   const [openAddContact, setOpenAddContact] = useState(false);
   const [openInvalid, setOpenInvalid] = useState(false);
@@ -239,6 +375,14 @@ export default function Leads() {
   const [anchorEl, setAnchorEl] = useState<HTMLDivElement | null>(null);
   const [hoveredLead, setHoveredLead] = useState<Lead | null>(null);
   const [openSnackbar, setOpenSnackbar] = useState(false);
+  const [view, setView] = useState<'kanban' | 'table'>('kanban');
+  const [selectedLeadIds, setSelectedLeadIds] =
+    useState<GridRowSelectionModel>({
+      type: 'include',
+      ids: new Set(),
+    });
+  const [statusAnchorEl, setStatusAnchorEl] =
+    useState<null | HTMLElement>(null);
 
   const [visibleCounts, setVisibleCounts] = useState<Record<LeadStatus, number>>({
     New: LAZY_CHUNK,
@@ -494,6 +638,7 @@ const handleConfirmCloseLead = async () => {
     const query = search[status].toLowerCase().trim();
 
     return leads
+      .filter((lead) => !lead.is_archived)
       .filter((lead) => lead.status === status)
       .filter((lead) => {
         if (!query) return true;
@@ -504,7 +649,6 @@ const handleConfirmCloseLead = async () => {
           lead.suffix,
           lead.email,
           lead.phone,
-          lead.title,
           lead.notes
         ]
           .join(' ')
@@ -514,28 +658,409 @@ const handleConfirmCloseLead = async () => {
       });
   };
 
+
+  const handleArchive = async (id: string) => {
+    try {
+      await dispatch(archiveLead(id)).unwrap();
+      await dispatch(fetchLeadsLists()).unwrap();
+    } catch (error) {
+      console.error("Archive failed:", error);
+    }
+  };
+
+  const getSelectedLeadIds = () => {
+    if (selectedLeadIds.type === 'include') {
+      return Array.from(selectedLeadIds.ids).map(String);
+    }
+
+    const excludedIds = new Set(
+      Array.from(selectedLeadIds.ids).map(String)
+    );
+
+    return tableRows
+      .map((lead) => String(lead.id))
+      .filter((id) => !excludedIds.has(id));
+  };
+
+  const handleBulkArchive = async () => {
+    if (loading) return;
+
+    try {
+      const ids = getSelectedLeadIds();
+
+      await dispatch(archiveBulkLeads(ids)).unwrap();
+
+      setSelectedLeadIds({
+        type: 'include',
+        ids: new Set(),
+      });
+
+      setBulkArchiveOpen(false);
+    } catch {
+      // Error handled by Redux state
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (loading) return;
+
+    try {
+      const ids = getSelectedLeadIds();
+
+      await dispatch(deleteBulkLeads(ids)).unwrap();
+
+      setSelectedLeadIds({
+        type: 'include',
+        ids: new Set(),
+      });
+
+      setBulkDeleteOpen(false);
+    } catch {
+      // Error handled by Redux state
+    }
+  };
+
+  const handleStatusChange = async (status: LeadStatus) => {
+    if (!selectedLead) return;
+
+    const lead = selectedLead;
+    const oldStatus = lead.status;
+
+    setStatusAnchorEl(null);
+
+    if (status === oldStatus) return;
+
+    if (
+      oldStatus === 'Qualified' &&
+      ['New', 'Contacted', 'Closed'].includes(status)
+    ) {
+      const message =
+        status === 'Closed'
+          ? `This lead is already in Contacts. Unable to change the status to '${status}'. Please change the status in Contacts instead.`
+          : `This lead is already in Contacts. Unable to change the status back to '${status}'.`;
+
+      setInvalid(message);
+      setTimeout(() => setInvalid(''), 3000);
+      setSelectedLead(null);
+      return;
+    }
+
+    if (
+      oldStatus === 'Closed' &&
+      ['New', 'Contacted', 'Qualified'].includes(status)
+    ) {
+      setInvalid(
+        `This lead already exists. Unable to change the status back to '${status}'.`
+      );
+      setTimeout(() => setInvalid(''), 3000);
+      setSelectedLead(null);
+      return;
+    }
+
+    if (status === 'Qualified') {
+      if (!lead.email?.trim() && !lead.phone?.trim()) {
+        setOpenInvalid(true);
+        setSelectedLead(null);
+        return;
+      }
+
+      setSelectedLead(null);
+      setDropResult({
+        draggableId: lead.id,
+        source: {
+          droppableId: oldStatus,
+          index: 0,
+        },
+        destination: {
+          droppableId: status,
+          index: 0,
+        },
+        combine: null,
+        reason: 'DROP',
+        type: 'DEFAULT',
+        mode: 'FLUID',
+      });
+
+      setOpenAddContact(true);
+      return;
+    }
+
+    if (status === 'Closed') {
+      setSelectedLead(null);
+      setDropResult({
+        draggableId: lead.id,
+        source: {
+          droppableId: oldStatus,
+          index: 0,
+        },
+        destination: {
+          droppableId: status,
+          index: 0,
+        },
+        combine: null,
+        reason: 'DROP',
+        type: 'DEFAULT',
+        mode: 'FLUID',
+      });
+
+      setOpenCloseConfirmation(true);
+      return;
+    }
+
+    try {
+      dispatch(
+        moveLeadLocally({
+          id: lead.id,
+          newStatus: status,
+        })
+      );
+
+      await dispatch(
+        updateLeadStatus({
+          id: lead.id,
+          status,
+        })
+      ).unwrap();
+
+      setSelectedLead(null);
+    } catch {
+      // Error in state
+    }
+  };
+
+  const AVATAR_PALETTE = [
+    "#4f5fce",
+    "#0f8f7a",
+    "#c4577a",
+    "#c17d2a",
+    "#7965d1",
+    "#2c8fb0",
+    "#b1544a",
+    "#4a935a",
+  ];
+
+  function getInitials(input: string) {
+    const trimmed = input.trim();
+    if (!trimmed) return "?";
+    const parts = trimmed.split(/\s+/).filter(Boolean);
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  }
+
+  function stringToAvatarColor(input: string) {
+    let hash = 0;
+    for (let i = 0; i < input.length; i++) hash = input.charCodeAt(i) + ((hash << 5) - hash);
+    return AVATAR_PALETTE[Math.abs(hash) % AVATAR_PALETTE.length];
+  }
+
+  const columns: GridColDef[] = [
+    {
+      field: 'display_id',
+      headerName: 'ID',
+      width: 70,
+      cellClassName: 'display-id-cell',
+    },
+    {
+      field: 'name',
+      headerName: 'Name',
+      sortable: true,
+      flex: 1,
+      minWidth: 200,
+      renderCell: (params) => (
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            height: '100%',
+            gap: 1,
+          }}
+        >
+          <Avatar
+            src={params.row.avatar_url ?? undefined}
+            sx={{
+              width: 24,
+              height: 24,
+              fontSize: 10.5,
+              fontWeight: 700,
+              bgcolor: stringToAvatarColor(params.value ?? ""),
+            }}
+          >
+            {!params.row.avatar_url && getInitials(params.value ?? "")}
+          </Avatar>
+
+          <Typography
+            sx={{
+              fontSize: '0.82rem',
+              fontWeight: 600,
+            }}
+            color="primary"
+          >
+            {params.value}
+          </Typography>
+        </Box>
+      ),
+    },
+    {
+      field: 'email',
+      headerName: 'Email',
+      flex: 1,
+      minWidth: 100,
+    },
+    {
+      field: 'phone',
+      headerName: 'Phone',
+      flex: 1,
+      minWidth: 100,
+    },
+    {
+      field: 'status',
+      headerName: 'Status',
+      minWidth: 100,
+      flex: 1,
+      display: 'flex',
+      align: 'left',
+      renderCell: ({ value }) => (
+        <Chip
+          label={value}
+          size="small"
+          sx={{
+            height: 22,
+            fontSize: '0.72rem',
+            fontWeight: 700,
+            borderRadius: 1.5,
+            border: value === 'New'
+              ? '1px solid #888888c2'
+              : 'none',
+            color: value === 'New'
+              ? '#303030'
+              : '#f7f6f6',
+            backgroundColor:
+              value === 'New'
+                ? '#ffffff'
+                : value === 'Contacted'
+                  ? '#ffbb29'
+                  : value === 'Qualified'
+                    ? '#AD7450'
+                    : '#7a0000',
+          }}
+        />
+      ),
+    },
+    {
+      field: 'priority',
+      headerName: 'Priority',
+      flex: 1,
+      minWidth: 100,
+    },
+    {
+      field: 'preferred_contact_time',
+      headerName: 'Preferred Time',
+      flex: 1,
+      minWidth: 130,
+    },
+    {
+      field: 'actions',
+      headerName: 'Action',
+      minWidth: 200,
+      flex: 1,
+      align: 'center',
+      headerAlign: 'center',
+      sortable: false,
+      filterable: false,
+      renderCell: (params) => (
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            paddingTop: '4px',
+          }}
+        >
+          <Button
+            size="small"
+            onClick={(e) => {
+              setStatusAnchorEl(e.currentTarget);
+              setSelectedLead(params.row);
+            }}
+            disableElevation
+            sx={{
+              py: '2px',
+              px: 1.75,
+              borderRadius: 999,
+              textTransform: 'none',
+              backgroundColor: 'primary.main',
+              color: 'white',
+              fontSize: '11px',
+              fontWeight: 700,
+              '&:hover': {
+                backgroundColor: 'primary.dark',
+              },
+            }}
+          >
+            Change Status
+          </Button>
+        </Box>
+      ),
+    },
+  ];
+
   if (loading) {
     return (
       <Box sx={{height: 1000}}>
         <Box sx={{
           display: 'flex',
           flexDirection: 'column',
-          width: "100%",
-          minWidth: 0,
+          width: { xs: '92%', sm: '85vw', md: '80vw' },
+          maxWidth: 1400,
           mx: 'auto',
           mb: 1,
         }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
-            <Typography variant="h4" fontWeight={700}>
+          <Box
+           sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: { xs: 0.75, sm: 1 },
+          }}>
+            <Typography sx={{ fontSize: { sm: 16, md: 18, lg: 20 } }} fontWeight={700}>
               Leads
             </Typography>
-            <Skeleton
-              variant="rounded"
-              width={40}
-              height={40}
-              animation={prefersReducedMotion ? false : 'wave'}
-              sx={{ borderRadius: 10 }}
-            />
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: { xs: 0.5, sm: 0.75 },
+              }}
+            >
+              <Skeleton
+                variant="circular"
+                width={32}
+                height={32}
+                animation={prefersReducedMotion ? false : "wave"}
+              />
+
+              <Skeleton
+                variant="circular"
+                width={32}
+                height={32}
+                animation={prefersReducedMotion ? false : "wave"}
+              />
+
+              <Skeleton
+                variant="circular"
+                width={32}
+                height={32}
+                animation={prefersReducedMotion ? false : "wave"}
+              />
+
+              <Skeleton
+                variant="circular"
+                width={32}
+                height={32}
+                animation={prefersReducedMotion ? false : "wave"}
+              />
+            </Box>
           </Box>
         </Box>
         <Box
@@ -601,7 +1126,17 @@ const handleConfirmCloseLead = async () => {
     );
   }
 
-  
+  const tableRows = leads.map((lead) => ({
+    id: lead.id,
+    display_id: lead.display_id,
+    name: `${formatName(lead.first_name, lead.last_name)} ${lead.suffix || ''}`,
+    avatar_url: lead.avatar_url,
+    email: lead.email || '',
+    phone: lead.phone || '',
+    status: lead.status,
+    priority: lead.priority,
+    preferred_contact_time: lead.preferred_contact_time,
+  }));
 
   return (
     <Box sx={{ pb: 2 }}>
@@ -643,6 +1178,29 @@ const handleConfirmCloseLead = async () => {
         </Typography>
 
         <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 0.5, sm: 0.75 } }}>
+          <IconButton
+            title="Kanban view"
+            onClick={() => setView('kanban')}
+            size="small"
+            sx={{
+              color: view === 'kanban' ? 'primary.main' : 'text.secondary',
+              backgroundColor: view === 'kanban' ? 'action.selected' : 'transparent',
+            }}
+          >
+            <ViewKanbanIcon />
+          </IconButton>
+
+          <IconButton
+            title="Table view"
+            onClick={() => setView('table')}
+            size="small"
+            sx={{
+              color: view === 'table' ? 'primary.main' : 'text.secondary',
+              backgroundColor: view === 'table' ? 'action.selected' : 'transparent',
+            }}
+          >
+            <TableRowsIcon />
+          </IconButton>
           <IconButton
             title="Add lead"
             onClick={() => {
@@ -689,11 +1247,94 @@ const handleConfirmCloseLead = async () => {
               <RefreshIcon />
             )}
           </IconButton>
+          {view === 'table' && (
+            <>
+              <Tooltip
+                title={
+                  selectedLeadIds.type === "exclude" ||
+                  selectedLeadIds.ids.size > 0
+                    ? "Archive selected"
+                    : "Select leads to archive"
+                }
+              >
+                <span>
+                  <IconButton
+                    onClick={() => setBulkArchiveOpen(true)}
+                    disabled={
+                      selectedLeadIds.type !== "exclude" &&
+                      selectedLeadIds.ids.size === 0
+                    }
+                    sx={{
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      borderRadius: 2,
+                    }}
+                  >
+                    <ArchiveIcon
+                      sx={{
+                        opacity:
+                          selectedLeadIds.type === "exclude" ||
+                          selectedLeadIds.ids.size > 0
+                            ? 1
+                            : 0.3,
+                        fontSize: { xs: 15, sm: 17, md: 20 },
+                      }}
+                    />
+                  </IconButton>
+                </span>
+              </Tooltip>
+
+              <Tooltip
+                title={
+                  selectedLeadIds.type === "exclude" ||
+                  selectedLeadIds.ids.size > 0
+                    ? "Delete selected"
+                    : "Select leads to delete"
+                }
+              >
+                <span>
+                  <IconButton
+                    onClick={() => setBulkDeleteOpen(true)}
+                    disabled={
+                      selectedLeadIds.type !== "exclude" &&
+                      selectedLeadIds.ids.size === 0
+                    }
+                    sx={{
+                      border: '1px solid',
+                      borderColor:
+                        selectedLeadIds.type === "exclude" ||
+                        selectedLeadIds.ids.size > 0
+                          ? alpha('#e95858', 0.4)
+                          : 'divider',
+                      borderRadius: 2,
+                    }}
+                  >
+                    <DeleteIcon
+                      sx={{
+                        opacity:
+                          selectedLeadIds.type === "exclude" ||
+                          selectedLeadIds.ids.size > 0
+                            ? 1
+                            : 0.3,
+                        color:
+                          selectedLeadIds.type === "exclude" ||
+                          selectedLeadIds.ids.size > 0
+                            ? '#e95858'
+                            : 'text.disabled',
+                        fontSize: { xs: 15, sm: 17, md: 20 },
+                      }}
+                    />
+                  </IconButton>
+                </span>
+              </Tooltip>
+            </>
+          )}
         </Box>
       </Box>
 
         
       </Box>
+      {view === 'kanban' ? (
       <DragDropContext onDragEnd={handleDragEnd}>
         <Box
           sx={{
@@ -844,51 +1485,82 @@ const handleConfirmCloseLead = async () => {
                               disabled={prefersReducedMotion}
                             >
                             <CardContent sx={{ p: 1.25, '&:last-child': { pb: 1.25 }, display: 'flex', gap: 1.25 }}>
-                              <Avatar
-                                onMouseEnter={(e) => handleMouseEnter(e, lead)}
-                                onMouseLeave={handleMouseLeave}
-                                sx={{
-                                  width: 38,
-                                  height: 38,
-                                  mt: '2px',
-                                  cursor: 'pointer',
-                                  bgcolor: 'action.hover',
-                                  flexShrink: 0,
-                                  transition: 'transform 0.2s ease, background-color 0.2s ease',
-                                  '&:hover': { transform: 'scale(1.06)', bgcolor: 'action.selected' },
-                                }}
-                              >
-                                <PersonIcon sx={{ opacity: 0.65, color: 'text.secondary' }}/>
-                              </Avatar>
-                              <Box flex={1} minWidth={0}>
-                                <Box sx={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 0.5}}>
-                                  <Typography
-                                  title="Lead Title"
+                              <Box sx={{display: 'flex', flexDirection: 'column',
+                                justifyContent: "space-between", alignItems: 'center',
+                              }}>
+                                <Avatar
+                                  src={lead.avatar_url ?? undefined}
+                                  onMouseEnter={(e) => handleMouseEnter(e, lead)}
+                                  onMouseLeave={handleMouseLeave}
                                   sx={{
+                                    width: 38,
+                                    height: 38,
+                                    mt: '2px',
                                     cursor: 'pointer',
-                                    fontSize: 13,
-                                    fontWeight: 700,
-                                    letterSpacing: '0.01em',
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis',
-                                    display: '-webkit-box',
-                                    WebkitLineClamp: 2,
-                                    WebkitBoxOrient: 'vertical',
-                                  }}>
-                                  {formatShortTitle(lead.title).toUpperCase()}
-                                  </Typography>
-                                  <Box
+                                    bgcolor: 'action.hover',
+                                    flexShrink: 0,
+                                    transition: 'transform 0.2s ease, background-color 0.2s ease',
+                                    '&:hover': {
+                                      transform: 'scale(1.06)',
+                                      bgcolor: 'action.selected',
+                                    },
+                                  }}
+                                >
+                                  {!lead.avatar_url && (
+                                    <PersonIcon sx={{ opacity: 0.65, color: 'text.secondary' }} />
+                                  )}
+                                </Avatar>
+                                <Box
                                     title={`${lead.priority} Priority`}
-                                   sx={{display: 'flex', alignItems: 'center', gap: 0.25, cursor: 'pointer', flexShrink: 0}}>
+                                    sx={{
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: 0.25,
+                                      cursor: 'pointer',
+                                      flexShrink: 0,
+                                      pb: 0.7
+                                    }}
+                                  >
                                     <PriorityBadge priority={lead.priority} />
                                   </Box>
-                                  
-                                </Box>
+                              </Box>
+                              
+                              <Box flex={1} minWidth={0}>
                                 <Box
-                                  title="Lead full name"
-                                  sx={{ display: 'flex', cursor: 'pointer'}}>
-                                    <Typography sx={{fontSize: '11px', fontWeight: 600, opacity: 0.75}}>
-                                    {formatName(lead.first_name, lead.last_name)} {lead.suffix} 
+                                  sx={{
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'flex-start',
+                                    gap: 0.5,
+                                  }}
+                                >
+                                  <Typography
+                                    title="Lead full name"
+                                    sx={{
+                                      cursor: 'pointer',
+                                      fontSize: 13,
+                                      fontWeight: 700,
+                                      letterSpacing: '0.01em',
+                                      overflow: 'hidden',
+                                      textOverflow: 'ellipsis',
+                                      whiteSpace: 'nowrap',
+                                    }}
+                                  >
+                                    {formatName(lead.first_name, lead.last_name)} {lead.suffix}
+                                  </Typography>
+
+                                    <Typography
+                                      title="Lead ID"
+                                      variant="caption"
+                                      color="text.secondary"
+                                      display="block"
+                                      sx={{
+                                        fontStyle: 'italic',
+                                        fontSize: 9,
+                                        cursor: 'pointer'
+                                      }}
+                                    >
+                                      {lead.display_id}
                                   </Typography>
                                 </Box>
                                 {lead.notes && (
@@ -912,15 +1584,25 @@ const handleConfirmCloseLead = async () => {
                                 )}
                                 <Stack direction="row" spacing={0.75} sx={{ mt: 0.75, flexWrap: 'wrap', rowGap: 0.5 }}>
                                   <Chip
-                                    title="Deal Owner"
+                                    title={lead.assigned_to ? "Assigned To" : "Deal Owner"}
                                     label={formatName(
-                                      lead.owner?.profile?.first_name ?? "Unknown",
-                                      lead.owner?.profile?.last_name ?? "Owner"
+                                      lead.assigned?.profile?.first_name ??
+                                        lead.owner?.profile?.first_name ??
+                                        "Unknown",
+                                      lead.assigned?.profile?.last_name ??
+                                        lead.owner?.profile?.last_name ??
+                                        "Owner"
                                     )}
                                     size="small"
                                     variant="outlined"
                                     color="primary"
-                                    sx={{ height: 18, fontSize: 9, fontWeight: 700, cursor: 'pointer', "& .MuiChip-label": { px: 0.75 } }}
+                                    sx={{
+                                      height: 18,
+                                      fontSize: 9,
+                                      fontWeight: 700,
+                                      cursor: 'pointer',
+                                      "& .MuiChip-label": { px: 0.75 }
+                                    }}
                                   />
                                   <Chip
                                     title="Preferred Time to contact"
@@ -960,18 +1642,39 @@ const handleConfirmCloseLead = async () => {
                                       </IconButton>
                                     </Tooltip>
                                   </Stack>
-                                  <Tooltip title="Delete lead">
-                                    <IconButton
-                                      size="small"
-                                      color="error"
-                                      onClick={(e) =>{
-                                        e.stopPropagation();
-                                         handleOpenDelete(lead)
-                                      }}
-                                    >
-                                      <DeleteIcon fontSize="small" />
-                                    </IconButton>
-                                  </Tooltip>
+                                  <Stack direction="row">
+                                    <Tooltip title="Archive lead">
+                                      <IconButton
+                                        size="small"
+                                        sx={{ p: 0.1 }}
+                                        onClick={async (e) => {
+                                          e.stopPropagation();
+
+                                          try {
+                                            await handleArchive(lead.id);
+                                          } catch {
+                                            // Error handled by Redux state
+                                          }
+                                        }}
+                                      >
+                                        <ArchiveIcon sx={{ fontSize: 16 }} />
+                                      </IconButton>
+                                    </Tooltip>
+
+                                    <Tooltip title="Delete lead">
+                                      <IconButton
+                                        size="small"
+                                        color="error"
+                                        sx={{ p: 0.1 }}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleOpenDelete(lead);
+                                        }}
+                                      >
+                                        <DeleteIcon sx={{ fontSize: 16 }} />
+                                      </IconButton>
+                                    </Tooltip>
+                                  </Stack>
                                 </Box> 
                               </Box>
                               
@@ -1002,6 +1705,107 @@ const handleConfirmCloseLead = async () => {
           })}
         </Box>
       </DragDropContext>
+      ) : (
+      <Box
+        sx={{
+          display: 'flex',
+          height: 700,
+          width: '100%',
+          minWidth: 0,
+          overflow: 'auto',
+          mb: 5,
+        }}
+      >
+        <Paper
+          variant="outlined"
+          sx={{
+            justifyContent: 'center',
+            p: 1,
+            pt: 2,
+            height: 700,
+            minWidth: 300,
+            display: 'flex',
+            flex: 1,
+            borderRadius: 3,
+            borderColor: 'divider',
+            flexDirection: 'column',
+            overflow: 'auto',
+          }}
+        >
+          <DataGrid
+            sx={{
+              border: 'none',
+              borderRadius: 3,
+              minWidth: 700,
+              fontSize: '0.85rem',
+              cursor: 'pointer',
+              overflow: 'auto',
+              '& .MuiDataGrid-columnHeaders': {
+                bgcolor: (theme) =>
+                  alpha(theme.palette.text.primary, 0.03),
+                borderRadius: 2,
+              },
+              '& .MuiDataGrid-columnHeaderTitle': {
+                fontWeight: 700,
+                fontSize: '0.75rem',
+                textTransform: 'uppercase',
+                letterSpacing: 0.3,
+                opacity: 0.7,
+              },
+              '& .MuiDataGrid-row:hover': {
+                bgcolor: (theme) =>
+                  alpha(theme.palette.primary.main, 0.05),
+              },
+              '& .display-id-cell': {
+                fontSize: '11px',
+              },
+              '& .MuiDataGrid-cell:focus, & .MuiDataGrid-cell:focus-within': {
+                outline: 'none',
+              },
+            }}
+            rows={tableRows}
+            columns={columns}
+            checkboxSelection
+            disableRowSelectionOnClick
+            rowSelectionModel={selectedLeadIds}
+            onRowSelectionModelChange={(newSelection) => {
+              setSelectedLeadIds(newSelection);
+            }}
+            onRowClick={(params) => {
+              navigate(`/app/leads/${params.row.id}`);
+            }}
+            initialState={{
+              pagination: {
+                paginationModel: {
+                  page: 0,
+                  pageSize: 10,
+                },
+              },
+            }}
+            pageSizeOptions={[30, 50]}
+            rowHeight={30}
+          />
+        </Paper>
+      </Box>
+      )}
+      <Menu
+        anchorEl={statusAnchorEl}
+        open={Boolean(statusAnchorEl)}
+        onClose={() => {
+          setStatusAnchorEl(null);
+          setSelectedLead(null);
+        }}
+      >
+        {LEAD_STATUSES.map((status) => (
+         <MenuItem
+            key={status}
+            disabled={status === selectedLead?.status}
+            onClick={() => handleStatusChange(status)}
+          >
+            {status}
+          </MenuItem>
+        ))}
+      </Menu>
       <Dialog
         PaperProps={{
           sx: {
@@ -1203,13 +2007,24 @@ const handleConfirmCloseLead = async () => {
               boxShadow: '0 16px 32px rgba(0,0,0,0.14)',
             }}>
           <Stack alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
-            <Avatar sx={{ width: 64, height: 64, bgcolor: 'action.hover' }}>
-              <PersonIcon sx={{ fontSize: 32, opacity: 0.7, color: 'text.secondary' }}/>
+           <Avatar
+              src={hoveredLead?.avatar_url ?? undefined}
+              sx={{ width: 64, height: 64, bgcolor: 'action.hover' }}
+            >
+              {!hoveredLead?.avatar_url && (
+                <PersonIcon
+                  sx={{
+                    fontSize: 32,
+                    opacity: 0.7,
+                    color: 'text.secondary'
+                  }}
+                />
+              )}
             </Avatar>
             <Box sx={{ textAlign: 'center' }}>
               <Typography variant="subtitle1" fontWeight={700} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.75 }}>
                 {formatName(hoveredLead?.first_name, hoveredLead?.last_name)} {hoveredLead?.suffix}
-                {hoveredLead && <PriorityBadge priority={hoveredLead.priority} />}
+                
               </Typography>
             </Box>
           </Stack>
@@ -1300,14 +2115,138 @@ const handleConfirmCloseLead = async () => {
             )}
           </Box>
           <Divider sx={{mt: 2, mb: 1}}></Divider>
-          <Typography marginBottom={1} variant="body1" fontWeight={700}>
-            {hoveredLead?.title.toUpperCase()}
-          </Typography>
           <Typography variant="body2" color="text.secondary">
             {hoveredLead?.notes}
           </Typography>
         </Card>
       </Popover>
+      <Dialog
+        open={bulkArchiveOpen}
+        onClose={() => setBulkArchiveOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            minWidth: 340,
+            boxShadow: '0 20px 40px rgba(0,0,0,0.18)',
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            fontWeight: 700,
+          }}
+        >
+          <ArchiveIcon
+            sx={{
+              fontSize: 22,
+            }}
+          />
+          Archive selected leads?
+        </DialogTitle>
+
+        <DialogContent>
+          Are you sure you want to archive{' '}
+          <Box component="span" sx={{ fontWeight: 700 }}>
+            {selectedLeadIds.type === 'exclude'
+              ? 'all'
+              : selectedLeadIds.ids.size}
+          </Box>{' '}
+          selected lead(s)? You can restore archived leads later.
+        </DialogContent>
+
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button
+            onClick={() => setBulkArchiveOpen(false)}
+            sx={{
+              textTransform: 'none',
+              borderRadius: 2,
+            }}
+          >
+            Cancel
+          </Button>
+
+          <Button
+            variant="contained"
+            disableElevation
+            onClick={handleBulkArchive}
+            disabled={loading}
+            sx={{
+              textTransform: 'none',
+              borderRadius: 2,
+              fontWeight: 700,
+            }}
+          >
+            Archive
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <Dialog
+        open={bulkDeleteOpen}
+        onClose={() => setBulkDeleteOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            minWidth: 340,
+            boxShadow: '0 20px 40px rgba(0,0,0,0.18)',
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            fontWeight: 700,
+          }}
+        >
+          <DeleteIcon color="error" fontSize="small" />
+          Delete selected leads?
+        </DialogTitle>
+
+        <DialogContent>
+          Are you sure you want to delete{' '}
+          <Box component="span" sx={{ fontWeight: 700 }}>
+            {selectedLeadIds.type === 'exclude'
+              ? 'all'
+              : selectedLeadIds.ids.size}
+          </Box>{' '}
+          selected lead(s)? Deleted leads can be recovered from Archives.
+        </DialogContent>
+
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button
+            onClick={() => setBulkDeleteOpen(false)}
+            sx={{
+              textTransform: 'none',
+              borderRadius: 2,
+            }}
+          >
+            Cancel
+          </Button>
+
+          <Button
+            variant="contained"
+            disableElevation
+            color="error"
+            onClick={handleBulkDelete}
+            disabled={loading}
+            sx={{
+              textTransform: 'none',
+              borderRadius: 2,
+              fontWeight: 700,
+            }}
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
       <Snackbar
         open={openSnackbar}
         autoHideDuration={3000}

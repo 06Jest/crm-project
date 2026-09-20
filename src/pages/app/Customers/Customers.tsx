@@ -2,7 +2,6 @@
 import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "../../../store/store";
 import { DataGrid, type GridColDef, useGridApiRef, type GridRowSelectionModel } from '@mui/x-data-grid';
-// import { useSidebar } from "../../../hooks/useSidebar";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -18,6 +17,8 @@ import {
   Typography,
   IconButton,
   Tooltip,
+  Avatar,
+  alpha,
 } from "@mui/material";
 import DeleteIcon from '@mui/icons-material/Delete';
 import GroupsIcon from '@mui/icons-material/Groups';
@@ -27,11 +28,17 @@ import { formatName } from "../../../utils/formatText";
 import { formatRelativeTime } from "../../../utils/formatTime";
 import type { CustomerStatus } from "../../../types/customer";
 import { fetchContactsLists } from "../../../store/contactsSlice";
-import { deleteBulkCustomers, fetchCustomersLists } from "../../../store/customersSlice";
+import {
+  archiveBulkCustomers,
+  deleteBulkCustomers,
+  fetchCustomersLists,
+} from "../../../store/customersSlice";
 import { fetchDealsLists } from "../../../store/dealsSlice";
 import CustomersSkeleton from "../../../components/CustomersSkeleton";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import CircularProgress from "@mui/material/CircularProgress";
+import PersonIcon from '@mui/icons-material/Person';
+import ArchiveIcon from "@mui/icons-material/Archive";
 
 const STATUS_COLORS: Record<CustomerStatus, string> = {
   Active: '#84e77c',
@@ -43,17 +50,49 @@ const STATUS_COLORS: Record<CustomerStatus, string> = {
 const getColumns = (
   navigate: ReturnType<typeof useNavigate>
 ): GridColDef[] => [
+  { field: 'display_id', headerName: 'ID', width: 80,cellClassName: 'display-id-cell',},
   {
-    field: 'name',
-    headerName: 'Name',
-    sortable: true,
-    flex: 1,
-    renderCell: (params) => (
-    <Typography sx={{display: 'flex', alignItems: 'center', height: '100%', fontWeight: 600}} color="primary">
-      {params.value}
-    </Typography>
-    ),
-  },
+  field: 'name',
+  headerName: 'Name',
+  sortable: true,
+  flex: 1,
+  renderCell: (params) => (
+    <Box
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        height: '100%',
+        gap: 1,
+      }}
+    >
+      <Avatar
+        src={params.row.avatar_url ?? undefined}
+        sx={{
+          width: 24,
+          height: 24,
+        }}
+      >
+        {!params.row.avatar_url && (
+          <PersonIcon
+            sx={{
+              fontSize: 16,
+              opacity: 0.7,
+            }}
+          />
+        )}
+      </Avatar>
+      <Typography
+        sx={{
+          fontWeight: 600,
+          lineHeight: 1.1,
+        }}
+        color="primary"
+      >
+        {params.value}
+      </Typography>
+    </Box>
+  ),
+},
   { field: 'email', headerName: 'Email', flex: 1,},
   { field: 'phone', headerName: 'Phone', flex: 1, },
   { field: 'status', 
@@ -91,7 +130,7 @@ const getColumns = (
   },
   { field: 'open_deals', headerName: 'Open Deals', width: 100 },
   { field: 'preferred_contact_time', headerName: 'Preferred time', flex: 1 },
-  { field: 'owner_name', headerName: 'Owner',  flex: 1 },
+  { field: 'assigned', headerName: 'Assigned',  flex: 1 },
   {
     field: 'created_at',
     headerName: 'Since',
@@ -142,6 +181,7 @@ export default function Customers() {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [archiveConfirmOpen, setArchiveConfirmOpen] = useState(false);
   const apiRef = useGridApiRef();
   const [selectedRows, setSelectedRows] = useState<GridRowSelectionModel>({
     type: "include",
@@ -170,14 +210,24 @@ export default function Customers() {
     return {
       id: customer.id,
       name: `${formatName(c.first_name, c.last_name)} ${c.suffix || ''}`,
+      display_id: customer.display_id,
+      avatar_url: c.avatar_url,
       email: c.email,
       phone: c.phone,
       status: customer.status,
       open_deals: dealsOpen,
       preferred_contact_time: c.preferred_contact_time,
-      owner_name: customer.owner
-        ? formatName(customer.owner.profile.first_name, customer.owner.profile.last_name)
-        : "Unassigned",
+      assigned: customer.assigned
+        ? formatName(
+            customer.assigned.profile.first_name,
+            customer.assigned.profile.last_name
+          )
+        : customer.owner
+          ? formatName(
+              customer.owner.profile.first_name,
+              customer.owner.profile.last_name
+            )
+          : "Unassigned",
       created_at: customer.created_at,
       action: customer.id
     }
@@ -240,6 +290,26 @@ const hasSelection =
   selectedRows.type === "exclude" ||
   selectedRows.ids.size > 0;
 
+  const getSelectedCustomerIds = () => {
+    if (selectedRows.type === "include") {
+      return Array.from(selectedRows.ids).map(String);
+    }
+
+    const excludedIds = new Set(
+      Array.from(selectedRows.ids).map(String)
+    );
+
+    return rows
+      .filter((row): row is NonNullable<typeof row> => row !== null)
+      .map((row) => String(row.id))
+      .filter((id) => !excludedIds.has(id));
+  };
+
+  const selectionCount =
+  selectedRows.type === "exclude"
+    ? rows.length - selectedRows.ids.size
+    : selectedRows.ids.size;
+
   if (needsLoading) {
     return <CustomersSkeleton />;
   }
@@ -290,58 +360,103 @@ const hasSelection =
           </Box>
           
         </Box>
-        <Box sx={{display: 'flex'}}>
-          <IconButton
-            onClick={() => setConfirmOpen(true)}
-            disabled={!hasSelection}
-            title="Delete selected"
-            sx={{
-              borderRadius: 2,
-              border: '1px solid',
-              borderColor: hasSelection ? '#e9585866' : 'transparent',
-              transition: 'border-color 0.15s ease, background-color 0.15s ease',
-              '&:hover': {
-                backgroundColor: hasSelection ? '#e9585818' : 'transparent',
-              },
-            }}
-          >
-            <DeleteIcon
-              sx={{
-                opacity: hasSelection ? 1 : 0,
-                color: '#e95858'
-              }}
-              fontSize="medium"
-            />
-          </IconButton>
-          <Tooltip title="Refresh Customers" >
-            <span
-              style={{
-                display: 'flex',
-                alignSelf: 'center',
-              }}
-            >
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: { xs: 0.5, sm: 0.75, md: 1 },
+          }}
+        >
+          <Tooltip title="Refresh customers">
+            <span>
               <IconButton
                 onClick={refreshCustomers}
                 disabled={loading}
                 sx={{
-                  alignSelf: 'center',
                   border: '1px solid',
                   borderColor: 'divider',
                   borderRadius: 2,
-                  py: { sm: 0.75, md: 1 },
-                  px: { sm: 0.75, md: 1 },
+                  py: { xs: 0.5, sm: 0.75, md: 1 },
+                  px: { xs: 0.5, sm: 0.75, md: 1 },
                 }}
               >
                 {loading ? (
                   <CircularProgress
                     size={16}
-                    sx={{ fontSize: { xs: 14, sm: 16, md: 18 } }}
+                    sx={{
+                      fontSize: { xs: 14, sm: 16, md: 18 },
+                    }}
                   />
                 ) : (
                   <RefreshIcon
-                    sx={{ fontSize: { xs: 15, sm: 17, md: 20 } }}
+                    sx={{
+                      fontSize: { xs: 15, sm: 17, md: 20 },
+                    }}
                   />
                 )}
+              </IconButton>
+            </span>
+          </Tooltip>
+
+          <Tooltip
+            title={
+              hasSelection
+                ? "Archive selected"
+                : "Select customers to archive"
+            }
+          >
+            <span>
+              <IconButton
+                onClick={() => setArchiveConfirmOpen(true)}
+                disabled={!hasSelection}
+                sx={{
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  borderRadius: 2,
+                  py: { xs: 0.5, sm: 0.75, md: 1 },
+                  px: { xs: 0.5, sm: 0.75, md: 1 },
+                }}
+              >
+                <ArchiveIcon
+                  sx={{
+                    opacity: hasSelection ? 1 : 0.3,
+                    fontSize: { xs: 15, sm: 17, md: 20 },
+                  }}
+                />
+              </IconButton>
+            </span>
+          </Tooltip>
+
+          <Tooltip
+            title={
+              hasSelection
+                ? "Delete selected"
+                : "Select customers to delete"
+            }
+          >
+            <span>
+              <IconButton
+                onClick={() => setConfirmOpen(true)}
+                disabled={!hasSelection}
+                sx={{
+                  border: '1px solid',
+                  borderColor: hasSelection
+                    ? alpha('#e95858', 0.4)
+                    : 'divider',
+                  borderRadius: 2,
+                  py: { xs: 0.5, sm: 0.75, md: 1 },
+                  px: { xs: 0.5, sm: 0.75, md: 1 },
+                }}
+              >
+                <DeleteIcon
+                  sx={{
+                    opacity: hasSelection ? 1 : 0.3,
+                    color: hasSelection
+                      ? '#e95858'
+                      : 'text.disabled',
+                    fontSize: { xs: 15, sm: 17, md: 20 },
+                  }}
+                />
               </IconButton>
             </span>
           </Tooltip>
@@ -380,6 +495,9 @@ const hasSelection =
             '& .MuiDataGrid-columnHeaderTitle': {
               fontWeight: 700,
             },
+            '& .display-id-cell': {
+              fontSize: '11px',
+            },
             '& .MuiDataGrid-row:hover': {
               backgroundColor: theme.palette.mode === 'dark' ? '#2a2a2a' : '#f4f6f9',
             },
@@ -402,6 +520,70 @@ const hasSelection =
         
       </Paper>
       <Dialog
+        open={archiveConfirmOpen}
+        onClose={() => setArchiveConfirmOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+          },
+        }}
+      >
+        <DialogTitle>Confirm archive</DialogTitle>
+
+        <DialogContent>
+          <Typography>
+            Are you sure you want to archive{" "}
+            {selectionCount}
+            selected customer(s)? You can restore archived customers later.
+          </Typography>
+        </DialogContent>
+
+        <DialogActions>
+          <Button
+            onClick={() => setArchiveConfirmOpen(false)}
+            disabled={loading}
+          >
+            Cancel
+          </Button>
+
+          <Button
+            variant="contained"
+            onClick={async () => {
+              if (loading) return;
+
+              try {
+                const ids = getSelectedCustomerIds();
+
+                await dispatch(
+                  archiveBulkCustomers(ids)
+                ).unwrap();
+
+                setSelectedRows({
+                  type: "include",
+                  ids: new Set(),
+                });
+
+                setArchiveConfirmOpen(false);
+              } catch {
+                // Error handled by Redux state
+              }
+            }}
+            disabled={loading}
+            startIcon={
+              loading ? (
+                <CircularProgress size={16} color="inherit" />
+              ) : (
+                <ArchiveIcon />
+              )
+            }
+          >
+            Archive
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <Dialog
         PaperProps={{ sx: { borderRadius: 3 } }}
         open={confirmOpen}
         onClose={() => setConfirmOpen(false)}
@@ -409,7 +591,7 @@ const hasSelection =
         <DialogTitle sx={{ fontWeight: 700 }}>Confirm delete</DialogTitle>
 
         <DialogContent>
-          Are you sure you want to delete {selectedRows.ids.size === 0  || selectedRows.type === "exclude" ? 'all' : selectedRows.ids.size} selected contact(s)?
+          Are you sure you want to delete {selectionCount} selected customer(s)?
         </DialogContent>
 
         <DialogActions sx={{ pb: 2, px: 3 }}>
@@ -426,7 +608,7 @@ const hasSelection =
               if (loading) return;
               // setConfirmOpen(false);
               try {
-                const ids = Array.from(selectedRows.ids).map(id => String(id));
+                const ids = getSelectedCustomerIds();
 
                 await dispatch(deleteBulkCustomers(ids)).unwrap();
 

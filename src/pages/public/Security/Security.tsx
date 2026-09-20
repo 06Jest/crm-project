@@ -37,7 +37,7 @@ import EastIcon from '@mui/icons-material/East';
 
 const LAST_UPDATED = 'August 10, 2026';
 const OPERATOR_NAME = 'Jestony Silvano';
-const SECURITY_EMAIL = 'silvanojestony27@gmail.com';
+const SECURITY_EMAIL = 'uni.mailer1@gmail.com';
 
 const subject = 'Security issue report uniThread CRM';
 

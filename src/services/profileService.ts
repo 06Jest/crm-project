@@ -58,25 +58,27 @@ export const updateProfileAPI = async (
 
 
 export const updateProfileAvatarAPI = async (
-  avatar_url: string | null
+  avatar_url: string | null,
+  avatar_file_id: string | null
 ): Promise<{
   avatar_url: string | null;
+  avatar_file_id: string | null;
 }> => {
-
   const result = await apiClient(
     "/api/profile/me/avatar",
     {
       method: "PATCH",
       body: JSON.stringify({
         avatar_url,
+        avatar_file_id,
       }),
     }
   );
 
   return result.data as {
     avatar_url: string | null;
+    avatar_file_id: string | null;
   };
-
 };
 
 

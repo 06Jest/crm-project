@@ -50,6 +50,28 @@ export const updateCustomerStatusAPI = async (
 };
 
 
+export const archiveCustomerAPI = async (
+  id: string
+): Promise<string> => {
+  const result = await apiClient(`/api/customers/archive/${id}`, {
+    method: "PATCH",
+  });
+
+  return result.data as string;
+};
+
+export const archiveBulkCustomersAPI = async (
+  ids: string[]
+): Promise<string[]> => {
+  const result = await apiClient(`/api/customers/archive/bulk`, {
+    method: "PATCH",
+    body: JSON.stringify({ ids }),
+  });
+
+  return result.data as string[];
+};
+
+
 export const deleteCustomerAPI = async (
   id: string
 ): Promise<string> => {

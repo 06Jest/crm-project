@@ -26,29 +26,6 @@ export const oauthLoginAPI = async (accessToken: string) => {
   });
 };
 
-// export const oauthLoginAPI = async (accessToken: string) => {
-//   return fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/oauth`, {
-//     method: "POST",
-//     credentials: "include",
-//     headers: {
-//       "Content-Type": "application/json",
-//       Authorization: `Bearer ${accessToken}`,
-//     },
-//   }).then(async (response) => {
-//     const data = await response.json().catch(() => null);
-
-//     if (!response.ok) {
-//       throw new Error(
-//         data?.error ??
-//         data?.message ??
-//         `API Error: ${response.status}`
-//       );
-//     }
-
-//     return data;
-//   });
-// };
-
 export const getCurrentUserAPI = async () => {
   return apiClient("/api/auth/me", {
     method: "GET",

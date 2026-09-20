@@ -92,6 +92,22 @@ export const updateContactCareerAPI = async (
   return result.data as ContactListItem;
 };
 
+export const updateContactAvatarAPI = async (
+  id: string,
+  avatarFileId: string | null,
+  avatarUrl: string | null
+): Promise<ContactListItem> => {
+  const result = await apiClient(`/api/contacts/update/avatar/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify({
+      avatar_file_id: avatarFileId,
+      avatar_url: avatarUrl,
+    }),
+  });
+
+  return result.data as ContactListItem;
+};
+
 export const updateContactNotesAPI = async (
   id: string,
   notes: string
@@ -144,7 +160,26 @@ export const updateContactPreferredTimeAPI = async (
   return result.data as ContactListItem;
 };
 
+export const archiveContactAPI = async (
+  id: string
+): Promise<string> => {
+  const result = await apiClient(`/api/contacts/archive/${id}`, {
+    method: "PATCH",
+  });
 
+  return result.data as string;
+};
+
+export const archiveBulkContactsAPI = async (
+  ids: string[]
+): Promise<string[]> => {
+  const result = await apiClient("/api/contacts/archive/bulk", {
+    method: "PATCH",
+    body: JSON.stringify({ ids }),
+  });
+
+  return result.data as string[];
+};
 
 export const deleteContactAPI = async (
   id: string
@@ -158,11 +193,11 @@ export const deleteContactAPI = async (
 
 export const deleteBulkContactsAPI = async (
   ids: string[]
-): Promise<string> => {
-  const result = await apiClient(`/api/contacts/delete/bulk`, {
+): Promise<string[]> => {
+  const result = await apiClient("/api/contacts/delete/bulk", {
     method: "DELETE",
-    body: JSON.stringify({ids}),
+    body: JSON.stringify({ ids }),
   });
 
-  return result.data as string;
+  return result.data as string[];
 };

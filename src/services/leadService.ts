@@ -68,6 +68,22 @@ export const updateLeadSocialsAPI = async (
   return result.data as LeadListItem;
 };
 
+export const updateLeadAvatarAPI = async (
+  id: string,
+  avatarFileId: string | null,
+  avatarUrl: string | null
+): Promise<LeadListItem> => {
+  const result = await apiClient(`/api/leads/update/avatar/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify({
+      avatar_file_id: avatarFileId,
+      avatar_url: avatarUrl,
+    }),
+  });
+
+  return result.data as LeadListItem;
+};
+
 export const updateLeadStatusAPI = async (
   id: string,
   status: LeadStatus
@@ -133,8 +149,26 @@ export const updateLeadPreferredTimeAPI = async (
   return result.data as LeadListItem;
 };
 
+export const archiveLeadAPI = async (
+  id: string
+): Promise<string> => {
+  const result = await apiClient(`/api/leads/archive/${id}`, {
+    method: "PATCH",
+  });
 
+  return result.data as string;
+};
 
+export const archiveBulkLeadsAPI = async (
+  ids: string[]
+): Promise<string[]> => {
+  const result = await apiClient("/api/leads/archive/bulk", {
+    method: "PATCH",
+    body: JSON.stringify({ ids }),
+  });
+
+  return result.data as string[];
+};
 
 export const deleteLeadAPI = async (
   id: string
@@ -144,4 +178,15 @@ export const deleteLeadAPI = async (
   });
 
   return result.data as string;
+};
+
+export const deleteBulkLeadsAPI = async (
+  ids: string[]
+): Promise<string[]> => {
+  const result = await apiClient("/api/leads/delete/bulk", {
+    method: "DELETE",
+    body: JSON.stringify({ ids }),
+  });
+
+  return result.data as string[];
 };

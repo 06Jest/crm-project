@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import type { CustomerState, CustomerStatus } from "../types/customer";
-import { deleteBulkCustomersAPI, deleteCustomerAPI, fetchCustomerListByIDAPI, fetchCustomersListsAPI, updateCustomerNotesAPI, updateCustomerStatusAPI } from "../services/customerService";
+import { archiveBulkCustomersAPI, archiveCustomerAPI, deleteBulkCustomersAPI, deleteCustomerAPI, fetchCustomerListByIDAPI, fetchCustomersListsAPI, updateCustomerNotesAPI, updateCustomerStatusAPI } from "../services/customerService";
 
 
 const initialState: CustomerState = {
@@ -80,6 +80,40 @@ export const updateCustomerStatus = createAsyncThunk(
         .rejectWithValue(
           'Something went wrong'
         );
+    }
+  }
+);
+
+export const archiveCustomer = createAsyncThunk(
+  'customers/archive-customer',
+  async (id: string, thunkAPI) => {
+    try {
+      return await archiveCustomerAPI(id);
+    } catch (err) {
+      if (err instanceof Error) {
+        return thunkAPI.rejectWithValue(err.message);
+      }
+
+      return thunkAPI.rejectWithValue(
+        'Something went wrong'
+      );
+    }
+  }
+);
+
+export const archiveBulkCustomers = createAsyncThunk(
+  'customers/archive-customers',
+  async (ids: string[], thunkAPI) => {
+    try {
+      return await archiveBulkCustomersAPI(ids);
+    } catch (err) {
+      if (err instanceof Error) {
+        return thunkAPI.rejectWithValue(err.message);
+      }
+
+      return thunkAPI.rejectWithValue(
+        'Something went wrong'
+      );
     }
   }
 );
@@ -205,6 +239,40 @@ const customersSlice = createSlice({
 
     builder.addCase(updateCustomerStatus.rejected, (state, action) => {
       state.error = action.payload as string
+      state.loading = false;
+    });
+
+
+    builder.addCase(archiveCustomer.pending, (state) => {
+      state.error = null;
+    });
+
+    builder.addCase(archiveCustomer.fulfilled, (state, action) => {
+      state.items = state.items.filter(
+        customer => customer.id !== action.payload
+      );
+      state.loading = false;
+    });
+
+    builder.addCase(archiveCustomer.rejected, (state, action) => {
+      state.error = action.payload as string;
+      state.loading = false;
+    });
+
+
+    builder.addCase(archiveBulkCustomers.pending, (state) => {
+      state.error = null;
+    });
+
+    builder.addCase(archiveBulkCustomers.fulfilled, (state, action) => {
+      state.items = state.items.filter(
+        customer => !action.payload.includes(customer.id)
+      );
+      state.loading = false;
+    });
+
+    builder.addCase(archiveBulkCustomers.rejected, (state, action) => {
+      state.error = action.payload as string;
       state.loading = false;
     });
 

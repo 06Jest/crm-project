@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector} from 'react-redux';
 import type { AppDispatch } from '../../../store/store';
 import 'leaflet/dist/leaflet.css';
-
+import { uploadImageToImageKit } from '../../../services/imageKitService';
 
 import {
   Box,
@@ -43,7 +43,7 @@ import CakeIcon from '@mui/icons-material/Cake';
 import BusinessIcon from '@mui/icons-material/Business';
 import WorkIcon from '@mui/icons-material/Work';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
-import PriorityIcon from '@mui/icons-material/PriorityHighRounded';
+import FlagIcon from '@mui/icons-material/Flag';
 import FacebookIcon from '@mui/icons-material/Facebook';
 import InstagramIcon from '@mui/icons-material/Instagram';
 import XIcon from '@mui/icons-material/X';
@@ -60,7 +60,7 @@ import ShareIcon from '@mui/icons-material/Share';
 import WorkOutlineIcon from '@mui/icons-material/WorkOutline';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import ClearIcon from '@mui/icons-material/Clear';
-
+import ArchiveIcon from "@mui/icons-material/Archive";
 import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
 import type { RootState } from '../../../store/store';
 import { fixLeafletIcons } from '../../../utils/fixLeafletIcons';
@@ -68,7 +68,7 @@ import { DEPARTMENTS, GENDERS, INDUSTRIES, PREFERRED_CONTACT_TIMES, SOURCES, SUF
 import ErrorAlert from '../../../components/Error';
 import { formatName } from '../../../utils/formatText';
 import type { LeadCareer, LeadPersonal, LeadSocials, LeadStatus } from '../../../types/lead';
-import { clearError, deleteLead, fetchLeadListByID, updateLeadCareer, updateLeadNotes, updateLeadPersonal, updateLeadPreferredTime, updateLeadSocials, updateLeadSource } from '../../../store/leadsSlice';
+import { archiveLead, clearError, deleteLead, fetchLeadListByID, updateLeadAvatar, updateLeadCareer, updateLeadNotes, updateLeadPersonal, updateLeadPreferredTime, updateLeadSocials, updateLeadSource } from '../../../store/leadsSlice';
 
 fixLeafletIcons();
 
@@ -288,6 +288,7 @@ export default function LeadDetails() {
   const [formSocials, setFormSocials] = useState<SocialsForm>({});
   const [formCareer, setFormCareer] = useState<CareerForm>({});
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [archiveDialogOpen, setArchiveDialogOpen] = useState(false);
   const [newNotes, setNewNotes] = useState("");
   const [hoveredNotes, setHoveredNotes] = useState(false);
   const [isEditingNotes, setIsEditingNotes] = useState(false);
@@ -299,6 +300,15 @@ export default function LeadDetails() {
   const [isUpdatingPreferredTime, setIsUpdatingPreferredTime] = useState(false);
   const [selectedPreferredTime, setSelectedPreferredTime] = useState<PreferredTime | "">("");
   const [updatePreferredTime, setUpdatePreferredTime] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (avatarPreview) {
+        URL.revokeObjectURL(avatarPreview);
+      }
+    };
+  }, [avatarPreview]);
   
   if (!lead && loading) {
     return (
@@ -333,6 +343,32 @@ export default function LeadDetails() {
       </Box>
     );
   }
+
+  
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+
+    if (!file) return;
+
+    setAvatarPreview(URL.createObjectURL(file));
+
+    try {
+      const uploaded = await uploadImageToImageKit(file);
+
+      await dispatch(
+        updateLeadAvatar({
+          id: lead.id,
+          avatarFileId: uploaded.fileId,
+          avatarUrl: uploaded.url,
+        })
+      ).unwrap();
+
+      setAvatarPreview(null);
+    } catch {
+      // Error in state
+    }
+  };
 
     const handleEditNotes = () => {
       setNewNotes(lead?.notes ?? "");
@@ -449,6 +485,17 @@ export default function LeadDetails() {
     }
   };
 
+  const handleArchiveConfirm = async () => {
+    if (loading) return;
+
+    try {
+      await dispatch(archiveLead(lead.id)).unwrap();
+      navigate('/app/leads');
+    } catch {
+      // Error in state
+    }
+  };
+
   const clearSuffix = () => {
     setFormPersonal(prev => ({
       ...prev,
@@ -514,14 +561,14 @@ export default function LeadDetails() {
 
   const priorityIcon = (priority: Priority) => {
     if (priority === 'High') {
-      return <PriorityIcon sx={{
+      return <FlagIcon sx={{
         color: PRIORITY_COLORS['High'],
         border: `1px solid ${PRIORITY_COLORS['High']}`,
         borderRadius: 20,
       }} fontSize='large' />
     }
     if (priority === 'Highest') {
-      return <PriorityIcon sx={{
+      return <FlagIcon sx={{
         color: PRIORITY_COLORS['Highest'],
         border: `1px solid ${PRIORITY_COLORS['Highest']}`,
         borderRadius: 20,
@@ -619,6 +666,7 @@ export default function LeadDetails() {
         >
           <Box sx={{ display: 'flex', flexShrink: 0, flexDirection: 'column', alignItems: 'center' }}>
             <Avatar
+              src={avatarPreview ?? lead.avatar_url ?? undefined}
               sx={{
                 width: { xs: 84, sm: 100 },
                 height: { xs: 84, sm: 100 },
@@ -627,9 +675,55 @@ export default function LeadDetails() {
                 bgcolor: stringToAvatarColor(fullName),
               }}
             >
-              {getInitials(fullName)}
+              {!avatarPreview && !lead.avatar_url && getInitials(fullName)}
             </Avatar>
-            <Box sx={{ display: 'flex', justifyContent: 'center'}}>
+            <Box sx={{ display: 'flex', justifyContent: 'center', gap: 0.5, mt: 0.5 }}>
+              <Button
+                component="label"
+                size="small"
+                sx={{
+                  textTransform: 'none',
+                  fontSize: 11,
+                  minWidth: 0,
+                }}
+              >
+                {lead.avatar_url ? 'Change' : 'Upload'}
+                <input
+                  hidden
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarChange}
+                />
+              </Button>
+
+              {lead.avatar_url && (
+                <Button
+                  size="small"
+                  color="error"
+                  onClick={async () => {
+                    try {
+                      await dispatch(
+                        updateLeadAvatar({
+                          id: lead.id,
+                          avatarFileId: null,
+                          avatarUrl: null,
+                        })
+                      ).unwrap();
+
+                      setAvatarPreview(null);
+                    } catch {
+                      // Error in state
+                    }
+                  }}
+                  sx={{
+                    textTransform: 'none',
+                    fontSize: 11,
+                    minWidth: 0,
+                  }}
+                >
+                  Delete
+                </Button>
+              )}
             </Box>
           </Box>
           <Box sx={{ flex: 1, minWidth: 0, width: '100%', overflowWrap: "anywhere", wordBreak: "break-word", textAlign: { xs: 'center', sm: 'left' } }}>
@@ -809,8 +903,20 @@ export default function LeadDetails() {
                   </Box>
               )}
               <Chip
-                label={formatName(lead.owner.profile.first_name, lead.owner.profile.last_name)}
-                title="Lead owner"
+                label={
+                  lead.assigned
+                    ? formatName(
+                        lead.assigned.profile.first_name,
+                        lead.assigned.profile.last_name
+                      )
+                    : lead.owner
+                      ? formatName(
+                          lead.owner.profile.first_name,
+                          lead.owner.profile.last_name
+                        )
+                      : "Unassigned"
+                }
+                title={lead.assigned ? "Assigned to" : "Lead owner"}
                 size='small'
                 sx={{
                   px: 1,
@@ -883,26 +989,63 @@ export default function LeadDetails() {
                 </Box>
                 )}
           </Box>
-          <Box sx={{ display: 'flex', flexShrink: 0, width: { xs: '100%', sm: 'auto' }, justifyContent: { xs: 'center', sm: 'flex-end' } }}>
+          <Box sx={{ display: 'flex', flexShrink: 0, width: { xs: '100%', sm: 'auto' },
+          flexDirection: 'column', justifyContent: { xs: 'center', sm: 'flex-end' } }}>
+            <Typography
+              sx={{
+                fontSize: 11,
+                color: 'text.secondary',
+                fontWeight: 600,
+                letterSpacing: '0.08em',
+                mt: 0.5,
+                mb: 1,
+              }}
+            >
+              ID: {lead.display_id}
+            </Typography>
             {!isEditingPersonal && (
-              <Button
-                variant='outlined'
-                color='error'
-                startIcon={<DeleteIcon />}
-                onClick={() => setDeleteDialogOpen(true)}
-                sx={{
-                  fontSize: '10px',
-                  fontWeight: 700,
-                  borderRadius: 2,
-                  textTransform: 'none',
-                  transition: 'background-color 0.2s ease',
-                  '&:hover': {
-                    bgcolor: (theme: Theme) => alpha(theme.palette.error.main, 0.06),
-                  },
-                }}
-              >
-                Delete
-              </Button>
+              <Box sx={{ display: 'flex', gap: 1, flexDirection: 'column' }}>
+                <Button
+                  variant="outlined"
+                  startIcon={<ArchiveIcon />}
+                  onClick={() => setArchiveDialogOpen(true)}
+                  sx={{
+                    fontSize: '10px',
+                    fontWeight: 700,
+                    borderRadius: 2,
+                    textTransform: 'none',
+                    color: 'text.secondary',
+                    borderColor: 'divider',
+                    transition: 'background-color 0.2s ease',
+                    '&:hover': {
+                      bgcolor: 'action.hover',
+                      borderColor: 'text.secondary',
+                    },
+                  }}
+                >
+                  Archive
+                </Button>
+
+                <Button
+                  variant="outlined"
+                  color="error"
+                  startIcon={<DeleteIcon />}
+                  onClick={() => setDeleteDialogOpen(true)}
+                  sx={{
+                    fontSize: '10px',
+                    fontWeight: 700,
+                    borderRadius: 2,
+                    textTransform: 'none',
+                    transition: 'background-color 0.2s ease',
+                    '&:hover': {
+                      bgcolor: (theme: Theme) =>
+                        alpha(theme.palette.error.main, 0.06),
+                    },
+                  }}
+                >
+                  Delete
+                </Button>
+              </Box>
             )}
           </Box>
         </Box>
@@ -1390,6 +1533,98 @@ export default function LeadDetails() {
         </Collapse>
       </Paper>
 
+      {archiveDialogOpen && (
+        <Dialog
+          open={archiveDialogOpen}
+          onClose={loading ? undefined : () => setArchiveDialogOpen(false)}
+          maxWidth="xs"
+          fullWidth
+          TransitionComponent={GrowTransition}
+          PaperProps={{ sx: { borderRadius: 3 } }}
+        >
+          <DialogTitle
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1.5,
+              fontWeight: 700,
+              pb: 1,
+            }}
+          >
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 44,
+                height: 44,
+                borderRadius: '50%',
+                bgcolor: (theme: Theme) =>
+                  alpha(theme.palette.warning.main, 0.1),
+                color: 'warning.main',
+                flexShrink: 0,
+              }}
+            >
+              <WarningAmberRoundedIcon />
+            </Box>
+
+            Archive lead?
+          </DialogTitle>
+
+          <DialogContent>
+            <DialogContentText sx={{ fontSize: '0.9rem' }}>
+              Are you sure you want to archive{' '}
+              <Box
+                component="span"
+                sx={{ fontWeight: 700, color: 'text.primary' }}
+              >
+                {lead.first_name} {lead.last_name}
+              </Box>
+              ? You can restore this lead later from Archives.
+            </DialogContentText>
+          </DialogContent>
+
+          <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
+            <Button
+              onClick={() => setArchiveDialogOpen(false)}
+              color="inherit"
+              disabled={loading}
+              sx={{
+                textTransform: 'none',
+                fontWeight: 600,
+                borderRadius: 2,
+              }}
+            >
+              Cancel
+            </Button>
+
+            <Button
+              color="warning"
+              variant="contained"
+              disableElevation
+              onClick={handleArchiveConfirm}
+              disabled={loading}
+              startIcon={
+                loading ? (
+                  <CircularProgress size={14} color="inherit" />
+                ) : undefined
+              }
+              sx={{
+                textTransform: 'none',
+                fontWeight: 700,
+                borderRadius: 2,
+                transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                '&:hover': {
+                  transform: 'translateY(-1px)',
+                  boxShadow: '0 4px 10px rgba(0,0,0,0.2)',
+                },
+              }}
+            >
+              Archive
+            </Button>
+          </DialogActions>
+        </Dialog>
+      )}
       {deleteDialogOpen && (
         <Dialog
           open={deleteDialogOpen}

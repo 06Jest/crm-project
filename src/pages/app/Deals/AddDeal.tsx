@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch } from "../../../store/store";
 import { useNavigate } from "react-router-dom";
 import { type RootState } from "../../../store/store";
-
+import { fetchOrgMembers } from "../../../store/organizationMemberSlice";
 import {
   Box,
   Paper,
@@ -26,6 +26,10 @@ import { useAuth } from "../../../hooks/useAuth";
 export default function AddDeal() {
   const { items: contacts, loaded, loading, error} = useSelector((state:RootState) => state.contacts);
   const { loading:  loadingDeals,error: errorDeals} = useSelector((state:RootState) => state.deals);
+  const {
+    items: members,
+    loaded: mLd,
+  } = useSelector((state: RootState) => state.orgmembers);
   const { user, loading: userLoading } = useAuth();
   const dispatch = useDispatch<AppDispatch>();
   const [submitting, setSubmitting] = useState(false);
@@ -37,6 +41,7 @@ export default function AddDeal() {
     contact_id: null,
     title: "",
     stage: 'Prospecting' as DealStage,
+    assigned_to: "",
     notes: "",
     value: 0,
   });
@@ -50,9 +55,13 @@ export default function AddDeal() {
       if (user && !loaded) {
         await dispatch(fetchContactsLists()).unwrap();
       }
+
+      if (user && !mLd) {
+        await dispatch(fetchOrgMembers()).unwrap();
+      }
     };
     loadData();
-  }, [userLoading, loaded, loading, user, dispatch]);
+  }, [userLoading, loaded, loading, mLd, user, dispatch]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -79,6 +88,7 @@ export default function AddDeal() {
     try {
        const newDeal = {
         contact_id: form.contact_id!,
+        assigned_to: form.assigned_to || null,
         title: form.title,
         stage: form.stage,
         notes: form.notes,
@@ -191,6 +201,29 @@ export default function AddDeal() {
                 </MenuItem>
                 )
               })}
+            </TextField>
+            <TextField
+              select
+              label="Assigned To"
+              name="assigned_to"
+              value={form.assigned_to}
+              onChange={handleChange}
+              size="small"
+              fullWidth
+              sx={{
+                fontSize: 13,
+                '& .MuiOutlinedInput-root': { borderRadius: 2 },
+              }}
+            >
+              <MenuItem value="">
+                Unassigned
+              </MenuItem>
+
+              {members.map((member) => (
+                <MenuItem key={member.id} value={member.id}>
+                  {member.profile.first_name} {member.profile.last_name}
+                </MenuItem>
+              ))}
             </TextField>
             <TextField
                 required

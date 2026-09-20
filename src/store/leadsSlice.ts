@@ -13,6 +13,10 @@ import {
   updateLeadPriorityAPI,
   updateLeadPreferredTimeAPI,
   fetchLeadListByIDAPI,
+  updateLeadAvatarAPI,
+  archiveLeadAPI,
+  archiveBulkLeadsAPI,
+  deleteBulkLeadsAPI,
 } from '../services/leadService';
 import type { PreferredTime, Priority, Source } from "../types/global";
 
@@ -137,6 +141,31 @@ export const updateLeadSocials = createAsyncThunk(
   }
 );
 
+export const updateLeadAvatar = createAsyncThunk(
+  'leads/update/avatar',
+  async ({ id, avatarFileId, avatarUrl }:{
+      id: string;
+      avatarFileId: string | null;
+      avatarUrl: string | null;
+    },thunkAPI) => {
+    try {
+      return await updateLeadAvatarAPI(
+        id,
+        avatarFileId,
+        avatarUrl
+      );
+    } catch (err) {
+      if (err instanceof Error) {
+        return thunkAPI.rejectWithValue(err.message);
+      }
+      return thunkAPI
+        .rejectWithValue(
+          'Something went wrong'
+        );
+    }
+  }
+);
+
 export const updateLeadStatus = createAsyncThunk(
   'leads/update/status',
   async ({ id, status }:{ id: string, status: LeadStatus}
@@ -223,6 +252,58 @@ export const updateLeadPreferredTime = createAsyncThunk(
         .rejectWithValue(
           'Something went wrong'
         );
+    }
+  }
+);
+
+export const archiveBulkLeads = createAsyncThunk(
+  'leads/archive-bulk',
+  async (ids: string[], thunkAPI) => {
+    try {
+      return await archiveBulkLeadsAPI(ids);
+    } catch (err) {
+      if (err instanceof Error) {
+        return thunkAPI.rejectWithValue(err.message);
+      }
+
+      return thunkAPI.rejectWithValue(
+        'Something went wrong'
+      );
+    }
+  }
+);
+
+
+export const archiveLead = createAsyncThunk(
+  'leads/archive',
+  async (id: string, thunkAPI) => {
+    try {
+      return await archiveLeadAPI(id);
+    } catch (err) {
+      if (err instanceof Error) {
+        return thunkAPI.rejectWithValue(err.message);
+      }
+
+      return thunkAPI.rejectWithValue(
+        'Something went wrong'
+      );
+    }
+  }
+);
+
+export const deleteBulkLeads = createAsyncThunk(
+  'leads/delete-bulk',
+  async (ids: string[], thunkAPI) => {
+    try {
+      return await deleteBulkLeadsAPI(ids);
+    } catch (err) {
+      if (err instanceof Error) {
+        return thunkAPI.rejectWithValue(err.message);
+      }
+
+      return thunkAPI.rejectWithValue(
+        'Something went wrong'
+      );
     }
   }
 );
@@ -366,6 +447,22 @@ const leadSlice = createSlice({
     });
 
 
+    builder.addCase(updateLeadAvatar.pending, (state) => {
+      state.error = null;
+    });
+
+    builder.addCase(updateLeadAvatar.fulfilled, (state, action) => {
+      const index = state.items.findIndex(l => l.id === action.payload.id);
+      if(index !== -1) state.items[index] = action.payload;
+      state.loading = false;
+    });
+
+    builder.addCase(updateLeadAvatar.rejected, (state, action) => {
+      state.error = action.payload as string
+      state.loading = false;
+    });
+
+
 
     builder.addCase(updateLeadStatus.pending, (state) => {
       state.error = null;
@@ -443,6 +540,61 @@ const leadSlice = createSlice({
 
     builder.addCase(updateLeadPreferredTime.rejected, (state, action) => {
       state.error = action.payload as string
+      state.loading = false;
+    });
+
+
+    builder.addCase(archiveBulkLeads.pending, (state) => {
+      state.error = null;
+      state.loading = true;
+    });
+
+    builder.addCase(archiveBulkLeads.fulfilled, (state, action) => {
+      state.loading = false;
+
+      state.items = state.items.filter(
+        (lead) => !action.payload.includes(lead.id)
+      );
+    });
+
+    builder.addCase(archiveBulkLeads.rejected, (state, action) => {
+      state.error = action.payload as string;
+      state.loading = false;
+    });
+
+
+    builder.addCase(archiveLead.pending, (state) => {
+      state.error = null;
+    });
+
+    builder.addCase(archiveLead.fulfilled, (state, action) => {
+      state.loading = false;
+      state.items = state.items.filter(
+        (lead) => lead.id !== action.payload
+      );
+    });
+
+    builder.addCase(archiveLead.rejected, (state, action) => {
+      state.error = action.payload as string;
+      state.loading = false;
+    });
+
+    
+    builder.addCase(deleteBulkLeads.pending, (state) => {
+      state.error = null;
+      state.loading = true;
+    });
+
+    builder.addCase(deleteBulkLeads.fulfilled, (state, action) => {
+      state.loading = false;
+
+      state.items = state.items.filter(
+        (lead) => !action.payload.includes(lead.id)
+      );
+    });
+
+    builder.addCase(deleteBulkLeads.rejected, (state, action) => {
+      state.error = action.payload as string;
       state.loading = false;
     });
 

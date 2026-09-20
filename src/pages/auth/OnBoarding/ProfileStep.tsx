@@ -1,4 +1,10 @@
-import { useState, type ReactElement } from 'react';
+import {
+  useRef,
+  useState,
+  type ChangeEvent,
+  type ReactElement,
+} from 'react';
+
 import {
   Box,
   Stack,
@@ -13,12 +19,14 @@ import {
 } from '@mui/material';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import { completeProfileSetupAPI } from "../../../services/onBoardingService";
-import { type CompleteProfileDTO } from '../../../types/profile';
+import { type CompleteProfileDTO, type DisplayProfile } from '../../../types/profile';
 import ErrorAlert from '../../../components/Error';
 import { JOB_TITLE_OPTIONS } from '../../../types/global';
+import { getImageKitAuthAPI } from "../../../services/imageKitService";
 
 interface ProfileStepProps {
   onNext: () => void;
+  initialProfile: DisplayProfile;
 }
 
 interface FormErrors {
@@ -26,12 +34,15 @@ interface FormErrors {
   last_name?: string;
 }
 
-export default function ProfileStep({ onNext }: ProfileStepProps): ReactElement {
+export default function ProfileStep({
+  onNext,
+  initialProfile,
+}: ProfileStepProps): ReactElement {
   const [formData, setFormData] = useState<CompleteProfileDTO>({
-    first_name: '',
-    last_name: '',
-    avatar_url: null,
-    job_title: '',
+    first_name: initialProfile.first_name ?? '',
+    last_name: initialProfile.last_name ?? '',
+    avatar_url: initialProfile.avatar_url ?? null,
+    job_title: initialProfile.job_title ?? '',
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
@@ -39,6 +50,10 @@ export default function ProfileStep({ onNext }: ProfileStepProps): ReactElement 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(
+    initialProfile.avatar_url ?? null
+  );
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
@@ -80,9 +95,65 @@ export default function ProfileStep({ onNext }: ProfileStepProps): ReactElement 
       }));
     }
   };
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleAvatarClick = (): void => {
-    console.log('Avatar upload clicked');
+    fileInputRef.current?.click();
+  };
+
+  const handleAvatarChange = (
+    event: ChangeEvent<HTMLInputElement>
+  ): void => {
+    const file = event.target.files?.[0];
+
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setError("Please select an image file.");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Image must be smaller than 5MB.");
+      return;
+    }
+
+    setError("");
+    setAvatarFile(file);
+
+    const previewUrl = URL.createObjectURL(file);
+    setAvatarPreview(previewUrl);
+  };
+
+  const uploadAvatar = async (file: File): Promise<string> => {
+    const auth = await getImageKitAuthAPI();
+
+    const formData = new FormData();
+
+    formData.append("file", file);
+    formData.append("fileName", file.name);
+    formData.append("publicKey", import.meta.env.VITE_IMAGEKIT_PUBLIC_KEY);
+    formData.append("token", auth.token);
+    formData.append("expire", auth.expire.toString());
+    formData.append("signature", auth.signature);
+
+    const response = await fetch(
+      "https://upload.imagekit.io/api/v1/files/upload",
+      {
+        method: "POST",
+        body: formData,
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data?.message ?? "Failed to upload avatar."
+      );
+    }
+
+    return data.url;
   };
 
   const handleContinue = async () => {
@@ -91,7 +162,16 @@ export default function ProfileStep({ onNext }: ProfileStepProps): ReactElement 
     setLoading(true);
 
     try {
-      await completeProfileSetupAPI(formData);
+      let avatarUrl = formData.avatar_url;
+
+      if (avatarFile) {
+        avatarUrl = await uploadAvatar(avatarFile);
+      }
+
+      await completeProfileSetupAPI({
+        ...formData,
+        avatar_url: avatarUrl,
+      });
 
       onNext();
     } catch (err) {
@@ -126,25 +206,31 @@ export default function ProfileStep({ onNext }: ProfileStepProps): ReactElement 
 
       <Box sx={{ display: 'flex', justifyContent: 'center', py: 1 }}>
         <Box sx={{ position: 'relative', width: 'fit-content' }}>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            hidden
+            onChange={handleAvatarChange}
+          />
           <Avatar
+            src={avatarPreview ?? undefined}
+            alt={`${formData.first_name} ${formData.last_name}`}
             sx={{
               width: 84,
               height: 84,
               fontSize: '1.9rem',
               fontWeight: 700,
-              bgcolor: 'primary.main',
+              bgcolor: avatarPreview ? 'transparent' : 'primary.main',
               border: '3px solid',
               borderColor: 'background.paper',
               boxShadow: '0 0 0 1px rgba(0,0,0,0.06)',
               transition: 'transform 0.2s ease',
             }}
           >
-            {formData.avatar_url ? (
-              <img src={formData.avatar_url} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            ) : (
-              initials || 'U'
-            )}
+            {!avatarPreview && (initials || 'U')}
           </Avatar>
+
           <Box
             onClick={handleAvatarClick}
             sx={{

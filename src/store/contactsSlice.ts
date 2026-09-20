@@ -14,6 +14,9 @@ import {
   updateContactPriorityAPI,
   updateContactPreferredTimeAPI,
   fetchContactListByIDAPI,
+  updateContactAvatarAPI,
+  archiveBulkContactsAPI,
+  archiveContactAPI,
 } from '../services/contactService';
 import type { PreferredTime, Priority, Source } from "../types/global";
 
@@ -155,6 +158,32 @@ export const updateContactCareer = createAsyncThunk(
   }
 );
 
+
+export const updateContactAvatar = createAsyncThunk(
+  'contacts/update/avatar',
+  async ({ id, avatarFileId, avatarUrl }:{
+      id: string;
+      avatarFileId: string | null;
+      avatarUrl: string | null;
+    },thunkAPI) => {
+    try {
+      return await updateContactAvatarAPI(
+        id,
+        avatarFileId,
+        avatarUrl
+      );
+    } catch (err) {
+      if (err instanceof Error) {
+        return thunkAPI.rejectWithValue(err.message);
+      }
+      return thunkAPI
+        .rejectWithValue(
+          'Something went wrong'
+        );
+    }
+  }
+);
+
 export const updateContactNotes = createAsyncThunk(
   'contacts/update/notes',
   async ({ id, notes }:{ id: string, notes: string}
@@ -223,6 +252,40 @@ export const updateContactPreferredTime = createAsyncThunk(
         .rejectWithValue(
           'Something went wrong'
         );
+    }
+  }
+);
+
+export const archiveContact = createAsyncThunk(
+  'contacts/archive',
+  async (id: string, thunkAPI) => {
+    try {
+      return await archiveContactAPI(id);
+    } catch (err) {
+      if (err instanceof Error) {
+        return thunkAPI.rejectWithValue(err.message);
+      }
+
+      return thunkAPI.rejectWithValue(
+        'Something went wrong'
+      );
+    }
+  }
+);
+
+export const archiveBulkContacts = createAsyncThunk(
+  'contacts/archive/bulk',
+  async (ids: string[], thunkAPI) => {
+    try {
+      return await archiveBulkContactsAPI(ids);
+    } catch (err) {
+      if (err instanceof Error) {
+        return thunkAPI.rejectWithValue(err.message);
+      }
+
+      return thunkAPI.rejectWithValue(
+        'Something went wrong'
+      );
     }
   }
 );
@@ -398,6 +461,23 @@ const contactsSlice = createSlice({
 
 
 
+    builder.addCase(updateContactAvatar.pending, (state) => {
+      state.error = null;
+    });
+
+    builder.addCase(updateContactAvatar.fulfilled, (state, action) => {
+      const index = state.items.findIndex(c => c.id === action.payload.id);
+      if(index !== -1) state.items[index] = action.payload;
+      state.loading = false;
+    });
+
+    builder.addCase(updateContactAvatar.rejected, (state, action) => {
+      state.error = action.payload as string
+      state.loading = false;
+    });
+
+
+
     builder.addCase(updateContactNotes.pending, (state) => {
       state.error = null;
     });
@@ -457,6 +537,40 @@ const contactsSlice = createSlice({
     });
 
     builder.addCase(updateContactPreferredTime.rejected, (state, action) => {
+      state.error = action.payload as string;
+      state.loading = false;
+    });
+
+
+    builder.addCase(archiveContact.pending, (state) => {
+      state.error = null;
+    });
+
+    builder.addCase(archiveContact.fulfilled, (state, action) => {
+      state.items = state.items.filter(
+        (contact) => contact.id !== action.payload
+      );
+      state.loading = false;
+    });
+
+    builder.addCase(archiveContact.rejected, (state, action) => {
+      state.error = action.payload as string;
+      state.loading = false;
+    });
+
+    builder.addCase(archiveBulkContacts.pending, (state) => {
+      state.error = null;
+      state.loading = true;
+    });
+
+    builder.addCase(archiveBulkContacts.fulfilled, (state, action) => {
+      state.items = state.items.filter(
+        (contact) => !action.payload.includes(contact.id)
+      );
+      state.loading = false;
+    });
+
+    builder.addCase(archiveBulkContacts.rejected, (state, action) => {
       state.error = action.payload as string;
       state.loading = false;
     });

@@ -24,7 +24,7 @@ const LEGAL_NAME = 'Jestony Silvano';
 const COUNTRY = 'Philippines';
 const WEBSITE_DISPLAY = 'uniThreadCRM.com';
 const WEBSITE_HREF = 'https://unithreadcrm.com';
-const CONTACT_EMAIL = 'silvanojestony27@gmail.com';
+const CONTACT_EMAIL = 'uni.mailer1@gmail.com';
 
 const HEADER_OFFSET = 96; 
 

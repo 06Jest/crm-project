@@ -89,7 +89,7 @@ export default function Header() {
       .join(' ') || user?.email || '';
 
   const avatarLetter = displayName[0]?.toUpperCase() || '?';
-  const avatarSrc = undefined;
+  const avatarSrc = user?.avatar_url ?? undefined;
 
   const goHome = () => {
     setNavOpen(false);
@@ -316,6 +316,14 @@ export default function Header() {
                 </MenuItem>
                 <MenuItem onClick={() => { handleMenuClose(); navigate('/app/workspace'); }}>
                   Workspace
+                </MenuItem>
+                <MenuItem
+                  onClick={() => {
+                    handleMenuClose();
+                    navigate("/app/archives");
+                  }}
+                >
+                  Archives
                 </MenuItem>
                 <MenuItem onClick={() => { handleMenuClose(); navigate('/app/settings'); }}>
                   Settings
