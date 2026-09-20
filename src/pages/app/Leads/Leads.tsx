@@ -979,6 +979,7 @@ const handleConfirmCloseLead = async () => {
           <Button
             size="small"
             onClick={(e) => {
+              e.stopPropagation();
               setStatusAnchorEl(e.currentTarget);
               setSelectedLead(params.row);
             }}
