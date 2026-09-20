@@ -3,16 +3,23 @@ import type { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "../../../store/store";
-import { DataGrid, type GridColDef } from '@mui/x-data-grid';
+import {
+  DataGrid,
+  type GridColDef,
+  type GridRowSelectionModel,
+} from '@mui/x-data-grid';
 import ViewKanbanIcon from '@mui/icons-material/ViewKanban';
 import TableRowsIcon from '@mui/icons-material/TableRows';
 
 import {
-  deleteLead, 
+  deleteLead,
+  deleteBulkLeads,
+  archiveBulkLeads,
   moveLeadLocally,
   updateLeadStatus,
   clearError,
   fetchLeadsLists,
+  archiveLead,
 } from '../../../store/leadsSlice';
 import { LEAD_STATUSES, type Lead, type LeadStatus } from '../../../types/lead';
 
@@ -62,6 +69,7 @@ import RefreshIcon from "@mui/icons-material/Refresh";
 import { type Priority } from "../../../types/global";
 import { formatName } from "../../../utils/formatText";
 import { calculateAge } from "../../../utils/calculateAge";
+import ArchiveIcon from "@mui/icons-material/Archive";
 
 const PRIORITY_COLORS: Record<Priority, string> = {
   Highest: '#df3232',
@@ -192,6 +200,7 @@ function LoadMoreSentinel({ onVisible }: { onVisible: () => void }) {
 
 function LeadCardSkeleton({ reducedMotion }: { reducedMotion: boolean }) {
   const anim = reducedMotion ? false : 'wave';
+
   return (
     <Card
       sx={{
@@ -202,28 +211,145 @@ function LeadCardSkeleton({ reducedMotion }: { reducedMotion: boolean }) {
         boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
       }}
     >
-      <CardContent sx={{ p: 1.25, '&:last-child': { pb: 1.25 }, display: 'flex', gap: 1.25 }}>
-        <Skeleton
-          variant="circular"
-          width={38}
-          height={38}
-          animation={anim}
-          sx={{ flexShrink: 0, mt: '2px' }}
-        />
+      <CardContent
+        sx={{
+          p: 1.25,
+          '&:last-child': { pb: 1.25 },
+          display: 'flex',
+          gap: 1.25,
+        }}
+      >
+        {/* Avatar + priority */}
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
+          <Skeleton
+            variant="circular"
+            width={38}
+            height={38}
+            animation={anim}
+            sx={{ flexShrink: 0, mt: '2px' }}
+          />
+
+          <Skeleton
+            variant="circular"
+            width={20}
+            height={20}
+            animation={anim}
+            sx={{ mb: 0.7 }}
+          />
+        </Box>
+
+        {/* Lead content */}
         <Box flex={1} minWidth={0}>
-          <Skeleton variant="text" width="65%" height={18} animation={anim} />
-          <Skeleton variant="text" width="40%" height={14} animation={anim} sx={{ mt: 0.5 }} />
-          <Stack direction="row" spacing={0.75} sx={{ mt: 0.75 }}>
-            <Skeleton variant="rounded" width={58} height={18} animation={anim} />
-            <Skeleton variant="rounded" width={68} height={18} animation={anim} />
+          {/* Name + ID */}
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              gap: 1,
+            }}
+          >
+            <Skeleton
+              variant="text"
+              width="58%"
+              height={20}
+              animation={anim}
+            />
+
+            <Skeleton
+              variant="text"
+              width={42}
+              height={14}
+              animation={anim}
+            />
+          </Box>
+
+          {/* Notes */}
+          <Skeleton
+            variant="text"
+            width="88%"
+            height={15}
+            animation={anim}
+            sx={{ mt: 0.25 }}
+          />
+
+          {/* Chips */}
+          <Stack
+            direction="row"
+            spacing={0.75}
+            sx={{
+              mt: 0.5,
+              flexWrap: 'wrap',
+            }}
+          >
+            <Skeleton
+              variant="rounded"
+              width={82}
+              height={18}
+              animation={anim}
+              sx={{ borderRadius: 1.5 }}
+            />
+
+            <Skeleton
+              variant="rounded"
+              width={96}
+              height={18}
+              animation={anim}
+              sx={{ borderRadius: 1.5 }}
+            />
           </Stack>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 0.75 }}>
-            <Stack direction="row" spacing={0.5}>
-              <Skeleton variant="circular" width={22} height={22} animation={anim} />
-              <Skeleton variant="circular" width={22} height={22} animation={anim} />
-              <Skeleton variant="circular" width={22} height={22} animation={anim} />
+
+          {/* Bottom actions */}
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              mt: 0.5,
+            }}
+          >
+            <Stack direction="row" spacing={0.25}>
+              <Skeleton
+                variant="circular"
+                width={28}
+                height={28}
+                animation={anim}
+              />
+              <Skeleton
+                variant="circular"
+                width={28}
+                height={28}
+                animation={anim}
+              />
+              <Skeleton
+                variant="circular"
+                width={28}
+                height={28}
+                animation={anim}
+              />
             </Stack>
-            <Skeleton variant="circular" width={22} height={22} animation={anim} />
+
+            <Stack direction="row" spacing={0.25}>
+              <Skeleton
+                variant="circular"
+                width={24}
+                height={24}
+                animation={anim}
+              />
+              <Skeleton
+                variant="circular"
+                width={24}
+                height={24}
+                animation={anim}
+              />
+            </Stack>
           </Box>
         </Box>
       </CardContent>
@@ -238,6 +364,8 @@ export default function Leads() {
   const [openCloseConfirmation, setOpenCloseConfirmation] = useState(false);
   const [dropResult, setDropResult] = useState<DropResult | null>(null)
   const [openDelete, setOpenDelete] = useState(false);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [bulkArchiveOpen, setBulkArchiveOpen] = useState(false);
   const [invalid, setInvalid] = useState('');
   const [openAddContact, setOpenAddContact] = useState(false);
   const [openInvalid, setOpenInvalid] = useState(false);
@@ -247,6 +375,11 @@ export default function Leads() {
   const [hoveredLead, setHoveredLead] = useState<Lead | null>(null);
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [view, setView] = useState<'kanban' | 'table'>('kanban');
+  const [selectedLeadIds, setSelectedLeadIds] =
+    useState<GridRowSelectionModel>({
+      type: 'include',
+      ids: new Set(),
+    });
   const [statusAnchorEl, setStatusAnchorEl] =
     useState<null | HTMLElement>(null);
 
@@ -504,6 +637,7 @@ const handleConfirmCloseLead = async () => {
     const query = search[status].toLowerCase().trim();
 
     return leads
+      .filter((lead) => !lead.is_archived)
       .filter((lead) => lead.status === status)
       .filter((lead) => {
         if (!query) return true;
@@ -521,6 +655,68 @@ const handleConfirmCloseLead = async () => {
 
         return searchableText.includes(query);
       });
+  };
+
+
+  const handleArchive = async (id: string) => {
+    try {
+      await dispatch(archiveLead(id)).unwrap();
+      await dispatch(fetchLeadsLists()).unwrap();
+    } catch (error) {
+      console.error("Archive failed:", error);
+    }
+  };
+
+  const getSelectedLeadIds = () => {
+    if (selectedLeadIds.type === 'include') {
+      return Array.from(selectedLeadIds.ids).map(String);
+    }
+
+    const excludedIds = new Set(
+      Array.from(selectedLeadIds.ids).map(String)
+    );
+
+    return tableRows
+      .map((lead) => String(lead.id))
+      .filter((id) => !excludedIds.has(id));
+  };
+
+  const handleBulkArchive = async () => {
+    if (loading) return;
+
+    try {
+      const ids = getSelectedLeadIds();
+
+      await dispatch(archiveBulkLeads(ids)).unwrap();
+
+      setSelectedLeadIds({
+        type: 'include',
+        ids: new Set(),
+      });
+
+      setBulkArchiveOpen(false);
+    } catch {
+      // Error handled by Redux state
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (loading) return;
+
+    try {
+      const ids = getSelectedLeadIds();
+
+      await dispatch(deleteBulkLeads(ids)).unwrap();
+
+      setSelectedLeadIds({
+        type: 'include',
+        ids: new Set(),
+      });
+
+      setBulkDeleteOpen(false);
+    } catch {
+      // Error handled by Redux state
+    }
   };
 
   const handleStatusChange = async (status: LeadStatus) => {
@@ -807,22 +1003,57 @@ const handleConfirmCloseLead = async () => {
         <Box sx={{
           display: 'flex',
           flexDirection: 'column',
-          width: "100%",
-          minWidth: 0,
+          width: { xs: '92%', sm: '85vw', md: '80vw' },
+          maxWidth: 1400,
           mx: 'auto',
           mb: 1,
         }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
-            <Typography variant="h4" fontWeight={700}>
+          <Box
+           sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: { xs: 0.75, sm: 1 },
+          }}>
+            <Typography sx={{ fontSize: { sm: 16, md: 18, lg: 20 } }} fontWeight={700}>
               Leads
             </Typography>
-            <Skeleton
-              variant="rounded"
-              width={40}
-              height={40}
-              animation={prefersReducedMotion ? false : 'wave'}
-              sx={{ borderRadius: 10 }}
-            />
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: { xs: 0.5, sm: 0.75 },
+              }}
+            >
+              <Skeleton
+                variant="circular"
+                width={32}
+                height={32}
+                animation={prefersReducedMotion ? false : "wave"}
+              />
+
+              <Skeleton
+                variant="circular"
+                width={32}
+                height={32}
+                animation={prefersReducedMotion ? false : "wave"}
+              />
+
+              <Skeleton
+                variant="circular"
+                width={32}
+                height={32}
+                animation={prefersReducedMotion ? false : "wave"}
+              />
+
+              <Skeleton
+                variant="circular"
+                width={32}
+                height={32}
+                animation={prefersReducedMotion ? false : "wave"}
+              />
+            </Box>
           </Box>
         </Box>
         <Box
@@ -1009,6 +1240,88 @@ const handleConfirmCloseLead = async () => {
               <RefreshIcon />
             )}
           </IconButton>
+          {view === 'table' && (
+            <>
+              <Tooltip
+                title={
+                  selectedLeadIds.type === "exclude" ||
+                  selectedLeadIds.ids.size > 0
+                    ? "Archive selected"
+                    : "Select leads to archive"
+                }
+              >
+                <span>
+                  <IconButton
+                    onClick={() => setBulkArchiveOpen(true)}
+                    disabled={
+                      selectedLeadIds.type !== "exclude" &&
+                      selectedLeadIds.ids.size === 0
+                    }
+                    sx={{
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      borderRadius: 2,
+                    }}
+                  >
+                    <ArchiveIcon
+                      sx={{
+                        opacity:
+                          selectedLeadIds.type === "exclude" ||
+                          selectedLeadIds.ids.size > 0
+                            ? 1
+                            : 0.3,
+                        fontSize: { xs: 15, sm: 17, md: 20 },
+                      }}
+                    />
+                  </IconButton>
+                </span>
+              </Tooltip>
+
+              <Tooltip
+                title={
+                  selectedLeadIds.type === "exclude" ||
+                  selectedLeadIds.ids.size > 0
+                    ? "Delete selected"
+                    : "Select leads to delete"
+                }
+              >
+                <span>
+                  <IconButton
+                    onClick={() => setBulkDeleteOpen(true)}
+                    disabled={
+                      selectedLeadIds.type !== "exclude" &&
+                      selectedLeadIds.ids.size === 0
+                    }
+                    sx={{
+                      border: '1px solid',
+                      borderColor:
+                        selectedLeadIds.type === "exclude" ||
+                        selectedLeadIds.ids.size > 0
+                          ? alpha('#e95858', 0.4)
+                          : 'divider',
+                      borderRadius: 2,
+                    }}
+                  >
+                    <DeleteIcon
+                      sx={{
+                        opacity:
+                          selectedLeadIds.type === "exclude" ||
+                          selectedLeadIds.ids.size > 0
+                            ? 1
+                            : 0.3,
+                        color:
+                          selectedLeadIds.type === "exclude" ||
+                          selectedLeadIds.ids.size > 0
+                            ? '#e95858'
+                            : 'text.disabled',
+                        fontSize: { xs: 15, sm: 17, md: 20 },
+                      }}
+                    />
+                  </IconButton>
+                </span>
+              </Tooltip>
+            </>
+          )}
         </Box>
       </Box>
 
@@ -1230,7 +1543,7 @@ const handleConfirmCloseLead = async () => {
                                   </Typography>
 
                                     <Typography
-                                      title="Lead Notes"
+                                      title="Lead ID"
                                       variant="caption"
                                       color="text.secondary"
                                       display="block"
@@ -1322,18 +1635,39 @@ const handleConfirmCloseLead = async () => {
                                       </IconButton>
                                     </Tooltip>
                                   </Stack>
-                                  <Tooltip title="Delete lead">
-                                    <IconButton
-                                      size="small"
-                                      color="error"
-                                      onClick={(e) =>{
-                                        e.stopPropagation();
-                                         handleOpenDelete(lead)
-                                      }}
-                                    >
-                                      <DeleteIcon fontSize="small" />
-                                    </IconButton>
-                                  </Tooltip>
+                                  <Stack direction="row">
+                                    <Tooltip title="Archive lead">
+                                      <IconButton
+                                        size="small"
+                                        sx={{ p: 0.1 }}
+                                        onClick={async (e) => {
+                                          e.stopPropagation();
+
+                                          try {
+                                            await handleArchive(lead.id);
+                                          } catch {
+                                            // Error handled by Redux state
+                                          }
+                                        }}
+                                      >
+                                        <ArchiveIcon sx={{ fontSize: 16 }} />
+                                      </IconButton>
+                                    </Tooltip>
+
+                                    <Tooltip title="Delete lead">
+                                      <IconButton
+                                        size="small"
+                                        color="error"
+                                        sx={{ p: 0.1 }}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleOpenDelete(lead);
+                                        }}
+                                      >
+                                        <DeleteIcon sx={{ fontSize: 16 }} />
+                                      </IconButton>
+                                    </Tooltip>
+                                  </Stack>
                                 </Box> 
                               </Box>
                               
@@ -1374,52 +1708,60 @@ const handleConfirmCloseLead = async () => {
           }}
         >
           <DataGrid
-            sx={{
-              minHeight: 800,
-              minWidth: 1200,
-              mx: 1,
-              mb: 1,
-              border: 'none',
-              borderRadius: 3,
-              fontSize: '0.85rem',
-              overflow: 'auto',
-              '& .MuiDataGrid-columnHeaders': {
-                bgcolor: (theme) =>
-                  alpha(theme.palette.text.primary, 0.03),
-                borderRadius: 2,
-              },
-              '& .MuiDataGrid-columnHeaderTitle': {
-                fontWeight: 700,
-                fontSize: '0.75rem',
-                textTransform: 'uppercase',
-                letterSpacing: 0.3,
-                opacity: 0.7,
-              },
-              '& .MuiDataGrid-row:hover': {
-                bgcolor: (theme) =>
-                  alpha(theme.palette.primary.main, 0.05),
-              },
-              '& .display-id-cell': {
-                fontSize: '11px',
-              },
-              '& .MuiDataGrid-cell:focus, & .MuiDataGrid-cell:focus-within': {
-                outline: 'none',
-              },
-            }}
-            rows={tableRows}
-            columns={columns}
-            initialState={{
-              pagination: {
-                paginationModel: {
-                  page: 0,
-                  pageSize: 10,
+              sx={{
+                minHeight: 800,
+                minWidth: 1200,
+                mx: 1,
+                mb: 1,
+                border: 'none',
+                borderRadius: 3,
+                fontSize: '0.85rem',
+                overflow: 'auto',
+                '& .MuiDataGrid-columnHeaders': {
+                  bgcolor: (theme) =>
+                    alpha(theme.palette.text.primary, 0.03),
+                  borderRadius: 2,
                 },
-              },
-            }}
-            pageSizeOptions={[30, 50]}
-            rowHeight={30}
-            disableRowSelectionOnClick
-          />
+                '& .MuiDataGrid-columnHeaderTitle': {
+                  fontWeight: 700,
+                  fontSize: '0.75rem',
+                  textTransform: 'uppercase',
+                  letterSpacing: 0.3,
+                  opacity: 0.7,
+                },
+                '& .MuiDataGrid-row:hover': {
+                  bgcolor: (theme) =>
+                    alpha(theme.palette.primary.main, 0.05),
+                },
+                '& .display-id-cell': {
+                  fontSize: '11px',
+                },
+                '& .MuiDataGrid-cell:focus, & .MuiDataGrid-cell:focus-within': {
+                  outline: 'none',
+                },
+              }}
+              rows={tableRows}
+              columns={columns}
+              checkboxSelection
+              disableRowSelectionOnClick
+              rowSelectionModel={selectedLeadIds}
+              onRowSelectionModelChange={(newSelection) => {
+                setSelectedLeadIds(newSelection);
+              }}
+              onRowClick={(params) => {
+                navigate(`/app/leads/${params.row.id}`);
+              }}
+              initialState={{
+                pagination: {
+                  paginationModel: {
+                    page: 0,
+                    pageSize: 10,
+                  },
+                },
+              }}
+              pageSizeOptions={[30, 50]}
+              rowHeight={30}
+            />
         </Box>
       )}
       <Menu
@@ -1754,6 +2096,133 @@ const handleConfirmCloseLead = async () => {
           </Typography>
         </Card>
       </Popover>
+      <Dialog
+        open={bulkArchiveOpen}
+        onClose={() => setBulkArchiveOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            minWidth: 340,
+            boxShadow: '0 20px 40px rgba(0,0,0,0.18)',
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            fontWeight: 700,
+          }}
+        >
+          <ArchiveIcon
+            sx={{
+              fontSize: 22,
+            }}
+          />
+          Archive selected leads?
+        </DialogTitle>
+
+        <DialogContent>
+          Are you sure you want to archive{' '}
+          <Box component="span" sx={{ fontWeight: 700 }}>
+            {selectedLeadIds.type === 'exclude'
+              ? 'all'
+              : selectedLeadIds.ids.size}
+          </Box>{' '}
+          selected lead(s)? You can restore archived leads later.
+        </DialogContent>
+
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button
+            onClick={() => setBulkArchiveOpen(false)}
+            sx={{
+              textTransform: 'none',
+              borderRadius: 2,
+            }}
+          >
+            Cancel
+          </Button>
+
+          <Button
+            variant="contained"
+            disableElevation
+            onClick={handleBulkArchive}
+            disabled={loading}
+            sx={{
+              textTransform: 'none',
+              borderRadius: 2,
+              fontWeight: 700,
+            }}
+          >
+            Archive
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <Dialog
+        open={bulkDeleteOpen}
+        onClose={() => setBulkDeleteOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            minWidth: 340,
+            boxShadow: '0 20px 40px rgba(0,0,0,0.18)',
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            fontWeight: 700,
+          }}
+        >
+          <DeleteIcon color="error" fontSize="small" />
+          Delete selected leads?
+        </DialogTitle>
+
+        <DialogContent>
+          Are you sure you want to delete{' '}
+          <Box component="span" sx={{ fontWeight: 700 }}>
+            {selectedLeadIds.type === 'exclude'
+              ? 'all'
+              : selectedLeadIds.ids.size}
+          </Box>{' '}
+          selected lead(s)? Deleted leads can be recovered from Archives.
+        </DialogContent>
+
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button
+            onClick={() => setBulkDeleteOpen(false)}
+            sx={{
+              textTransform: 'none',
+              borderRadius: 2,
+            }}
+          >
+            Cancel
+          </Button>
+
+          <Button
+            variant="contained"
+            disableElevation
+            color="error"
+            onClick={handleBulkDelete}
+            disabled={loading}
+            sx={{
+              textTransform: 'none',
+              borderRadius: 2,
+              fontWeight: 700,
+            }}
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
       <Snackbar
         open={openSnackbar}
         autoHideDuration={3000}

@@ -9,6 +9,7 @@ import {
   fetchDealsListsAPI,
   fetchDealsListsByContactIDAPI,
   fetchDealListByIDAPI,
+  archiveDealAPI,
 } from '../services/dealService';
 
 
@@ -142,6 +143,23 @@ export const closeDeal = createAsyncThunk(
         .rejectWithValue(
           'Something went wrong'
         );
+    }
+  }
+);
+
+export const archiveDeal = createAsyncThunk(
+  'deals/archive-deal',
+  async (id: string, thunkAPI) => {
+    try {
+      return await archiveDealAPI(id);
+    } catch (err) {
+      if (err instanceof Error) {
+        return thunkAPI.rejectWithValue(err.message);
+      }
+
+      return thunkAPI.rejectWithValue(
+        'Something went wrong'
+      );
     }
   }
 );
@@ -314,6 +332,23 @@ const dealSlice = createSlice({
 
     builder.addCase(closeDeal.rejected, (state, action) => {
       state.error = action.payload as string
+      state.loading = false;
+    });
+
+
+    builder.addCase(archiveDeal.pending, (state) => {
+      state.error = null;
+    });
+
+    builder.addCase(archiveDeal.fulfilled, (state, action) => {
+      state.items = state.items.filter(
+        (deal) => deal.id !== action.payload
+      );
+      state.loading = false;
+    });
+
+    builder.addCase(archiveDeal.rejected, (state, action) => {
+      state.error = action.payload as string;
       state.loading = false;
     });
 

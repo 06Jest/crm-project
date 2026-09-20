@@ -317,6 +317,14 @@ export default function Header() {
                 <MenuItem onClick={() => { handleMenuClose(); navigate('/app/workspace'); }}>
                   Workspace
                 </MenuItem>
+                <MenuItem
+                  onClick={() => {
+                    handleMenuClose();
+                    navigate("/app/archives");
+                  }}
+                >
+                  Archives
+                </MenuItem>
                 <MenuItem onClick={() => { handleMenuClose(); navigate('/app/settings'); }}>
                   Settings
                 </MenuItem>

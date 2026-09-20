@@ -14,6 +14,9 @@ import {
   updateLeadPreferredTimeAPI,
   fetchLeadListByIDAPI,
   updateLeadAvatarAPI,
+  archiveLeadAPI,
+  archiveBulkLeadsAPI,
+  deleteBulkLeadsAPI,
 } from '../services/leadService';
 import type { PreferredTime, Priority, Source } from "../types/global";
 
@@ -253,6 +256,58 @@ export const updateLeadPreferredTime = createAsyncThunk(
   }
 );
 
+export const archiveBulkLeads = createAsyncThunk(
+  'leads/archive-bulk',
+  async (ids: string[], thunkAPI) => {
+    try {
+      return await archiveBulkLeadsAPI(ids);
+    } catch (err) {
+      if (err instanceof Error) {
+        return thunkAPI.rejectWithValue(err.message);
+      }
+
+      return thunkAPI.rejectWithValue(
+        'Something went wrong'
+      );
+    }
+  }
+);
+
+
+export const archiveLead = createAsyncThunk(
+  'leads/archive',
+  async (id: string, thunkAPI) => {
+    try {
+      return await archiveLeadAPI(id);
+    } catch (err) {
+      if (err instanceof Error) {
+        return thunkAPI.rejectWithValue(err.message);
+      }
+
+      return thunkAPI.rejectWithValue(
+        'Something went wrong'
+      );
+    }
+  }
+);
+
+export const deleteBulkLeads = createAsyncThunk(
+  'leads/delete-bulk',
+  async (ids: string[], thunkAPI) => {
+    try {
+      return await deleteBulkLeadsAPI(ids);
+    } catch (err) {
+      if (err instanceof Error) {
+        return thunkAPI.rejectWithValue(err.message);
+      }
+
+      return thunkAPI.rejectWithValue(
+        'Something went wrong'
+      );
+    }
+  }
+);
+
 export const deleteLead = createAsyncThunk(
   'leads/delete',
   async (id: string, thunkAPI) => {
@@ -485,6 +540,61 @@ const leadSlice = createSlice({
 
     builder.addCase(updateLeadPreferredTime.rejected, (state, action) => {
       state.error = action.payload as string
+      state.loading = false;
+    });
+
+
+    builder.addCase(archiveBulkLeads.pending, (state) => {
+      state.error = null;
+      state.loading = true;
+    });
+
+    builder.addCase(archiveBulkLeads.fulfilled, (state, action) => {
+      state.loading = false;
+
+      state.items = state.items.filter(
+        (lead) => !action.payload.includes(lead.id)
+      );
+    });
+
+    builder.addCase(archiveBulkLeads.rejected, (state, action) => {
+      state.error = action.payload as string;
+      state.loading = false;
+    });
+
+
+    builder.addCase(archiveLead.pending, (state) => {
+      state.error = null;
+    });
+
+    builder.addCase(archiveLead.fulfilled, (state, action) => {
+      state.loading = false;
+      state.items = state.items.filter(
+        (lead) => lead.id !== action.payload
+      );
+    });
+
+    builder.addCase(archiveLead.rejected, (state, action) => {
+      state.error = action.payload as string;
+      state.loading = false;
+    });
+
+    
+    builder.addCase(deleteBulkLeads.pending, (state) => {
+      state.error = null;
+      state.loading = true;
+    });
+
+    builder.addCase(deleteBulkLeads.fulfilled, (state, action) => {
+      state.loading = false;
+
+      state.items = state.items.filter(
+        (lead) => !action.payload.includes(lead.id)
+      );
+    });
+
+    builder.addCase(deleteBulkLeads.rejected, (state, action) => {
+      state.error = action.payload as string;
       state.loading = false;
     });
 

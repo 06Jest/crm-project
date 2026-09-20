@@ -149,8 +149,26 @@ export const updateLeadPreferredTimeAPI = async (
   return result.data as LeadListItem;
 };
 
+export const archiveLeadAPI = async (
+  id: string
+): Promise<string> => {
+  const result = await apiClient(`/api/leads/archive/${id}`, {
+    method: "PATCH",
+  });
 
+  return result.data as string;
+};
 
+export const archiveBulkLeadsAPI = async (
+  ids: string[]
+): Promise<string[]> => {
+  const result = await apiClient("/api/leads/archive/bulk", {
+    method: "PATCH",
+    body: JSON.stringify({ ids }),
+  });
+
+  return result.data as string[];
+};
 
 export const deleteLeadAPI = async (
   id: string
@@ -160,4 +178,15 @@ export const deleteLeadAPI = async (
   });
 
   return result.data as string;
+};
+
+export const deleteBulkLeadsAPI = async (
+  ids: string[]
+): Promise<string[]> => {
+  const result = await apiClient("/api/leads/delete/bulk", {
+    method: "DELETE",
+    body: JSON.stringify({ ids }),
+  });
+
+  return result.data as string[];
 };

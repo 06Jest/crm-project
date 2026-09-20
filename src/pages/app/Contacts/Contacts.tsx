@@ -2,9 +2,10 @@ import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "../../../store/store";
 import { DataGrid, type GridColDef, useGridApiRef, type GridRowSelectionModel } from '@mui/x-data-grid';
 import { alpha } from '@mui/material/styles';
-import { 
+import {
   clearError,
   deleteBulkContacts,
+  archiveBulkContacts,
   fetchContactsLists,
 } from "../../../store/contactsSlice";
 import { useEffect } from "react";
@@ -46,6 +47,7 @@ import { formatName } from "../../../utils/formatText";
 import { formatRelativeTime } from "../../../utils/formatTime";
 import ContactsSkeleton from "../../../components/ContactsSkeleton";
 import RefreshIcon from "@mui/icons-material/Refresh";
+import ArchiveIcon from "@mui/icons-material/Archive";
 
 
 const STATUS_COLORS: Record<ContactStatus, string> = {
@@ -201,6 +203,7 @@ export default function Contacts() {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [archiveConfirmOpen, setArchiveConfirmOpen] = useState(false);
   const apiRef = useGridApiRef();
   const [selectedRows, setSelectedRows] = useState<GridRowSelectionModel>({
     type: "include",
@@ -430,6 +433,34 @@ const selectionCount =
             <Tooltip
               title={
                 hasSelection
+                  ? "Archive selected"
+                  : "Select contacts to archive"
+              }
+            >
+              <span>
+                <IconButton
+                  onClick={() => setArchiveConfirmOpen(true)}
+                  disabled={!hasSelection}
+                  sx={{
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    borderRadius: 2,
+                    py: {xs: 0.5, sm: 0.75, md: 1},
+                    px: {xs: 0.5, sm: 0.75, md: 1},
+                  }}
+                >
+                  <ArchiveIcon
+                    sx={{
+                      opacity: hasSelection ? 1 : 0.3,
+                      fontSize: {xs: 15, sm: 17, md: 20},
+                    }}
+                  />
+                </IconButton>
+              </span>
+            </Tooltip>
+            <Tooltip
+              title={
+                hasSelection
                   ? "Delete selected"
                   : "Select contacts to delete"
               }
@@ -462,7 +493,17 @@ const selectionCount =
             </Tooltip>
           </Box>
         </Box>
-        <Box sx={{display: 'flex', height: 850, gap: 2, justifyContent: 'space-between', width: '100%', overflow: 'auto', mb: 5 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            height: 700,
+            gap: 2,
+            justifyContent: 'space-between',
+            width: '100%',
+            overflow: 'auto',
+            mb: 5,
+          }}
+        >
           <Paper
             variant="outlined"
             sx={{
@@ -470,7 +511,7 @@ const selectionCount =
               p: 1,
               pt: 2,
               transition: 'width 0.3s ease',
-              height: 850,
+              height: 700,
               minWidth: 300,
               display: 'flex',
               flex: 1,
@@ -482,10 +523,7 @@ const selectionCount =
           >
             <DataGrid
               sx={{
-                minHeight: 0,
-                minWidth: 1200,
-                mx: 1,
-                mb: 1,
+                
                 border: 'none',
                 borderRadius: 3,
                 fontSize: '0.85rem',
@@ -527,7 +565,18 @@ const selectionCount =
             
           </Paper>
           <Box sx={{display: {xs: 'none', xl: 'flex'}, flexDirection: 'column',  width: '15%', alignItems: 'end', minWidth: 270, height: '100%', gap: 2 }}>
-            <Paper variant="outlined" sx={{ height: '50%', width: '100%', minWidth: 200, minHeight: 400, p: 1.5, borderRadius: 3, borderColor: 'divider'}}>
+            <Paper
+              variant="outlined"
+              sx={{
+                height: '50%',
+                width: '100%',
+                minWidth: 200,
+                minHeight: 0,
+                p: 1.5,
+                borderRadius: 3,
+                borderColor: 'divider',
+              }}
+            >
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, pb: 1, mb: 0.5, borderBottom: '1px solid', borderColor: 'divider' }}>
                 <FlagCircleIcon sx={{ fontSize: 18, color: 'error.main' }} />
                 <Typography variant="h6" fontWeight={700} sx={{ fontSize: 14.5 }}>Priorities</Typography>
@@ -565,7 +614,17 @@ const selectionCount =
                 ))}
               </List>
             </Paper>
-            <Paper variant="outlined" sx={{ height: '50%' , width: '100%', minHeight: 400, p: 1.5, borderRadius: 3, borderColor: 'divider'}}>
+            <Paper
+              variant="outlined"
+              sx={{
+                height: '50%',
+                width: '100%',
+                minHeight: 0,
+                p: 1.5,
+                borderRadius: 3,
+                borderColor: 'divider',
+              }}
+            >
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, pb: 1, mb: 0.5, borderBottom: '1px solid', borderColor: 'divider' }}>
                 <AccessTimeIcon sx={{ fontSize: 18, color: 'primary.main' }} />
                 <Typography variant="h6" fontWeight={700} sx={{ fontSize: 14.5 }}>Recently Added</Typography>
@@ -686,6 +745,103 @@ const selectionCount =
               }}
             >
               Delete
+            </Button>
+          </DialogActions>
+        </Dialog>
+        <Dialog
+          open={archiveConfirmOpen}
+          onClose={() => setArchiveConfirmOpen(false)}
+          maxWidth="xs"
+          fullWidth
+          PaperProps={{ sx: { borderRadius: 3 } }}
+        >
+          <DialogTitle
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1.5,
+              fontWeight: 700,
+              pb: 1,
+            }}
+          >
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 44,
+                height: 44,
+                borderRadius: '50%',
+                bgcolor: (theme) => alpha(theme.palette.primary.main, 0.1),
+                color: 'primary.main',
+                flexShrink: 0,
+              }}
+            >
+              <ArchiveIcon />
+            </Box>
+            Archive contacts?
+          </DialogTitle>
+
+          <DialogContent>
+            <DialogContentText sx={{ fontSize: '0.9rem' }}>
+              Are you sure you want to archive{' '}
+              <Box
+                component="span"
+                sx={{
+                  fontWeight: 700,
+                  color: 'text.primary',
+                }}
+              >
+                {selectedRows.type === "exclude"
+                  ? 'all'
+                  : selectedRows.ids.size}
+              </Box>{' '}
+              selected contact(s)? You can restore archived contacts later.
+            </DialogContentText>
+          </DialogContent>
+
+          <DialogActions sx={{ px: 3, pb: 2.5 }}>
+            <Button
+              onClick={() => setArchiveConfirmOpen(false)}
+              color="inherit"
+              sx={{
+                textTransform: 'none',
+                fontWeight: 600,
+              }}
+            >
+              Cancel
+            </Button>
+
+            <Button
+              variant="contained"
+              disableElevation
+              sx={{
+                textTransform: 'none',
+                fontWeight: 700,
+                borderRadius: 2,
+              }}
+              onClick={async () => {
+                if (loading) return;
+
+                try {
+                  const ids = Array.from(selectedRows.ids).map(String);
+
+                  await dispatch(
+                    archiveBulkContacts(ids)
+                  ).unwrap();
+
+                  setSelectedRows({
+                    type: "include",
+                    ids: new Set(),
+                  });
+
+                  setArchiveConfirmOpen(false);
+                } catch {
+                  // Error handled by Redux state
+                }
+              }}
+            >
+              Archive
             </Button>
           </DialogActions>
         </Dialog>

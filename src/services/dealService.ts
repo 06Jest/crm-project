@@ -92,6 +92,16 @@ export const closeDealAPI = async (
   return result.data as DealListItem;
 };
 
+export const archiveDealAPI = async (
+  id: string
+): Promise<string> => {
+  const result = await apiClient(`/api/deals/archive/${id}`, {
+    method: "PATCH",
+  });
+
+  return result.data as string;
+};
+
 export const deleteDealAPI = async (
   id: string
 ): Promise<string> => {

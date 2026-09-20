@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import {
   deleteDeal,
   moveDealLocally,
-  // updateDeal,
+  archiveDeal,
   updateDealStage,
   updateDeal,
   fetchDealsLists,
@@ -53,7 +53,7 @@ import CallIcon from '@mui/icons-material/Call';
 import SmsIcon from '@mui/icons-material/Sms';
 import DeleteIcon from '@mui/icons-material/Delete';
 import PersonIcon from "@mui/icons-material/Person";
-// import InfoIcon from '@mui/icons-material/Info';
+import ArchiveIcon from "@mui/icons-material/Archive";
 import PriorityIcon from '@mui/icons-material/PriorityHighRounded';
 import HandshakeIcon from "@mui/icons-material/Handshake";
 import AddIcon from '@mui/icons-material/Add';
@@ -154,6 +154,7 @@ interface LazyColumnBodyProps {
   onNavigateContact: (contactId: string) => void;
   onEdit: (deal: Deal) => void;
   onDelete: (deal: Deal) => void;
+  onArchive: (deal: Deal) => void;
   onQuickAction: () => void;
 }
 
@@ -169,6 +170,7 @@ function LazyColumnBody({
   onNavigateContact,
   onEdit,
   onDelete,
+  onArchive,
   onQuickAction,
 }: LazyColumnBodyProps) {
   const { nodeRef, inView } = useInViewOnce(scrollRoot);
@@ -303,20 +305,43 @@ function LazyColumnBody({
                                       ID: {deal.display_id}
                                     </Typography>
                                   </Box>
-                                  <Box sx={{display: 'flex', width: '10%', flexDirection: 'column'}}>
+                                  <Box
+                                    sx={{
+                                      display: 'flex',
+                                      width: '10%',
+                                      flexDirection: 'column',
+                                      alignItems: 'center',
+                                    }}
+                                  >
                                     <Tooltip title="Edit deal" arrow>
                                       <IconButton
                                         sx={{
                                           height: 25,
                                           width: 25,
-                                          mr: '5px',
                                           transition: reduceMotion ? 'none' : 'background-color 0.15s ease',
                                           '&:hover': { bgcolor: `${stageColor}1f` },
                                         }}
                                         size="small"
                                         onClick={() => onEdit(deal)}
                                       >
-                                        <EditIcon titleAccess="Edit deal" sx={{fontSize: '14px'}} />
+                                        <EditIcon sx={{ fontSize: '14px' }} />
+                                      </IconButton>
+                                    </Tooltip>
+
+                                    <Tooltip title="Archive deal" arrow>
+                                      <IconButton
+                                        sx={{
+                                          height: 25,
+                                          width: 25,
+                                          transition: reduceMotion ? 'none' : 'background-color 0.15s ease',
+                                          '&:hover': {
+                                            bgcolor: `${stageColor}1f`,
+                                          },
+                                        }}
+                                        size="small"
+                                        onClick={() => onArchive(deal)}
+                                      >
+                                        <ArchiveIcon sx={{ fontSize: '16px' }} />
                                       </IconButton>
                                     </Tooltip>
                                   </Box>
@@ -387,7 +412,7 @@ function LazyColumnBody({
                                     <Tooltip title="Email lead" arrow>
                                       <IconButton sx={{p: '4px', transition: reduceMotion ? 'none' : 'background-color 0.15s ease', '&:hover': { bgcolor: `${stageColor}1f` }}}>
                                         <EmailIcon
-                                          titleAccess="Email lead"
+                                          
                                           onClick={onQuickAction}
                                           sx={{cursor: 'pointer', color: 'primary.main', fontSize: 17}}
                                         />
@@ -397,7 +422,7 @@ function LazyColumnBody({
                                       <IconButton sx={{p: '4px', transition: reduceMotion ? 'none' : 'background-color 0.15s ease', '&:hover': { bgcolor: `${stageColor}1f` }}}>
                                         <CallIcon
                                           onClick={onQuickAction}
-                                          titleAccess="Call lead"
+                                          
                                           sx={{cursor: 'pointer', color: 'primary.main', fontSize: 17}}
                                         />
                                       </IconButton>
@@ -406,7 +431,7 @@ function LazyColumnBody({
                                       <IconButton sx={{p: '4px', transition: reduceMotion ? 'none' : 'background-color 0.15s ease', '&:hover': { bgcolor: `${stageColor}1f` }}}>
                                         <SmsIcon
                                           onClick={onQuickAction}
-                                          titleAccess="Message lead"
+                                          
                                           sx={{cursor: 'pointer', color: 'primary.main', fontSize: 17}}
                                         />
                                       </IconButton>
@@ -425,15 +450,23 @@ function LazyColumnBody({
                                         {formatCurrency(deal.value)}
                                       </Typography>
                                   </Box>
-                                  <Box sx={{ display: 'flex' }}>
+                                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
                                     <Tooltip title="Delete deal" arrow>
                                       <IconButton
                                         size="small"
                                         color="error"
-                                        sx={{ transition: reduceMotion ? 'none' : 'background-color 0.15s ease', '&:hover': { bgcolor: 'error.main', color: '#fff' } }}
+                                        sx={{
+                                          transition: reduceMotion
+                                            ? 'none'
+                                            : 'background-color 0.15s ease',
+                                          '&:hover': {
+                                            bgcolor: 'error.main',
+                                            color: '#fff',
+                                          },
+                                        }}
                                         onClick={() => onDelete(deal)}
                                       >
-                                        <DeleteIcon titleAccess="Delete lead" fontSize="small" />
+                                        <DeleteIcon fontSize="small" />
                                       </IconButton>
                                     </Tooltip>
                                   </Box>
@@ -469,6 +502,7 @@ export default function Deals() {
   const dispatch = useDispatch<AppDispatch>();;
   const navigate = useNavigate();
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [archiveOpen, setArchiveOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [confirmEdit, setConfirmEdit] = useState(false);
   const [confirmClose, setConfirmClose] = useState(false);
@@ -540,10 +574,15 @@ export default function Deals() {
     setHoveredDeal(null);
   };
 
+  const handleOpenArchive = (deal: Deal) => {
+    setSelectedDeal(deal);
+    setArchiveOpen(true);
+  };
+
   const handleOpenDelete = (deal: Deal) => {
-      setSelectedDeal(deal); 
-      setDeleteOpen(true);
-      };
+    setSelectedDeal(deal); 
+    setDeleteOpen(true);
+    };
 
   const refreshDeals = async () => {
     try {
@@ -624,6 +663,21 @@ export default function Deals() {
           return searchableText.includes(query);
         });
     };
+
+  const handleArchiveConfirm = async () => {
+    if (selectedDeal) {
+      if (loading) return;
+
+      try {
+        await dispatch(archiveDeal(selectedDeal.id)).unwrap();
+        setArchiveOpen(false);
+        setSelectedDeal(null);
+        dispatch(clearError());
+      } catch {
+        // Error in state
+      }
+    }
+  };
 
   const handleDeleteConfirm = async () => {
     if (selectedDeal) {
@@ -1024,6 +1078,7 @@ export default function Deals() {
                       onNavigateContact={(contactId) => navigate(`/app/contacts/${contactId}`)}
                       onEdit={handleOpenEdit}
                       onDelete={handleOpenDelete}
+                      onArchive={handleOpenArchive}
                       onQuickAction={() => setOpenSnackbar(true)}
                     />
                   </Box>
@@ -1237,6 +1292,53 @@ export default function Deals() {
             >
               Yes
             </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        PaperProps={{ sx: { borderRadius: 3 } }}
+        transitionDuration={reduceMotion ? 0 : undefined}
+        open={archiveOpen}
+        onClose={() => setArchiveOpen(false)}
+      >
+        <DialogTitle sx={{ fontWeight: 700 }}>
+          Archive deal?
+        </DialogTitle>
+
+        <DialogContent>
+          <Typography>
+            Are you sure you want to archive{' '}
+            <strong>{selectedDeal?.title}</strong>? You can restore it later from Archives.
+          </Typography>
+        </DialogContent>
+
+        <DialogActions sx={{ pb: 2, px: 3 }}>
+          <Button
+            onClick={() => setArchiveOpen(false)}
+            sx={{ textTransform: 'none', fontWeight: 600 }}
+          >
+            Cancel
+          </Button>
+
+          <Button
+            variant="contained"
+            disableElevation
+            onClick={handleArchiveConfirm}
+            disabled={loading}
+            sx={{
+              textTransform: 'none',
+              fontWeight: 700,
+              borderRadius: 2,
+              transition: reduceMotion
+                ? 'none'
+                : 'transform 0.1s ease',
+              '&:active': {
+                transform: reduceMotion ? 'none' : 'scale(0.97)',
+              },
+            }}
+          >
+            Archive
+          </Button>
         </DialogActions>
       </Dialog>
       <Dialog

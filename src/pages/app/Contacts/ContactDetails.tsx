@@ -2,7 +2,19 @@ import { forwardRef, useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector} from 'react-redux';
 import type { AppDispatch } from '../../../store/store';
-import {  deleteContact, clearError, updateContactPersonal, updateContactSocials, updateContactCareer, updateContactNotes, updateContactSource, updateContactPreferredTime, fetchContactListByID, updateContactAvatar, } from '../../../store/contactsSlice';
+import {
+  archiveContact,
+  deleteContact,
+  clearError,
+  updateContactPersonal,
+  updateContactSocials,
+  updateContactCareer,
+  updateContactNotes,
+  updateContactSource,
+  updateContactPreferredTime,
+  fetchContactListByID,
+  updateContactAvatar,
+} from '../../../store/contactsSlice';
 import { type ContactCareer, type ContactPersonal, type ContactSocials, type ContactStatus, } from "../../../types/contact";
 import { uploadImageToImageKit } from '../../../services/imageKitService';
 import 'leaflet/dist/leaflet.css';
@@ -50,6 +62,7 @@ import PriorityIcon from '@mui/icons-material/PriorityHighRounded';
 import FacebookIcon from '@mui/icons-material/Facebook';
 import InstagramIcon from '@mui/icons-material/Instagram';
 import XIcon from '@mui/icons-material/X';
+import ArchiveIcon from "@mui/icons-material/Archive";
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import TelegramIcon from '@mui/icons-material/Telegram';
 import LinkedInIcon from '@mui/icons-material/LinkedIn';
@@ -292,6 +305,7 @@ export default function ContactDetail() {
   const [formPersonal, setFormPersonal] = useState<PersonalForm>({});
   const [formSocials, setFormSocials] = useState<SocialsForm>({});
   const [formCareer, setFormCareer] = useState<CareerForm>({});
+  const [archiveDialogOpen, setArchiveDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [newNotes, setNewNotes] = useState("");
   const [hoveredNotes, setHoveredNotes] = useState(false);
@@ -540,6 +554,17 @@ export default function ContactDetail() {
       //Error in state
     }
     dispatch(clearError())
+  };
+
+  const handleArchiveConfirm = async () => {
+    if (loading) return;
+
+    try {
+      await dispatch(archiveContact(contact.id)).unwrap();
+      navigate('/app/contacts');
+    } catch {
+      // Error in state
+    }
   };
 
   const handleDeleteConfirm = async () => {
@@ -1012,46 +1037,78 @@ export default function ContactDetail() {
               ID: {contact.display_id}
             </Typography>
             <Box sx={{ display: 'flex', justifyContent: 'center', mt: 0.5 }}>
-              <Button
-                variant='outlined'
-                size="small"
-                startIcon={<AddCircleIcon />}
-                onClick={() => navigate(`/app/deals/adddeal/${contact.id}`)}
-                sx={{
-                  fontSize: '10px',
-                  fontWeight: 700,
-                  borderRadius: 2,
-                  mb: 1,
-                  textTransform: 'none',
-                  p: '6px 10px',
-                  transition: 'background-color 0.2s ease',
-                  '&:hover': {
-                    bgcolor: (theme: Theme) => alpha(theme.palette.error.main, 0.06),
-                  },
-                }}
-              >
-                Add Deal
-              </Button>
+              <Tooltip title="Add deal" arrow>
+                <Button
+                  variant='outlined'
+                  size="small"
+                  startIcon={<AddCircleIcon />}
+                  onClick={() => navigate(`/app/deals/adddeal/${contact.id}`)}
+                  sx={{
+                    fontSize: '10px',
+                    fontWeight: 700,
+                    borderRadius: 2,
+                    mb: 1,
+                    textTransform: 'none',
+                    p: '6px 10px',
+                    transition: 'background-color 0.2s ease',
+                    '&:hover': {
+                      bgcolor: (theme: Theme) => alpha(theme.palette.error.main, 0.06),
+                    },
+                  }}
+                >
+                  Add Deal
+                </Button>
+              </Tooltip>
             </Box>
             {!isEditingPersonal && (
-              <Button
-                variant='outlined'
-                color='error'
-                startIcon={<DeleteIcon />}
-                onClick={() => setDeleteDialogOpen(true)}
+              <Box
                 sx={{
-                  fontSize: '10px',
-                  fontWeight: 700,
-                  borderRadius: 2,
-                  textTransform: 'none',
-                  transition: 'background-color 0.2s ease',
-                  '&:hover': {
-                    bgcolor: (theme: Theme) => alpha(theme.palette.error.main, 0.06),
-                  },
+                  display: 'flex',
+                  gap: 1,
+                  flexWrap: 'wrap',
+                  flexDirection: 'column',
+                  justifyContent: 'center',
                 }}
               >
-                Delete
-              </Button>
+                <Tooltip title="Archive contact" arrow>
+                  <Button
+                    variant="outlined"
+                    startIcon={<ArchiveIcon />}
+                    onClick={() => setArchiveDialogOpen(true)}
+                    sx={{
+                      fontSize: '10px',
+                      fontWeight: 700,
+                      borderRadius: 2,
+                      textTransform: 'none',
+                      color: 'text.secondary',
+                      borderColor: 'divider',
+                      transition: 'background-color 0.2s ease',
+                      '&:hover': {
+                        bgcolor: 'action.hover',
+                        borderColor: 'text.secondary',
+                      },
+                    }}
+                  >
+                    Archive
+                  </Button>
+                </Tooltip>
+                <Tooltip title="Delete contact" arrow>
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    startIcon={<DeleteIcon />}
+                    onClick={() => setDeleteDialogOpen(true)}
+                    sx={{
+                      fontSize: '10px',
+                      fontWeight: 700,
+                      borderRadius: 2,
+                      textTransform: 'none',
+                    }}
+                  >
+                    Delete
+                  </Button>
+                </Tooltip>
+              </Box>
             )}
           </Box>
         </Box>
@@ -1547,6 +1604,47 @@ export default function ContactDetail() {
           </Box>
         </Collapse>
       </Paper>
+      <Dialog
+        open={archiveDialogOpen}
+        onClose={() => setArchiveDialogOpen(false)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>
+          Archive contact?
+        </DialogTitle>
+
+        <DialogContent>
+          <Typography>
+            This contact will be moved to Archives. You can restore it later.
+          </Typography>
+        </DialogContent>
+
+        <DialogActions>
+          <Button
+            onClick={() => setArchiveDialogOpen(false)}
+            sx={{
+              textTransform: 'none',
+              fontWeight: 600,
+            }}
+          >
+            Cancel
+          </Button>
+
+          <Button
+            onClick={handleArchiveConfirm}
+            variant="contained"
+            color="primary"
+            disabled={loading}
+            sx={{
+              textTransform: 'none',
+              fontWeight: 600,
+            }}
+          >
+            Archive
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {deleteDialogOpen && (
         <Dialog

@@ -60,7 +60,7 @@ import ShareIcon from '@mui/icons-material/Share';
 import WorkOutlineIcon from '@mui/icons-material/WorkOutline';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import ClearIcon from '@mui/icons-material/Clear';
-
+import ArchiveIcon from "@mui/icons-material/Archive";
 import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
 import type { RootState } from '../../../store/store';
 import { fixLeafletIcons } from '../../../utils/fixLeafletIcons';
@@ -68,7 +68,7 @@ import { DEPARTMENTS, GENDERS, INDUSTRIES, PREFERRED_CONTACT_TIMES, SOURCES, SUF
 import ErrorAlert from '../../../components/Error';
 import { formatName } from '../../../utils/formatText';
 import type { LeadCareer, LeadPersonal, LeadSocials, LeadStatus } from '../../../types/lead';
-import { clearError, deleteLead, fetchLeadListByID, updateLeadAvatar, updateLeadCareer, updateLeadNotes, updateLeadPersonal, updateLeadPreferredTime, updateLeadSocials, updateLeadSource } from '../../../store/leadsSlice';
+import { archiveLead, clearError, deleteLead, fetchLeadListByID, updateLeadAvatar, updateLeadCareer, updateLeadNotes, updateLeadPersonal, updateLeadPreferredTime, updateLeadSocials, updateLeadSource } from '../../../store/leadsSlice';
 
 fixLeafletIcons();
 
@@ -288,6 +288,7 @@ export default function LeadDetails() {
   const [formSocials, setFormSocials] = useState<SocialsForm>({});
   const [formCareer, setFormCareer] = useState<CareerForm>({});
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [archiveDialogOpen, setArchiveDialogOpen] = useState(false);
   const [newNotes, setNewNotes] = useState("");
   const [hoveredNotes, setHoveredNotes] = useState(false);
   const [isEditingNotes, setIsEditingNotes] = useState(false);
@@ -481,6 +482,17 @@ export default function LeadDetails() {
       navigate('/app/leads');
     } catch {
       //Error in State
+    }
+  };
+
+  const handleArchiveConfirm = async () => {
+    if (loading) return;
+
+    try {
+      await dispatch(archiveLead(lead.id)).unwrap();
+      navigate('/app/leads');
+    } catch {
+      // Error in state
     }
   };
 
@@ -992,24 +1004,48 @@ export default function LeadDetails() {
               ID: {lead.display_id}
             </Typography>
             {!isEditingPersonal && (
-              <Button
-                variant='outlined'
-                color='error'
-                startIcon={<DeleteIcon />}
-                onClick={() => setDeleteDialogOpen(true)}
-                sx={{
-                  fontSize: '10px',
-                  fontWeight: 700,
-                  borderRadius: 2,
-                  textTransform: 'none',
-                  transition: 'background-color 0.2s ease',
-                  '&:hover': {
-                    bgcolor: (theme: Theme) => alpha(theme.palette.error.main, 0.06),
-                  },
-                }}
-              >
-                Delete
-              </Button>
+              <Box sx={{ display: 'flex', gap: 1, flexDirection: 'column' }}>
+                <Button
+                  variant="outlined"
+                  startIcon={<ArchiveIcon />}
+                  onClick={() => setArchiveDialogOpen(true)}
+                  sx={{
+                    fontSize: '10px',
+                    fontWeight: 700,
+                    borderRadius: 2,
+                    textTransform: 'none',
+                    color: 'text.secondary',
+                    borderColor: 'divider',
+                    transition: 'background-color 0.2s ease',
+                    '&:hover': {
+                      bgcolor: 'action.hover',
+                      borderColor: 'text.secondary',
+                    },
+                  }}
+                >
+                  Archive
+                </Button>
+
+                <Button
+                  variant="outlined"
+                  color="error"
+                  startIcon={<DeleteIcon />}
+                  onClick={() => setDeleteDialogOpen(true)}
+                  sx={{
+                    fontSize: '10px',
+                    fontWeight: 700,
+                    borderRadius: 2,
+                    textTransform: 'none',
+                    transition: 'background-color 0.2s ease',
+                    '&:hover': {
+                      bgcolor: (theme: Theme) =>
+                        alpha(theme.palette.error.main, 0.06),
+                    },
+                  }}
+                >
+                  Delete
+                </Button>
+              </Box>
             )}
           </Box>
         </Box>
@@ -1497,6 +1533,98 @@ export default function LeadDetails() {
         </Collapse>
       </Paper>
 
+      {archiveDialogOpen && (
+        <Dialog
+          open={archiveDialogOpen}
+          onClose={loading ? undefined : () => setArchiveDialogOpen(false)}
+          maxWidth="xs"
+          fullWidth
+          TransitionComponent={GrowTransition}
+          PaperProps={{ sx: { borderRadius: 3 } }}
+        >
+          <DialogTitle
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1.5,
+              fontWeight: 700,
+              pb: 1,
+            }}
+          >
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 44,
+                height: 44,
+                borderRadius: '50%',
+                bgcolor: (theme: Theme) =>
+                  alpha(theme.palette.warning.main, 0.1),
+                color: 'warning.main',
+                flexShrink: 0,
+              }}
+            >
+              <WarningAmberRoundedIcon />
+            </Box>
+
+            Archive lead?
+          </DialogTitle>
+
+          <DialogContent>
+            <DialogContentText sx={{ fontSize: '0.9rem' }}>
+              Are you sure you want to archive{' '}
+              <Box
+                component="span"
+                sx={{ fontWeight: 700, color: 'text.primary' }}
+              >
+                {lead.first_name} {lead.last_name}
+              </Box>
+              ? You can restore this lead later from Archives.
+            </DialogContentText>
+          </DialogContent>
+
+          <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
+            <Button
+              onClick={() => setArchiveDialogOpen(false)}
+              color="inherit"
+              disabled={loading}
+              sx={{
+                textTransform: 'none',
+                fontWeight: 600,
+                borderRadius: 2,
+              }}
+            >
+              Cancel
+            </Button>
+
+            <Button
+              color="warning"
+              variant="contained"
+              disableElevation
+              onClick={handleArchiveConfirm}
+              disabled={loading}
+              startIcon={
+                loading ? (
+                  <CircularProgress size={14} color="inherit" />
+                ) : undefined
+              }
+              sx={{
+                textTransform: 'none',
+                fontWeight: 700,
+                borderRadius: 2,
+                transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                '&:hover': {
+                  transform: 'translateY(-1px)',
+                  boxShadow: '0 4px 10px rgba(0,0,0,0.2)',
+                },
+              }}
+            >
+              Archive
+            </Button>
+          </DialogActions>
+        </Dialog>
+      )}
       {deleteDialogOpen && (
         <Dialog
           open={deleteDialogOpen}
