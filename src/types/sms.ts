@@ -32,6 +32,7 @@ export interface SmsListItem extends Sms {
     id: string;
     first_name: string;
     last_name: string;
+    avatar_url: string | null,
     phone: string;
   } | null;
 
@@ -39,6 +40,7 @@ export interface SmsListItem extends Sms {
     id: string;
     first_name: string;
     last_name: string;
+    avatar_url: string | null,
     phone: string;
   } | null;
 
