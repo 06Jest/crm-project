@@ -193,7 +193,7 @@ function LazyColumnBody({
             borderRadius: '0 0 8px 8px',
             p: 1,
             transition: reduceMotion ? 'none' : 'background-color 0.2s ease',
-            height: 850,
+            height: 700,
           }}
         >
           {!inView ? (
@@ -286,23 +286,32 @@ function LazyColumnBody({
                               <Box sx={{display: 'flex', flexDirection: 'column', flex: 1}} >
                                 <Box sx={{display: 'flex', width: '100%'}}>
                                   <Box sx={{display: 'flex', width: '90%', flexDirection: 'column'}}>
-                                    <Typography sx={{cursor: 'pointer', fontSize: '15px'}} title="Deal Title" fontWeight={700}>
+                                    <Typography
+                                      sx={{
+                                        cursor: 'pointer',
+                                        fontSize: '15px',
+                                        lineHeight: 1.15,
+                                      }}
+                                      title="Deal Title"
+                                      fontWeight={700}
+                                    >
                                     {(deal.title.length > 25
                                       ? `${deal.title.slice(0, 25)}...`
                                       : formatTitle(deal.title).toUpperCase())}
                                     </Typography>
-                                    <Typography sx={{cursor: 'pointer'}} title="Contact name" variant="body2" color="text.secondary">
-                                      {formatName(contact.first_name, contact.last_name)} {contact.suffix}
-                                    </Typography>
                                     <Typography
-                                      sx={{
-                                        fontSize: 10,
-                                        color: 'text.secondary',
-                                        fontWeight: 400,
-                                        letterSpacing: '0.06em',
-                                      }}
+                                    sx={{ cursor: 'pointer' }}
+                                    title="Contact name"
+                                    variant="body2"
+                                    color="text.secondary"
+                                  >
+                                    <Typography
+                                      component="span"
+                                      sx={{ fontSize: 11,}}
                                     >
-                                      ID: {deal.display_id}
+                                      {deal.display_id}
+                                    </Typography>
+                                    - {formatName(contact.first_name, contact.last_name)} {contact.suffix}
                                     </Typography>
                                   </Box>
                                   <Box
@@ -316,23 +325,25 @@ function LazyColumnBody({
                                     <Tooltip title="Edit deal" arrow>
                                       <IconButton
                                         sx={{
-                                          height: 25,
-                                          width: 25,
+                                          p:0,
+                                          height: 20,
+                                          width: 20,
                                           transition: reduceMotion ? 'none' : 'background-color 0.15s ease',
                                           '&:hover': { bgcolor: `${stageColor}1f` },
                                         }}
                                         size="small"
                                         onClick={() => onEdit(deal)}
                                       >
-                                        <EditIcon sx={{ fontSize: '14px' }} />
+                                        <EditIcon sx={{ fontSize: '16px' }} />
                                       </IconButton>
                                     </Tooltip>
 
                                     <Tooltip title="Archive deal" arrow>
                                       <IconButton
                                         sx={{
-                                          height: 25,
-                                          width: 25,
+                                          p:0,
+                                          height: 20,
+                                          width: 20,
                                           transition: reduceMotion ? 'none' : 'background-color 0.15s ease',
                                           '&:hover': {
                                             bgcolor: `${stageColor}1f`,
@@ -355,7 +366,6 @@ function LazyColumnBody({
                                     color="text.secondary"
                                     display="block"
                                     sx={{
-                                      mb: 1,
                                       wordBreak: 'break-word',
                                       cursor: 'pointer'
                                     }}
@@ -403,7 +413,6 @@ function LazyColumnBody({
                                   display: 'flex',
                                   justifyContent: 'space-between',
                                   alignItems: 'center',
-                                  mt: '6px',
                                 }}>
                                   <Box sx={{
                                     display: 'flex',
@@ -950,6 +959,7 @@ export default function Deals() {
           width: {md: '85vw', sm: '90vw', xs: '98vw' }, 
           mb: 2,  
           p: '10px', 
+          height: 780,
           borderRadius: 2, 
           display: 'flex', 
           justifySelf: 'center'

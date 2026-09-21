@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import type { ElementType, ReactNode } from "react";
+import type { ElementType } from "react";
 import {
   Box,
   TextField,
@@ -28,7 +28,7 @@ import {
 import { alpha } from "@mui/material/styles";
 
 import AddIcon from "@mui/icons-material/Add";
-import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import DeleteIcon from '@mui/icons-material/Delete';
 import SearchIcon from "@mui/icons-material/Search";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import LockIcon from "@mui/icons-material/Lock";
@@ -43,7 +43,7 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import BlockIcon from "@mui/icons-material/Block";
 import HourglassBottomIcon from "@mui/icons-material/HourglassBottom";
 import TaskAltIcon from "@mui/icons-material/TaskAlt";
-import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
+import LiveHelpIcon from '@mui/icons-material/LiveHelp';
 import CallIcon from "@mui/icons-material/Call";
 import SmsIcon from "@mui/icons-material/Sms";
 import EmailIcon from "@mui/icons-material/Email";
@@ -100,7 +100,7 @@ const STATUS_META: Record<
 };
 
 const TASK_TYPE_META: Record<TaskType, { label: string; icon: ElementType }> = {
-  other: { label: "Other", icon: MoreHorizIcon },
+  other: { label: "Other", icon: LiveHelpIcon },
   call: { label: "Call", icon: CallIcon },
   sms: { label: "SMS", icon: SmsIcon },
   email: { label: "Email", icon: EmailIcon },
@@ -119,9 +119,23 @@ const pillFieldSx = {
   width: "100%",
   bgcolor: "action.hover",
   borderRadius: 1.5,
-  "& .MuiInputBase-input": { py: "7px", fontSize: 12, fontWeight: 600 },
-  "& .MuiOutlinedInput-notchedOutline": { border: "none" },
-  "&.Mui-focused .MuiOutlinedInput-notchedOutline": { border: "none" },
+  "& .MuiInputBase-input": {
+    py: "5px",
+    px: "9px",
+    fontSize: 11,
+    fontWeight: 600,
+  },
+  "& .MuiSelect-select": {
+    py: "5px",
+    px: "9px",
+    fontSize: 11,
+  },
+  "& .MuiOutlinedInput-notchedOutline": {
+    border: "none",
+  },
+  "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+    border: "none",
+  },
 } as const;
 
 const filterPillSx = (minWidth: {
@@ -155,27 +169,17 @@ const filterPillSx = (minWidth: {
   },
 });
 
+
+const compactFieldSx = {
+  display: "flex",
+  alignItems: "center",
+  gap: 0.5,
+  minWidth: 0,
+} as const;
+
 const menuItemSx = { fontSize: 11 } as const;
 const chipSx = { height: 20, fontSize: 10, fontWeight: 700, "& .MuiChip-label": { px: 0.75 } } as const;
 
-function FieldLabel({ children }: { children: ReactNode }) {
-  return (
-    <Typography
-      variant="caption"
-      sx={{
-        display: "block",
-        fontSize: 10,
-        fontWeight: 700,
-        letterSpacing: "0.04em",
-        textTransform: "uppercase",
-        opacity: 0.5,
-        mb: 0.4,
-      }}
-    >
-      {children}
-    </Typography>
-  );
-}
 
 export default function TasksPanel() {
   const dispatch = useDispatch<AppDispatch>();
@@ -234,7 +238,7 @@ export default function TasksPanel() {
   const [openDelete, setOpenDelete] = useState(false);
   const [openDone, setOpenDone] = useState(false);
   const [selectedTaskDone, setSelectedTaskDone] = useState<TaskListItem | null>();
-  const [assignedTo, setAssignedTo] = useState(userId);
+  const [assignedTo, setAssignedTo] = useState(memberId);
 
   useEffect(() => {
     const loadData = async () => {
@@ -324,43 +328,47 @@ export default function TasksPanel() {
     (targetType === "personal" || targetId.length > 0);
 
   const items = useMemo(() => {
-    switch (targetType) {
-      case "contact":
-        return contacts.map((c) => ({
+  switch (targetType) {
+    case "contact":
+      return contacts.map((c) => ({
+        id: c.id,
+        label: `${c.display_id} ${c.first_name} ${c.last_name}`,
+      }));
+
+    case "lead":
+      return leads.map((l) => ({
+        id: l.id,
+        label: `${l.display_id} ${l.first_name} ${l.last_name}`,
+      }));
+
+    case "deal":
+      return deals.map((d) => ({
+        id: d.id,
+        label: `${d.display_id} ${
+          d.title.length > 25
+            ? `${formatTitle(d.title).slice(0, 25)}...`
+            : formatTitle(d.title).toUpperCase()
+        }`,
+      }));
+
+    case "customer":
+      return customers.map((c) => {
+        const con = contacts.find((co) => co.id === c.contact_id);
+
+        return {
           id: c.id,
-          label: `${c.first_name} ${c.last_name}`,
-        }));
-
-      case "lead":
-        return leads.map((l) => ({
-          id: l.id,
-          label: `${l.first_name} ${l.last_name}`,
-        }));
-
-      case "deal":
-        return deals.map((d) => ({
-          id: d.id,
-          label:
-            d.title.length > 25
-              ? `${formatTitle(d.title).slice(0, 25)}...`
-              : formatTitle(d.title).toUpperCase(),
-        }));
-
-      case "customer":
-        return customers.map((c) => {
-          const con = contacts.find((co) => co.id === c.contact_id);
-
-          return {
-            id: c.id,
-            label: con
+          label: `${c.display_id} ${
+            con
               ? `${con.first_name} ${con.last_name}`
-              : "Unknown Contact",
-          };
-        });
-      default:
-        return [];
-    }
-  }, [targetType, contacts, leads, deals, customers]);
+              : "Unknown Contact"
+          }`,
+        };
+      });
+
+    default:
+      return [];
+  }
+}, [targetType, contacts, leads, deals, customers]);
 
   const saveAndExit = async () => {
     const title = editTitle.trim();
@@ -551,9 +559,45 @@ export default function TasksPanel() {
 
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
-      {view === "list" && (
-        <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
+    <Box
+      sx={{
+        height: "100%",
+        minHeight: 0,
+        overflow: "hidden",
+        containerType: "inline-size",
+        containerName: "tasks-panel",
+      }}
+    >
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          height: "100%",
+          minHeight: 0,
+          overflow: "hidden",
+          "@container tasks-panel (min-width: 700px)": {
+            flexDirection: "row",
+          },
+        }}
+      >
+        <Box
+          sx={{
+            display: view === "list" ? "flex" : "none",
+            flexDirection: "column",
+            flex: 1,
+            minWidth: 0,
+            minHeight: 0,
+            overflow: "hidden",
+
+            "@container tasks-panel (min-width: 700px)": {
+              display: "flex",
+              flex: "0 0 clamp(230px, 25%, 270px)",
+              borderRight: 1,
+              borderColor: "divider",
+              pr: 1.5,
+            },
+          }}
+        >
           {error && (
             <Box sx={{ width: "100%", mb: 1 }}>
               <ErrorAlert message={error} />
@@ -743,14 +787,23 @@ export default function TasksPanel() {
               )}
             </Box>
           ) : (
-            <List sx={{ overflowY: "auto", px: 0, flex: 1, }} dense disablePadding>
+            <List
+              sx={{
+                overflowY: "auto",
+                overflowX: "hidden",
+                px: 0,
+                flex: 1,
+                minHeight: 0,
+              }}
+              dense
+              disablePadding
+            >
               {visibleTasks.map((task) => {
                 const isPublic = task.visibility === "public";
                 const isDone = task.status === "completed";
                 const isCancelled = task.status === "cancelled";
                 const overdue = isOverdue(task);
                 const StatusIcon = STATUS_META[task.status].icon;
-                const initials = `${task.assignee.profile.first_name?.[0] ?? ""}${task.assignee.profile.last_name?.[0] ?? ""}`.toUpperCase();
 
                 return (
                   <ListItem
@@ -767,8 +820,6 @@ export default function TasksPanel() {
                       borderRadius: 2,
                       border: "1px solid",
                       borderColor: "divider",
-                      borderLeft: "3px solid",
-                      borderLeftColor: PRIORITY_COLOR[task.priority],
                       opacity: isCancelled ? 0.55 : 1,
                       transition: "box-shadow .15s ease, background-color .15s ease",
                       "&:hover": { bgcolor: "action.hover", boxShadow: 1 },
@@ -840,14 +891,16 @@ export default function TasksPanel() {
                             </Box>
 
                             <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 0.5, mt: 0.35 }}>
-                              <Chip
-                                size="small"
-                                icon={<StatusIcon style={{ fontSize: 12 }} />}
-                                label={STATUS_META[task.status].label}
-                                color={STATUS_META[task.status].color === "default" ? undefined : STATUS_META[task.status].color}
-                                variant={STATUS_META[task.status].color === "default" ? "outlined" : "filled"}
-                                sx={{ ...chipSx, height: 18, fontSize: "0.62rem" }}
-                              />
+                              <Tooltip title="Status">
+                                <Chip
+                                  size="small"
+                                  icon={<StatusIcon style={{ fontSize: 12 }} />}
+                                  label={STATUS_META[task.status].label}
+                                  color={STATUS_META[task.status].color === "default" ? undefined : STATUS_META[task.status].color}
+                                  variant={STATUS_META[task.status].color === "default" ? "outlined" : "filled"}
+                                  sx={{ ...chipSx, height: 18, fontSize: "0.62rem" }}
+                                />
+                              </Tooltip>
 
                               <Tooltip title={`Priority: ${task.priority}`}>
                                 <Chip
@@ -864,49 +917,128 @@ export default function TasksPanel() {
                                   }}
                                 />
                               </Tooltip>
-
                               {task.due_date && (
-                                <Chip
-                                  size="small"
-                                  icon={<EventIcon style={{ fontSize: 11 }} />}
-                                  label={new Date(task.due_date).toLocaleDateString([], { month: "short", day: "numeric" })}
-                                  variant="outlined"
-                                  color={overdue ? "error" : undefined}
-                                  sx={{ ...chipSx, height: 18, fontSize: "0.62rem", fontWeight: overdue ? 700 : 500 }}
-                                />
+                                <Tooltip title="Due date">
+                                  <Chip
+                                    size="small"
+                                    icon={<EventIcon style={{ fontSize: 11 }} />}
+                                    label={new Date(task.due_date).toLocaleDateString([], {
+                                      month: "short",
+                                      day: "numeric",
+                                    })}
+                                    variant="outlined"
+                                    color={overdue ? "error" : undefined}
+                                    sx={{
+                                      ...chipSx,
+                                      height: 18,
+                                      fontSize: "0.62rem",
+                                      fontWeight: overdue ? 700 : 500,
+                                    }}
+                                  />
+                                </Tooltip>
                               )}
                             </Box>
                           </Box>
 
                           {task.author_id === memberId && (
-                            <IconButton
-                              className="task-delete-btn"
-                              size="small"
-                              sx={{ p: "2px", opacity: 0, transition: "opacity .15s ease", flexShrink: 0 }}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleOpenDelete(task);
-                              }}
-                            >
-                              <DeleteOutlineIcon sx={{ fontSize: "14px" }} />
-                            </IconButton>
+                            <Tooltip title="Delete task">
+                              <IconButton
+                                className="task-delete-btn"
+                                size="small"
+                                color="error"
+                                sx={{ p: "2px", opacity: 0, transition: "opacity .15s ease", flexShrink: 0 }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOpenDelete(task);
+                                }}
+                              >
+                                <DeleteIcon sx={{ fontSize: "14px" }} />
+                              </IconButton>
+                            </Tooltip>
                           )}
                         </Box>
                       }
                       secondary={
-                        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 0.5, pl: 3 }}>
-                          <Stack direction="row" alignItems="center" spacing={0.5}>
-                            <Avatar sx={{ width: 14, height: 14, fontSize: 8, fontWeight: 700, bgcolor: "primary.main", color: "common.white" }}>
-                              {initials}
-                            </Avatar>
-                            <Typography variant="caption" fontSize="0.65rem" sx={{ opacity: 0.75 }}>
-                              {formatName(task.assignee.profile.first_name, task.assignee.profile.last_name)}
-                            </Typography>
-                          </Stack>
+                        <Box
+                          sx={{
+                            display: "none",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            mt: 0.5,
+                            pl: 3,
 
-                          <Typography variant="caption" fontSize="0.6rem" sx={{ opacity: 0.45 }}>
-                            {formatName(task.author.profile.first_name, task.author.profile.last_name)}
-                          </Typography>
+                            "@container tasks-panel (min-width: 1000px)": {
+                              display: "flex",
+                            },
+                          }}
+                        >
+                          <Tooltip
+                            title= "Assigned to"
+                            arrow
+                          >
+                            <Stack
+                              direction="row"
+                              alignItems="center"
+                              spacing={0.5}
+                              sx={{ minWidth: 0 }}
+                            >
+                              <Avatar
+                                src={task.assignee?.profile.avatar_url || undefined}
+                                sx={{
+                                  width: 14,
+                                  height: 14,
+                                  fontSize: 8,
+                                  fontWeight: 700,
+                                }}
+                              >
+                                {task.assignee
+                                  ? `${task.assignee.profile.first_name?.[0] ?? ""}${task.assignee.profile.last_name?.[0] ?? ""}`
+                                  : "?"}
+                              </Avatar>
+
+                              <Typography
+                                variant="caption"
+                                fontSize="0.65rem"
+                                sx={{
+                                  opacity: 0.75,
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                  whiteSpace: "nowrap",
+                                }}
+                              >
+                                {task.assignee
+                                  ? formatName(
+                                      task.assignee.profile.first_name,
+                                      task.assignee.profile.last_name
+                                    )
+                                  : "Unassigned"}
+                              </Typography>
+                            </Stack>
+                          </Tooltip>
+
+                          <Tooltip
+                            title="Author"
+                            arrow
+                          >
+                            <Typography
+                              variant="caption"
+                              fontSize="0.6rem"
+                              sx={{
+                                opacity: 0.45,
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap",
+                                maxWidth: 120,
+                              }}
+                            >
+                              {task.author
+                                ? formatName(
+                                    task.author.profile.first_name,
+                                    task.author.profile.last_name
+                                  )
+                                : "Unknown"}
+                            </Typography>
+                          </Tooltip>
                         </Box>
                       }
                     />
@@ -916,10 +1048,23 @@ export default function TasksPanel() {
             </List>
           )}
         </Box>
-      )}
+      
+        <Box
+          sx={{
+            display: view === "editor" ? "flex" : "none",
+            flexDirection: "column",
+            flex: 1,
+            minWidth: 0,
+            minHeight: 0,
+            overflow: "hidden",
 
-      {view === "editor" && (
-        <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
+            "@container tasks-panel (min-width: 700px)": {
+              display: "flex",
+              flex: 1,
+              pl: 1.5,
+            },
+          }}
+        >
           {error && (
             <Box sx={{ width: "100%", mb: 1 }}>
               <ErrorAlert message={error} />
@@ -958,16 +1103,19 @@ export default function TasksPanel() {
 
             <Stack direction="row" alignItems="center" spacing={0.5}>
               {activeTask && activeTask.author_id === memberId && (
-                <IconButton
-                  size="small"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleOpenDelete(activeTask);
-                  }}
-                  disabled={saving}
-                >
-                  <DeleteOutlineIcon fontSize="small" />
-                </IconButton>
+                <Tooltip title="Delete task">
+                  <IconButton
+                    color="error"
+                    size="small"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleOpenDelete(activeTask);
+                    }}
+                    disabled={saving}
+                  >
+                    <DeleteIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
               )}
 
               {canEdit && (
@@ -998,14 +1146,18 @@ export default function TasksPanel() {
           <Box
             sx={{
               display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: 1,
+              gridTemplateColumns: {
+                xs: "1fr 1fr",
+                sm: "repeat(3, 1fr)",
+              },
+              gap: 0.75,
               mx: 1,
-              mb: 1,
+              mb: 0.75,
             }}
           >
-            <Box>
-              <FieldLabel>Assigned to</FieldLabel>
+            <Box sx={compactFieldSx}>
+              <PersonIcon sx={{ fontSize: 15, opacity: 0.5, flexShrink: 0 }} />
+
               <FormControl size="small" fullWidth>
                 <Select
                   disabled={!canEdit}
@@ -1015,53 +1167,66 @@ export default function TasksPanel() {
                 >
                   {members.map((member) => (
                     <MenuItem sx={{ fontSize: 11 }} key={member.id} value={member.id}>
-                      {member.id === memberId ? 'Self' : `${formatName(member.profile.first_name, member.profile.last_name)}`}
+                      {member.id === memberId
+                        ? "Self"
+                        : formatName(
+                            member.profile.first_name,
+                            member.profile.last_name
+                          )}
                     </MenuItem>
                   ))}
                 </Select>
               </FormControl>
             </Box>
 
-            <Box>
-              <FieldLabel>Visibility</FieldLabel>
+            <Box sx={compactFieldSx}>
+              {editVisibility === "public" ? (
+                <PublicIcon sx={{ fontSize: 15, opacity: 0.5, flexShrink: 0 }} />
+              ) : (
+                <LockIcon sx={{ fontSize: 15, opacity: 0.5, flexShrink: 0 }} />
+              )}
+
               <FormControl size="small" fullWidth>
                 <Select
                   disabled={!canEdit}
                   value={editVisibility}
-                  onChange={(e) => setEditVisibility(e.target.value as TaskVisibility)}
-                  renderValue={(val) => (
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.6 }}>
-                      {val === "public" ? (
-                        <PublicIcon sx={{ fontSize: 14, opacity: 0.6 }} />
-                      ) : (
-                        <LockIcon sx={{ fontSize: 14, opacity: 0.6 }} />
-                      )}
-                      <span>{val === "public" ? "Public" : "Private"}</span>
-                    </Box>
-                  )}
+                  onChange={(e) =>
+                    setEditVisibility(e.target.value as TaskVisibility)
+                  }
+                  renderValue={(val) => (val === "public" ? "Public" : "Private")}
                   sx={pillFieldSx}
                 >
                   <MenuItem sx={{ fontSize: 11 }} value="private">
-                    <LockIcon sx={{ fontSize: 14, mr: 1, opacity: 0.6 }} /> Private
+                    Private
                   </MenuItem>
                   <MenuItem sx={{ fontSize: 11 }} value="public">
-                    <PublicIcon sx={{ fontSize: 14, mr: 1, opacity: 0.6 }} /> Public
+                    Public
                   </MenuItem>
                 </Select>
               </FormControl>
             </Box>
 
-            <Box>
-              <FieldLabel>Priority</FieldLabel>
+            <Box sx={compactFieldSx}>
+              <FlagIcon sx={{ fontSize: 15, opacity: 0.5, flexShrink: 0 }} />
+
               <FormControl size="small" fullWidth>
                 <Select
                   disabled={!canEdit}
                   value={editPriority}
-                  onChange={(e) => setEditPriority(e.target.value as TaskPriority)}
+                  onChange={(e) =>
+                    setEditPriority(e.target.value as TaskPriority)
+                  }
                   renderValue={(val) => (
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.6, textTransform: "capitalize" }}>
-                      <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: PRIORITY_COLOR[val] }} />
-                      {val}
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.6 }}>
+                      <Box
+                        sx={{
+                          width: 7,
+                          height: 7,
+                          borderRadius: "50%",
+                          bgcolor: PRIORITY_COLOR[val],
+                        }}
+                      />
+                      <span style={{ textTransform: "capitalize" }}>{val}</span>
                     </Box>
                   )}
                   sx={pillFieldSx}
@@ -1074,8 +1239,9 @@ export default function TasksPanel() {
               </FormControl>
             </Box>
 
-            <Box>
-              <FieldLabel>Due date</FieldLabel>
+            <Box sx={compactFieldSx}>
+              <EventIcon sx={{ fontSize: 15, opacity: 0.5, flexShrink: 0 }} />
+
               <TextField
                 disabled={!canEdit}
                 size="small"
@@ -1083,33 +1249,31 @@ export default function TasksPanel() {
                 type="date"
                 value={editDueDate}
                 onChange={(e) => setEditDueDate(e.target.value)}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <EventIcon sx={{ fontSize: 14, opacity: 0.5 }} />
-                    </InputAdornment>
-                  ),
-                }}
                 sx={pillFieldSx}
               />
             </Box>
 
-            <Box>
-              <FieldLabel>Type</FieldLabel>
+            <Box sx={compactFieldSx}>
+              {(() => {
+                const Meta = TASK_TYPE_META[taskType].icon;
+
+                return (
+                  <Meta
+                    style={{
+                      fontSize: 15,
+                      opacity: 0.5,
+                      flexShrink: 0,
+                    }}
+                  />
+                );
+              })()}
+
               <FormControl size="small" fullWidth>
                 <Select
                   disabled={!canEdit}
                   value={taskType}
                   onChange={(e) => setTaskType(e.target.value as TaskType)}
-                  renderValue={(val) => {
-                    const Meta = TASK_TYPE_META[val].icon;
-                    return (
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 0.6 }}>
-                        <Meta style={{ fontSize: 14, opacity: 0.6 }} />
-                        {TASK_TYPE_META[val].label}
-                      </Box>
-                    );
-                  }}
+                  renderValue={(val) => TASK_TYPE_META[val].label}
                   sx={pillFieldSx}
                 >
                   {(Object.keys(TASK_TYPE_META) as TaskType[]).map((key) => (
@@ -1122,120 +1286,173 @@ export default function TasksPanel() {
             </Box>
 
             {activeTask && canComplete && (
-              <Box>
-                <FieldLabel>Status</FieldLabel>
+              <Box sx={compactFieldSx}>
+                {(() => {
+                  const Meta = STATUS_META[editStatus].icon;
+
+                  return (
+                    <Meta
+                      style={{
+                        fontSize: 15,
+                        opacity: 0.5,
+                        flexShrink: 0,
+                      }}
+                    />
+                  );
+                })()}
+
                 <FormControl size="small" fullWidth>
                   <Select
                     value={editStatus}
                     onChange={async (e) => {
                       const newStatus = e.target.value as TaskStatus;
                       setEditStatus(newStatus);
+
                       if (activeId) {
                         await dispatch(
-                          completeTask({ id: activeId, completed: newStatus === "completed" })
+                          completeTask({
+                            id: activeId,
+                            completed: newStatus === "completed",
+                          })
                         ).unwrap().catch(() => {});
                       }
                     }}
-                    renderValue={(val) => {
-                      const Meta = STATUS_META[val].icon;
-                      return (
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.6 }}>
-                          <Meta style={{ fontSize: 14, opacity: 0.6 }} />
-                          {STATUS_META[val].label}
-                        </Box>
-                      );
-                    }}
+                    renderValue={(val) => STATUS_META[val].label}
                     sx={pillFieldSx}
                   >
-                    <MenuItem sx={{ fontSize: 11 }} value="todo">To Do</MenuItem>
-                    <MenuItem sx={{ fontSize: 11 }} value="in_progress">In Progress</MenuItem>
-                    <MenuItem sx={{ fontSize: 11 }} value="completed">Completed</MenuItem>
-                    <MenuItem sx={{ fontSize: 11 }} value="cancelled">Cancelled</MenuItem>
+                    <MenuItem sx={{ fontSize: 11 }} value="todo">
+                      To Do
+                    </MenuItem>
+                    <MenuItem sx={{ fontSize: 11 }} value="in_progress">
+                      In Progress
+                    </MenuItem>
+                    <MenuItem sx={{ fontSize: 11 }} value="completed">
+                      Completed
+                    </MenuItem>
+                    <MenuItem sx={{ fontSize: 11 }} value="cancelled">
+                      Cancelled
+                    </MenuItem>
                   </Select>
                 </FormControl>
               </Box>
             )}
           </Box>
 
-          <Box sx={{ mx: 1, mb: 1 }}>
-            <FieldLabel>Related to</FieldLabel>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
-              <FormControl size="small" sx={{ width: 140, flexShrink: 0 }}>
-                <Select
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 0.5,
+              mx: 1,
+              mb: 0.75,
+              minWidth: 0,
+            }}
+          >
+            {(() => {
+              const Meta = TARGET_META[targetType].icon;
+
+              return (
+                <Meta
+                  style={{
+                    fontSize: 15,
+                    opacity: 0.5,
+                    flexShrink: 0,
+                  }}
+                />
+              );
+            })()}
+
+            <FormControl
+              size="small"
+              sx={{
+                width: { xs: 105, sm: 120 },
+                flexShrink: 0,
+              }}
+            >
+              <Select
+                disabled={!canEdit}
+                value={targetType}
+                onChange={(e) => {
+                  setTargetType(e.target.value as TaskTargetType);
+                  setTargetId("");
+                }}
+                renderValue={(val) => TARGET_META[val].label}
+                sx={pillFieldSx}
+              >
+                {(Object.keys(TARGET_META) as TaskTargetType[]).map((key) => (
+                  <MenuItem sx={{ fontSize: 11 }} key={key} value={key}>
+                    {TARGET_META[key].label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            {targetType !== "personal" && (
+              <FormControl size="small" fullWidth>
+                <TextField
                   disabled={!canEdit}
-                  value={targetType}
-                  onChange={(e) => {
-                    setTargetType(e.target.value as TaskTargetType);
-                    setTargetId("");
-                  }}
-                  renderValue={(val) => {
-                    const Meta = TARGET_META[val].icon;
-                    return (
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 0.6 }}>
-                        <Meta style={{ fontSize: 14, opacity: 0.6 }} />
-                        {TARGET_META[val].label}
-                      </Box>
-                    );
-                  }}
+                  select
+                  fullWidth
+                  size="small"
+                  value={targetId}
+                  onChange={(e) => setTargetId(e.target.value)}
                   sx={pillFieldSx}
+                  SelectProps={{
+                    displayEmpty: true,
+                    renderValue: (selected) => {
+                      if (!selected) {
+                        return (
+                          <span style={{ opacity: 0.5 }}>
+                            Choose a target from {targetType}
+                          </span>
+                        );
+                      }
+
+                      const item = items.find((i) => i.id === selected);
+                      return item?.label ?? "";
+                    },
+                    MenuProps: {
+                      PaperProps: {
+                        sx: {
+                          maxHeight: 200,
+                          overflowY: "auto",
+                        },
+                      },
+                    },
+                  }}
                 >
-                  {(Object.keys(TARGET_META) as TaskTargetType[]).map((key) => (
-                    <MenuItem sx={{ fontSize: 11 }} key={key} value={key}>
-                      {TARGET_META[key].label}
+                  <MenuItem value="" disabled sx={{ fontSize: 11 }}>
+                    Choose a target from {targetType}
+                  </MenuItem>
+
+                  {items.map((item) => (
+                    <MenuItem key={item.id} value={item.id} sx={{ fontSize: 11 }}>
+                      {item.label}
                     </MenuItem>
                   ))}
-                </Select>
+                </TextField>
               </FormControl>
+            )}
 
-              {targetType !== "personal" && (
-                <FormControl size="small" fullWidth>
-                  <TextField
-                    disabled={!canEdit}
-                    select
-                    fullWidth
-                    size="small"
-                    value={targetId}
-                    onChange={(e) => setTargetId(e.target.value)}
-                    sx={pillFieldSx}
-                    SelectProps={{
-                      displayEmpty: true,
-                      renderValue: (selected) => {
-                        if (!selected) {
-                          return <span style={{ opacity: 0.5 }}>Choose a target from {targetType}</span>;
-                        }
-                        const item = items.find((i) => i.id === selected);
-                        return item?.label ?? "";
-                      },
-                      MenuProps: {
-                        PaperProps: { sx: { maxHeight: 200, overflowY: "auto" } },
-                      },
-                    }}
-                  >
-                    <MenuItem value="" disabled sx={{ fontSize: 11 }}>
-                      Choose a target from {targetType}
-                    </MenuItem>
-                    {items.map((item) => (
-                      <MenuItem key={item.id} value={item.id} sx={{ fontSize: 11 }}>
-                        {item.label}
-                      </MenuItem>
-                    ))}
-                  </TextField>
-                </FormControl>
-              )}
-
-              {activeTask && (activeTask.target_type === "customer" || activeTask.target_type === "contact") && (
+            {activeTask &&
+              (activeTask.target_type === "customer" ||
+                activeTask.target_type === "contact") && (
                 <IconButton
-                  title={`View full details for ${getValue(activeTask.target_type, activeTask.target_id)}`}
+                  title={`View full details for ${getValue(
+                    activeTask.target_type,
+                    activeTask.target_id
+                  )}`}
                   size="small"
                   onClick={(e) => {
                     e.stopPropagation();
-                    navigate(`/app/${activeTask.target_type}s/${activeTask.target_id}`);
+                    navigate(
+                      `/app/${activeTask.target_type}s/${activeTask.target_id}`
+                    );
                   }}
                 >
                   <ExitToAppIcon sx={{ fontSize: 13, opacity: 0.5 }} />
                 </IconButton>
               )}
-            </Box>
           </Box>
 
           <TextField
@@ -1268,6 +1485,7 @@ export default function TasksPanel() {
             autoFocus
             multiline
             variant="standard"
+            fullWidth
             value={editDescription}
             onChange={(e) => setEditDescription(e.target.value)}
             InputProps={{ disableUnderline: true }}
@@ -1279,7 +1497,7 @@ export default function TasksPanel() {
             }}
           />
         </Box>
-      )}
+      </Box>
 
       <Dialog
         open={openDelete}
@@ -1298,7 +1516,7 @@ export default function TasksPanel() {
               bgcolor: (theme) => alpha(theme.palette.error.main, 0.12),
             }}
           >
-            <DeleteOutlineIcon sx={{ color: "error.main", fontSize: 20 }} />
+            <DeleteIcon sx={{ color: "error.main", fontSize: 20 }} />
           </Box>
           Delete task
         </DialogTitle>

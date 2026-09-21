@@ -24,12 +24,12 @@ import useDock from '../hooks/useDock';
 export const MOBILE_BOTTOM_NAV_HEIGHT = 64;
 
 const tabs = [
-  { label: "Notes", icon: NoteAltIcon, width: 380, height: 460 },
-  { label: "Tasks", icon: TaskAltIcon, width: 380, height: 460 },
-  { label: "Chats", icon: ChatIcon, width: 380, height: 460 },
+  { label: "Notes", icon: NoteAltIcon, width: 450, height: 520 },
+  { label: "Tasks", icon: TaskAltIcon, width: 450, height: 520 },
+  { label: "Chats", icon: ChatIcon, width: 450, height: 520 },
   { label: "Emails", icon: EmailIcon, width: 800, height: 600 },
-  { label: "Calls", icon: CallIcon, width: 380, height: 460 },
-  { label: "SMS", icon: SmsIcon, width: 380, height: 460 },
+  { label: "Calls", icon: CallIcon, width: 450, height: 520 },
+  { label: "SMS", icon: SmsIcon, width: 450, height: 520 },
 ];
 
 export default function Sidebar() {

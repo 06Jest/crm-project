@@ -1,37 +1,54 @@
-import { Box, Collapse, Grow, IconButton, Paper, Tooltip, Typography } from '@mui/material';
+import { Box, Grow, IconButton, Paper, Tooltip, Typography } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import RemoveIcon from '@mui/icons-material/Remove';
 import FullscreenIcon from '@mui/icons-material/Fullscreen';
-import { useSelector } from 'react-redux';
-import { type RootState } from '../store/store';
 import { type ElementType, type ReactNode } from 'react';
+import { Rnd } from 'react-rnd';
 
 interface DockWindowProps {
+  id: string;
   title: string;
   Icon?: ElementType;
   minimized: boolean;
   minimizedIndex?: number;
   width?: number;
   height?: number;
+  x?: number;
+  y?: number;
+  zIndex?: number;
   onClose: () => void;
   onToggleMinimize: () => void;
+  onFocus: () => void;
+  onUpdate: (
+    updates: Partial<{
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+    }>
+  ) => void;
   children: ReactNode;
 }
 
 // const MOBILE_VERTICAL_SAFE_OFFSET = 180;
 
 export default function DockWindow({
+  id,
   title,
   Icon,
   minimized,
   minimizedIndex = 0,
   width = 280,
   height = 380,
+  x,
+  y,
+  zIndex = 1200,
   onClose,
   onToggleMinimize,
+  onFocus,
+  onUpdate,
   children,
 }: DockWindowProps) {
-  const themeMode = useSelector((state: RootState) => state.ui.themeMode);
 
   if (minimized) {
     return (
@@ -52,6 +69,7 @@ export default function DockWindow({
             alignItems: 'center',
             color: "#fff",
             backgroundColor: 'primary.main',
+            pointerEvents: "auto",
           }}>
           <Box sx={{
             display: 'flex',
@@ -67,103 +85,136 @@ export default function DockWindow({
   }
 
   return (
-    <Collapse timeout={250} in={!minimized}>
-      <Grow timeout={250} in={!minimized}>
+    <Rnd
+      position={{
+        x: x ?? window.innerWidth - width - 90 - minimizedIndex * (width + 12),
+        y: y ?? window.innerHeight - height,
+      }}
+      size={{
+        width,
+        height,
+      }}
+      onMouseDown={onFocus}
+      bounds="window"
+      enableResizing={true}
+      dragHandleClassName="dock-window-header"
+      onDragStop={(_e, data) => {
+        onUpdate({
+          x: data.x,
+          y: data.y,
+        });
+      }}
+      onResizeStop={(_e, _direction, ref, _delta, position) => {
+        onUpdate({
+          width: ref.offsetWidth,
+          height: ref.offsetHeight,
+          x: position.x,
+          y: position.y,
+        });
+      }}
+      style={{
+        zIndex,
+        pointerEvents: "auto",
+      }}
+>
+      <Box
+        sx={{
+          width: "100%",
+          height: "100%",
+          display: "flex",
+          flexDirection: "column",
+          overflow: "hidden",
+          borderRadius: "10px 10px 0 0",
+          boxShadow: "0 4px 18px rgba(0,0,0,0.25)",
+          backgroundColor: "background.paper",
+          border: "1px solid",
+          borderColor: "divider",
+        }}
+      >
         <Box
+          className="dock-window-header"
           sx={{
-            width: { xs: '100vw', md: width },
-            height: { xs: '100dvh', md: height },
-            position: { xs: 'fixed', md: 'static' },
-            top: { xs: 0, md: 'auto' },
-            left: { xs: 0, md: 'auto' },
-            borderRadius: { xs: 0, md: '10px 10px 0 0' },
-            zIndex: { xs: 1200, md: 'auto' },
-            display: 'flex',
-            flexDirection: 'column',
-            overflow: 'hidden',
-            boxShadow: '0 4px 18px rgba(0,0,0,0.25)',
-            backgroundColor: themeMode === 'dark' ? '#2b2b2b' : '#ffffff',
-            border: '1px solid',
-            borderColor: '#63636338',
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            px: 1.5,
+            py: 1,
+            cursor: "grab",
+            backgroundColor: "primary.main",
+            color: "primary.contrastText",
             flexShrink: 0,
+            "&:active": {
+              cursor: "grabbing",
+            },
           }}
         >
           <Box
-            onClick={onToggleMinimize}
             sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              px: 1.5,
-              py: 1,
-              cursor: 'pointer',
-              backgroundColor: 'primary.main',
-              color: 'primary.contrastText',
-              flexShrink: 0,
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+              overflow: "hidden",
             }}
           >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, overflow: 'hidden' }}>
-              {Icon && <Icon sx={{ color: '#fff' }} />}
-              <Typography variant="body2" fontWeight={700} noWrap>
-                {title}
-              </Typography>
-            </Box>
+            {Icon && <Icon sx={{ color: "#fff" }} />}
 
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>  
-              <IconButton
-                size="small"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onToggleMinimize();
-                }}
-                sx={{ color: 'inherit' }}
-              >
-                <RemoveIcon fontSize="small" />
-              </IconButton>
-              <Tooltip title="Coming soon">
-                <span>
-                  <IconButton
-                    size="small"
-                    disabled
-                    sx={{
-                      color: "inherit",
-                      opacity: 0.6,
-                      position: "relative",
-                    }}
-                  >
-                    <FullscreenIcon fontSize="small" />
-                  </IconButton>
-                </span>
-              </Tooltip>
-              <IconButton
-                size="small"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onClose();
-                }}
-                sx={{ color: 'inherit' }}
-              >
-                <CloseIcon fontSize="small" />
-              </IconButton>
-            </Box>
+            <Typography variant="body2" fontWeight={700} noWrap>
+              {title}
+            </Typography>
           </Box>
-          {!minimized && (
-            <Box
-              sx={{
-                 flex: 1,
-                  minHeight: 0,
-                  minWidth: 0,
-                  p: 1.5,
-                  overflowY: 'auto',
-                  overflowX: 'hidden',
-                  WebkitOverflowScrolling: 'touch',
+
+          <Box sx={{ display: "flex", alignItems: "center" }}>
+            <IconButton
+              size="small"
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleMinimize();
               }}
+              sx={{ color: "inherit" }}
             >
-              {children}
-            </Box>
-          )}
+              <RemoveIcon fontSize="small" />
+            </IconButton>
+
+            <Tooltip title="Open full page">
+              <IconButton
+                size="small"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  window.open(`/app/communication/${id}`, "_blank");
+                }}
+                sx={{ color: "inherit" }}
+              >
+                <FullscreenIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+
+            <IconButton
+              size="small"
+              onClick={(e) => {
+                e.stopPropagation();
+                onClose();
+              }}
+              sx={{ color: "inherit" }}
+            >
+              <CloseIcon fontSize="small" />
+            </IconButton>
+          </Box>
         </Box>
-      </Grow>
-    </Collapse>
+
+        <Box
+          sx={{
+            flex: 1,
+            minHeight: 0,
+            minWidth: 0,
+            p: 1.5,
+            overflowY: "auto",
+            overflowX: "hidden",
+            WebkitOverflowScrolling: "touch",
+          }}
+        >
+          {children}
+        </Box>
+      </Box>
+    </Rnd>
   );
 }

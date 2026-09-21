@@ -27,6 +27,7 @@ import Deals from './pages/app/Deals/Deals';
 import AddDeal from './pages/app/Deals/AddDeal'
 import AddLead from './pages/app/Leads/AddLead';
 import Activities from './pages/app/Activities/Activities';
+import CommunicationPage from './pages/app/Communication/CommunicationPage';
 import Customers from './pages/app/Customers/Customers';
 import CustomerDetail from './pages/app/Customers/CustomerDetail';
 import Profile from './pages/app/Profile/Profile';
@@ -106,6 +107,7 @@ function AppRoutes() {
             <Route path="/app/workspace" element={<Workspace />} />
             <Route path="/app/archives" element={<Archives />} />
             <Route path="/app/settings" element={<Settings />} />
+            <Route path="/app/communication/:id" element={<CommunicationPage />} />
           </Route>
         </Route>
         <Route path="*" element={<NotFoundPage />} />

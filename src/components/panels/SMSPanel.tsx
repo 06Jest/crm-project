@@ -23,10 +23,18 @@ import PhoneRoundedIcon from '@mui/icons-material/PhoneRounded';
 
 import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '../../store/store';
-import { fetchSms, addSms, clearError as clearSmsError } from '../../store/smsSlice';
+import {
+  fetchSms,
+  addSms,
+  clearError as clearSmsError,
+} from '../../store/smsSlice';
 import { fetchContactsLists } from '../../store/contactsSlice';
 import { fetchLeadsLists } from '../../store/leadsSlice';
-import type { SmsListItem, CreateSms, SmsStatus } from '../../types/sms';
+import type {
+  SmsListItem,
+  CreateSms,
+  SmsStatus,
+} from '../../types/sms';
 import { formatName } from '../../utils/formatText';
 import ErrorAlert from '../Error';
 import RefreshIcon from '@mui/icons-material/Refresh';
@@ -46,6 +54,7 @@ interface DerivedThread {
   id: string;
   name: string;
   phone: string;
+  avatarUrl?: string | null;
   messages: SmsListItem[];
 }
 
@@ -65,6 +74,7 @@ const getSmsStatusColor = (status: SmsStatus): string => {
       return '#9e9e9e';
   }
 };
+
 const AVATAR_PALETTE = [
   '#6C5CE7',
   '#0984E3',
@@ -80,9 +90,11 @@ const AVATAR_PALETTE = [
 
 const getAvatarColor = (name: string): string => {
   let hash = 0;
+
   for (let i = 0; i < name.length; i += 1) {
     hash = name.charCodeAt(i) + ((hash << 5) - hash);
   }
+
   return AVATAR_PALETTE[Math.abs(hash) % AVATAR_PALETTE.length];
 };
 
@@ -102,7 +114,8 @@ const pillInputSx = (radius: number | string) => ({
     '& fieldset': { border: 'none' },
     '&.Mui-focused': {
       bgcolor: 'background.paper',
-      boxShadow: (theme: Theme) => `0 0 0 2px ${alpha(theme.palette.primary.main, 0.35)}`,
+      boxShadow: (theme: Theme) =>
+        `0 0 0 2px ${alpha(theme.palette.primary.main, 0.35)}`,
     },
   },
 });
@@ -122,8 +135,14 @@ const sendButtonSx = {
 export default function SmsPanel() {
   const dispatch = useDispatch<AppDispatch>();
 
-  const { items: contacts, loaded: cLd } = useSelector((s: RootState) => s.contacts);
-  const { items: leads, loaded: lLd } = useSelector((s: RootState) => s.leads);
+  const { items: contacts, loaded: cLd } = useSelector(
+    (s: RootState) => s.contacts
+  );
+
+  const { items: leads, loaded: lLd } = useSelector(
+    (s: RootState) => s.leads
+  );
+
   const {
     items: smsItems,
     loading: smsLoading,
@@ -135,7 +154,8 @@ export default function SmsPanel() {
   const [view, setView] = useState<ViewMode>('list');
   const [activeKey, setActiveKey] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
-  const [selectedRecipient, setSelectedRecipient] = useState<RecipientOption | null>(null);
+  const [selectedRecipient, setSelectedRecipient] =
+    useState<RecipientOption | null>(null);
   const [sending, setSending] = useState(false);
 
   useEffect(() => {
@@ -148,6 +168,7 @@ export default function SmsPanel() {
         // Error handled by Redux state
       }
     };
+
     loadData();
   }, [smsLd, cLd, lLd, dispatch]);
 
@@ -169,25 +190,29 @@ export default function SmsPanel() {
     [contacts, leads]
   );
 
-
   const threads: DerivedThread[] = useMemo(() => {
     const map = new Map<string, DerivedThread>();
 
     for (const sms of smsItems) {
       const isLead = !!sms.lead_id;
       const refId = isLead ? sms.lead_id : sms.contact_id;
+
       if (!refId) continue;
 
       const key = `${isLead ? 'lead' : 'contact'}:${refId}`;
 
       if (!map.has(key)) {
         const person = isLead ? sms.lead : sms.contact;
+
         map.set(key, {
           key,
           type: isLead ? 'lead' : 'contact',
           id: refId,
-          name: person ? formatName(person.first_name, person.last_name) : 'Unknown',
+          name: person
+            ? formatName(person.first_name, person.last_name)
+            : 'Unknown',
           phone: person?.phone ?? '',
+          avatarUrl: person?.avatar_url ?? null,
           messages: [],
         });
       }
@@ -199,26 +224,41 @@ export default function SmsPanel() {
       .map((t) => ({
         ...t,
         messages: [...t.messages].sort(
-          (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+          (a, b) =>
+            new Date(a.created_at).getTime() -
+            new Date(b.created_at).getTime()
         ),
       }))
       .sort((a, b) => {
-        const aLast = a.messages[a.messages.length - 1]?.created_at ?? '';
-        const bLast = b.messages[b.messages.length - 1]?.created_at ?? '';
-        return new Date(bLast).getTime() - new Date(aLast).getTime();
+        const aLast =
+          a.messages[a.messages.length - 1]?.created_at ?? '';
+        const bLast =
+          b.messages[b.messages.length - 1]?.created_at ?? '';
+
+        return (
+          new Date(bLast).getTime() -
+          new Date(aLast).getTime()
+        );
       });
   }, [smsItems]);
 
-  const activeThread = threads.find((t) => t.key === activeKey) ?? null;
+  const activeThread =
+    threads.find((t) => t.key === activeKey) ?? null;
 
   const visibleThreads = useMemo(() => {
     const q = query.trim().toLowerCase();
+
     if (!q) return threads;
 
     return threads.filter((t) => {
-      const searchable = [t.name, t.phone, ...t.messages.map((m) => m.content)]
+      const searchable = [
+        t.name,
+        t.phone,
+        ...t.messages.map((m) => m.content),
+      ]
         .join(' ')
         .toLowerCase();
+
       return searchable.includes(q);
     });
   }, [threads, query]);
@@ -238,14 +278,22 @@ export default function SmsPanel() {
 
   const sendMessage = useCallback(async () => {
     const text = draft.trim();
+
     if (!text || !activeThread) return;
 
     const payload: CreateSms =
       activeThread.type === 'lead'
-        ? { lead_id: activeThread.id, content: text }
-        : { contact_id: activeThread.id, content: text };
+        ? {
+            lead_id: activeThread.id,
+            content: text,
+          }
+        : {
+            contact_id: activeThread.id,
+            content: text,
+          };
 
     setSending(true);
+
     try {
       await dispatch(addSms(payload)).unwrap();
       setDraft('');
@@ -258,17 +306,28 @@ export default function SmsPanel() {
 
   const createThreadAndSend = useCallback(async () => {
     const text = draft.trim();
+
     if (!text || !selectedRecipient) return;
 
     const payload: CreateSms =
       selectedRecipient.type === 'lead'
-        ? { lead_id: selectedRecipient.id, content: text }
-        : { contact_id: selectedRecipient.id, content: text };
+        ? {
+            lead_id: selectedRecipient.id,
+            content: text,
+          }
+        : {
+            contact_id: selectedRecipient.id,
+            content: text,
+          };
 
     setSending(true);
+
     try {
       await dispatch(addSms(payload)).unwrap();
-      setActiveKey(`${selectedRecipient.type}:${selectedRecipient.id}`);
+
+      setActiveKey(
+        `${selectedRecipient.type}:${selectedRecipient.id}`
+      );
       setDraft('');
       setSelectedRecipient(null);
       setView('thread');
@@ -288,17 +347,76 @@ export default function SmsPanel() {
   }, [dispatch]);
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      {error && (
-        <Box sx={{ width: '100%', mb: 1 }}>
-          <ErrorAlert message={error} />
-        </Box>
-      )}
+    <Box
+      sx={{
+        height: '100%',
+        minHeight: 0,
+        width: '100%',
+        overflow: 'hidden',
+        containerType: 'inline-size',
+        containerName: 'sms-panel',
+      }}
+    >
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          height: '100%',
+          minHeight: 0,
+          overflow: 'hidden',
 
-      {/* LIST VIEW */}
-      {view === 'list' && (
-        <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', ...fadeInSx }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
+          '@container sms-panel (min-width: 700px)': {
+            flexDirection: 'row',
+          },
+        }}
+      >
+        {error && (
+          <Box
+            sx={{
+              width: '100%',
+              mb: 1,
+              flexShrink: 0,
+              '@container sms-panel (min-width: 700px)': {
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                zIndex: 2,
+              },
+            }}
+          >
+            <ErrorAlert message={error} />
+          </Box>
+        )}
+
+        {/* LIST VIEW / SIDEBAR */}
+        <Box
+          sx={{
+            display: view === 'list' ? 'flex' : 'none',
+            flexDirection: 'column',
+            flex: 1,
+            minWidth: 0,
+            minHeight: 0,
+            overflow: 'hidden',
+            ...fadeInSx,
+
+            '@container sms-panel (min-width: 700px)': {
+              display: 'flex',
+              flex: '0 0 clamp(230px, 25%, 270px)',
+              borderRight: 1,
+              borderColor: 'divider',
+              pr: 1.5,
+            },
+          }}
+        >
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0.5,
+              mb: 1,
+            }}
+          >
             <TextField
               size="small"
               fullWidth
@@ -308,21 +426,28 @@ export default function SmsPanel() {
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <SearchIcon fontSize="small" sx={{ color: 'text.secondary' }} />
+                    <SearchIcon
+                      fontSize="small"
+                      sx={{ color: 'text.secondary' }}
+                    />
                   </InputAdornment>
                 ),
               }}
               sx={pillInputSx(999)}
             />
+
             <Tooltip title="New message">
               <IconButton
                 onClick={startNewThread}
                 sx={{
                   color: 'primary.main',
-                  bgcolor: (theme) => alpha(theme.palette.primary.main, 0.1),
-                  transition: 'background-color 0.15s ease, transform 0.15s ease',
+                  bgcolor: (theme) =>
+                    alpha(theme.palette.primary.main, 0.1),
+                  transition:
+                    'background-color 0.15s ease, transform 0.15s ease',
                   '&:hover': {
-                    bgcolor: (theme) => alpha(theme.palette.primary.main, 0.18),
+                    bgcolor: (theme) =>
+                      alpha(theme.palette.primary.main, 0.18),
                     transform: 'scale(1.05)',
                   },
                 }}
@@ -330,7 +455,14 @@ export default function SmsPanel() {
                 <AddIcon fontSize="small" />
               </IconButton>
             </Tooltip>
-            <Tooltip title={smsLoading ? "Refreshing..." : "Refresh messages"}>
+
+            <Tooltip
+              title={
+                smsLoading && smsLd
+                  ? 'Refreshing messages...'
+                  : 'Refresh messages'
+              }
+            >
               <span>
                 <IconButton
                   size="small"
@@ -339,15 +471,18 @@ export default function SmsPanel() {
                   sx={{
                     p: 1,
                     color: 'text.secondary',
-                    bgcolor: (theme) => alpha(theme.palette.text.primary, 0.04),
-                    transition: 'background-color 0.15s ease, transform 0.15s ease',
+                    bgcolor: (theme) =>
+                      alpha(theme.palette.text.primary, 0.04),
+                    transition:
+                      'background-color 0.15s ease, transform 0.15s ease',
                     '&:hover': {
-                      bgcolor: (theme) => alpha(theme.palette.text.primary, 0.08),
+                      bgcolor: (theme) =>
+                        alpha(theme.palette.text.primary, 0.08),
                       transform: 'rotate(30deg)',
                     },
                   }}
                 >
-                  {smsLoading ? (
+                  {smsLoading && smsLd ? (
                     <CircularProgress size={16} />
                   ) : (
                     <RefreshIcon fontSize="small" />
@@ -358,9 +493,21 @@ export default function SmsPanel() {
           </Box>
 
           {smsLoading && !smsLd ? (
-            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, mt: 4 }}>
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 1,
+                mt: 4,
+              }}
+            >
               <CircularProgress size={22} />
-              <Typography variant="caption" sx={{ opacity: 0.6 }}>
+
+              <Typography
+                variant="caption"
+                sx={{ opacity: 0.6 }}
+              >
                 Loading conversations…
               </Typography>
             </Box>
@@ -368,9 +515,16 @@ export default function SmsPanel() {
             <Box
               sx={{
                 flex: 1,
+                minHeight: 0,
                 overflowY: 'auto',
-                '&::-webkit-scrollbar': { width: 6 },
-                '&::-webkit-scrollbar-thumb': { bgcolor: 'action.disabled', borderRadius: 999 },
+                overflowX: 'hidden',
+                '&::-webkit-scrollbar': {
+                  width: 6,
+                },
+                '&::-webkit-scrollbar-thumb': {
+                  bgcolor: 'action.disabled',
+                  borderRadius: 999,
+                },
               }}
             >
               {visibleThreads.length === 0 ? (
@@ -384,14 +538,23 @@ export default function SmsPanel() {
                     opacity: 0.6,
                   }}
                 >
-                  <ChatBubbleOutlineRoundedIcon sx={{ fontSize: 32 }} />
-                  <Typography variant="body2" sx={{ textAlign: 'center' }}>
-                    No conversations {query ? 'match your search' : 'yet'}
+                  <ChatBubbleOutlineRoundedIcon
+                    sx={{ fontSize: 32 }}
+                  />
+
+                  <Typography
+                    variant="body2"
+                    sx={{ textAlign: 'center' }}
+                  >
+                    No conversations{' '}
+                    {query ? 'match your search' : 'yet'}
                   </Typography>
                 </Box>
               ) : (
                 visibleThreads.map((thread) => {
-                  const last = thread.messages[thread.messages.length - 1];
+                  const last =
+                    thread.messages[thread.messages.length - 1];
+
                   return (
                     <Box
                       key={thread.key}
@@ -406,11 +569,15 @@ export default function SmsPanel() {
                         cursor: 'pointer',
                         borderBottom: '1px solid',
                         borderColor: 'divider',
-                        transition: 'background-color 0.15s ease',
-                        '&:hover': { bgcolor: 'action.hover' },
+                        transition:
+                          'background-color 0.15s ease',
+                        '&:hover': {
+                          bgcolor: 'action.hover',
+                        },
                       }}
                     >
                       <Avatar
+                        src={thread.avatarUrl || undefined}
                         sx={{
                           width: 30,
                           height: 30,
@@ -422,48 +589,83 @@ export default function SmsPanel() {
                       >
                         {thread.name.charAt(0).toUpperCase()}
                       </Avatar>
-                      <Box sx={{ flex: 1, minWidth: 0 }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 0.5 }}>
-                          <Typography variant="body2" fontWeight={600} noWrap sx={{ maxWidth: '70%' }}>
+
+                      <Box
+                        sx={{
+                          flex: 1,
+                          minWidth: 0,
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            gap: 0.5,
+                          }}
+                        >
+                          <Typography
+                            variant="body2"
+                            fontWeight={600}
+                            noWrap
+                            sx={{ maxWidth: '70%' }}
+                          >
                             {thread.name}
                           </Typography>
+
                           {last && (
                             <Typography
                               variant="caption"
                               sx={{
                                 color: 'text.secondary',
                                 whiteSpace: 'nowrap',
-                                fontVariantNumeric: 'tabular-nums',
+                                fontVariantNumeric:
+                                  'tabular-nums',
                               }}
                             >
-                              {new Date(last.created_at).toLocaleTimeString([], {
+                              {new Date(
+                                last.created_at
+                              ).toLocaleTimeString([], {
                                 hour: '2-digit',
                                 minute: '2-digit',
                               })}
                             </Typography>
                           )}
                         </Box>
+
                         <Typography
                           variant="caption"
                           noWrap
                           sx={{
                             color: 'text.secondary',
                             display: 'block',
-                            fontStyle: last ? 'normal' : 'italic',
+                            fontStyle: last
+                              ? 'normal'
+                              : 'italic',
                           }}
                         >
-                          {last ? last.content : 'No messages yet'}
+                          {last
+                            ? last.content
+                            : 'No messages yet'}
                         </Typography>
                       </Box>
+
                       {last && (
                         <Chip
                           label={last.status}
                           size="small"
                           sx={{
-                            bgcolor: alpha(getSmsStatusColor(last.status), 0.16),
-                            color: getSmsStatusColor(last.status),
+                            bgcolor: alpha(
+                              getSmsStatusColor(last.status),
+                              0.16
+                            ),
+                            color: getSmsStatusColor(
+                              last.status
+                            ),
                             border: '1px solid',
-                            borderColor: alpha(getSmsStatusColor(last.status), 0.4),
+                            borderColor: alpha(
+                              getSmsStatusColor(last.status),
+                              0.4
+                            ),
                             height: 18,
                             fontSize: '0.65rem',
                             fontWeight: 700,
@@ -479,231 +681,469 @@ export default function SmsPanel() {
             </Box>
           )}
         </Box>
-      )}
 
-      {view === 'thread' && activeThread && (
-        <Box sx={{ display: 'flex', flexDirection: 'column', overflowy: 'auto', height: 470, ...fadeInSx }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
-            <IconButton
-              size="small"
-              onClick={() => setView('list')}
-              sx={{ transition: 'background-color 0.15s ease', '&:hover': { bgcolor: 'action.hover' } }}
-            >
-              <ArrowBackIcon fontSize="small" />
-            </IconButton>
-            <Avatar
-              sx={{
-                width: 24,
-                height: 24,
-                fontSize: '0.7rem',
-                fontWeight: 700,
-                bgcolor: getAvatarColor(activeThread.name),
-                color: '#fff',
-              }}
-            >
-              {activeThread.name.charAt(0).toUpperCase()}
-            </Avatar>
-            <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Typography variant="body2" fontWeight={700} noWrap>
-                {activeThread.name}
-              </Typography>
-              {activeThread.phone && (
-                <Typography
-                  variant="caption"
-                  noWrap
-                  sx={{ color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 0.25 }}
-                >
-                  <PhoneRoundedIcon sx={{ fontSize: 11 }} />
-                  {activeThread.phone}
-                </Typography>
-              )}
-            </Box>
-          </Box>
-
-          <Divider />
-
+        {/* THREAD VIEW */}
+        {view === 'thread' && activeThread && (
           <Box
             sx={{
-              flex: 1,
-              overflowY: 'auto',
               display: 'flex',
               flexDirection: 'column',
-              gap: 0.75,
-              px: 0.5,
-              mt: 0.75,
-              '&::-webkit-scrollbar': { width: 6 },
-              '&::-webkit-scrollbar-thumb': { bgcolor: 'action.disabled', borderRadius: 999 },
+              flex: 1,
+              minWidth: 0,
+              minHeight: 0,
+              overflow: 'hidden',
+              ...fadeInSx,
+
+              '@container sms-panel (min-width: 700px)': {
+                display: 'flex',
+                flex: 1,
+                pl: 1.5,
+              },
             }}
           >
-            <Box height={370}></Box>
-            {activeThread.messages.map((msg) => (
-              <Box key={msg.id} sx={{ alignSelf: 'flex-end', maxWidth: '78%' }}>
-                
-                <Box
-                  sx={{
-                    backgroundColor: `primary.main`,
-                    color: 'primary.contrastText',
-                    borderRadius: '14px 14px 4px 14px',
-                    px: 1.25,
-                    py: 0.75,
-                    fontSize: '0.8rem',
-                    lineHeight: 1.45,
-                    wordBreak: 'break-word',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
-                  }}
-                >
-                  {msg.content}
-                </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 0.5, mt: 0.25 }}>
-                  <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                    {formatName(msg.sender.profile.first_name, msg.sender.profile.last_name)} ·{' '}
-                    {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </Typography>
-                  <Chip
-                    label={msg.status}
-                    size="small"
-                    sx={{
-                      bgcolor: alpha(getSmsStatusColor(msg.status), 0.16),
-                      color: getSmsStatusColor(msg.status),
-                      border: '1px solid',
-                      borderColor: alpha(getSmsStatusColor(msg.status), 0.4),
-                      height: 16,
-                      fontSize: '0.6rem',
-                      fontWeight: 700,
-                      textTransform: 'capitalize',
-                      letterSpacing: 0.2,
-                    }}
-                  />
-                </Box>
-              </Box>
-            ))}
-          </Box>
-
-          <Divider />
-
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 1 }}>
-            <TextField
-              size="small"
-              fullWidth
-              placeholder="Text message"
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  sendMessage();
-                }
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0.5,
+                mb: 1,
               }}
-              multiline
-              maxRows={3}
-              disabled={sending}
-              sx={pillInputSx('18px')}
-            />
-            <IconButton onClick={sendMessage} disabled={!draft.trim() || sending} sx={sendButtonSx}>
-              {sending ? <CircularProgress size={16} sx={{ color: 'inherit' }} /> : <SendIcon fontSize="small" />}
-            </IconButton>
-          </Box>
-        </Box>
-      )}
-
-      {/* NEW THREAD VIEW */}
-      {view === 'newThread' && (
-        <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', ...fadeInSx }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-            <IconButton
-              size="small"
-              onClick={() => setView('list')}
-              sx={{ transition: 'background-color 0.15s ease', '&:hover': { bgcolor: 'action.hover' } }}
             >
-              <ArrowBackIcon fontSize="small" />
-            </IconButton>
-            <Typography variant="body2" fontWeight={700} sx={{ ml: 0.5 }}>
-              New message
-            </Typography>
-          </Box>
+              <IconButton
+                size="small"
+                onClick={() => setView('list')}
+                sx={{
+                  transition:
+                    'background-color 0.15s ease',
+                  '&:hover': {
+                    bgcolor: 'action.hover',
+                  },
+                  '@container sms-panel (min-width: 700px)': {
+                    display: 'none',
+                  },
+                }}
+              >
+                <ArrowBackIcon fontSize="small" />
+              </IconButton>
 
-          <Autocomplete
-            size="small"
-            options={recipientOptions}
-            getOptionLabel={(option) => option.label}
-            value={selectedRecipient}
-            renderOption={(props, option) => (
-              <li {...props}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
-                  <Avatar
+              <Avatar
+                src={activeThread.avatarUrl || undefined}
+                sx={{
+                  width: 40,
+                  height: 40,
+                  fontSize: '0.7rem',
+                  fontWeight: 700,
+                  bgcolor: getAvatarColor(
+                    activeThread.name
+                  ),
+                  color: '#fff',
+                }}
+              >
+                {activeThread.name.charAt(0).toUpperCase()}
+              </Avatar>
+
+              <Box
+                sx={{
+                  flex: 1,
+                  ml:1,
+                  minWidth: 0,
+                }}
+              >
+                <Typography
+                  variant="body2"
+                  fontWeight={700}
+                  noWrap
+                >
+                  {activeThread.name}
+                </Typography>
+
+                {activeThread.phone && (
+                  <Typography
+                    variant="caption"
+                    noWrap
                     sx={{
-                      width: 24,
-                      height: 24,
-                      fontSize: '0.7rem',
-                      fontWeight: 700,
-                      bgcolor: getAvatarColor(option.label),
-                      color: '#fff',
+                      color: 'text.secondary',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 0.25,
                     }}
                   >
-                    {option.label.charAt(0).toUpperCase()}
-                  </Avatar>
-                  <Typography variant="body2" noWrap sx={{ flex: 1 }}>
-                    {option.label}
+                    <PhoneRoundedIcon
+                      sx={{ fontSize: 11 }}
+                    />
+                    {activeThread.phone}
                   </Typography>
-                  <Chip
-                    label={option.type}
-                    size="small"
-                    sx={{
-                      height: 18,
-                      fontSize: '0.65rem',
-                      fontWeight: 700,
-                      textTransform: 'capitalize',
-                      bgcolor: option.type === 'lead' ? alpha('#0984E3', 0.16) : alpha('#20BF6B', 0.16),
-                      color: option.type === 'lead' ? '#0984E3' : '#20BF6B',
-                    }}
-                  />
-                </Box>
-              </li>
-            )}
-            onChange={(_, option) => setSelectedRecipient(option)}
-            sx={{ mb: 1, ...pillInputSx('18px') }}
-            renderInput={(params) => <TextField {...params} placeholder="To: lead or contact" />}
-          />
-
-          <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            {!selectedRecipient && (
-              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5, opacity: 0.5 }}>
-                <PersonSearchRoundedIcon sx={{ fontSize: 32 }} />
-                <Typography variant="caption" sx={{ textAlign: 'center' }}>
-                  Choose a lead or contact to start texting
-                </Typography>
+                )}
               </Box>
-            )}
-          </Box>
+            </Box>
 
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            <TextField
-              size="small"
-              fullWidth
-              placeholder="Text message"
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  createThreadAndSend();
-                }
+            <Divider />
+
+            <Box
+              sx={{
+                flex: 1,
+                minHeight: 0,
+                overflowY: 'auto',
+                display: 'flex',
+                flexDirection: 'column',
+                px: 0.5,
+                mt: 0.75,
+                '&::-webkit-scrollbar': {
+                  width: 6,
+                },
+                '&::-webkit-scrollbar-thumb': {
+                  bgcolor: 'action.disabled',
+                  borderRadius: 999,
+                },
               }}
-              multiline
-              maxRows={3}
-              disabled={sending}
-              sx={pillInputSx('18px')}
-            />
-            <IconButton
-              onClick={createThreadAndSend}
-              disabled={!selectedRecipient || !draft.trim() || sending}
-              sx={sendButtonSx}
             >
-              {sending ? <CircularProgress size={16} sx={{ color: 'inherit' }} /> : <SendIcon fontSize="small" />}
-            </IconButton>
+              <Box
+                sx={{
+                  marginTop: 'auto',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 0.75,
+                }}
+              >
+                {activeThread.messages.map((msg) => (
+                  <Box
+                    key={msg.id}
+                    sx={{
+                      alignSelf: 'flex-end',
+                      maxWidth: '78%',
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        backgroundColor: 'primary.main',
+                        color: 'primary.contrastText',
+                        borderRadius:
+                          '14px 14px 4px 14px',
+                        px: 1.25,
+                        py: 0.75,
+                        fontSize: '0.8rem',
+                        lineHeight: 1.45,
+                        wordBreak: 'break-word',
+                        boxShadow:
+                          '0 1px 3px rgba(0,0,0,0.2)',
+                      }}
+                    >
+                      {msg.content}
+                    </Box>
+
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        justifyContent: 'flex-end',
+                        alignItems: 'center',
+                        gap: 0.5,
+                        mt: 0.25,
+                      }}
+                    >
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          color: 'text.secondary',
+                        }}
+                      >
+                        {formatName(
+                          msg.sender.profile.first_name,
+                          msg.sender.profile.last_name
+                        )}{' '}
+                        ·{' '}
+                        {new Date(
+                          msg.created_at
+                        ).toLocaleTimeString([], {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </Typography>
+
+                      <Chip
+                        label={msg.status}
+                        size="small"
+                        sx={{
+                          bgcolor: alpha(
+                            getSmsStatusColor(msg.status),
+                            0.16
+                          ),
+                          color: getSmsStatusColor(
+                            msg.status
+                          ),
+                          border: '1px solid',
+                          borderColor: alpha(
+                            getSmsStatusColor(msg.status),
+                            0.4
+                          ),
+                          height: 16,
+                          fontSize: '0.6rem',
+                          fontWeight: 700,
+                          textTransform: 'capitalize',
+                          letterSpacing: 0.2,
+                        }}
+                      />
+                    </Box>
+                  </Box>
+                ))}
+              </Box>
+            </Box>
+
+            <Divider />
+
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0.5,
+                mt: 1,
+              }}
+            >
+              <TextField
+                size="small"
+                fullWidth
+                placeholder="Text message"
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                  }
+                }}
+                multiline
+                maxRows={3}
+                disabled={sending}
+                sx={pillInputSx('18px')}
+              />
+
+              <IconButton
+                onClick={sendMessage}
+                disabled={!draft.trim() || sending}
+                sx={sendButtonSx}
+              >
+                {sending ? (
+                  <CircularProgress
+                    size={16}
+                    sx={{ color: 'inherit' }}
+                  />
+                ) : (
+                  <SendIcon fontSize="small" />
+                )}
+              </IconButton>
+            </Box>
           </Box>
-        </Box>
-      )}
+        )}
+
+        {/* NEW THREAD VIEW */}
+        {view === 'newThread' && (
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              flex: 1,
+              minWidth: 0,
+              minHeight: 0,
+              overflow: 'hidden',
+              ...fadeInSx,
+
+              '@container sms-panel (min-width: 700px)': {
+                flex: 1,
+                pl: 1.5,
+              },
+            }}
+          >
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                mb: 1,
+              }}
+            >
+              <IconButton
+                size="small"
+                onClick={() => setView('list')}
+                sx={{
+                  transition:
+                    'background-color 0.15s ease',
+                  '&:hover': {
+                    bgcolor: 'action.hover',
+                  },
+                  '@container sms-panel (min-width: 700px)': {
+                    display: 'none',
+                  },
+                }}
+              >
+                <ArrowBackIcon fontSize="small" />
+              </IconButton>
+
+              <Typography
+                variant="body2"
+                fontWeight={700}
+                sx={{ ml: 0.5 }}
+              >
+                New message
+              </Typography>
+            </Box>
+
+            <Autocomplete
+              size="small"
+              options={recipientOptions}
+              getOptionLabel={(option) => option.label}
+              value={selectedRecipient}
+              renderOption={(props, option) => (
+                <li {...props}>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1,
+                      width: '100%',
+                    }}
+                  >
+                    <Avatar
+                      sx={{
+                        width: 24,
+                        height: 24,
+                        fontSize: '0.7rem',
+                        fontWeight: 700,
+                        bgcolor: getAvatarColor(
+                          option.label
+                        ),
+                        color: '#fff',
+                      }}
+                    >
+                      {option.label
+                        .charAt(0)
+                        .toUpperCase()}
+                    </Avatar>
+
+                    <Typography
+                      variant="body2"
+                      noWrap
+                      sx={{ flex: 1 }}
+                    >
+                      {option.label}
+                    </Typography>
+
+                    <Chip
+                      label={option.type}
+                      size="small"
+                      sx={{
+                        height: 18,
+                        fontSize: '0.65rem',
+                        fontWeight: 700,
+                        textTransform: 'capitalize',
+                        bgcolor:
+                          option.type === 'lead'
+                            ? alpha('#0984E3', 0.16)
+                            : alpha('#20BF6B', 0.16),
+                        color:
+                          option.type === 'lead'
+                            ? '#0984E3'
+                            : '#20BF6B',
+                      }}
+                    />
+                  </Box>
+                </li>
+              )}
+              onChange={(_, option) =>
+                setSelectedRecipient(option)
+              }
+              sx={{
+                mb: 1,
+                ...pillInputSx('18px'),
+              }}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  placeholder="To: lead or contact"
+                />
+              )}
+            />
+
+            <Box
+              sx={{
+                flex: 1,
+                minHeight: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              {!selectedRecipient && (
+                <Box
+                  sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: 0.5,
+                    opacity: 0.5,
+                  }}
+                >
+                  <PersonSearchRoundedIcon
+                    sx={{ fontSize: 32 }}
+                  />
+
+                  <Typography
+                    variant="caption"
+                    sx={{ textAlign: 'center' }}
+                  >
+                    Choose a lead or contact to start
+                    texting
+                  </Typography>
+                </Box>
+              )}
+            </Box>
+
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0.5,
+              }}
+            >
+              <TextField
+                size="small"
+                fullWidth
+                placeholder="Text message"
+                value={draft}
+                onChange={(e) =>
+                  setDraft(e.target.value)
+                }
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    createThreadAndSend();
+                  }
+                }}
+                multiline
+                maxRows={3}
+                disabled={sending}
+                sx={pillInputSx('18px')}
+              />
+
+              <IconButton
+                onClick={createThreadAndSend}
+                disabled={
+                  !selectedRecipient ||
+                  !draft.trim() ||
+                  sending
+                }
+                sx={sendButtonSx}
+              >
+                {sending ? (
+                  <CircularProgress
+                    size={16}
+                    sx={{ color: 'inherit' }}
+                  />
+                ) : (
+                  <SendIcon fontSize="small" />
+                )}
+              </IconButton>
+            </Box>
+          </Box>
+        )}
+      </Box>
     </Box>
   );
 }

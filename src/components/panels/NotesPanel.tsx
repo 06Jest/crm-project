@@ -21,7 +21,6 @@ import {
   DialogActions,
   Button,
   DialogContentText,
-  Chip,
   Skeleton,
 } from "@mui/material";
 
@@ -380,42 +379,48 @@ const removeNote = async (note: NoteListItem) => {
 
 
   const items = useMemo(() => {
-    switch (targetType) {
-      case "contact":
-        return contacts.map(c => ({
-          id: c.id,
-          label: `${c.first_name} ${c.last_name}`,
-        }));
+  switch (targetType) {
+    case "contact":
+      return contacts.map((c) => ({
+        id: c.id,
+        label: `${c.first_name} ${c.last_name}`,
+        displayId: c.display_id,
+      }));
 
-      case "lead":
-        return leads.map(l => ({
-          id: l.id,
-          label:  `${l.first_name} ${l.last_name}`
-        }));
+    case "lead":
+      return leads.map((l) => ({
+        id: l.id,
+        label: `${l.first_name} ${l.last_name}`,
+        displayId: l.display_id,
+      }));
 
-      case "deal":
-        return deals.map(d => ({
-          id: d.id,
-          label:  d.title.length > 25
+    case "deal":
+      return deals.map((d) => ({
+        id: d.id,
+        label:
+          d.title.length > 25
             ? `${formatTitle(d.title).slice(0, 25)}...`
-            : formatTitle(d.title).toUpperCase()
-        }));
+            : formatTitle(d.title).toUpperCase(),
+        displayId: d.display_id,
+      }));
 
-      case "customer":
-        return customers.map((c) => {
-          const con = contacts.find((co) => co.id === c.contact_id);
+    case "customer":
+      return customers.map((c) => {
+        const con = contacts.find((co) => co.id === c.contact_id);
 
-          return {
-            id: c.id,
-            label: con
-              ? `${con.first_name} ${con.last_name}`
-              : "Unknown Contact",
-          };
-        });
-      default:
-        return [];
-    }
-  }, [targetType, contacts, leads, deals, customers]);
+        return {
+          id: c.id,
+          label: con
+            ? `${con.first_name} ${con.last_name}`
+            : "Unknown Contact",
+          displayId: c.display_id,
+        };
+      });
+
+    default:
+      return [];
+  }
+}, [targetType, contacts, leads, deals, customers]);
 
    
 
@@ -581,11 +586,46 @@ const removeNote = async (note: NoteListItem) => {
   
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", height: "100%" ,minHeight: 0,
-    overflow: "hidden",}}>
-      {view === "list" && (
-        <>
-          {nL && !nLd ? (
+     <Box
+      sx={{
+        height: "100%",
+        minHeight: 0,
+        overflow: "hidden",
+        containerType: "inline-size",
+        containerName: "notes-panel",
+      }}
+    >
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          height: "100%",
+          minHeight: 0,
+          overflow: "hidden",
+          "@container notes-panel (min-width: 700px)": {
+            flexDirection: "row",
+          },
+        }}
+      >
+      <Box
+        sx={{
+          display: view === "list" ? "flex" : "none",
+          flexDirection: "column",
+          flex: 1,
+          minWidth: 0,
+          minHeight: 0,
+          overflow: "hidden",
+
+         "@container notes-panel (min-width: 700px)": {
+            display: "flex",
+            flex: "0 0 clamp(230px, 25%, 270px)",
+            borderRight: 1,
+            borderColor: "divider",
+            pr: 1.5,
+          },
+        }}
+      >
+        {nL && !nLd ? (
             <NotesSkeleton />
           ) : (
             <>
@@ -622,6 +662,28 @@ const removeNote = async (note: NoteListItem) => {
                 ),
               }}
             />
+            <Tooltip title="New note">
+              <Paper
+                elevation={0}
+                sx={(theme) => ({
+                  borderRadius: "50%",
+                  mr:0.5,
+                  bgcolor: alpha(theme.palette.primary.main, 0.1),
+                })}
+              >
+                <IconButton
+                  color="primary"
+                  size="small"
+                  onClick={() => {
+                    resetEditor();
+                    dispatch(clearError());
+                    openNewNote();
+                  }}
+                >
+                  <AddIcon fontSize="small" />
+                </IconButton>
+              </Paper>
+            </Tooltip>
             <Tooltip title="Refresh">
               <span>
                 {nLd &&
@@ -642,42 +704,12 @@ const removeNote = async (note: NoteListItem) => {
             <Box
               sx={{
                 display: "flex",
-                justifyContent: "space-between",
+                justifyContent: "end ",
                 alignItems: "center",
                 mb: 1.5,
                 flexShrink: 0,
               }}
             >
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <Tooltip title="New note">
-                  <Paper
-                    elevation={0}
-                    sx={(theme) => ({
-                      borderRadius: "50%",
-                      bgcolor: alpha(theme.palette.primary.main, 0.1),
-                    })}
-                  >
-                    <IconButton
-                      color="primary"
-                      size="small"
-                      onClick={() => {
-                        resetEditor();
-                        dispatch(clearError());
-                        openNewNote();
-                      }}
-                    >
-                      <AddIcon fontSize="small" />
-                    </IconButton>
-                  </Paper>
-                </Tooltip>
-                <Typography
-                  variant="caption"
-                  sx={{ opacity: 0.5, fontWeight: 700, letterSpacing: 0.4 }}
-                >
-                  {visibleNotes.length} {visibleNotes.length === 1 ? "NOTE" : "NOTES"}
-                </Typography>
-              </Box>
-
               <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 0.5 }}>
                 <FormControl size="small">
                   <Select
@@ -689,7 +721,7 @@ const removeNote = async (note: NoteListItem) => {
                       )
                     }
                     sx={(theme) => ({
-                      width: 80,
+                      width: 90,
                       borderRadius: 2,
                       bgcolor: alpha(theme.palette.text.primary, 0.04),
                       "& .MuiInputBase-input": {
@@ -764,7 +796,6 @@ const removeNote = async (note: NoteListItem) => {
                 sx={(theme) => ({
                   flex: 1,
                   minHeight: 0,
-                  height: {lg: 300, md: '80%' },
                   overflowY: "auto",
                   overflowX: "hidden",
                   pr: 0.5,
@@ -787,7 +818,6 @@ const removeNote = async (note: NoteListItem) => {
                 {visibleNotes.map((note) => {
                   const isPublic =
                     (note as NoteListItem & { visibility?: NoteVisibility }).visibility === "public";
-                  const meta = TARGET_META[note.target_type];
                   const targetValue = getValue(note.target_type, note.target_id);
                   const isNavigable = note.target_type === "customer" || note.target_type === "contact";
 
@@ -798,8 +828,8 @@ const removeNote = async (note: NoteListItem) => {
                       onClick={() => openExistingNote(note)}
                       sx={(theme) => ({
                         display: "block",
-                        p: 1.25,
-                        mb: 1,
+                        px: 1.25,
+                        mb: 0.5,
                         borderRadius: 2,
                         cursor: "pointer",
                         bgcolor: note.pinned
@@ -819,12 +849,16 @@ const removeNote = async (note: NoteListItem) => {
                     >
                       <ListItemText
                         primary={
-                          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 0.5, mb: 0.5 }}>
+                          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 0.5}}>
                             <Box sx={{ display: "flex", alignItems: "center", minWidth: 0 }}>
                               {isPublic ? (
+                                <Tooltip title="Public">
                                 <PublicIcon sx={{ fontSize: 13, opacity: 0.5, flexShrink: 0 }} />
+                                </Tooltip>
                               ) : (
+                                <Tooltip title="Private">
                                 <LockIcon sx={{ fontSize: 13, opacity: 0.5, flexShrink: 0 }} />
+                                </Tooltip>
                               )}
 
                               <Typography
@@ -859,73 +893,104 @@ const removeNote = async (note: NoteListItem) => {
                                 sx={{alignSelf: 'end', p: '2px'}}
                               >
                                 {note.pinned ? (
+                                  <Tooltip title="Pin note">
                                   <PushPinIcon sx={{color: 'warning.main', fontSize: '15px'}} />
+                                  </Tooltip>
                                 ) : (
+                                  <Tooltip title="Unpin note">
                                   <PushPinIcon  sx={{ fontSize: '15px', opacity: 0.4 }}/>
+                                  </Tooltip>
                                 )}
                               </IconButton>
                               {note.author_id === memberId && (
-                              <IconButton
-                                title="Delete note"
-                                color="error"  sx={{p: '2px'}} onClick={(e) => {
-                                e.stopPropagation();
-                                handleOpenDelete(note)
-                              }}>
-                                <DeleteIcon sx={{ fontSize: '15px', }}/>
-                              </IconButton>
+                              <Tooltip title="Delete note">
+                                <IconButton
+                                  title="Delete note"
+                                  color="error"  sx={{p: '2px'}} onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOpenDelete(note)
+                                }}>
+                                  <DeleteIcon sx={{ fontSize: '15px', }}/>
+                                </IconButton>
+                              </Tooltip>
                               )}
                             </Box>
                           </Box>
                           
                         }
-                       secondary={
-                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 0.5 }}>
-                            <Box sx={{display: 'flex', alignItems: 'center', gap: 0.75, minWidth: 0}}>
-                              <Chip
-                                size="small"
-                                icon={meta.icon}
-                                label={meta.label}
-                                variant="outlined"
-                                color={meta.color}
-                                sx={{
-                                  height: 18,
-                                  fontSize: '0.62rem',
-                                  fontWeight: 700,
-                                  '& .MuiChip-icon': { ml: '5px' },
-                                  '& .MuiChip-label': { px: '6px' },
-                                }}
-                              />
-                            {targetValue && (
-                            <Typography
-                            title={isNavigable ? `View full details for ${targetValue}` : 'Note target'}
-                            onClick={(e) => {
-                               if (!isNavigable) return
-                                 e.stopPropagation();
-                                 navigate(`/app/${note.target_type}s/${note.target_id}`)
-                              }}
-                            variant="caption" fontSize="0.7rem" sx={{
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap',
-                              cursor: isNavigable ? 'pointer' : 'default',
-                              ":hover": isNavigable ? {textDecoration: 'underline', color: 'primary.main'} : {}
-                            }}>
-                              {targetValue}
-                            </Typography>
-                            )}
-                            </Box>
-                            
-                            <Typography variant="caption" fontSize="0.63rem" sx={{ opacity: 0.6, flexShrink: 0 }}>
-                              {new Date(note.updated_at).toLocaleString([], {
-                                month: "short",
-                                day: "numeric",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
-                              {` · ${formatName(note.author.profile.first_name, note.author.profile.last_name)}`}
-                            </Typography>
-                          </Box>
-                       }
+                        secondary={
+  <Box
+    sx={{
+      display: "flex",
+      alignItems: "center",
+      gap: 0.5,
+      width: "100%",
+      minWidth: 0,
+    }}
+  >
+    <Box
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        gap: 0.75,
+        minWidth: 0,
+        flex: 1,
+      }}
+    >
+      {targetValue && (
+        <Typography
+          title={
+            isNavigable
+              ? `View full details for ${targetValue}`
+              : "Note target"
+          }
+          onClick={(e) => {
+            if (!isNavigable) return;
+            e.stopPropagation();
+            navigate(
+              `/app/${note.target_type}s/${note.target_id}`
+            );
+          }}
+          variant="caption"
+          fontSize="0.7rem"
+          sx={{
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+            cursor: isNavigable ? "pointer" : "default",
+            ":hover": isNavigable
+              ? {
+                  textDecoration: "underline",
+                  color: "primary.main",
+                }
+              : {},
+          }}
+        >
+          {targetValue}
+        </Typography>
+      )}
+    </Box>
+
+    <Typography
+      variant="caption"
+      fontSize="0.63rem"
+      sx={{
+        opacity: 0.6,
+        flexShrink: 1,
+        minWidth: 0,
+        whiteSpace: "nowrap",
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        textAlign: "right",
+      }}
+    >
+      {`${formatName(
+        note.author.profile.first_name,
+        note.author.profile.last_name
+      )}`}
+    </Typography>
+  </Box>
+}
                         secondaryTypographyProps={{ component: "div" }}
                       />
                     </ListItem>
@@ -933,15 +998,26 @@ const removeNote = async (note: NoteListItem) => {
                 })}
               </List>
             )}
-            <Box sx={{height: 30}}></Box>
           </Box>
         </>
         )}
-      </>
-      )}
+    </Box>
 
-      {view === "editor" && (
-        <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
+      <Box
+        sx={{
+          display: view === "editor" ? "flex" : "none",
+          flexDirection: "column",
+          flex: 1,
+          minWidth: 0,
+          minHeight: 0,
+          overflow: "hidden",
+          "@container notes-panel (min-width: 700px)": {
+            display: "flex",
+            flex: 1,
+            pl: 1.5,
+          },
+        }}
+      >
           {error && (
               <Box sx={{ width: "100%", my: 1 }}>
                 <ErrorAlert message={error} />
@@ -949,14 +1025,28 @@ const removeNote = async (note: NoteListItem) => {
             )}
           <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1.5, gap: 1 }}>
             <Box sx={{ display: 'flex', justifyContent: 'start', alignItems: 'center', minWidth: 0 }}>
-              <Tooltip title="Back to notes">
-                <IconButton title="Back" size="small" onClick={() => {
-                  setView("list")
-                  dispatch(clearError())
-                }} disabled={saving}>
-                  <ArrowBackIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
+              <Box
+                sx={{
+                  display: "flex",
+                  "@container notes-panel (min-width: 700px)": {
+                    display: "none",
+                  },
+                }}
+              >
+                <Tooltip title="Back to notes">
+                  <IconButton
+                    title="Back"
+                    size="small"
+                    onClick={() => {
+                      setView("list");
+                      dispatch(clearError());
+                    }}
+                    disabled={saving}
+                  >
+                    <ArrowBackIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              </Box>
               <Box sx={{ ml: 1, display: 'flex', gap: 1, flexWrap: 'wrap', minWidth: 0 }}>
                 {activeNote ? (
                   <>
@@ -1015,7 +1105,6 @@ const removeNote = async (note: NoteListItem) => {
             sx={(theme) => ({
               display: 'flex',
               alignItems: 'center',
-              gap: 1,
               flexWrap: 'wrap',
               p: 0.75,
               mb: 1.5,
@@ -1135,7 +1224,7 @@ const removeNote = async (note: NoteListItem) => {
                       }
 
                       const item = items.find((i) => i.id === selected);
-                      return item?.label ?? '';
+                      return item ? `${item.displayId} - ${item.label}` : "";
                     },
                     MenuProps: {
                       PaperProps: {
@@ -1153,7 +1242,7 @@ const removeNote = async (note: NoteListItem) => {
 
                   {items.map((item) => (
                     <MenuItem key={item.id} value={item.id} sx={{ fontSize: 11 }}>
-                      {item.label}
+                      {item.displayId} {item.label}
                     </MenuItem>
                   ))}
                 </TextField>
@@ -1243,7 +1332,7 @@ const removeNote = async (note: NoteListItem) => {
             />
           </Paper>
         </Box>
-      )}
+        </Box>
       <Dialog
         open={openDelete}
         onClose={() => setOpenDelete(false)}
