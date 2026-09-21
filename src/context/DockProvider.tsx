@@ -31,8 +31,43 @@ export function DockProvider({ children }: { children: React.ReactNode }) {
     );
   };
 
+  const updateWindow = (
+    id: string,
+    updates: Partial<Pick<DockWindowState, "x" | "y" | "width" | "height">>
+  ) => {
+    setWindows((prev) =>
+      prev.map((w) =>
+        w.id === id ? { ...w, ...updates } : w
+      )
+    );
+  };
+
+  const focusWindow = (id: string) => {
+    setWindows((prev) => {
+      const maxZIndex = Math.max(
+        ...prev.map((window) => window.zIndex ?? 0),
+        0
+      );
+
+      return prev.map((window) =>
+        window.id === id
+          ? { ...window, zIndex: maxZIndex + 1 }
+          : window
+      );
+    });
+  };
+
   return (
-    <DockContext.Provider value={{ windows, openWindow, closeWindow, toggleMinimize }}>
+    <DockContext.Provider
+      value={{
+        windows,
+        openWindow,
+        closeWindow,
+        toggleMinimize,
+        updateWindow,
+        focusWindow,
+      }}
+    >
       {children}
     </DockContext.Provider>
   );

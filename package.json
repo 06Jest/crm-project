@@ -42,6 +42,7 @@
     "react-ga4": "^3.0.1",
     "react-leaflet": "^5.0.0",
     "react-redux": "^9.2.0",
+    "react-rnd": "^10.5.3",
     "react-router-dom": "^7.13.2",
     "recharts": "^2.15.0",
     "uuid": "^13.0.0"

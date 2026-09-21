@@ -9,38 +9,43 @@ interface DockContainerProps {
 }
 
 export default function DockContainer({ renderContent }: DockContainerProps) {
-  const { windows, closeWindow, toggleMinimize } = useDock();
+  const {
+  windows,
+  closeWindow,
+  toggleMinimize,
+  updateWindow,
+  focusWindow,
+} = useDock();
 
   if (windows.length === 0) return null;
 
   return (
     <Box
       sx={{
-      position: 'fixed',
-      bottom: { xs: 'auto', md: 0 },
-      right: { xs: 'auto', md: 90 },
-      left: { xs: 0, md: 'auto' },
-      top: { xs: 0, md: 'auto' },
-      width: { xs: '100%', md: 'auto' },
-      display: 'flex',
-      flexDirection: 'row-reverse',
-      gap: 1.5,
-      alignItems: 'flex-end',
-      zIndex: { xs: 2400, md: 2300 },
-    }}
+        position: "fixed",
+        inset: 0,
+        pointerEvents: "none",
+        zIndex: { xs: 2400, md: 2300 },
+      }}
     >
       {windows.map((win, index) => (
-        <DockWindow
-          key={win.id}
-          minimizedIndex={index}
-          title={win.title}
-          Icon={win.Icon}
-          minimized={!!win.minimized}
-          width={win.width}
-          height={win.height}
-          onClose={() => closeWindow(win.id)}
-          onToggleMinimize={() => toggleMinimize(win.id)}
-        >
+       <DockWindow
+        key={win.id}
+        id={win.id}
+        minimizedIndex={index}
+        title={win.title}
+        Icon={win.Icon}
+        minimized={!!win.minimized}
+        width={win.width}
+        height={win.height}
+        x={win.x}
+        y={win.y}
+        zIndex={win.zIndex}
+        onClose={() => closeWindow(win.id)}
+        onToggleMinimize={() => toggleMinimize(win.id)}
+        onUpdate={(updates) => updateWindow(win.id, updates)}
+        onFocus={() => focusWindow(win.id)}
+      >
           {renderContent(win.id)}
         </DockWindow>
       ))}
