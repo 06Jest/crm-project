@@ -113,12 +113,14 @@ export interface CallListItem extends Call {
 
   lead?: {
     id: string;
+    display_id: string;
     first_name: string;
     last_name: string;
   };
 
   contact?: {
     id: string;
+    display_id: string;
     first_name: string;
     last_name: string;
   };

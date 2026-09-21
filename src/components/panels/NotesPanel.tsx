@@ -21,7 +21,6 @@ import {
   DialogActions,
   Button,
   DialogContentText,
-  Chip,
   Skeleton,
 } from "@mui/material";
 
@@ -663,6 +662,28 @@ const removeNote = async (note: NoteListItem) => {
                 ),
               }}
             />
+            <Tooltip title="New note">
+              <Paper
+                elevation={0}
+                sx={(theme) => ({
+                  borderRadius: "50%",
+                  mr:0.5,
+                  bgcolor: alpha(theme.palette.primary.main, 0.1),
+                })}
+              >
+                <IconButton
+                  color="primary"
+                  size="small"
+                  onClick={() => {
+                    resetEditor();
+                    dispatch(clearError());
+                    openNewNote();
+                  }}
+                >
+                  <AddIcon fontSize="small" />
+                </IconButton>
+              </Paper>
+            </Tooltip>
             <Tooltip title="Refresh">
               <span>
                 {nLd &&
@@ -683,37 +704,12 @@ const removeNote = async (note: NoteListItem) => {
             <Box
               sx={{
                 display: "flex",
-                justifyContent: "space-between",
+                justifyContent: "end ",
                 alignItems: "center",
                 mb: 1.5,
                 flexShrink: 0,
               }}
             >
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <Tooltip title="New note">
-                  <Paper
-                    elevation={0}
-                    sx={(theme) => ({
-                      borderRadius: "50%",
-                      mr:0.5,
-                      bgcolor: alpha(theme.palette.primary.main, 0.1),
-                    })}
-                  >
-                    <IconButton
-                      color="primary"
-                      size="small"
-                      onClick={() => {
-                        resetEditor();
-                        dispatch(clearError());
-                        openNewNote();
-                      }}
-                    >
-                      <AddIcon fontSize="small" />
-                    </IconButton>
-                  </Paper>
-                </Tooltip>
-              </Box>
-
               <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 0.5 }}>
                 <FormControl size="small">
                   <Select
@@ -800,7 +796,6 @@ const removeNote = async (note: NoteListItem) => {
                 sx={(theme) => ({
                   flex: 1,
                   minHeight: 0,
-                  height: {lg: 300, md: '80%' },
                   overflowY: "auto",
                   overflowX: "hidden",
                   pr: 0.5,
@@ -823,7 +818,6 @@ const removeNote = async (note: NoteListItem) => {
                 {visibleNotes.map((note) => {
                   const isPublic =
                     (note as NoteListItem & { visibility?: NoteVisibility }).visibility === "public";
-                  const meta = TARGET_META[note.target_type];
                   const targetValue = getValue(note.target_type, note.target_id);
                   const isNavigable = note.target_type === "customer" || note.target_type === "contact";
 
@@ -834,8 +828,8 @@ const removeNote = async (note: NoteListItem) => {
                       onClick={() => openExistingNote(note)}
                       sx={(theme) => ({
                         display: "block",
-                        p: 1.25,
-                        mb: 1,
+                        px: 1.25,
+                        mb: 0.5,
                         borderRadius: 2,
                         cursor: "pointer",
                         bgcolor: note.pinned
@@ -855,12 +849,16 @@ const removeNote = async (note: NoteListItem) => {
                     >
                       <ListItemText
                         primary={
-                          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 0.5, mb: 0.5 }}>
+                          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 0.5}}>
                             <Box sx={{ display: "flex", alignItems: "center", minWidth: 0 }}>
                               {isPublic ? (
+                                <Tooltip title="Public">
                                 <PublicIcon sx={{ fontSize: 13, opacity: 0.5, flexShrink: 0 }} />
+                                </Tooltip>
                               ) : (
+                                <Tooltip title="Private">
                                 <LockIcon sx={{ fontSize: 13, opacity: 0.5, flexShrink: 0 }} />
+                                </Tooltip>
                               )}
 
                               <Typography
@@ -895,42 +893,43 @@ const removeNote = async (note: NoteListItem) => {
                                 sx={{alignSelf: 'end', p: '2px'}}
                               >
                                 {note.pinned ? (
+                                  <Tooltip title="Pin note">
                                   <PushPinIcon sx={{color: 'warning.main', fontSize: '15px'}} />
+                                  </Tooltip>
                                 ) : (
+                                  <Tooltip title="Unpin note">
                                   <PushPinIcon  sx={{ fontSize: '15px', opacity: 0.4 }}/>
+                                  </Tooltip>
                                 )}
                               </IconButton>
                               {note.author_id === memberId && (
-                              <IconButton
-                                title="Delete note"
-                                color="error"  sx={{p: '2px'}} onClick={(e) => {
-                                e.stopPropagation();
-                                handleOpenDelete(note)
-                              }}>
-                                <DeleteIcon sx={{ fontSize: '15px', }}/>
-                              </IconButton>
+                              <Tooltip title="Delete note">
+                                <IconButton
+                                  title="Delete note"
+                                  color="error"  sx={{p: '2px'}} onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOpenDelete(note)
+                                }}>
+                                  <DeleteIcon sx={{ fontSize: '15px', }}/>
+                                </IconButton>
+                              </Tooltip>
                               )}
                             </Box>
                           </Box>
                           
                         }
                        secondary={
-                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 0.5 }}>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "center",
+                              flexWrap: "wrap",
+                              height: 13,
+                              gap: 0.5,
+                            }}
+                          >
                             <Box sx={{display: 'flex', alignItems: 'center', gap: 0.75, minWidth: 0}}>
-                              <Chip
-                                size="small"
-                                icon={meta.icon}
-                                label={meta.label}
-                                variant="outlined"
-                                color={meta.color}
-                                sx={{
-                                  height: 18,
-                                  fontSize: '0.62rem',
-                                  fontWeight: 700,
-                                  '& .MuiChip-icon': { ml: '5px' },
-                                  '& .MuiChip-label': { px: '6px' },
-                                }}
-                              />
                             {targetValue && (
                             <Typography
                             title={isNavigable ? `View full details for ${targetValue}` : 'Note target'}
@@ -969,7 +968,6 @@ const removeNote = async (note: NoteListItem) => {
                 })}
               </List>
             )}
-            <Box sx={{height: 30}}></Box>
           </Box>
         </>
         )}
@@ -1077,7 +1075,6 @@ const removeNote = async (note: NoteListItem) => {
             sx={(theme) => ({
               display: 'flex',
               alignItems: 'center',
-              gap: 1,
               flexWrap: 'wrap',
               p: 0.75,
               mb: 1.5,

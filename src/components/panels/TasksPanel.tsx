@@ -28,7 +28,7 @@ import {
 import { alpha } from "@mui/material/styles";
 
 import AddIcon from "@mui/icons-material/Add";
-import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import DeleteIcon from '@mui/icons-material/Delete';
 import SearchIcon from "@mui/icons-material/Search";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import LockIcon from "@mui/icons-material/Lock";
@@ -804,9 +804,6 @@ export default function TasksPanel() {
                 const isCancelled = task.status === "cancelled";
                 const overdue = isOverdue(task);
                 const StatusIcon = STATUS_META[task.status].icon;
-                const initials = task.assignee
-                  ? `${task.assignee.profile.first_name?.[0] ?? ""}${task.assignee.profile.last_name?.[0] ?? ""}`.toUpperCase()
-                  : "";
 
                 return (
                   <ListItem
@@ -823,8 +820,6 @@ export default function TasksPanel() {
                       borderRadius: 2,
                       border: "1px solid",
                       borderColor: "divider",
-                      borderLeft: "3px solid",
-                      borderLeftColor: PRIORITY_COLOR[task.priority],
                       opacity: isCancelled ? 0.55 : 1,
                       transition: "box-shadow .15s ease, background-color .15s ease",
                       "&:hover": { bgcolor: "action.hover", boxShadow: 1 },
@@ -896,14 +891,16 @@ export default function TasksPanel() {
                             </Box>
 
                             <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 0.5, mt: 0.35 }}>
-                              <Chip
-                                size="small"
-                                icon={<StatusIcon style={{ fontSize: 12 }} />}
-                                label={STATUS_META[task.status].label}
-                                color={STATUS_META[task.status].color === "default" ? undefined : STATUS_META[task.status].color}
-                                variant={STATUS_META[task.status].color === "default" ? "outlined" : "filled"}
-                                sx={{ ...chipSx, height: 18, fontSize: "0.62rem" }}
-                              />
+                              <Tooltip title="Status">
+                                <Chip
+                                  size="small"
+                                  icon={<StatusIcon style={{ fontSize: 12 }} />}
+                                  label={STATUS_META[task.status].label}
+                                  color={STATUS_META[task.status].color === "default" ? undefined : STATUS_META[task.status].color}
+                                  variant={STATUS_META[task.status].color === "default" ? "outlined" : "filled"}
+                                  sx={{ ...chipSx, height: 18, fontSize: "0.62rem" }}
+                                />
+                              </Tooltip>
 
                               <Tooltip title={`Priority: ${task.priority}`}>
                                 <Chip
@@ -920,32 +917,44 @@ export default function TasksPanel() {
                                   }}
                                 />
                               </Tooltip>
-
                               {task.due_date && (
-                                <Chip
-                                  size="small"
-                                  icon={<EventIcon style={{ fontSize: 11 }} />}
-                                  label={new Date(task.due_date).toLocaleDateString([], { month: "short", day: "numeric" })}
-                                  variant="outlined"
-                                  color={overdue ? "error" : undefined}
-                                  sx={{ ...chipSx, height: 18, fontSize: "0.62rem", fontWeight: overdue ? 700 : 500 }}
-                                />
+                                <Tooltip title="Due date">
+                                  <Chip
+                                    size="small"
+                                    icon={<EventIcon style={{ fontSize: 11 }} />}
+                                    label={new Date(task.due_date).toLocaleDateString([], {
+                                      month: "short",
+                                      day: "numeric",
+                                    })}
+                                    variant="outlined"
+                                    color={overdue ? "error" : undefined}
+                                    sx={{
+                                      ...chipSx,
+                                      height: 18,
+                                      fontSize: "0.62rem",
+                                      fontWeight: overdue ? 700 : 500,
+                                    }}
+                                  />
+                                </Tooltip>
                               )}
                             </Box>
                           </Box>
 
                           {task.author_id === memberId && (
-                            <IconButton
-                              className="task-delete-btn"
-                              size="small"
-                              sx={{ p: "2px", opacity: 0, transition: "opacity .15s ease", flexShrink: 0 }}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleOpenDelete(task);
-                              }}
-                            >
-                              <DeleteOutlineIcon sx={{ fontSize: "14px" }} />
-                            </IconButton>
+                            <Tooltip title="Delete task">
+                              <IconButton
+                                className="task-delete-btn"
+                                size="small"
+                                color="error"
+                                sx={{ p: "2px", opacity: 0, transition: "opacity .15s ease", flexShrink: 0 }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOpenDelete(task);
+                                }}
+                              >
+                                <DeleteIcon sx={{ fontSize: "14px" }} />
+                              </IconButton>
+                            </Tooltip>
                           )}
                         </Box>
                       }
@@ -963,22 +972,73 @@ export default function TasksPanel() {
                             },
                           }}
                         >
-                          <Stack direction="row" alignItems="center" spacing={0.5}>
-                            <Avatar sx={{ width: 14, height: 14, fontSize: 8, fontWeight: 700, bgcolor: "primary.main", color: "common.white" }}>
-                              {initials}
-                            </Avatar>
-                            <Typography variant="caption" fontSize="0.65rem" sx={{ opacity: 0.75 }}>
-                              {task.assignee
-                                ? formatName(task.assignee.profile.first_name, task.assignee.profile.last_name)
-                                : "Unassigned"}
-                            </Typography>
-                          </Stack>
+                          <Tooltip
+                            title= "Assigned to"
+                            arrow
+                          >
+                            <Stack
+                              direction="row"
+                              alignItems="center"
+                              spacing={0.5}
+                              sx={{ minWidth: 0 }}
+                            >
+                              <Avatar
+                                src={task.assignee?.profile.avatar_url || undefined}
+                                sx={{
+                                  width: 14,
+                                  height: 14,
+                                  fontSize: 8,
+                                  fontWeight: 700,
+                                }}
+                              >
+                                {task.assignee
+                                  ? `${task.assignee.profile.first_name?.[0] ?? ""}${task.assignee.profile.last_name?.[0] ?? ""}`
+                                  : "?"}
+                              </Avatar>
 
-                          <Typography variant="caption" fontSize="0.6rem" sx={{ opacity: 0.45 }}>
-                            {task.author
-                              ? formatName(task.author.profile.first_name, task.author.profile.last_name)
-                              : "Unknown"}
-                          </Typography>
+                              <Typography
+                                variant="caption"
+                                fontSize="0.65rem"
+                                sx={{
+                                  opacity: 0.75,
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                  whiteSpace: "nowrap",
+                                }}
+                              >
+                                {task.assignee
+                                  ? formatName(
+                                      task.assignee.profile.first_name,
+                                      task.assignee.profile.last_name
+                                    )
+                                  : "Unassigned"}
+                              </Typography>
+                            </Stack>
+                          </Tooltip>
+
+                          <Tooltip
+                            title="Author"
+                            arrow
+                          >
+                            <Typography
+                              variant="caption"
+                              fontSize="0.6rem"
+                              sx={{
+                                opacity: 0.45,
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap",
+                                maxWidth: 120,
+                              }}
+                            >
+                              {task.author
+                                ? formatName(
+                                    task.author.profile.first_name,
+                                    task.author.profile.last_name
+                                  )
+                                : "Unknown"}
+                            </Typography>
+                          </Tooltip>
                         </Box>
                       }
                     />
@@ -1043,16 +1103,19 @@ export default function TasksPanel() {
 
             <Stack direction="row" alignItems="center" spacing={0.5}>
               {activeTask && activeTask.author_id === memberId && (
-                <IconButton
-                  size="small"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleOpenDelete(activeTask);
-                  }}
-                  disabled={saving}
-                >
-                  <DeleteOutlineIcon fontSize="small" />
-                </IconButton>
+                <Tooltip title="Delete task">
+                  <IconButton
+                    color="error"
+                    size="small"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleOpenDelete(activeTask);
+                    }}
+                    disabled={saving}
+                  >
+                    <DeleteIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
               )}
 
               {canEdit && (
@@ -1453,7 +1516,7 @@ export default function TasksPanel() {
               bgcolor: (theme) => alpha(theme.palette.error.main, 0.12),
             }}
           >
-            <DeleteOutlineIcon sx={{ color: "error.main", fontSize: 20 }} />
+            <DeleteIcon sx={{ color: "error.main", fontSize: 20 }} />
           </Box>
           Delete task
         </DialogTitle>

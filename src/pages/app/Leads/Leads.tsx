@@ -1007,7 +1007,7 @@ const handleConfirmCloseLead = async () => {
 
   if (loading) {
     return (
-      <Box sx={{height: 1000}}>
+      <Box sx={{height: 800}}>
         <Box sx={{
           display: 'flex',
           flexDirection: 'column',
@@ -1107,7 +1107,7 @@ const handleConfirmCloseLead = async () => {
               <Box
                 sx={{
                   minHeight: 500,
-                  height: 850,
+                  height: 700,
                   bgcolor: 'background.paper',
                   borderRadius: '0 0 10px 10px',
                   p: 1,
@@ -1439,7 +1439,7 @@ const handleConfirmCloseLead = async () => {
                       borderRadius: '0 0 10px 10px',
                       p: 1,
                       transition: 'background-color 0.2s ease',
-                      height: 850,
+                      height: 700,
                       border: '1px solid',
                       borderColor: 'divider',
                       borderTop: 0,

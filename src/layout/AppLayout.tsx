@@ -3,7 +3,6 @@ import { Box } from "@mui/material";
 
 import Header from "../components/Header";
 import Topbar from "../components/Topbar";
-import Footer from "../components/Footer";
 import Sidebar, {
   MOBILE_BOTTOM_NAV_HEIGHT,
 } from "../components/Sidebar";
@@ -74,7 +73,6 @@ function AppLayout() {
         </Box>
       </Box>
 
-      <Footer />
       <AIWorkspace />
     </Box>
   );
