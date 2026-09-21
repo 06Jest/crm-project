@@ -27,7 +27,7 @@ import {
 import { alpha, type SxProps, type Theme } from "@mui/material/styles";
 
 import AddIcon from "@mui/icons-material/Add";
-import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import DeleteIcon from "@mui/icons-material/Delete";
 import SearchIcon from "@mui/icons-material/Search";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import RefreshIcon from "@mui/icons-material/Refresh";
@@ -107,7 +107,7 @@ const SIDEBAR_ITEMS: {
   { key: "queued", label: "Queue", icon: <ScheduleIcon fontSize="small" /> },
   { key: "sent", label: "Sent", icon: <MarkEmailReadIcon fontSize="small" /> },
   { key: "failed", label: "Failed", icon: <ErrorOutlineIcon fontSize="small" /> },
-  { key: "trash", label: "Trash", icon: <DeleteOutlineIcon fontSize="small" /> },
+  { key: "trash", label: "Trash", icon: <DeleteIcon fontSize="small" /> },
 ];
 
 
@@ -153,6 +153,7 @@ function statusThemeColor(theme: Theme, status: EmailStatus) {
 
 const statusChipSx = (status: EmailStatus): SxProps<Theme> => ({
   height: 22,
+  width: 65,
   fontSize: 11,
   fontWeight: 700,
   color: (theme) => statusThemeColor(theme, status),
@@ -1096,7 +1097,10 @@ const ownerOf = (
           alignItems: { xs: "stretch", sm: "stretch" },
           overflowX: { xs: "auto", sm: "visible" },
           overflowY: "hidden",
-          borderRight: { xs: "none", sm: "1px solid" },
+          borderRight: {
+            xs: "none",
+            sm: "1px solid rgba(0, 0, 0, 0.08)",
+          },
           borderColor: "divider",
           pr: { xs: 0, sm: 1.5 },
           pb: { xs: 1, sm: 0 },
@@ -1235,35 +1239,35 @@ const ownerOf = (
               </Typography>
 
               {statusCounts[key] > 0 && (
-  <Chip
-    label={statusCounts[key]}
-    size="small"
-    sx={{
-      height: 18,
-      minWidth: 18,
-      fontSize: 10,
-      fontWeight: 700,
-      flexShrink: 0,
+                <Chip
+                  label={statusCounts[key]}
+                  size="small"
+                  sx={{
+                    height: 18,
+                    minWidth: 18,
+                    fontSize: 10,
+                    fontWeight: 700,
+                    flexShrink: 0,
 
-      bgcolor: active
-        ? "primary.main"
-        : "action.selected",
+                    bgcolor: active
+                      ? "primary.main"
+                      : "action.selected",
 
-      color: active
-        ? "primary.contrastText"
-        : "text.secondary",
+                    color: active
+                      ? "primary.contrastText"
+                      : "text.secondary",
 
-      "& .MuiChip-label": {
-        px: "5px",
-      },
+                    "& .MuiChip-label": {
+                      px: "5px",
+                    },
 
-      // Hide count on very small screens
-      "@media (max-width: 400px)": {
-        display: "none",
-      },
-    }}
-  />
-)}
+                    // Hide count on very small screens
+                    "@media (max-width: 400px)": {
+                      display: "none",
+                    },
+                  }}
+                />
+              )}
             </Box>
           </ListItem>
         );
@@ -1455,7 +1459,7 @@ const ownerOf = (
                                   }}
                                   onClick={(e) => removeEmail(email, e)}
                                 >
-                                  <DeleteOutlineIcon sx={{ fontSize: "15px" }} />
+                                  <DeleteIcon sx={{ fontSize: "15px" }} />
                                 </IconButton>
                               </Box>
                             </Box>
@@ -1563,7 +1567,7 @@ const ownerOf = (
                       disabled={saving}
                       sx={{ border: "1px solid", borderColor: "divider", borderRadius: 2, "&:hover": { color: "error.main" } }}
                     >
-                      <DeleteOutlineIcon fontSize="small" />
+                      <DeleteIcon fontSize="small" />
                     </IconButton>
                   </Tooltip>
                 )}
@@ -1828,7 +1832,7 @@ const ownerOf = (
                   variant="outlined"
                   sx={{
                     width: "100%",
-                    maxWidth: 540,
+                    maxWidth: 1200,
                     borderColor: "divider",
                     borderRadius: 3,
                     overflow: "hidden",
@@ -1836,8 +1840,8 @@ const ownerOf = (
                 >
                   <Box
                     sx={{
-                      px: { xs: 1.5, sm: 3 },
-                      pt: { xs: 2, sm: 3 },
+                      px: { xs: 1.5, sm: 2 },
+                      pt: { xs: 1.5, sm: 2 },
                       pb: 2,
                     }}
                   >
@@ -1847,7 +1851,7 @@ const ownerOf = (
                       justifyContent: "space-between",
                       flexDirection: { xs: "column", sm: "row" },
                       gap: 1, mb: 1.5 }}>
-                      <Typography sx={{ fontWeight: 700, fontSize: 17, lineHeight: 1.3 }}>
+                      <Typography sx={{ fontWeight: 700, fontSize: 1, lineHeight: 1.3 }}>
                         {activeEmail.subject || "(No subject)"}
                       </Typography>
                       <Chip
@@ -1953,7 +1957,7 @@ const ownerOf = (
               variant="contained"
               color="error"
               disableElevation
-              startIcon={deleting ? <CircularProgress size={14} color="inherit" /> : <DeleteOutlineIcon fontSize="small" />}
+              startIcon={deleting ? <CircularProgress size={14} color="inherit" /> : <DeleteIcon fontSize="small" />}
               sx={{ textTransform: "none", fontWeight: 700, borderRadius: 999 }}
             >
               Delete
