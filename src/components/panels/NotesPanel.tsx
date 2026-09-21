@@ -918,49 +918,79 @@ const removeNote = async (note: NoteListItem) => {
                           </Box>
                           
                         }
-                       secondary={
-                          <Box
-                            sx={{
-                              display: "flex",
-                              justifyContent: "space-between",
-                              alignItems: "center",
-                              flexWrap: "wrap",
-                              height: 13,
-                              gap: 0.5,
-                            }}
-                          >
-                            <Box sx={{display: 'flex', alignItems: 'center', gap: 0.75, minWidth: 0}}>
-                            {targetValue && (
-                            <Typography
-                            title={isNavigable ? `View full details for ${targetValue}` : 'Note target'}
-                            onClick={(e) => {
-                               if (!isNavigable) return
-                                 e.stopPropagation();
-                                 navigate(`/app/${note.target_type}s/${note.target_id}`)
-                              }}
-                            variant="caption" fontSize="0.7rem" sx={{
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap',
-                              cursor: isNavigable ? 'pointer' : 'default',
-                              ":hover": isNavigable ? {textDecoration: 'underline', color: 'primary.main'} : {}
-                            }}>
-                              {targetValue}
-                            </Typography>
-                            )}
-                            </Box>
-                            
-                            <Typography variant="caption" fontSize="0.63rem" sx={{ opacity: 0.6, flexShrink: 0 }}>
-                              {new Date(note.updated_at).toLocaleString([], {
-                                month: "short",
-                                day: "numeric",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
-                              {` · ${formatName(note.author.profile.first_name, note.author.profile.last_name)}`}
-                            </Typography>
-                          </Box>
-                       }
+                        secondary={
+  <Box
+    sx={{
+      display: "flex",
+      alignItems: "center",
+      gap: 0.5,
+      width: "100%",
+      minWidth: 0,
+    }}
+  >
+    <Box
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        gap: 0.75,
+        minWidth: 0,
+        flex: 1,
+      }}
+    >
+      {targetValue && (
+        <Typography
+          title={
+            isNavigable
+              ? `View full details for ${targetValue}`
+              : "Note target"
+          }
+          onClick={(e) => {
+            if (!isNavigable) return;
+            e.stopPropagation();
+            navigate(
+              `/app/${note.target_type}s/${note.target_id}`
+            );
+          }}
+          variant="caption"
+          fontSize="0.7rem"
+          sx={{
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+            cursor: isNavigable ? "pointer" : "default",
+            ":hover": isNavigable
+              ? {
+                  textDecoration: "underline",
+                  color: "primary.main",
+                }
+              : {},
+          }}
+        >
+          {targetValue}
+        </Typography>
+      )}
+    </Box>
+
+    <Typography
+      variant="caption"
+      fontSize="0.63rem"
+      sx={{
+        opacity: 0.6,
+        flexShrink: 1,
+        minWidth: 0,
+        whiteSpace: "nowrap",
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        textAlign: "right",
+      }}
+    >
+      {`${formatName(
+        note.author.profile.first_name,
+        note.author.profile.last_name
+      )}`}
+    </Typography>
+  </Box>
+}
                         secondaryTypographyProps={{ component: "div" }}
                       />
                     </ListItem>
