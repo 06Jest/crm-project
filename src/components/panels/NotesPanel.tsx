@@ -380,42 +380,48 @@ const removeNote = async (note: NoteListItem) => {
 
 
   const items = useMemo(() => {
-    switch (targetType) {
-      case "contact":
-        return contacts.map(c => ({
-          id: c.id,
-          label: `${c.first_name} ${c.last_name}`,
-        }));
+  switch (targetType) {
+    case "contact":
+      return contacts.map((c) => ({
+        id: c.id,
+        label: `${c.first_name} ${c.last_name}`,
+        displayId: c.display_id,
+      }));
 
-      case "lead":
-        return leads.map(l => ({
-          id: l.id,
-          label:  `${l.first_name} ${l.last_name}`
-        }));
+    case "lead":
+      return leads.map((l) => ({
+        id: l.id,
+        label: `${l.first_name} ${l.last_name}`,
+        displayId: l.display_id,
+      }));
 
-      case "deal":
-        return deals.map(d => ({
-          id: d.id,
-          label:  d.title.length > 25
+    case "deal":
+      return deals.map((d) => ({
+        id: d.id,
+        label:
+          d.title.length > 25
             ? `${formatTitle(d.title).slice(0, 25)}...`
-            : formatTitle(d.title).toUpperCase()
-        }));
+            : formatTitle(d.title).toUpperCase(),
+        displayId: d.display_id,
+      }));
 
-      case "customer":
-        return customers.map((c) => {
-          const con = contacts.find((co) => co.id === c.contact_id);
+    case "customer":
+      return customers.map((c) => {
+        const con = contacts.find((co) => co.id === c.contact_id);
 
-          return {
-            id: c.id,
-            label: con
-              ? `${con.first_name} ${con.last_name}`
-              : "Unknown Contact",
-          };
-        });
-      default:
-        return [];
-    }
-  }, [targetType, contacts, leads, deals, customers]);
+        return {
+          id: c.id,
+          label: con
+            ? `${con.first_name} ${con.last_name}`
+            : "Unknown Contact",
+          displayId: c.display_id,
+        };
+      });
+
+    default:
+      return [];
+  }
+}, [targetType, contacts, leads, deals, customers]);
 
    
 
@@ -613,7 +619,7 @@ const removeNote = async (note: NoteListItem) => {
 
          "@container notes-panel (min-width: 700px)": {
             display: "flex",
-            flex: "0 0 clamp(230px, 25%, 250px)",
+            flex: "0 0 clamp(230px, 25%, 270px)",
             borderRight: 1,
             borderColor: "divider",
             pr: 1.5,
@@ -1191,7 +1197,7 @@ const removeNote = async (note: NoteListItem) => {
                       }
 
                       const item = items.find((i) => i.id === selected);
-                      return item?.label ?? '';
+                      return item ? `${item.displayId} - ${item.label}` : "";
                     },
                     MenuProps: {
                       PaperProps: {
@@ -1209,7 +1215,7 @@ const removeNote = async (note: NoteListItem) => {
 
                   {items.map((item) => (
                     <MenuItem key={item.id} value={item.id} sx={{ fontSize: 11 }}>
-                      {item.label}
+                      {item.displayId} {item.label}
                     </MenuItem>
                   ))}
                 </TextField>

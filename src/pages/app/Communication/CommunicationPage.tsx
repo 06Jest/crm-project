@@ -58,14 +58,18 @@ export default function CommunicationPage() {
     >
       <Box
         sx={{
-          px: { xs: 2, md: 3 },
-          py: 2,
-          borderBottom: "1px solid",
-          borderColor: "divider",
-          flexShrink: 0,
+          display: "flex",
+          justifyContent: "center",
+          borderBottom: '1px divider'
         }}
       >
-        <Typography variant="h5" fontWeight={700}>
+        <Typography sx={{
+          width: "100%",
+          maxWidth: 1400,
+          minWidth: 0,
+        }} 
+        variant="h5"
+        fontWeight={700}>
           {title}
         </Typography>
       </Box>
