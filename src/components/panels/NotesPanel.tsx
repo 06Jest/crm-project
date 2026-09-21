@@ -581,11 +581,46 @@ const removeNote = async (note: NoteListItem) => {
   
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", height: "100%" ,minHeight: 0,
-    overflow: "hidden",}}>
-      {view === "list" && (
-        <>
-          {nL && !nLd ? (
+     <Box
+      sx={{
+        height: "100%",
+        minHeight: 0,
+        overflow: "hidden",
+        containerType: "inline-size",
+        containerName: "notes-panel",
+      }}
+    >
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          height: "100%",
+          minHeight: 0,
+          overflow: "hidden",
+          "@container notes-panel (min-width: 700px)": {
+            flexDirection: "row",
+          },
+        }}
+      >
+      <Box
+        sx={{
+          display: view === "list" ? "flex" : "none",
+          flexDirection: "column",
+          flex: 1,
+          minWidth: 0,
+          minHeight: 0,
+          overflow: "hidden",
+
+         "@container notes-panel (min-width: 700px)": {
+            display: "flex",
+            flex: "0 0 clamp(230px, 25%, 250px)",
+            borderRight: 1,
+            borderColor: "divider",
+            pr: 1.5,
+          },
+        }}
+      >
+        {nL && !nLd ? (
             <NotesSkeleton />
           ) : (
             <>
@@ -654,6 +689,7 @@ const removeNote = async (note: NoteListItem) => {
                     elevation={0}
                     sx={(theme) => ({
                       borderRadius: "50%",
+                      mr:0.5,
                       bgcolor: alpha(theme.palette.primary.main, 0.1),
                     })}
                   >
@@ -670,12 +706,6 @@ const removeNote = async (note: NoteListItem) => {
                     </IconButton>
                   </Paper>
                 </Tooltip>
-                <Typography
-                  variant="caption"
-                  sx={{ opacity: 0.5, fontWeight: 700, letterSpacing: 0.4 }}
-                >
-                  {visibleNotes.length} {visibleNotes.length === 1 ? "NOTE" : "NOTES"}
-                </Typography>
               </Box>
 
               <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 0.5 }}>
@@ -689,7 +719,7 @@ const removeNote = async (note: NoteListItem) => {
                       )
                     }
                     sx={(theme) => ({
-                      width: 80,
+                      width: 90,
                       borderRadius: 2,
                       bgcolor: alpha(theme.palette.text.primary, 0.04),
                       "& .MuiInputBase-input": {
@@ -937,11 +967,23 @@ const removeNote = async (note: NoteListItem) => {
           </Box>
         </>
         )}
-      </>
-      )}
+    </Box>
 
-      {view === "editor" && (
-        <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
+      <Box
+        sx={{
+          display: view === "editor" ? "flex" : "none",
+          flexDirection: "column",
+          flex: 1,
+          minWidth: 0,
+          minHeight: 0,
+          overflow: "hidden",
+          "@container notes-panel (min-width: 700px)": {
+            display: "flex",
+            flex: 1,
+            pl: 1.5,
+          },
+        }}
+      >
           {error && (
               <Box sx={{ width: "100%", my: 1 }}>
                 <ErrorAlert message={error} />
@@ -949,14 +991,28 @@ const removeNote = async (note: NoteListItem) => {
             )}
           <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1.5, gap: 1 }}>
             <Box sx={{ display: 'flex', justifyContent: 'start', alignItems: 'center', minWidth: 0 }}>
-              <Tooltip title="Back to notes">
-                <IconButton title="Back" size="small" onClick={() => {
-                  setView("list")
-                  dispatch(clearError())
-                }} disabled={saving}>
-                  <ArrowBackIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
+              <Box
+                sx={{
+                  display: "flex",
+                  "@container notes-panel (min-width: 700px)": {
+                    display: "none",
+                  },
+                }}
+              >
+                <Tooltip title="Back to notes">
+                  <IconButton
+                    title="Back"
+                    size="small"
+                    onClick={() => {
+                      setView("list");
+                      dispatch(clearError());
+                    }}
+                    disabled={saving}
+                  >
+                    <ArrowBackIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              </Box>
               <Box sx={{ ml: 1, display: 'flex', gap: 1, flexWrap: 'wrap', minWidth: 0 }}>
                 {activeNote ? (
                   <>
@@ -1243,7 +1299,7 @@ const removeNote = async (note: NoteListItem) => {
             />
           </Paper>
         </Box>
-      )}
+        </Box>
       <Dialog
         open={openDelete}
         onClose={() => setOpenDelete(false)}

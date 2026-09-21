@@ -70,11 +70,11 @@ export default function CommunicationPage() {
         </Typography>
       </Box>
 
-      <Box
+     <Box
         sx={{
           flex: 1,
           minHeight: 0,
-          overflow: "hidden",
+          overflow: "auto",
           p: { xs: 1, md: 2 },
           display: "flex",
           justifyContent: "center",
@@ -85,7 +85,7 @@ export default function CommunicationPage() {
             width: "100%",
             maxWidth: 1400,
             minWidth: 0,
-            minHeight: 0,
+            minHeight: 750,
           }}
         >
           <Panel />
