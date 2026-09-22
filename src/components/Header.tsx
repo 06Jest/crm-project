@@ -108,6 +108,9 @@ export default function Header() {
     displayName[0]?.toUpperCase() || "?";
 
   const avatarSrc = user?.avatar_url ?? undefined;
+  const { isOwner, isManager } = useAuth();
+
+  const canViewAnalytics = isOwner || isManager;
 
   const goHome = () => {
     setNavOpen(false);
@@ -516,6 +519,17 @@ export default function Header() {
                 >
                   Workspace
                 </MenuItem>
+
+                {canViewAnalytics && (
+                <MenuItem
+                  onClick={() => {
+                    handleMenuClose();
+                    navigate("/app/analytics");
+                  }}
+                >
+                  Analytics
+                </MenuItem>
+              )}
 
                 <MenuItem
                   onClick={() => {

@@ -21,6 +21,7 @@ import messagesReducer from './messagesSlice'
 import smsReducer from './smsSlice'
 import archiveReducer from "./archiveSlice";
 import aiReducer from "./aiSlice";
+import analyticsReducer from './analyticsSlice';
 
 export const store = configureStore({
   reducer: {
@@ -46,6 +47,7 @@ export const store = configureStore({
     sms: smsReducer,
     ui: uiReducer,
     archives: archiveReducer,
+    analytics: analyticsReducer,
   },
 });
 

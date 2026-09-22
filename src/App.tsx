@@ -33,6 +33,7 @@ import Customers from './pages/app/Customers/Customers';
 import CustomerDetail from './pages/app/Customers/CustomerDetail';
 import Profile from './pages/app/Profile/Profile';
 import Workspace from './pages/app/Workspace/Workspace';
+import Analytics from './pages/app/Analytics/Analytics';
 import Archives from './pages/app/Archives/Archives';
 import Settings from './pages/app/Settings/Settings';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -106,6 +107,7 @@ function AppRoutes() {
             <Route path="/app/customers/:id" element={<CustomerDetail />} /> 
             <Route path="/app/profile" element={<Profile />} />
             <Route path="/app/workspace" element={<Workspace />} />
+            <Route path="/app/analytics" element={<Analytics/>} />
             <Route path="/app/archives" element={<Archives />} />
             <Route path="/app/settings" element={<Settings />} />
             <Route path="/app/communication/:id" element={<CommunicationPage />} />

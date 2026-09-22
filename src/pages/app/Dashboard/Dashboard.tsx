@@ -567,7 +567,7 @@ const LeadStatusChart: React.FC<{ data: StatusDatum[] }> = ({ data }) => {
             />
           }
         />
-        <Bar dataKey="count" radius={[0, 4, 4, 0]} barSize={16}>
+        <Bar dataKey="count" radius={[0, 4, 4, 0]} barSize={25}>
           {data.map((entry, index) => (
             <Cell key={entry.label} fill={colors[index % colors.length]} />
           ))}
@@ -586,14 +586,14 @@ const CustomerStatusChart: React.FC<{
 
   return (
     <Stack direction="row" spacing={2.5} alignItems="center" sx={{ height: "100%" }}>
-      <Box sx={{ position: "relative", width: 140, height: "100%", flexShrink: 0 }}>
+      <Box sx={{ position: "relative", width: 250, height: "100%", flexShrink: 0 }}>
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
               data={data}
               dataKey="count"
               nameKey="label"
-              innerRadius="60%"
+              innerRadius="40%"
               outerRadius="100%"
               paddingAngle={2}
               stroke="none"
@@ -656,7 +656,7 @@ const CustomerStatusChart: React.FC<{
             <Typography variant="body2" noWrap sx={{ flex: 1, minWidth: 0 }}>
               {entry.label}
             </Typography>
-            <Typography variant="body2" fontWeight={600}>
+            <Typography variant="body2" sx={{ flex: 1, minWidth: 0 }} fontWeight={600}>
               {entry.count}
             </Typography>
           </Stack>
@@ -968,7 +968,7 @@ const RecentActivityList: React.FC<{ activities: DashboardActivity[] }> = ({
 
   return (
     <List disablePadding>
-      {activities.map((activity, index) => {
+      {activities.slice(0, 5).map((activity, index) => {
         const Icon = getActivityIcon(activity.type);
 
         return (
@@ -1351,10 +1351,12 @@ const Dashboard = () => {
             isEmpty={customerChartData.length === 0}
             emptyMessage="No customer data yet."
           >
+            
             <CustomerStatusChart
               data={customerChartData}
               total={dashboard?.customers.total ?? 0}
             />
+            
           </ChartCard>
         </Grid>
       </Grid>
