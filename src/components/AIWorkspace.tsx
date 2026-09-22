@@ -577,12 +577,12 @@ const handleConfirm = () => {
             position: "fixed",
             zIndex: 5000,
             isolation: "isolate",
-            left: isMobile ? 0 : position.x,
-            top: isMobile ? 0 : position.y,
             right: "auto",
             bottom: "auto",
-            width: isMobile ? "100%" : size.width,
-            height: isMobile ? "100%" : size.height,
+            left: isMobile ? "10%" : position.x,
+            top: isMobile ? "18%" : position.y,
+            width: isMobile ? "60%" : size.width,
+            height: isMobile ? "80%" : size.height,
             minWidth: isMobile ? 0 : 320,
             minHeight: isMobile ? 0 : 460,
             display: "flex",
@@ -590,7 +590,7 @@ const handleConfirm = () => {
             resize: "none",
             color: theme.palette.text.primary,
             border: `1px solid ${glassBorder}`,
-            borderRadius: isMobile ? 0 : 28,
+            borderRadius:  28,
             background: glassBackground,
             backdropFilter: "blur(24px) saturate(160%)",
             WebkitBackdropFilter: "blur(24px) saturate(160%)",
@@ -1514,18 +1514,18 @@ const handleConfirm = () => {
       {/* Responsive mobile overrides */}
       <style>
         {`
-          @media (max-width: 768px) {
-            section[aria-label="uniThread AI workspace"] {
-              inset: 0 !important;
-              left: 0 !important;
-              top: 0 !important;
-              width: 100% !important;
-              height: 100% !important;
-              min-width: 0 !important;
-              min-height: 0 !important;
-              border-radius: 0 !important;
-              resize: none !important;
-            }
+         @media (max-width: 768px) {
+          section[aria-label="uniThread AI workspace"] {
+            left: 10% !important;
+            top: 18% !important;
+            width: 80% !important;
+            height: 80% !important;
+            min-width: 0 !important;
+            min-height: 0 !important;
+            border-radius: 30px !important;
+            resize: none !important;
+          }
+        }
 
             section[aria-label="uniThread AI workspace"] aside.ai-conversation-sidebar {
               position: absolute;
