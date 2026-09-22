@@ -64,6 +64,7 @@ import SmsIcon from '@mui/icons-material/Sms';
 import PersonIcon from '@mui/icons-material/Person';
 import SearchIcon from '@mui/icons-material/Search';
 import FlagIcon from '@mui/icons-material/Flag';
+import PersonSearchIcon from '@mui/icons-material/PersonSearch';
 import AddIcon from '@mui/icons-material/Add';
 import ErrorAlert from "../../../components/Error";
 import RefreshIcon from "@mui/icons-material/Refresh";
@@ -1174,9 +1175,42 @@ const handleConfirmCloseLead = async () => {
           gap: { xs: 0.75, sm: 1 },
         }}
       >
-        <Typography sx={{ fontSize: { sm: 16, md: 18, lg: 20 } }} fontWeight={700}>
-          Leads
-        </Typography>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: { xs: 1, sm: 1.25 },
+            minWidth: 0,
+          }}
+        >
+          <Box
+            sx={(theme) => ({
+              flexShrink: 0,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: { xs: 36, sm: 40 },
+              height: { xs: 36, sm: 40 },
+              borderRadius: 2,
+              bgcolor:
+                theme.palette.mode === "dark" ? "#2a2a2a" : "#eef1f6",
+              color: "primary.main",
+            })}
+          >
+            <PersonSearchIcon
+              sx={{
+                fontSize: { xs: 20, sm: 24 },
+              }}
+            />
+          </Box>
+
+          <Box sx={{ minWidth: 0 }}>
+            <Typography sx={{ fontSize: { sm: 16, md: 18, lg: 20 } }} fontWeight={700}>
+              Leads
+            </Typography>
+          </Box>
+        </Box>
+        
 
         <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 0.5, sm: 0.75 } }}>
           <IconButton

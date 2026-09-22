@@ -1,105 +1,119 @@
-import { Tabs, Tab, Box } from "@mui/material";
-// import { useRole } from "../hooks/useRole";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import {
+  AppBar,
+  Toolbar,
+  IconButton,
+  Typography,
+  Drawer,
+  List,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+} from "@mui/material";
+import MenuIcon from "@mui/icons-material/Menu";
 
-import DashboardIcon from "@mui/icons-material/Dashboard";
-import ContactsIcon from "@mui/icons-material/Contacts";
-import PermContactCalendarIcon from '@mui/icons-material/PermContactCalendar';
+import { navigationTabs } from "../constants/navigation";
 
-import HandshakeIcon from "@mui/icons-material/Handshake";
-import EventNoteIcon from '@mui/icons-material/EventNote';
-import PersonSearchIcon from '@mui/icons-material/PersonSearch';
+export default function Topbar() {
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
-function Topbar() {
   const navigate = useNavigate();
   const location = useLocation();
-  const handleChange = (_: unknown, newValue: string) => {
-    navigate(newValue);
+
+  const currentTab =
+    navigationTabs.find((tab) => {
+      if (
+        tab.value === "/app/contacts" ||
+        tab.value === "/app/leads" ||
+        tab.value === "/app/deals" ||
+        tab.value === "/app/customers"
+      ) {
+        return (
+          location.pathname === tab.value ||
+          location.pathname.startsWith(`${tab.value}/`)
+        );
+      }
+
+      return location.pathname === tab.value;
+    }) ?? navigationTabs[0];
+
+  const handleNavigate = (path: string) => {
+    navigate(path);
+    setDrawerOpen(false);
   };
 
-  const tabs = [
-    { label: "Dashboard", value: "/app/dashboard", icon: <DashboardIcon /> },
-    { label: "Leads", value: "/app/leads", icon: <PersonSearchIcon /> },
-    { label: "Contacts", value: "/app/contacts", icon: <ContactsIcon /> },
-    { label: "Deals", value: "/app/deals", icon: <HandshakeIcon /> },
-    { label: "Customers", value: "/app/customers", icon: <PermContactCalendarIcon /> },
-    { label: "Activities", value: "/app/activities", icon: <EventNoteIcon /> },
-
-  ];
-
-const path = location.pathname;
-
-const tabValue =
-  path === "/app/addcontact" || path.startsWith("/app/contacts/")
-    ? "/app/contacts"
-    : path === "/app/addlead" || path.startsWith("/app/leads/")
-    ? "/app/leads"
-    : path === "/app/adddeal" || path.startsWith("/app/deals/")
-    ? "/app/deals"
-    : path;
-    
-
   return (
-    <Box
-      sx={{
-        mt: 7.5,
-        position: "fixed",
-        left: 0,
-        right: 0,
-        zIndex: 400,
-        borderColor: "divider",
-        display: "flex",
-        justifyContent: "center",
-      }}
-    >
-      <Tabs value={tabValue} onChange={handleChange}
+    <>
+      <AppBar
+        position="fixed"
+        elevation={0}
         sx={{
-          '& .MuiTabs-indicator': {
-                  display: 'none',
-                },
+          display: {
+            xs: "flex",
+            sm: "flex",
+            md: "none",
+          },
+          top: 64,
+          height: 50,
+          backgroundColor: "background.paper",
+          color: "text.primary",
+          borderBottom: "1px solid",
+          borderColor: "divider",
+          zIndex: 1900,
         }}
       >
-        {tabs.map((tab) => (
-          <Tab
-            key={tab.value}
-            icon={tab.icon}
-            iconPosition="start"
-            title={tab.label}
-            value={tab.value}
-            sx={{
-              transformOrigin: "top",
-              "& .MuiSvgIcon-root": {
-                transformOrigin: "top",
-                transition: "transform .3s ease",
-              },
-              "&:hover .MuiSvgIcon-root": {
-                transform: "scale(1.4)",
+        <Toolbar
+          sx={{
+            minHeight: "50px !important",
+            height: 50,
+            px: 1.5,
+          }}
+        >
+          <IconButton
+            edge="start"
+            onClick={() => setDrawerOpen(true)}
+            size="small"
+            sx={{ mr: 0.75 }}
+          >
+            <MenuIcon fontSize="small" />
+          </IconButton>
 
-              },
-              minWidth: {
-                xs: 50,
-                sm: 80,
-                md: 100
-              },
-              minHeight: {
-                xs: 30,
-                sm: 50,
-              },
-              fontSize: {
-                xs: "0.65rem",
-                sm: "0.85rem",
-                md: "1.2rem",
-              },
-              padding: {
-                xs: "2px 8px",
-                sm: "6px 12px",
-              },
-            }}
-          />
-        ))}
-      </Tabs>
-    </Box>
+          <Typography variant="subtitle1" fontWeight={700} noWrap>
+            {currentTab.label}
+          </Typography>
+        </Toolbar>
+      </AppBar>
+
+     <Drawer
+        anchor="left"
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        PaperProps={{
+          sx: {
+            top: 112,
+            height: "calc(100% - 112px)",
+          },
+        }}
+      >
+        <List sx={{ width: 200, pt: 1 }}>
+          {navigationTabs.map(
+            ({ label, value, icon: Icon }) => (
+              <ListItemButton
+                key={value}
+                selected={currentTab.value === value}
+                onClick={() => handleNavigate(value)}
+              >
+                <ListItemIcon>
+                  <Icon />
+                </ListItemIcon>
+
+                <ListItemText primary={label} />
+              </ListItemButton>
+            )
+          )}
+        </List>
+      </Drawer>
+    </>
   );
 }
-
-export default Topbar;

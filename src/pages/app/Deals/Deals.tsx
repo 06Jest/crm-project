@@ -870,59 +870,35 @@ export default function Deals() {
           </Box>
 
           <Box sx={{ minWidth: 0 }}>
-            <Typography
-              variant="h5"
-              fontWeight={800}
-              letterSpacing={-0.3}
-              lineHeight={1.2}
-              sx={{
-                fontSize: { xs: "1.2rem", sm: "1.5rem" },
-                whiteSpace: "nowrap",
-              }}
-            >
+            <Typography variant="h5" fontWeight={800} sx={{ lineHeight: 1.2, fontSize: {xs: 15, sm: 17, md: 20}}}>
               Deals
-            </Typography>
-
-            <Typography
-              variant="caption"
-              color="text.secondary"
-              sx={{
-                display: "block",
-                fontSize: { xs: "0.7rem", sm: "0.75rem" },
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-              }}
-            >
-              {deals.length}{" "}
-              {deals.length === 1 ? "deal" : "deals"} across your pipeline
             </Typography>
           </Box>
         </Box>
 
         <Box>
           <IconButton
-            onClick={() => navigate(`/app/deals/adddeal`)}
+            title="Add deal"
+            onClick={() => {
+              clearError()
+              navigate(`/app/deals/adddeal`)
+            }}
             sx={{
-              width: { xs: 36, sm: 40 },
-              height: { xs: 36, sm: 40 },
-              backgroundColor: 'primary.main',
+              width: { xs: 26, sm: 32 },
+              height: { xs: 26, sm: 32 },
+              backgroundColor: "primary.main",
               borderRadius: "50%",
               flexShrink: 0,
-              p: 0,
-              color: 'white',
-
+              color: "white",
               "& svg": {
                 fontSize: { xs: 20, sm: 22 },
               },
-
               transition: "transform 0.15s ease, box-shadow 0.15s ease",
-
               "&:hover": {
                 transform: "translateY(-1px)",
                 boxShadow: "0 6px 14px rgba(0,0,0,0.12)",
+                backgroundColor: "primary.light",
               },
-
               "&:active": {
                 transform: "scale(0.96)",
               },

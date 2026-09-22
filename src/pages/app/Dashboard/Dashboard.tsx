@@ -1,18 +1,13 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import React, { useEffect, useMemo } from "react";
 
 import {
   Alert,
   Avatar,
   Box,
-  Button,
   Chip,
   Divider,
-  Fade,
   Grid,
-  Grow,
   IconButton,
-  LinearProgress,
   List,
   ListItem,
   ListItemAvatar,
@@ -26,177 +21,233 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  ToggleButton,
-  ToggleButtonGroup,
   Tooltip,
   Typography,
-  useMediaQuery,
-  useTheme,
-} from '@mui/material';
-import type { Theme } from '@mui/material/styles';
+} from "@mui/material";
+import { useTheme } from "@mui/material/styles";
+import type { Theme } from "@mui/material/styles";
 
-import PersonAddAltOutlinedIcon from '@mui/icons-material/PersonAddAltOutlined';
-import PeopleAltOutlinedIcon from '@mui/icons-material/PeopleAltOutlined';
-import SellOutlinedIcon from '@mui/icons-material/SellOutlined';
-import GroupsOutlinedIcon from '@mui/icons-material/GroupsOutlined';
-import AttachMoneyOutlinedIcon from '@mui/icons-material/AttachMoneyOutlined';
-import TaskAltOutlinedIcon from '@mui/icons-material/TaskAltOutlined';
-import PhoneOutlinedIcon from '@mui/icons-material/PhoneOutlined';
-import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
-import SmsOutlinedIcon from '@mui/icons-material/SmsOutlined';
-import RefreshOutlinedIcon from '@mui/icons-material/RefreshOutlined';
-import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
-import TrendingUpOutlinedIcon from '@mui/icons-material/TrendingUpOutlined';
-import TrendingDownOutlinedIcon from '@mui/icons-material/TrendingDownOutlined';
-import EmojiEventsOutlinedIcon from '@mui/icons-material/EmojiEventsOutlined';
-import CalendarTodayOutlinedIcon from '@mui/icons-material/CalendarTodayOutlined';
-import InboxOutlinedIcon from '@mui/icons-material/InboxOutlined';
-
-import { LineChart } from '@mui/x-charts/LineChart';
-import { BarChart } from '@mui/x-charts/BarChart';
-
-import type { RootState, AppDispatch } from '../../../store/store';
 import {
-  fetchDashboardOverview,
-  fetchLeadMetrics,
-  fetchDealMetrics,
-  fetchCustomerMetrics,
-  fetchActivityMetrics,
-  fetchDashboardTrends,
-  fetchRecentDashboardActivities,
-  fetchUserPerformanceMetrics,
-  clearError,
-} from '../../../store/dashboardSlice';
-import type { ActivityItem, ActivityType, TrendInterval } from '../../../types/dashboard';
-import { useAuth } from '../../../hooks/useAuth';
-import { fetchOrgMembers } from '../../../store/organizationMemberSlice';
-import type { DisplayOrganizationMember } from '../../../types/organization.member';
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip as RechartsTooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 
+import PersonAddAltOutlinedIcon from "@mui/icons-material/PersonAddAltOutlined";
+import PeopleAltOutlinedIcon from "@mui/icons-material/PeopleAltOutlined";
+import GroupsOutlinedIcon from "@mui/icons-material/GroupsOutlined";
+import SellOutlinedIcon from "@mui/icons-material/SellOutlined";
+import AttachMoneyOutlinedIcon from "@mui/icons-material/AttachMoneyOutlined";
+import TaskAltOutlinedIcon from "@mui/icons-material/TaskAltOutlined";
+import PhoneOutlinedIcon from "@mui/icons-material/PhoneOutlined";
+import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
+import SmsOutlinedIcon from "@mui/icons-material/SmsOutlined";
+import RefreshOutlinedIcon from "@mui/icons-material/RefreshOutlined";
+import WarningAmberOutlinedIcon from "@mui/icons-material/WarningAmberOutlined";
+import PersonOffOutlinedIcon from "@mui/icons-material/PersonOffOutlined";
+import InboxOutlinedIcon from "@mui/icons-material/InboxOutlined";
+import CheckCircleOutlineOutlinedIcon from "@mui/icons-material/CheckCircleOutlineOutlined";
+import CircleOutlinedIcon from "@mui/icons-material/CircleOutlined";
+
+import type {
+  DashboardActivity,
+  InactiveContactItem,
+  MemberDashboardStats,
+  OpenDealItem,
+  PriorityItem,
+} from "../../../types/dashboard";
+
+import { useAuth } from "../../../hooks/useAuth";
+import { useDispatch, useSelector } from "react-redux";
+import type { AppDispatch, RootState } from "../../../store/store";
+import { clearError, fetchDashboard } from "../../../store/dashboardSlice";
+
+/* ------------------------------------------------------------------ */
+/* Formatting helpers                                                  */
+/* ------------------------------------------------------------------ */
 
 const formatCompactNumber = (value: number): string => {
-  if (!Number.isFinite(value)) return '0';
-  if (Math.abs(value) >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
-  if (Math.abs(value) >= 1_000) return `${(value / 1_000).toFixed(1)}K`;
-  return value.toLocaleString('en-US');
+  if (!Number.isFinite(value)) return "0";
+
+  if (Math.abs(value) >= 1_000_000) {
+    return `${(value / 1_000_000).toFixed(1)}M`;
+  }
+
+  if (Math.abs(value) >= 1_000) {
+    return `${(value / 1_000).toFixed(1)}K`;
+  }
+
+  return value.toLocaleString("en-US");
 };
 
 const formatCurrency = (value: number): string => {
-  if (!Number.isFinite(value)) return 'Php0';
-  if (Math.abs(value) >= 1_000_000) return `Php${(value / 1_000_000).toFixed(1)}M`;
-  if (Math.abs(value) >= 1_000) return `Php${(value / 1_000).toFixed(1)}K`;
-  return `Php${value.toLocaleString('en-US')}`;
-};
+  if (!Number.isFinite(value)) return "Php0";
 
-const formatPercent = (value: number): string => `${value.toFixed(1)}%`;
+  if (Math.abs(value) >= 1_000_000) {
+    return `Php${(value / 1_000_000).toFixed(1)}M`;
+  }
+
+  if (Math.abs(value) >= 1_000) {
+    return `Php${(value / 1_000).toFixed(1)}K`;
+  }
+
+  return `Php${value.toLocaleString("en-US")}`;
+};
 
 const formatRelativeTime = (iso: string): string => {
   const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return '—';
+
+  if (Number.isNaN(date.getTime())) {
+    return "—";
+  }
+
   const diffMs = Date.now() - date.getTime();
-  const diffMin = Math.floor(diffMs / 60000);
-  if (diffMin < 1) return 'Just now';
-  if (diffMin < 60) return `${diffMin}m ago`;
-  const diffHr = Math.floor(diffMin / 60);
-  if (diffHr < 24) return `${diffHr}h ago`;
-  const diffDay = Math.floor(diffHr / 24);
-  if (diffDay < 7) return `${diffDay}d ago`;
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  const diffMinutes = Math.floor(diffMs / 60_000);
+
+  if (diffMinutes < 1) return "Just now";
+  if (diffMinutes < 60) return `${diffMinutes}m ago`;
+
+  const diffHours = Math.floor(diffMinutes / 60);
+
+  if (diffHours < 24) {
+    return `${diffHours}h ago`;
+  }
+
+  const diffDays = Math.floor(diffHours / 24);
+
+  if (diffDays < 7) {
+    return `${diffDays}d ago`;
+  }
+
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  });
+};
+
+const formatDate = (iso: string | null): string => {
+  if (!iso) return "No activity";
+
+  const date = new Date(iso);
+
+  if (Number.isNaN(date.getTime())) {
+    return "No activity";
+  }
+
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
 };
 
 const getInitials = (label: string): string => {
   const parts = label.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return '?';
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
-};
 
+  if (parts.length === 0) return "?";
 
-const formatUserLabel = (
-  key: string,
-  members: DisplayOrganizationMember[]
-): string => {
-
-  if (!key || key === "Unassigned") {
-    return "Unassigned";
+  if (parts.length === 1) {
+    return parts[0].slice(0, 2).toUpperCase();
   }
 
-  const profile = members
-  .filter(member => member.profile)
-  .find(member => member.profile!.id === key)
-  ?.profile;
-
-  return profile
-    ? `${profile.first_name} ${profile.last_name}`
-    : "Unknown";
+  return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
 };
 
 const getDaypart = (): string => {
   const hour = new Date().getHours();
-  if (hour < 12) return 'morning';
-  if (hour < 18) return 'afternoon';
-  return 'evening';
+
+  if (hour < 12) return "morning";
+  if (hour < 18) return "afternoon";
+
+  return "evening";
 };
 
-const toSeries = (
-  record: Record<string, number> | undefined
-): { date: string; value: number }[] => {
-  if (!record) return [];
-  return Object.entries(record)
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([date, value]) => ({ date, value }));
+const getActivityIcon = (type: string): React.ElementType => {
+  switch (type.toLowerCase()) {
+    case "lead":
+      return PersonAddAltOutlinedIcon;
+    case "contact":
+      return PeopleAltOutlinedIcon;
+    case "customer":
+      return GroupsOutlinedIcon;
+    case "deal":
+      return SellOutlinedIcon;
+    case "email":
+      return EmailOutlinedIcon;
+    case "sms":
+      return SmsOutlinedIcon;
+    case "call":
+      return PhoneOutlinedIcon;
+    case "task":
+      return TaskAltOutlinedIcon;
+    default:
+      return CircleOutlinedIcon;
+  }
 };
 
-const computeDelta = (series: { date: string; value: number }[]): number | null => {
-  if (series.length < 2) return null;
-  const last = series[series.length - 1].value;
-  const prior = series[series.length - 2].value;
-  if (prior === 0) return null;
-  return ((last - prior) / prior) * 100;
+const getPriorityColor = (
+  priority: string
+): "error" | "warning" | "default" => {
+  switch (priority.toLowerCase()) {
+    case "highest":
+      return "error";
+    case "high":
+      return "warning";
+    default:
+      return "default";
+  }
 };
 
-type ChipTone = 'success' | 'warning' | 'error' | 'info' | 'default';
-
-const SUCCESS_KEYWORDS = ['won', 'active', 'completed', 'sent', 'converted', 'closed'];
-const WARNING_KEYWORDS = ['pending', 'open', 'in progress', 'proposal', 'negotiation'];
-const ERROR_KEYWORDS = ['lost', 'churned', 'overdue', 'failed'];
-
-const statusTone = (status: string | null | undefined): ChipTone => {
-  const value = (status ?? '').toLowerCase();
-  if (SUCCESS_KEYWORDS.some((k) => value.includes(k))) return 'success';
-  if (ERROR_KEYWORDS.some((k) => value.includes(k))) return 'error';
-  if (WARNING_KEYWORDS.some((k) => value.includes(k))) return 'warning';
-  if (value) return 'info';
-  return 'default';
+const getStageLabel = (stage: string): string => {
+  return stage.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/[-_]/g, " ");
 };
 
-const ACTIVITY_ICONS: Record<ActivityType, React.ElementType> = {
-  lead: PersonAddAltOutlinedIcon,
-  deal: SellOutlinedIcon,
-  customer: GroupsOutlinedIcon,
-  email: EmailOutlinedIcon,
-  sms: SmsOutlinedIcon,
-  call: PhoneOutlinedIcon,
-  task: TaskAltOutlinedIcon,
-};
+const getChartPalette = (theme: Theme): string[] => [
+  theme.palette.primary.main,
+  theme.palette.info.main,
+  theme.palette.warning.main,
+  theme.palette.success.main,
+  theme.palette.secondary.main,
+  theme.palette.error.main,
+];
 
 const surfaceHoverSx = {
   transition: (theme: Theme) =>
-    theme.transitions.create(['border-color', 'box-shadow', 'transform'], { duration: 200 }),
-  '&:hover': {
-    borderColor: 'grey.400',
-    boxShadow: '0 2px 10px rgba(15, 23, 42, 0.06)',
-    transform: 'translateY(-1px)',
+    theme.transitions.create(["border-color", "box-shadow"], {
+      duration: 160,
+    }),
+
+  "&:hover": {
+    borderColor: "grey.400",
+    boxShadow: "0 2px 8px rgba(15, 23, 42, 0.06)",
   },
-  '@media (prefers-reduced-motion: reduce)': {
-    transition: 'none',
-    transform: 'none',
+
+  "@media (prefers-reduced-motion: reduce)": {
+    transition: "none",
   },
 };
 
+/* ------------------------------------------------------------------ */
+/* Shared primitives                                                   */
+/* ------------------------------------------------------------------ */
+
 const EmptyState: React.FC<{ message: string }> = ({ message }) => (
-  <Stack alignItems="center" justifyContent="center" spacing={1} sx={{ py: 6, color: 'text.disabled' }}>
-    <InboxOutlinedIcon sx={{ fontSize: 26, opacity: 0.6 }} />
-    <Typography variant="body2" color="text.secondary">
+  <Stack
+    alignItems="center"
+    justifyContent="center"
+    spacing={0.75}
+    sx={{ py: 3, color: "text.disabled" }}
+  >
+    <InboxOutlinedIcon sx={{ fontSize: 22, opacity: 0.5 }} />
+
+    <Typography variant="caption" color="text.secondary">
       {message}
     </Typography>
   </Stack>
@@ -205,30 +256,27 @@ const EmptyState: React.FC<{ message: string }> = ({ message }) => (
 interface SectionHeadingProps {
   title: string;
   subtitle?: string;
-  action?: React.ReactNode;
 }
 
-const SectionHeading: React.FC<SectionHeadingProps> = ({ title, subtitle, action }) => (
-  <Stack
-    direction={{ xs: 'column', sm: 'row' }}
-    alignItems={{ xs: 'flex-start', sm: 'flex-end' }}
-    justifyContent="space-between"
-    flexWrap="wrap"
-    rowGap={1.5}
-    sx={{ mb: 2 }}
-  >
-    <Box>
-      <Typography variant="h6" fontWeight={700} sx={{ letterSpacing: '-0.01em' }}>
-        {title}
+const SectionHeading: React.FC<SectionHeadingProps> = ({
+  title,
+  subtitle,
+}) => (
+  <Box sx={{ mb: 1.5 }}>
+    <Typography
+      variant="h6"
+      fontWeight={700}
+      sx={{ letterSpacing: "-0.01em", fontSize: "1.05rem" }}
+    >
+      {title}
+    </Typography>
+
+    {subtitle && (
+      <Typography variant="caption" color="text.secondary">
+        {subtitle}
       </Typography>
-      {subtitle && (
-        <Typography variant="body2" color="text.secondary">
-          {subtitle}
-        </Typography>
-      )}
-    </Box>
-    {action && <Box sx={{ width: { xs: '100%', sm: 'auto' } }}>{action}</Box>}
-  </Stack>
+    )}
+  </Box>
 );
 
 interface KpiCardProps {
@@ -236,857 +284,1408 @@ interface KpiCardProps {
   value: string;
   icon: React.ElementType;
   loading: boolean;
-  delta?: number | null;
-  tooltip?: string;
+  secondary?: string;
 }
 
-const KpiCard: React.FC<KpiCardProps> = ({ label, value, icon: Icon, loading, delta, tooltip }) => {
-  const content = (
-    <Paper
-      variant="outlined"
-      sx={[
-        {
-          p: { xs: 2, sm: 2.5 },
-          borderRadius: 2,
-          borderColor: 'divider',
-          height: '100%',
-        },
-        surfaceHoverSx,
-      ]}
+const KpiCard: React.FC<KpiCardProps> = ({
+  label,
+  value,
+  icon: Icon,
+  loading,
+  secondary,
+}) => (
+  <Paper
+    variant="outlined"
+    sx={[
+      {
+        p: 1.5,
+        borderRadius: 2,
+        borderColor: "divider",
+        height: "100%",
+      },
+      surfaceHoverSx,
+    ]}
+  >
+    <Stack
+      direction="row"
+      alignItems="flex-start"
+      justifyContent="space-between"
+      spacing={1}
+      sx={{ mb: 1 }}
     >
-      <Stack direction="row" alignItems="flex-start" justifyContent="space-between" sx={{ mb: 1.5 }}>
-        <Typography variant="body2" color="text.secondary" fontWeight={500}>
-          {label}
+      <Typography
+        variant="body2"
+        color="text.secondary"
+        fontWeight={500}
+        noWrap
+      >
+        {label}
+      </Typography>
+
+      <Box
+        sx={{
+          width: 26,
+          height: 26,
+          borderRadius: 1.25,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: "text.secondary",
+          bgcolor: "action.hover",
+          flexShrink: 0,
+        }}
+      >
+        <Icon sx={{ fontSize: 16 }} />
+      </Box>
+    </Stack>
+
+    {loading ? (
+      <Skeleton variant="text" width="55%" height={30} />
+    ) : (
+      <Typography
+        variant="h5"
+        fontWeight={700}
+        sx={{ letterSpacing: "-0.02em", lineHeight: 1.15 }}
+      >
+        {value}
+      </Typography>
+    )}
+
+    {secondary && !loading && (
+      <Typography
+        variant="caption"
+        color="text.secondary"
+        noWrap
+        sx={{ display: "block", mt: 0.25 }}
+      >
+        {secondary}
+      </Typography>
+    )}
+  </Paper>
+);
+
+const SectionCard: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => (
+  <Paper
+    variant="outlined"
+    sx={[
+      {
+        borderRadius: 2,
+        borderColor: "divider",
+        height: "100%",
+        overflow: "hidden",
+      },
+      surfaceHoverSx,
+    ]}
+  >
+    {children}
+  </Paper>
+);
+
+/* ------------------------------------------------------------------ */
+/* Chart primitives                                                    */
+/* ------------------------------------------------------------------ */
+
+interface ChartTooltipProps<T extends object> {
+  active?: boolean;
+  payload?: Array<{ payload: T }>;
+  render?: (item: T) => React.ReactNode;
+}
+const ChartTooltip = <T extends object>({
+  active,
+  payload,
+  render,
+}: ChartTooltipProps<T>) => {
+  if (!active || !payload?.length || !render) {
+    return null;
+  }
+
+  return (
+    <Box
+      sx={{
+        bgcolor: "background.paper",
+        border: "1px solid",
+        borderColor: "divider",
+        borderRadius: 1.5,
+        px: 1.25,
+        py: 0.75,
+        boxShadow: 3,
+      }}
+    >
+      {render(payload[0].payload)}
+    </Box>
+  );
+};
+
+interface ChartCardProps {
+  title: string;
+  action?: React.ReactNode;
+  height?: number;
+  loading: boolean;
+  isEmpty: boolean;
+  emptyMessage: string;
+  children: React.ReactNode;
+}
+
+const ChartCard: React.FC<ChartCardProps> = ({
+  title,
+  action,
+  height = 260,
+  loading,
+  isEmpty,
+  emptyMessage,
+  children,
+}) => (
+  <SectionCard>
+    <Box sx={{ p: { xs: 1.5, sm: 2 } }}>
+      <Stack
+        direction="row"
+        alignItems="center"
+        justifyContent="space-between"
+        sx={{ mb: 1.5 }}
+      >
+        <Typography variant="subtitle2" fontWeight={600}>
+          {title}
         </Typography>
-        <Box
-          sx={{
-            width: 30,
-            height: 30,
-            borderRadius: 1.5,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'text.secondary',
-            bgcolor: 'action.hover',
-            flexShrink: 0,
-          }}
-        >
-          <Icon sx={{ fontSize: 17 }} />
-        </Box>
+
+        {action}
       </Stack>
 
       {loading ? (
-        <Skeleton variant="text" width="60%" height={36} />
+        <Skeleton variant="rounded" height={height} />
+      ) : isEmpty ? (
+        <Box
+          sx={{
+            height,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <EmptyState message={emptyMessage} />
+        </Box>
       ) : (
-        <Typography variant="h5" fontWeight={700} sx={{ letterSpacing: '-0.02em' }}>
-          {value}
-        </Typography>
+        <Box sx={{ height }}>{children}</Box>
       )}
-
-      {!loading && delta !== null && delta !== undefined && (
-        <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mt: 0.75 }}>
-          {delta >= 0 ? (
-            <TrendingUpOutlinedIcon sx={{ fontSize: 14 }} color="success" />
-          ) : (
-            <TrendingDownOutlinedIcon sx={{ fontSize: 14 }} color="error" />
-          )}
-          <Typography variant="caption" fontWeight={600} color={delta >= 0 ? 'success.main' : 'error.main'}>
-            {Math.abs(delta).toFixed(1)}%
-          </Typography>
-          <Typography variant="caption" color="text.secondary" noWrap>
-            vs prior period
-          </Typography>
-        </Stack>
-      )}
-    </Paper>
-  );
-
-  return tooltip ? (
-    <Tooltip title={tooltip} arrow placement="top">
-      {content}
-    </Tooltip>
-  ) : (
-    content
-  );
-};
-
-interface ChartPanelProps {
-  title: string;
-  loading: boolean;
-  isEmpty: boolean;
-  children: React.ReactNode;
-}
-
-const ChartPanel: React.FC<ChartPanelProps> = ({ title, loading, isEmpty, children }) => (
-  <Paper
-    variant="outlined"
-    sx={[{ p: { xs: 2, sm: 3 }, borderRadius: 2, borderColor: 'divider', height: '100%' }, surfaceHoverSx]}
-  >
-    <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
-      {title}
-    </Typography>
-    {loading ? (
-      <Skeleton variant="rounded" height={240} />
-    ) : isEmpty ? (
-      <EmptyState message="No data for this period yet." />
-    ) : (
-      children
-    )}
-  </Paper>
+    </Box>
+  </SectionCard>
 );
 
-// Skeleton placeholder matching the real chart grid layout exactly, so the
-// deferred-render swap (see useInViewOnce below) causes no layout shift.
-const ChartsFallback: React.FC = () => (
-  <Grid container spacing={2.5} sx={{ mb: 5 }}>
-    {['Revenue Trend', 'Lead Growth', 'Deal Pipeline', 'Customer Growth'].map((title) => (
-      <Grid size={{ xs: 12, sm: 6, md: 3 }} key={title}>
-        <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3 }, borderRadius: 2, borderColor: 'divider', height: '100%' }}>
-          <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
-            {title}
-          </Typography>
-          <Skeleton variant="rounded" height={240} />
-        </Paper>
-      </Grid>
-    ))}
-  </Grid>
-);
-
-interface MetricBarProps {
-  label: string;
+interface PipelineStageDatum {
+  stage: string;
+  count: number;
   value: number;
-  display: string;
-  loading: boolean;
 }
 
-const MetricBar: React.FC<MetricBarProps> = ({ label, value, display, loading }) => (
-  <Box>
-    <Stack direction="row" justifyContent="space-between" sx={{ mb: 0.75 }}>
-      <Typography variant="body2" color="text.secondary">
-        {label}
-      </Typography>
-      {loading ? (
-        <Skeleton width={40} />
-      ) : (
-        <Typography variant="body2" fontWeight={600}>
-          {display}
-        </Typography>
-      )}
-    </Stack>
-    <LinearProgress
-      variant="determinate"
-      value={Math.min(100, Math.max(0, value))}
-      sx={{
-        height: 6,
-        borderRadius: 3,
-        '& .MuiLinearProgress-bar': {
-          borderRadius: 3,
-          transition: (theme: Theme) => theme.transitions.create('transform', { duration: 500 }),
-        },
-      }}
-    />
-  </Box>
-);
+const PipelineChart: React.FC<{ stages: PipelineStageDatum[] }> = ({
+  stages,
+}) => {
+  const theme = useTheme();
 
-interface ActivityListCardProps {
-  title: string;
-  items: ActivityItem[];
-  loading: boolean;
-}
-
-const ActivityListCard: React.FC<ActivityListCardProps> = ({ title, items, loading }) => (
-  <Paper variant="outlined" sx={[{ borderRadius: 2, borderColor: 'divider', height: '100%' }, surfaceHoverSx]}>
-    <Box sx={{ p: { xs: 2, sm: 3 }, pb: 1 }}>
-      <Typography variant="subtitle1" fontWeight={600}>
-        {title}
-      </Typography>
-    </Box>
-    {loading ? (
-      <Box sx={{ px: { xs: 2, sm: 3 }, pb: 3 }}>
-        <Stack spacing={1.5}>
-          {[0, 1, 2, 3].map((i) => (
-            <Skeleton key={i} variant="rounded" height={44} />
-          ))}
-        </Stack>
-      </Box>
-    ) : items.length === 0 ? (
-      <Box sx={{ pb: 3 }}>
-        <EmptyState message="Nothing here yet." />
-      </Box>
-    ) : (
-      <List disablePadding sx={{ pb: 1 }}>
-        {items.map((item, idx) => {
-          const Icon = ACTIVITY_ICONS[item.type] ?? InboxOutlinedIcon;
-          const tone = statusTone(item.description);
-          return (
-            <React.Fragment key={item.id}>
-              <ListItem
-                sx={{
-                  px: { xs: 2, sm: 3 },
-                  py: 1.25,
-                  gap: 1,
-                  transition: (theme: Theme) => theme.transitions.create('background-color', { duration: 150 }),
-                  '&:hover': { bgcolor: 'action.hover' },
-                }}
-              >
-                <ListItemAvatar sx={{ minWidth: 40 }}>
-                  <Box
-                    sx={{
-                      width: 32,
-                      height: 32,
-                      borderRadius: 1.5,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: 'text.secondary',
-                      bgcolor: 'action.hover',
-                    }}
-                  >
-                    <Icon sx={{ fontSize: 16 }} />
-                  </Box>
-                </ListItemAvatar>
-                <ListItemText
-                  primary={
-                    <Typography variant="body2" fontWeight={500} noWrap>
-                      {item.title}
-                    </Typography>
-                  }
-                  secondary={formatRelativeTime(item.createdAt)}
-                  secondaryTypographyProps={{ variant: 'caption', color: 'text.secondary' }}
-                />
-                {item.description && (
-                  <Chip
-                    label={item.description}
-                    size="small"
-                    color={tone === 'default' ? undefined : tone}
-                    variant="outlined"
-                    sx={{ height: 22, fontSize: 11, textTransform: 'capitalize', flexShrink: 0 }}
-                  />
-                )}
-              </ListItem>
-              {idx < items.length - 1 && <Divider component="li" sx={{ mx: { xs: 2, sm: 3 } }} />}
-            </React.Fragment>
-          );
-        })}
-      </List>
-    )}
-  </Paper>
-);
-
-function useInViewOnce<T extends HTMLElement = HTMLDivElement>(
-  rootMargin = '200px 0px'
-) {
-  const ref = useRef<T | null>(null);
-
-  const [inView, setInView] = useState(
-    () => typeof IntersectionObserver === 'undefined'
-  );
-
-  useEffect(() => {
-    if (inView) return;
-
-    const node = ref.current;
-    if (!node) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting) {
-          setInView(true);
-          observer.disconnect();
-        }
-      },
-      {
-        rootMargin,
-        threshold: 0.01,
-      }
-    );
-
-    observer.observe(node);
-
-    return () => observer.disconnect();
-  }, [inView, rootMargin]);
-
-  return { ref, inView };
-}
-
-interface LazySectionProps {
-  fallback: React.ReactNode;
-  children: React.ReactNode;
-}
-
-const LazySection: React.FC<LazySectionProps> = ({ fallback, children }) => {
-  const { ref, inView } = useInViewOnce<HTMLDivElement>();
   return (
-    <Box ref={ref}>
-      {inView ? (
-        <Fade in timeout={300}>
-          <Box>{children}</Box>
-        </Fade>
-      ) : (
-        fallback
-      )}
-    </Box>
+    <ResponsiveContainer width="100%" height="100%">
+      <BarChart
+        data={stages}
+        layout="vertical"
+        margin={{ top: 0, right: 12, left: 0, bottom: 0 }}
+      >
+        <CartesianGrid horizontal={false} stroke={theme.palette.divider} />
+        <XAxis type="number" hide />
+        <YAxis
+          type="category"
+          dataKey="stage"
+          width={96}
+          tick={{ fontSize: 12, fill: theme.palette.text.secondary }}
+          axisLine={false}
+          tickLine={false}
+        />
+        <RechartsTooltip
+          cursor={{ fill: theme.palette.action.hover }}
+          content={
+            <ChartTooltip<PipelineStageDatum>
+              render={(item) => (
+                <>
+                  <Typography>{item.stage}</Typography>
+                  <Typography>{item.count}</Typography>
+                </>
+              )}
+            />
+          }
+        />
+        <Bar
+          dataKey="count"
+          radius={[0, 4, 4, 0]}
+          fill={theme.palette.primary.main}
+          barSize={16}
+        />
+      </BarChart>
+    </ResponsiveContainer>
   );
 };
 
-const Dashboard = () => {
-  const { user } = useAuth();
+interface StatusDatum {
+  label: string;
+  count: number;
+}
+
+const LeadStatusChart: React.FC<{ data: StatusDatum[] }> = ({ data }) => {
   const theme = useTheme();
-  const dispatch = useDispatch<AppDispatch>();
-  const reduceMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
+  const colors = getChartPalette(theme);
 
-   const userName =
-    user?.display_name ||
-    `${user?.first_name ?? ''} ${user?.last_name ?? ''}`.trim() ||
-    'there';
-
-  const membership = user?.membership?.[0];
-
-  const orgName = membership?.org?.name ?? "your organization";
-  const {
-    overview,
-    leadMetrics,
-    dealMetrics,
-    customerMetrics,
-    activityMetrics,
-    trends,
-    recentActivities,
-    userPerformance,
-    loading,
-    error,
-  } = useSelector((state: RootState) => state.dashboard);
-
-  const [trendInterval, setTrendInterval] = useState<TrendInterval>('day');
-
-  const loadAll = useCallback(() => {
-    dispatch(fetchDashboardOverview());
-    dispatch(fetchLeadMetrics());
-    dispatch(fetchDealMetrics());
-    dispatch(fetchCustomerMetrics());
-    dispatch(fetchActivityMetrics());
-    dispatch(fetchDashboardTrends({ interval: trendInterval, daysBack: 30 }));
-    dispatch(fetchRecentDashboardActivities(12));
-    dispatch(fetchUserPerformanceMetrics());
-    
-  }, [dispatch, trendInterval]);
-
-  const { items: members, loaded, loading: pL} = useSelector((state:RootState) => state.orgmembers);
-
-  const loadProfiles = useCallback(() => {
-    if (!loaded && !pL) {
-      dispatch(fetchOrgMembers());
-    }
-  }, [dispatch, loaded, pL]);
-
-  useEffect(() => {
-    loadAll();
-  }, [loadAll]);
-
-  useEffect(() => {
-    loadProfiles();
-  }, [loadProfiles]);
-
-  const handleIntervalChange = (_event: React.MouseEvent<HTMLElement>, next: TrendInterval | null) => {
-    if (!next) return;
-    setTrendInterval(next);
-    dispatch(fetchDashboardTrends({ interval: next, daysBack: 30 }));
-  };
-
-  const handleExport = useCallback(() => {
-    if (!overview) return;
-    const rows: string[][] = [
-      ['Metric', 'Value'],
-      ['Total Leads', String(overview.totalLeads)],
-      ['Contacts', String(overview.totalContacts)],
-      ['Deals', String(overview.totalDeals)],
-      ['Customers', String(overview.totalCustomers)],
-      ['Revenue', String(dealMetrics?.totalRevenue ?? 0)],
-      ['Open Tasks', String(activityMetrics?.tasksPending ?? 0)],
-      ['Calls', String(overview.totalCalls)],
-      ['Emails', String(overview.totalEmails)],
-    ];
-    const csv = rows.map((r) => r.join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `dashboard-summary-${new Date().toISOString().slice(0, 10)}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
-  }, [overview, dealMetrics, activityMetrics]);
-
-  const today = useMemo(
-    () =>
-      new Date().toLocaleDateString('en-US', {
-        weekday: 'long',
-        month: 'long',
-        day: 'numeric',
-        year: 'numeric',
-      }),
-    []
+  return (
+    <ResponsiveContainer width="100%" height="100%">
+      <BarChart
+        data={data}
+        layout="vertical"
+        margin={{ top: 0, right: 12, left: 0, bottom: 0 }}
+      >
+        <CartesianGrid horizontal={false} stroke={theme.palette.divider} />
+        <XAxis type="number" hide />
+        <YAxis
+          type="category"
+          dataKey="label"
+          width={90}
+          tick={{ fontSize: 12, fill: theme.palette.text.secondary }}
+          axisLine={false}
+          tickLine={false}
+        />
+        <RechartsTooltip
+          cursor={{ fill: theme.palette.action.hover }}
+          content={
+            <ChartTooltip<StatusDatum>
+              render={(item) => (
+                <>
+                  <Typography variant="caption" fontWeight={600} display="block">
+                    {item.label}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {item.count} leads
+                  </Typography>
+                </>
+              )}
+            />
+          }
+        />
+        <Bar dataKey="count" radius={[0, 4, 4, 0]} barSize={16}>
+          {data.map((entry, index) => (
+            <Cell key={entry.label} fill={colors[index % colors.length]} />
+          ))}
+        </Bar>
+      </BarChart>
+    </ResponsiveContainer>
   );
+};
 
-  const revenueSeries = useMemo(() => toSeries(trends?.revenueOverTime), [trends]);
-  const leadSeries = useMemo(() => toSeries(trends?.leadsCreated), [trends]);
-  const customerSeries = useMemo(() => toSeries(trends?.customerGrowth), [trends]);
-  const dealStageData = useMemo(
-    () => Object.entries(dealMetrics?.dealsByStage ?? {}).map(([stage, count]) => ({ stage, count })),
-    [dealMetrics]
+const CustomerStatusChart: React.FC<{
+  data: StatusDatum[];
+  total: number;
+}> = ({ data, total }) => {
+  const theme = useTheme();
+  const colors = getChartPalette(theme);
+
+  return (
+    <Stack direction="row" spacing={2.5} alignItems="center" sx={{ height: "100%" }}>
+      <Box sx={{ position: "relative", width: 140, height: "100%", flexShrink: 0 }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie
+              data={data}
+              dataKey="count"
+              nameKey="label"
+              innerRadius="60%"
+              outerRadius="100%"
+              paddingAngle={2}
+              stroke="none"
+            >
+              {data.map((entry, index) => (
+                <Cell key={entry.label} fill={colors[index % colors.length]} />
+              ))}
+            </Pie>
+            <RechartsTooltip
+              content={
+                <ChartTooltip<StatusDatum>
+                  render={(item) => (
+                    <>
+                      <Typography variant="caption" fontWeight={600} display="block">
+                        {item.label}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {item.count} customers
+                      </Typography>
+                    </>
+                  )}
+                />
+              }
+            />
+          </PieChart>
+        </ResponsiveContainer>
+
+        <Box
+          sx={{
+            position: "absolute",
+            inset: 0,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            pointerEvents: "none",
+          }}
+        >
+          <Typography variant="h6" fontWeight={700} sx={{ lineHeight: 1 }}>
+            {total}
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            total
+          </Typography>
+        </Box>
+      </Box>
+
+      <Stack spacing={1} sx={{ flex: 1, minWidth: 0 }}>
+        {data.map((entry, index) => (
+          <Stack key={entry.label} direction="row" alignItems="center" spacing={1}>
+            <Box
+              sx={{
+                width: 8,
+                height: 8,
+                borderRadius: "50%",
+                bgcolor: colors[index % colors.length],
+                flexShrink: 0,
+              }}
+            />
+            <Typography variant="body2" noWrap sx={{ flex: 1, minWidth: 0 }}>
+              {entry.label}
+            </Typography>
+            <Typography variant="body2" fontWeight={600}>
+              {entry.count}
+            </Typography>
+          </Stack>
+        ))}
+      </Stack>
+    </Stack>
   );
+};
 
-  const revenueDelta = useMemo(() => computeDelta(revenueSeries), [revenueSeries]);
-  const leadDelta = useMemo(() => computeDelta(leadSeries), [leadSeries]);
-  const customerDelta = useMemo(() => computeDelta(customerSeries), [customerSeries]);
+interface WorkloadDatum {
+  name: string;
+  workload: number;
+}
 
-  const recentTasks = useMemo(() => recentActivities.filter((a) => a.type === 'task').slice(0, 6), [
-    recentActivities,
-  ]);
-  const recentDeals = useMemo(() => recentActivities.filter((a) => a.type === 'deal').slice(0, 6), [
-    recentActivities,
-  ]);
+const WorkloadChart: React.FC<{ data: WorkloadDatum[] }> = ({ data }) => {
+  const theme = useTheme();
 
-  const leaderboard = useMemo(() => {
-    if (!userPerformance) return [];
+  return (
+    <ResponsiveContainer width="100%" height="100%">
+      <BarChart
+        data={data}
+        layout="vertical"
+        margin={{ top: 0, right: 12, left: 0, bottom: 0 }}
+      >
+        <CartesianGrid horizontal={false} stroke={theme.palette.divider} />
+        <XAxis type="number" hide />
+        <YAxis
+          type="category"
+          dataKey="name"
+          width={76}
+          tick={{ fontSize: 12, fill: theme.palette.text.secondary }}
+          axisLine={false}
+          tickLine={false}
+        />
+        <RechartsTooltip
+          cursor={{ fill: theme.palette.action.hover }}
+          content={
+            <ChartTooltip<WorkloadDatum>
+              render={(item) => (
+                <>
+                  <Typography variant="caption" fontWeight={600} display="block">
+                    {item.name}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Workload: {item.workload}
+                  </Typography>
+                </>
+              )}
+            />
+          }
+        />
+        <Bar
+          dataKey="workload"
+          radius={[0, 4, 4, 0]}
+          fill={theme.palette.secondary.main}
+          barSize={14}
+        />
+      </BarChart>
+    </ResponsiveContainer>
+  );
+};
 
-    const keys = new Set<string>([
-      ...Object.keys(userPerformance.leadsPerUser),
-      ...Object.keys(userPerformance.dealsClosedPerUser),
-      ...Object.keys(userPerformance.tasksCompletedPerUser),
-      ...Object.keys(userPerformance.callsCompletedPerUser),
-    ]);
+interface ActivitySummaryProps {
+  emailsSent: number;
+  smsSent: number;
+  callsCompleted: number;
+  tasksCompleted: number;
+  tasksPending: number;
+  tasksOverdue: number;
+}
 
-    return Array.from(keys)
-      .map((key) => ({
-        key,
-        label: formatUserLabel(key, members),
-        leads: userPerformance.leadsPerUser[key] ?? 0,
-        dealsClosed: userPerformance.dealsClosedPerUser[key] ?? 0,
-        tasksCompleted: userPerformance.tasksCompletedPerUser[key] ?? 0,
-        callsCompleted: userPerformance.callsCompletedPerUser[key] ?? 0,
-      }))
-      .sort((a, b) => b.dealsClosed - a.dealsClosed || b.leads - a.leads);
-
-  }, [userPerformance, members]);
-
-  const topPerformer = leaderboard[0];
-
-  const kpis: KpiCardProps[] = [
+const ActivitySummary: React.FC<ActivitySummaryProps> = ({
+  emailsSent,
+  smsSent,
+  callsCompleted,
+  tasksCompleted,
+  tasksPending,
+  tasksOverdue,
+}) => {
+  const metrics: Array<{
+    label: string;
+    value: number;
+    icon: React.ElementType;
+    highlight?: boolean;
+  }> = [
+    { label: "Emails", value: emailsSent, icon: EmailOutlinedIcon },
+    { label: "SMS", value: smsSent, icon: SmsOutlinedIcon },
+    { label: "Calls", value: callsCompleted, icon: PhoneOutlinedIcon },
     {
-      label: 'Total Leads',
-      value: overview ? formatCompactNumber(overview.totalLeads) : '—',
-      icon: PersonAddAltOutlinedIcon,
-      loading: loading.overview,
-      delta: leadDelta,
+      label: "Tasks done",
+      value: tasksCompleted,
+      icon: CheckCircleOutlineOutlinedIcon,
     },
+    { label: "Pending", value: tasksPending, icon: TaskAltOutlinedIcon },
     {
-      label: 'Contacts',
-      value: overview ? formatCompactNumber(overview.totalContacts) : '—',
-      icon: PeopleAltOutlinedIcon,
-      loading: loading.overview,
-    },
-    {
-      label: 'Deals',
-      value: overview ? formatCompactNumber(overview.totalDeals) : '—',
-      icon: SellOutlinedIcon,
-      loading: loading.overview,
-      tooltip: dealMetrics
-        ? `${dealMetrics.openDeals} open · ${dealMetrics.wonDeals} won · ${dealMetrics.lostDeals} lost`
-        : undefined,
-    },
-    {
-      label: 'Customers',
-      value: overview ? formatCompactNumber(overview.totalCustomers) : '—',
-      icon: GroupsOutlinedIcon,
-      loading: loading.overview,
-      delta: customerDelta,
-      tooltip: customerMetrics
-        ? `${customerMetrics.activeCustomers} active · ${customerMetrics.churnedCustomers} churned`
-        : undefined,
-    },
-    {
-      label: 'Revenue',
-      value: dealMetrics ? formatCurrency(dealMetrics.totalRevenue) : '—',
-      icon: AttachMoneyOutlinedIcon,
-      loading: loading.deals,
-      delta: revenueDelta,
-    },
-    {
-      label: 'Open Tasks',
-      value: activityMetrics ? formatCompactNumber(activityMetrics.tasksPending) : '—',
-      icon: TaskAltOutlinedIcon,
-      loading: loading.activity,
-      tooltip: activityMetrics ? `${activityMetrics.tasksOverdue} overdue` : undefined,
-    },
-    {
-      label: 'Calls',
-      value: overview ? formatCompactNumber(overview.totalCalls) : '—',
-      icon: PhoneOutlinedIcon,
-      loading: loading.overview,
-    },
-    {
-      label: 'Emails',
-      value: overview ? formatCompactNumber(overview.totalEmails) : '—',
-      icon: EmailOutlinedIcon,
-      loading: loading.overview,
+      label: "Overdue",
+      value: tasksOverdue,
+      icon: WarningAmberOutlinedIcon,
+      highlight: tasksOverdue > 0,
     },
   ];
 
   return (
-    <Box sx={{ bgcolor: 'background.default', minHeight: '100%', px: { xs: 2, sm: 3, md: 4 }, py: { xs: 3, md: 4 },pt: 0, }}>
+    <Grid container spacing={1.5}>
+      {metrics.map((metric) => {
+        const Icon = metric.icon;
+
+        return (
+          <Grid key={metric.label} size={{ xs: 6, sm: 4, md: 2 }}>
+            <Stack direction="row" alignItems="center" spacing={1}>
+              <Box
+                sx={{
+                  width: 30,
+                  height: 30,
+                  borderRadius: 1.5,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  bgcolor: metric.highlight ? "error.main" : "action.hover",
+                  color: metric.highlight
+                    ? "error.contrastText"
+                    : "text.secondary",
+                  flexShrink: 0,
+                }}
+              >
+                <Icon sx={{ fontSize: 16 }} />
+              </Box>
+
+              <Box sx={{ minWidth: 0 }}>
+                <Typography
+                  variant="body2"
+                  fontWeight={700}
+                  color={metric.highlight ? "error.main" : "text.primary"}
+                >
+                  {metric.value}
+                </Typography>
+                <Typography variant="caption" color="text.secondary" noWrap>
+                  {metric.label}
+                </Typography>
+              </Box>
+            </Stack>
+          </Grid>
+        );
+      })}
+    </Grid>
+  );
+};
+
+/* ------------------------------------------------------------------ */
+/* Lists                                                                */
+/* ------------------------------------------------------------------ */
+
+const PriorityList: React.FC<{
+  items: PriorityItem[];
+  label: string;
+}> = ({ items, label }) => {
+  if (items.length === 0) {
+    return <EmptyState message={`No priority ${label.toLowerCase()} right now.`} />;
+  }
+
+  return (
+    <List disablePadding>
+      {items.map((item, index) => (
+        <React.Fragment key={item.id}>
+          <ListItem sx={{ px: { xs: 1.5, sm: 2 }, py: 1 }}>
+            <ListItemAvatar sx={{ minWidth: 40 }}>
+              <Avatar sx={{ width: 30, height: 30, fontSize: 12 }}>
+                {getInitials(item.name)}
+              </Avatar>
+            </ListItemAvatar>
+
+            <ListItemText
+              primary={
+                <Typography variant="body2" fontWeight={600} noWrap>
+                  {item.name}
+                </Typography>
+              }
+              secondary={
+                <Typography variant="caption" color="text.secondary">
+                  {item.displayId}
+                </Typography>
+              }
+            />
+
+            <Chip
+              label={item.priority}
+              size="small"
+              color={getPriorityColor(item.priority)}
+              variant="outlined"
+              sx={{ textTransform: "capitalize", flexShrink: 0 }}
+            />
+          </ListItem>
+
+          {index < items.length - 1 && (
+            <Divider component="li" sx={{ mx: { xs: 1.5, sm: 2 } }} />
+          )}
+        </React.Fragment>
+      ))}
+    </List>
+  );
+};
+
+const OpenDealsList: React.FC<{ items: OpenDealItem[] }> = ({ items }) => {
+  if (items.length === 0) {
+    return <EmptyState message="No open deals right now." />;
+  }
+
+  return (
+    <List disablePadding>
+      {items.map((deal, index) => (
+        <React.Fragment key={deal.id}>
+          <ListItem sx={{ px: { xs: 1.5, sm: 2 }, py: 1 }}>
+            <ListItemText
+              primary={
+                <Stack direction="row" alignItems="center" spacing={1} sx={{ minWidth: 0 }}>
+                  <Typography variant="body2" fontWeight={600} noWrap sx={{ minWidth: 0 }}>
+                    {deal.title}
+                  </Typography>
+
+                  <Chip
+                    label={getStageLabel(deal.stage)}
+                    size="small"
+                    variant="outlined"
+                    sx={{ height: 20, fontSize: 11, flexShrink: 0 }}
+                  />
+                </Stack>
+              }
+              secondary={
+                <Typography variant="caption" color="text.secondary">
+                  {deal.displayId}
+                  {deal.closeDate ? ` · Close ${formatDate(deal.closeDate)}` : ""}
+                </Typography>
+              }
+            />
+
+            <Typography variant="body2" fontWeight={700} sx={{ ml: 2, flexShrink: 0 }}>
+              {formatCurrency(deal.value)}
+            </Typography>
+          </ListItem>
+
+          {index < items.length - 1 && (
+            <Divider component="li" sx={{ mx: { xs: 1.5, sm: 2 } }} />
+          )}
+        </React.Fragment>
+      ))}
+    </List>
+  );
+};
+
+const InactiveContactsList: React.FC<{ items: InactiveContactItem[] }> = ({
+  items,
+}) => {
+  if (items.length === 0) {
+    return <EmptyState message="No inactive contacts right now." />;
+  }
+
+  return (
+    <List disablePadding>
+      {items.map((contact, index) => (
+        <React.Fragment key={contact.id}>
+          <ListItem sx={{ px: { xs: 1.5, sm: 2 }, py: 1 }}>
+            <ListItemAvatar sx={{ minWidth: 40 }}>
+              <Avatar sx={{ width: 30, height: 30, fontSize: 12 }}>
+                {getInitials(contact.name)}
+              </Avatar>
+            </ListItemAvatar>
+
+            <ListItemText
+              primary={
+                <Typography variant="body2" fontWeight={600} noWrap>
+                  {contact.name}
+                </Typography>
+              }
+              secondary={
+                <Typography variant="caption" color="text.secondary">
+                  {contact.displayId} ·{" "}
+                  {contact.lastActivityAt
+                    ? `Last activity ${formatDate(contact.lastActivityAt)}`
+                    : "No recorded activity"}
+                </Typography>
+              }
+            />
+
+            <Stack alignItems="flex-end" sx={{ ml: 1, flexShrink: 0 }}>
+              <Typography variant="body2" fontWeight={700} color="warning.main">
+                {contact.inactiveDays}d
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                inactive
+              </Typography>
+            </Stack>
+          </ListItem>
+
+          {index < items.length - 1 && (
+            <Divider component="li" sx={{ mx: { xs: 1.5, sm: 2 } }} />
+          )}
+        </React.Fragment>
+      ))}
+    </List>
+  );
+};
+
+const RecentActivityList: React.FC<{ activities: DashboardActivity[] }> = ({
+  activities,
+}) => {
+  if (activities.length === 0) {
+    return <EmptyState message="No recent activity yet." />;
+  }
+
+  return (
+    <List disablePadding>
+      {activities.map((activity, index) => {
+        const Icon = getActivityIcon(activity.type);
+
+        return (
+          <React.Fragment key={activity.id}>
+            <ListItem sx={{ px: { xs: 1.5, sm: 2 }, py: 1 }}>
+              <ListItemAvatar sx={{ minWidth: 40 }}>
+                <Box
+                  sx={{
+                    width: 30,
+                    height: 30,
+                    borderRadius: 1.5,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    bgcolor: "action.hover",
+                    color: "text.secondary",
+                  }}
+                >
+                  <Icon sx={{ fontSize: 16 }} />
+                </Box>
+              </ListItemAvatar>
+
+              <ListItemText
+                primary={
+                  <Typography variant="body2" fontWeight={600} noWrap>
+                    {activity.title}
+                  </Typography>
+                }
+                secondary={
+                  <Stack direction="row" spacing={0.75} sx={{ mt: 0.25 }}>
+                    {activity.createdBy && (
+                      <Typography variant="caption" color="text.secondary" noWrap>
+                        {activity.createdBy.name}
+                      </Typography>
+                    )}
+
+                    {activity.targetName && (
+                      <>
+                        <Typography variant="caption" color="text.disabled">
+                          ·
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary" noWrap>
+                          {activity.targetName}
+                        </Typography>
+                      </>
+                    )}
+
+                    <Typography variant="caption" color="text.disabled">
+                      ·
+                    </Typography>
+
+                    <Typography variant="caption" color="text.secondary" noWrap>
+                      {formatRelativeTime(activity.createdAt)}
+                    </Typography>
+                  </Stack>
+                }
+              />
+            </ListItem>
+
+            {index < activities.length - 1 && (
+              <Divider component="li" sx={{ mx: { xs: 1.5, sm: 2 } }} />
+            )}
+          </React.Fragment>
+        );
+      })}
+    </List>
+  );
+};
+
+/* ------------------------------------------------------------------ */
+/* Dashboard                                                            */
+/* ------------------------------------------------------------------ */
+
+const Dashboard = () => {
+  const dispatch = useDispatch<AppDispatch>();
+  const { user } = useAuth();
+
+  const { data: dashboard, loading, error } = useSelector(
+    (state: RootState) => state.dashboard
+  );
+
+  const userName =
+    user?.display_name ||
+    `${user?.first_name ?? ""} ${user?.last_name ?? ""}`.trim() ||
+    "there";
+
+  const membership = user?.membership?.[0];
+  const orgName = membership?.org?.name ?? "your organization";
+
+  useEffect(() => {
+    dispatch(fetchDashboard());
+  }, [dispatch]);
+
+  const today = useMemo(
+    () =>
+      new Date().toLocaleDateString("en-US", {
+        weekday: "long",
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+      }),
+    []
+  );
+
+  const isOrganizationDashboard = dashboard?.scope === "organization";
+  const isUserDashboard = dashboard?.scope === "user";
+
+  const kpis = dashboard?.kpis;
+  const activityStats = dashboard?.activity;
+
+  const pipelineChartData = useMemo<PipelineStageDatum[]>(
+    () =>
+      (dashboard?.pipeline.stages ?? []).map((stage) => ({
+        stage: getStageLabel(stage.stage),
+        count: stage.count,
+        value: stage.value,
+      })),
+    [dashboard]
+  );
+
+  const leadChartData = useMemo<StatusDatum[]>(
+    () =>
+      Object.entries(dashboard?.leads.byStatus ?? {})
+        .sort(([, a], [, b]) => b - a)
+        .map(([status, count]) => ({ label: getStageLabel(status), count })),
+    [dashboard]
+  );
+
+  const customerChartData = useMemo<StatusDatum[]>(
+    () =>
+      Object.entries(dashboard?.customers.byStatus ?? {})
+        .sort(([, a], [, b]) => b - a)
+        .map(([status, count]) => ({ label: getStageLabel(status), count })),
+    [dashboard]
+  );
+
+  const memberRows = useMemo(
+    () =>
+      [...(dashboard?.members ?? [])].sort((a, b) => {
+        const workloadA = a.openTasks + a.openDeals + a.scheduledCalls;
+        const workloadB = b.openTasks + b.openDeals + b.scheduledCalls;
+        return workloadB - workloadA;
+      }),
+    [dashboard]
+  );
+
+  const workloadChartData = useMemo<WorkloadDatum[]>(
+    () =>
+      memberRows.slice(0, 6).map((member) => ({
+        name: member.name.split(" ")[0] || member.name,
+        workload: member.openTasks + member.openDeals + member.scheduledCalls,
+      })),
+    [memberRows]
+  );
+
+  const handleRefresh = () => {
+    dispatch(fetchDashboard());
+  };
+
+  const handleClearError = () => {
+    dispatch(clearError());
+  };
+
+  return (
+    <Box
+      sx={{
+        bgcolor: "background.default",
+        minHeight: "100%",
+        px: { xs: 2, sm: 3, md: 4 },
+        py: { xs: 2, md: 2.5 },
+        pt: 0,
+      }}
+    >
       {error && (
-        <Fade in timeout={reduceMotion ? 0 : 250}>
-          <Alert severity="error" onClose={() => dispatch(clearError())} sx={{ mb: 3, borderRadius: 2 }}>
-            {error}
-          </Alert>
-        </Fade>
+        <Alert
+          severity="error"
+          onClose={handleClearError}
+          sx={{ mb: 2.5, borderRadius: 2 }}
+        >
+          {error}
+        </Alert>
       )}
 
+      {/* Header */}
       <Stack
-        direction={{ xs: 'column', sm: 'row' }}
-        alignItems={{ xs: 'flex-start', sm: 'center' }}
+        direction={{ xs: "column", sm: "row" }}
+        alignItems={{ xs: "flex-start", sm: "center" }}
         justifyContent="space-between"
-        spacing={2}
-        sx={{ mb: 4 }}
+        spacing={1.5}
+        sx={{ mb: 3 }}
       >
         <Box>
-          <Typography variant="h5" fontWeight={700} sx={{ letterSpacing: '-0.02em' }}>
+          <Typography variant="h6" fontWeight={700} sx={{ letterSpacing: "-0.02em" }}>
             Good {getDaypart()}, {userName}
           </Typography>
-          <Stack direction="row" alignItems="center" spacing={0.75} sx={{ mt: 0.5 }}>
-            <CalendarTodayOutlinedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
-            <Typography variant="body2" color="text.secondary">
-              {today} · {orgName}
-            </Typography>
-          </Stack>
+
+          <Typography variant="body2" color="text.secondary">
+            {isOrganizationDashboard
+              ? `Organization overview · ${orgName}`
+              : "Your personal CRM overview"}
+          </Typography>
+
+          <Typography variant="caption" color="text.secondary">
+            {today}
+          </Typography>
         </Box>
 
-        <Stack direction="row" spacing={1.5} sx={{ width: { xs: '100%', sm: 'auto' } }}>
-          <Button
-            variant="outlined"
+        <Tooltip title="Refresh dashboard data">
+          <IconButton
             size="small"
-            startIcon={<FileDownloadOutlinedIcon />}
-            onClick={handleExport}
-            disabled={!overview}
-            sx={{ borderColor: 'divider', color: 'text.primary', flex: { xs: 1, sm: 'initial' } }}
+            onClick={handleRefresh}
+            disabled={loading}
+            aria-label="Refresh dashboard data"
+            sx={{ border: "1px solid", borderColor: "divider", borderRadius: 1.5 }}
           >
-            Export
-          </Button>
-          <Tooltip title="Refresh dashboard data">
-            <IconButton
-              size="small"
-              onClick={loadAll}
-              aria-label="Refresh dashboard data"
-              sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1.5 }}
-            >
-              <RefreshOutlinedIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-        </Stack>
+            <RefreshOutlinedIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
       </Stack>
 
-      <Grid container spacing={2.5} sx={{ mb: 5 }}>
-        {kpis.map((kpi, index) => (
-          <Grid
-            size={{ xs: 6, sm: 4, md: 3 }}
-            key={kpi.label}
-          >
-            <Grow
-              in
-              timeout={reduceMotion ? 0 : 400}
-              style={{ transitionDelay: reduceMotion ? '0ms' : `${index * 40}ms` }}
-            >
-              <div style={{ height: '100%' }}>
-                <KpiCard {...kpi} />
-              </div>
-            </Grow>
-          </Grid>
-        ))}
+      {/* KPI cards */}
+      <Grid container spacing={1.5} sx={{ mb: 3 }}>
+        <Grid size={{ xs: 6, sm: 4, md: 3 }}>
+          <KpiCard
+            label="Total Leads"
+            value={kpis ? formatCompactNumber(kpis.totalLeads) : "—"}
+            icon={PersonAddAltOutlinedIcon}
+            loading={loading}
+          />
+        </Grid>
+
+        <Grid size={{ xs: 6, sm: 4, md: 3 }}>
+          <KpiCard
+            label="Contacts"
+            value={kpis ? formatCompactNumber(kpis.totalContacts) : "—"}
+            icon={PeopleAltOutlinedIcon}
+            loading={loading}
+          />
+        </Grid>
+
+        <Grid size={{ xs: 6, sm: 4, md: 3 }}>
+          <KpiCard
+            label="Customers"
+            value={kpis ? formatCompactNumber(kpis.totalCustomers) : "—"}
+            icon={GroupsOutlinedIcon}
+            loading={loading}
+          />
+        </Grid>
+
+        <Grid size={{ xs: 6, sm: 4, md: 3 }}>
+          <KpiCard
+            label="Open Deals"
+            value={kpis ? formatCompactNumber(kpis.openDeals) : "—"}
+            icon={SellOutlinedIcon}
+            loading={loading}
+            secondary={kpis ? `${formatCurrency(kpis.pipelineValue)} pipeline` : undefined}
+          />
+        </Grid>
+
+        <Grid size={{ xs: 6, sm: 4, md: 3 }}>
+          <KpiCard
+            label="Pipeline Value"
+            value={kpis ? formatCurrency(kpis.pipelineValue) : "—"}
+            icon={AttachMoneyOutlinedIcon}
+            loading={loading}
+          />
+        </Grid>
+
+        <Grid size={{ xs: 6, sm: 4, md: 3 }}>
+          <KpiCard
+            label="Open Tasks"
+            value={kpis ? formatCompactNumber(kpis.openTasks) : "—"}
+            icon={TaskAltOutlinedIcon}
+            loading={loading}
+            secondary={kpis ? `${kpis.overdueTasks} overdue` : undefined}
+          />
+        </Grid>
+
+        <Grid size={{ xs: 6, sm: 4, md: 3 }}>
+          <KpiCard
+            label="Scheduled Calls"
+            value={kpis ? formatCompactNumber(kpis.scheduledCalls) : "—"}
+            icon={PhoneOutlinedIcon}
+            loading={loading}
+          />
+        </Grid>
+
+        <Grid size={{ xs: 6, sm: 4, md: 3 }}>
+          <KpiCard
+            label="Won Revenue"
+            value={kpis ? formatCurrency(kpis.wonRevenue) : "—"}
+            icon={CheckCircleOutlineOutlinedIcon}
+            loading={loading}
+          />
+        </Grid>
       </Grid>
 
-      <SectionHeading
-        title="Analytics"
-        subtitle="Trends across your pipeline over time"
-        action={
-          <ToggleButtonGroup
-            size="small"
-            exclusive
-            fullWidth
-            value={trendInterval}
-            onChange={handleIntervalChange}
-            aria-label="Trend interval"
-            sx={{
-              '& .MuiToggleButton-root': {
-                textTransform: 'none',
-                px: 1.75,
-                py: 0.5,
-                borderColor: 'divider',
-              },
-            }}
+      {/* Pipeline */}
+      <SectionHeading title="Pipeline" subtitle="Deal stages, open pipeline and won revenue" />
+
+      <Grid container spacing={1.5} sx={{ mb: 3 }}>
+        <Grid size={{ xs: 12, md: 8 }}>
+          <ChartCard
+            title="Pipeline by Stage"
+            height={280}
+            loading={loading}
+            isEmpty={pipelineChartData.length === 0}
+            emptyMessage="No deals in the pipeline yet."
           >
-            <ToggleButton value="day">Day</ToggleButton>
-            <ToggleButton value="week">Week</ToggleButton>
-            <ToggleButton value="month">Month</ToggleButton>
-          </ToggleButtonGroup>
+            <PipelineChart stages={pipelineChartData} />
+          </ChartCard>
+        </Grid>
+
+        <Grid size={{ xs: 12, md: 4 }}>
+          <SectionCard>
+            <Box sx={{ p: { xs: 1.5, sm: 2 } }}>
+              <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1.5 }}>
+                Pipeline Summary
+              </Typography>
+
+              <Stack spacing={1.5} divider={<Divider />}>
+                <Box>
+                  <Typography variant="caption" color="text.secondary">
+                    Open pipeline
+                  </Typography>
+                  <Typography variant="h5" fontWeight={700} sx={{ mt: 0.25 }}>
+                    {loading ? "—" : formatCurrency(kpis?.pipelineValue ?? 0)}
+                  </Typography>
+                </Box>
+
+                <Box>
+                  <Typography variant="caption" color="text.secondary">
+                    Won revenue
+                  </Typography>
+                  <Typography variant="h6" fontWeight={700} sx={{ mt: 0.25 }}>
+                    {loading ? "—" : formatCurrency(kpis?.wonRevenue ?? 0)}
+                  </Typography>
+                </Box>
+              </Stack>
+            </Box>
+          </SectionCard>
+        </Grid>
+      </Grid>
+
+      {/* CRM overview */}
+      <SectionHeading title="CRM Overview" subtitle="Distribution across leads and customers" />
+
+      <Grid container spacing={1.5} sx={{ mb: 3 }}>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <ChartCard
+            title="Lead Status"
+            action={
+              <Chip
+                label={loading ? "—" : `${dashboard?.leads.total ?? 0} total`}
+                size="small"
+                variant="outlined"
+              />
+            }
+            height={240}
+            loading={loading}
+            isEmpty={leadChartData.length === 0}
+            emptyMessage="No lead data yet."
+          >
+            <LeadStatusChart data={leadChartData} />
+          </ChartCard>
+        </Grid>
+
+        <Grid size={{ xs: 12, md: 6 }}>
+          <ChartCard
+            title="Customer Status"
+            action={
+              <Chip
+                label={loading ? "—" : `${dashboard?.customers.total ?? 0} total`}
+                size="small"
+                variant="outlined"
+              />
+            }
+            height={240}
+            loading={loading}
+            isEmpty={customerChartData.length === 0}
+            emptyMessage="No customer data yet."
+          >
+            <CustomerStatusChart
+              data={customerChartData}
+              total={dashboard?.customers.total ?? 0}
+            />
+          </ChartCard>
+        </Grid>
+      </Grid>
+
+      {/* Activity */}
+      <SectionHeading title="Activity" subtitle="Communication and task volume" />
+
+      <Box sx={{ mb: 3 }}>
+        <SectionCard>
+          <Box sx={{ p: { xs: 1.5, sm: 2 } }}>
+            {loading ? (
+              <Grid container spacing={1.5}>
+                {[0, 1, 2, 3, 4, 5].map((item) => (
+                  <Grid key={item} size={{ xs: 6, sm: 4, md: 2 }}>
+                    <Skeleton variant="rounded" height={40} />
+                  </Grid>
+                ))}
+              </Grid>
+            ) : (
+              <ActivitySummary
+                emailsSent={activityStats?.emailsSent ?? 0}
+                smsSent={activityStats?.smsSent ?? 0}
+                callsCompleted={activityStats?.callsCompleted ?? 0}
+                tasksCompleted={activityStats?.tasksCompleted ?? 0}
+                tasksPending={activityStats?.tasksPending ?? 0}
+                tasksOverdue={activityStats?.tasksOverdue ?? 0}
+              />
+            )}
+          </Box>
+        </SectionCard>
+      </Box>
+
+      {/* Needs attention */}
+      <SectionHeading title="Needs Attention" subtitle="Items that may need action right now" />
+
+      <Grid container spacing={1.5} sx={{ mb: 3 }}>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <SectionCard>
+            <Box sx={{ p: { xs: 1.5, sm: 2 }, pb: 1 }}>
+              <Stack direction="row" alignItems="center" spacing={1}>
+                <WarningAmberOutlinedIcon sx={{ fontSize: 18, color: "warning.main" }} />
+                <Typography variant="subtitle2" fontWeight={600}>
+                  Priority Leads
+                </Typography>
+              </Stack>
+            </Box>
+
+            {loading ? (
+              <Box sx={{ p: 2 }}>
+                <Stack spacing={1}>
+                  {[0, 1, 2, 3].map((item) => (
+                    <Skeleton key={item} variant="rounded" height={44} />
+                  ))}
+                </Stack>
+              </Box>
+            ) : (
+              <PriorityList items={dashboard?.attention.priorityLeads ?? []} label="leads" />
+            )}
+          </SectionCard>
+        </Grid>
+
+        <Grid size={{ xs: 12, md: 6 }}>
+          <SectionCard>
+            <Box sx={{ p: { xs: 1.5, sm: 2 }, pb: 1 }}>
+              <Stack direction="row" alignItems="center" spacing={1}>
+                <WarningAmberOutlinedIcon sx={{ fontSize: 18, color: "warning.main" }} />
+                <Typography variant="subtitle2" fontWeight={600}>
+                  Priority Contacts
+                </Typography>
+              </Stack>
+            </Box>
+
+            {loading ? (
+              <Box sx={{ p: 2 }}>
+                <Stack spacing={1}>
+                  {[0, 1, 2, 3].map((item) => (
+                    <Skeleton key={item} variant="rounded" height={44} />
+                  ))}
+                </Stack>
+              </Box>
+            ) : (
+              <PriorityList
+                items={dashboard?.attention.priorityContacts ?? []}
+                label="contacts"
+              />
+            )}
+          </SectionCard>
+        </Grid>
+
+        <Grid size={{ xs: 12, md: 6 }}>
+          <SectionCard>
+            <Box sx={{ p: { xs: 1.5, sm: 2 }, pb: 1 }}>
+              <Stack direction="row" alignItems="center" spacing={1}>
+                <AttachMoneyOutlinedIcon sx={{ fontSize: 19, color: "success.main" }} />
+                <Typography variant="subtitle2" fontWeight={600}>
+                  Open Deals
+                </Typography>
+              </Stack>
+            </Box>
+
+            {loading ? (
+              <Box sx={{ p: 2 }}>
+                <Stack spacing={1}>
+                  {[0, 1, 2, 3].map((item) => (
+                    <Skeleton key={item} variant="rounded" height={44} />
+                  ))}
+                </Stack>
+              </Box>
+            ) : (
+              <OpenDealsList items={dashboard?.attention.openDeals ?? []} />
+            )}
+          </SectionCard>
+        </Grid>
+
+        <Grid size={{ xs: 12, md: 6 }}>
+          <SectionCard>
+            <Box sx={{ p: { xs: 1.5, sm: 2 }, pb: 1 }}>
+              <Stack direction="row" alignItems="center" spacing={1}>
+                <PersonOffOutlinedIcon sx={{ fontSize: 18, color: "warning.main" }} />
+                <Typography variant="subtitle2" fontWeight={600}>
+                  Inactive Contacts
+                </Typography>
+              </Stack>
+
+              <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.25 }}>
+                No recorded CRM activity in the last 30 days
+              </Typography>
+            </Box>
+
+            {loading ? (
+              <Box sx={{ p: 2 }}>
+                <Stack spacing={1}>
+                  {[0, 1, 2, 3].map((item) => (
+                    <Skeleton key={item} variant="rounded" height={44} />
+                  ))}
+                </Stack>
+              </Box>
+            ) : (
+              <InactiveContactsList items={dashboard?.attention.inactiveContacts ?? []} />
+            )}
+          </SectionCard>
+        </Grid>
+      </Grid>
+
+      {/* Recent activity */}
+      <SectionHeading
+        title="Recent Activity"
+        subtitle={
+          isOrganizationDashboard
+            ? "Latest activity across your organization"
+            : "Your latest CRM activity"
         }
       />
 
-      <LazySection fallback={<ChartsFallback />}>
-        <Grid container spacing={2.5} sx={{ mb: 5 }}>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <ChartPanel title="Revenue Trend" loading={loading.trends} isEmpty={revenueSeries.length === 0}>
-              <LineChart
-                dataset={revenueSeries}
-                xAxis={[{ dataKey: 'date', scaleType: 'point', tickLabelStyle: { fontSize: 11 } }]}
-                series={[
-                  {
-                    dataKey: 'value',
-                    color: theme.palette.primary.main,
-                    showMark: false,
-                    curve: 'monotoneX',
-                    valueFormatter: (v) => formatCurrency(Number(v ?? 0)),
-                  },
-                ]}
-                height={260}
-                margin={{ left: 56, right: 16, top: 16, bottom: 32 }}
-                grid={{ horizontal: true }}
-                slotProps={{
-                  legend: {
-                    sx: {
-                      display: "none",
-                    },
-                  },
-                }}
-              />
-            </ChartPanel>
-          </Grid>
-
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <ChartPanel title="Lead Growth" loading={loading.trends} isEmpty={leadSeries.length === 0}>
-              <LineChart
-                dataset={leadSeries}
-                xAxis={[{ dataKey: 'date', scaleType: 'point', tickLabelStyle: { fontSize: 11 } }]}
-                series={[
-                  {
-                    dataKey: 'value',
-                    color: theme.palette.grey[700],
-                    showMark: false,
-                    curve: 'monotoneX',
-                    area: true,
-                  },
-                ]}
-                height={260}
-                margin={{ left: 40, right: 16, top: 16, bottom: 32 }}
-                grid={{ horizontal: true }}
-                slotProps={{
-                  legend: {
-                    sx: {
-                      display: "none",
-                    },
-                  },
-                }}
-                sx={{ '& .MuiAreaElement-root': { fillOpacity: 0.08 } }}
-              />
-            </ChartPanel>
-          </Grid>
-
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <ChartPanel title="Deal Pipeline" loading={loading.deals} isEmpty={dealStageData.length === 0}>
-              <BarChart
-                dataset={dealStageData}
-                xAxis={[{ dataKey: 'stage', scaleType: 'band', tickLabelStyle: { fontSize: 11 } }]}
-                series={[{ dataKey: 'count', color: theme.palette.primary.main }]}
-                height={260}
-                margin={{ left: 40, right: 16, top: 16, bottom: 32 }}
-                grid={{ horizontal: true }}
-                slotProps={{
-                  legend: {
-                    sx: {
-                      display: "none",
-                    },
-                  },
-                }}
-                borderRadius={4}
-              />
-            </ChartPanel>
-          </Grid>
-
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <ChartPanel title="Customer Growth" loading={loading.trends} isEmpty={customerSeries.length === 0}>
-              <LineChart
-                dataset={customerSeries}
-                xAxis={[{ dataKey: 'date', scaleType: 'point', tickLabelStyle: { fontSize: 11 } }]}
-                series={[
-                  {
-                    dataKey: 'value',
-                    color: theme.palette.info.main,
-                    showMark: false,
-                    curve: 'monotoneX',
-                  },
-                ]}
-                height={260}
-                margin={{ left: 40, right: 16, top: 16, bottom: 32 }}
-                grid={{ horizontal: true }}
-                slotProps={{
-                  legend: {
-                    sx: {
-                      display: "none",
-                    },
-                  },
-                }}
-              />
-            </ChartPanel>
-          </Grid>
-        </Grid>
-      </LazySection>
-
-      <SectionHeading title="Activity" subtitle="What's happening across your organization" />
-      <Box sx={{ mb: 5 }}>
-        <LazySection fallback={<Skeleton variant="rounded" height={360} sx={{ borderRadius: 2 }} />}>
-          <Grid container spacing={2.5}>
-            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-              <ActivityListCard
-                title="Recent Activities"
-                items={recentActivities.slice(0, 6)}
-                loading={loading.recentActivities}
-              />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-              <ActivityListCard title="Recent Tasks" items={recentTasks} loading={loading.recentActivities} />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-              <ActivityListCard title="Recent Deals" items={recentDeals} loading={loading.recentActivities} />
-            </Grid>
-          </Grid>
-        </LazySection>
+      <Box sx={{ mb: 3 }}>
+        <SectionCard>
+          {loading ? (
+            <Box sx={{ p: 2 }}>
+              <Stack spacing={1}>
+                {[0, 1, 2, 3, 4].map((item) => (
+                  <Skeleton key={item} variant="rounded" height={44} />
+                ))}
+              </Stack>
+            </Box>
+          ) : (
+            <RecentActivityList activities={dashboard?.recentActivity ?? []} />
+          )}
+        </SectionCard>
       </Box>
 
-      <SectionHeading title="Performance" subtitle="Team output and conversion health" />
-      <LazySection fallback={<Skeleton variant="rounded" height={420} sx={{ borderRadius: 2 }} />}>
-        <Grid container spacing={2.5}>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-            <Paper
-              variant="outlined"
-              sx={[{ borderRadius: 2, borderColor: 'divider', overflow: 'hidden' }, surfaceHoverSx]}
-            >
-              <Box sx={{ p: { xs: 2, sm: 3 }, pb: 1.5 }}>
-                <Typography variant="subtitle1" fontWeight={600}>
-                  Team Leaderboard
-                </Typography>
-              </Box>
-              {loading.performance ? (
-                <Box sx={{ px: { xs: 2, sm: 3 }, pb: 3 }}>
-                  <Skeleton variant="rounded" height={220} />
+      {/* Team workload */}
+      {isOrganizationDashboard && (
+        <>
+          <SectionHeading
+            title="Team Workload"
+            subtitle="Current workload and communication volume by active member"
+          />
+
+          <Stack spacing={1.5}>
+            {(loading || workloadChartData.length > 0) && (
+              <ChartCard
+                title="Workload by Member"
+                height={Math.max(140, workloadChartData.length * 30)}
+                loading={loading}
+                isEmpty={workloadChartData.length === 0}
+                emptyMessage="No active organization members."
+              >
+                <WorkloadChart data={workloadChartData} />
+              </ChartCard>
+            )}
+
+            <SectionCard>
+              {loading ? (
+                <Box sx={{ p: 2 }}>
+                  <Stack spacing={1}>
+                    {[0, 1, 2, 3].map((item) => (
+                      <Skeleton key={item} variant="rounded" height={48} />
+                    ))}
+                  </Stack>
                 </Box>
-              ) : leaderboard.length === 0 ? (
-                <Box sx={{ px: { xs: 2, sm: 3 }, pb: 4 }}>
-                  <EmptyState message="No performance data yet." />
-                </Box>
+              ) : memberRows.length === 0 ? (
+                <EmptyState message="No active organization members." />
               ) : (
-                <TableContainer sx={{ maxHeight: 340 }}>
-                  <Table stickyHeader size="small">
+                <TableContainer>
+                  <Table
+                    size="small"
+                    sx={{
+                      minWidth: 900,
+                      "& .MuiTableCell-root": {
+                        py: 0.75,
+                        px: 1.5,
+                        fontSize: 13,
+                      },
+                    }}
+                  >
                     <TableHead>
                       <TableRow>
-                        <TableCell>Rep</TableCell>
+                        <TableCell>Member</TableCell>
+                        <TableCell>Role</TableCell>
                         <TableCell align="right">Leads</TableCell>
-                        <TableCell align="right">Deals Closed</TableCell>
-                        <TableCell align="right">Tasks Done</TableCell>
+                        <TableCell align="right">Contacts</TableCell>
+                        <TableCell align="right">Customers</TableCell>
+                        <TableCell align="right">Open Deals</TableCell>
+                        <TableCell align="right">Pipeline</TableCell>
+                        <TableCell align="right">Open Tasks</TableCell>
+                        <TableCell align="right">Overdue</TableCell>
                         <TableCell align="right">Calls</TableCell>
+                        <TableCell align="right">Emails</TableCell>
+                        <TableCell align="right">SMS</TableCell>
                       </TableRow>
                     </TableHead>
+
                     <TableBody>
-                      {leaderboard.map((row) => (
-                        <TableRow key={row.key} hover>
-                          <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                      {memberRows.map((member: MemberDashboardStats) => (
+                        <TableRow key={member.memberId} hover>
+                          <TableCell>
                             <Stack direction="row" alignItems="center" spacing={1.25}>
                               <Avatar
-                                sx={{ width: 28, height: 28, fontSize: 12, bgcolor: 'grey.200', color: 'text.primary' }}
+                                src={member.avatarUrl ?? undefined}
+                                sx={{ width: 28, height: 28, fontSize: 11 }}
                               >
-                                {getInitials(row.label)}
+                                {getInitials(member.name)}
                               </Avatar>
-                              <Typography variant="body2" fontWeight={500}>
-                                {row.label}
-                              </Typography>
+
+                              <Box sx={{ minWidth: 0 }}>
+                                <Typography variant="body2" fontWeight={600} noWrap>
+                                  {member.name}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary" noWrap>
+                                  {member.displayId}
+                                </Typography>
+                              </Box>
                             </Stack>
                           </TableCell>
-                          <TableCell align="right">{row.leads}</TableCell>
+
+                          <TableCell>
+                            <Chip
+                              label={member.role}
+                              size="small"
+                              variant="outlined"
+                              sx={{ textTransform: "capitalize", height: 20, fontSize: 11 }}
+                            />
+                          </TableCell>
+
+                          <TableCell align="right">{member.leads}</TableCell>
+                          <TableCell align="right">{member.contacts}</TableCell>
+                          <TableCell align="right">{member.customers}</TableCell>
+                          <TableCell align="right">{member.openDeals}</TableCell>
+
                           <TableCell align="right">
                             <Typography variant="body2" fontWeight={600}>
-                              {row.dealsClosed}
+                              {formatCurrency(member.pipelineValue)}
                             </Typography>
                           </TableCell>
-                          <TableCell align="right">{row.tasksCompleted}</TableCell>
-                          <TableCell align="right">{row.callsCompleted}</TableCell>
+
+                          <TableCell align="right">{member.openTasks}</TableCell>
+
+                          <TableCell align="right">
+                            <Typography
+                              variant="body2"
+                              color={member.overdueTasks > 0 ? "error.main" : "text.primary"}
+                              fontWeight={member.overdueTasks > 0 ? 600 : 400}
+                            >
+                              {member.overdueTasks}
+                            </Typography>
+                          </TableCell>
+
+                          <TableCell align="right">{member.scheduledCalls}</TableCell>
+                          <TableCell align="right">{member.emailsSent}</TableCell>
+                          <TableCell align="right">{member.smsSent}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
                   </Table>
                 </TableContainer>
               )}
-            </Paper>
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-            <Paper variant="outlined" sx={[{ p: { xs: 2, sm: 3 }, borderRadius: 2, borderColor: 'divider' }, surfaceHoverSx]}>
-              <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
-                Top Performer
-              </Typography>
-              {loading.performance ? (
-                <Skeleton variant="rounded" height={72} />
-              ) : topPerformer ? (
-                <Stack direction="row" alignItems="center" spacing={2}>
-                  <Avatar sx={{ width: 44, height: 44, bgcolor: 'primary.main', color: 'primary.contrastText' }}>
-                    {getInitials(topPerformer.label)}
-                  </Avatar>
-                  <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <Typography variant="body1" fontWeight={600} noWrap>
-                      {topPerformer.label}
+            </SectionCard>
+          </Stack>
+        </>
+      )}
+
+      {/* Personal workload */}
+      {isUserDashboard && dashboard?.members[0] && (
+        <>
+          <SectionHeading title="My Workload" subtitle="Your current assignments and activity" />
+
+          <SectionCard>
+            <Box sx={{ p: { xs: 1.5, sm: 2 } }}>
+              <Stack direction="row" flexWrap="wrap" spacing={3} rowGap={1.5}>
+                {[
+                  { label: "Leads", value: formatCompactNumber(dashboard.members[0].leads) },
+                  { label: "Contacts", value: formatCompactNumber(dashboard.members[0].contacts) },
+                  { label: "Deals", value: formatCompactNumber(dashboard.members[0].openDeals) },
+                  { label: "Tasks", value: formatCompactNumber(dashboard.members[0].openTasks) },
+                  { label: "Calls", value: formatCompactNumber(dashboard.members[0].scheduledCalls) },
+                  { label: "Pipeline", value: formatCurrency(dashboard.members[0].pipelineValue) },
+                ].map((item) => (
+                  <Stack key={item.label} spacing={0.25} sx={{ minWidth: 76 }}>
+                    <Typography variant="caption" color="text.secondary">
+                      {item.label}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {topPerformer.dealsClosed} deals closed
+                    <Typography variant="subtitle1" fontWeight={700}>
+                      {item.value}
                     </Typography>
-                  </Box>
-                  <EmojiEventsOutlinedIcon sx={{ color: 'warning.main', fontSize: 26, flexShrink: 0 }} />
-                </Stack>
-              ) : (
-                <EmptyState message="No leaderboard data yet." />
-              )}
-            </Paper>
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-            <Paper variant="outlined" sx={[{ p: { xs: 2, sm: 3 }, borderRadius: 2, borderColor: 'divider' }, surfaceHoverSx]}>
-              <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
-                Conversion Metrics
-              </Typography>
-              <Stack spacing={2.5}>
-                <MetricBar
-                  label="Lead Conversion"
-                  value={leadMetrics?.conversionRate ?? 0}
-                  display={leadMetrics ? formatPercent(leadMetrics.conversionRate) : '—'}
-                  loading={loading.leads}
-                />
-                <MetricBar
-                  label="Deal Win Rate"
-                  value={dealMetrics?.winRate ?? 0}
-                  display={dealMetrics ? formatPercent(dealMetrics.winRate) : '—'}
-                  loading={loading.deals}
-                />
-                <Divider />
-                <Stack direction="row" justifyContent="space-between" alignItems="center">
-                  <Typography variant="body2" color="text.secondary">
-                    Average Deal Size
-                  </Typography>
-                  {loading.deals ? (
-                    <Skeleton width={60} />
-                  ) : (
-                    <Typography variant="body2" fontWeight={600}>
-                      {dealMetrics ? formatCurrency(dealMetrics.averageDealSize) : '—'}
-                    </Typography>
-                  )}
-                </Stack>
+                  </Stack>
+                ))}
               </Stack>
-            </Paper>
-          </Grid>
-        </Grid>
-      </LazySection>
+            </Box>
+          </SectionCard>
+        </>
+      )}
     </Box>
   );
 };

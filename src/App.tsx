@@ -1,5 +1,6 @@
-import { Routes, Route, useLocation} from 'react-router-dom';
-import { useEffect } from 'react';
+import { Routes, Route} from 'react-router-dom';
+// import { useEffect } from 'react';
+// import {  useLocation} from 'react-router-dom';
 
 import PublicLayout from './layout/PublicLayout';
 import AuthLayout from './layout/AuthLayout';
@@ -36,7 +37,7 @@ import Archives from './pages/app/Archives/Archives';
 import Settings from './pages/app/Settings/Settings';
 import ProtectedRoute from './components/ProtectedRoute';
 import ResetPassword from './pages/auth/ForgotPassword/ResetPassword';
-import { useSidebar } from '../src/hooks//useSidebar';
+// import { useSidebar } from '../src/hooks//useSidebar';
 import AddDealByID from './pages/app/Deals/AddDealByID';
 import ProductOverview from './pages/public/ProductOverview/ProductOverview';
 import TermsOfService from './pages/public/TermsOfService/Terms';
@@ -50,14 +51,14 @@ import CookiePolicyPage from './pages/public/CookiePolicy/CookiePolicy';
 
 
 function AppRoutes() {
-  const location = useLocation();
-  const { setCollapsed } = useSidebar(); 
+  // const location = useLocation();
+  // const { setCollapsed } = useSidebar(); 
 
 
 
-  useEffect(() => {
-    setCollapsed(true);
-  }, [location.pathname, setCollapsed]);
+  // useEffect(() => {
+  //   setCollapsed(true);
+  // }, [location.pathname, setCollapsed]);
 
   return (
       <Routes>
