@@ -1,5 +1,6 @@
-import { Routes, Route, useLocation} from 'react-router-dom';
-import { useEffect } from 'react';
+import { Routes, Route} from 'react-router-dom';
+// import { useEffect } from 'react';
+// import {  useLocation} from 'react-router-dom';
 
 import PublicLayout from './layout/PublicLayout';
 import AuthLayout from './layout/AuthLayout';
@@ -32,11 +33,12 @@ import Customers from './pages/app/Customers/Customers';
 import CustomerDetail from './pages/app/Customers/CustomerDetail';
 import Profile from './pages/app/Profile/Profile';
 import Workspace from './pages/app/Workspace/Workspace';
+import Analytics from './pages/app/Analytics/Analytics';
 import Archives from './pages/app/Archives/Archives';
 import Settings from './pages/app/Settings/Settings';
 import ProtectedRoute from './components/ProtectedRoute';
 import ResetPassword from './pages/auth/ForgotPassword/ResetPassword';
-import { useSidebar } from '../src/hooks//useSidebar';
+// import { useSidebar } from '../src/hooks//useSidebar';
 import AddDealByID from './pages/app/Deals/AddDealByID';
 import ProductOverview from './pages/public/ProductOverview/ProductOverview';
 import TermsOfService from './pages/public/TermsOfService/Terms';
@@ -50,14 +52,14 @@ import CookiePolicyPage from './pages/public/CookiePolicy/CookiePolicy';
 
 
 function AppRoutes() {
-  const location = useLocation();
-  const { setCollapsed } = useSidebar(); 
+  // const location = useLocation();
+  // const { setCollapsed } = useSidebar(); 
 
 
 
-  useEffect(() => {
-    setCollapsed(true);
-  }, [location.pathname, setCollapsed]);
+  // useEffect(() => {
+  //   setCollapsed(true);
+  // }, [location.pathname, setCollapsed]);
 
   return (
       <Routes>
@@ -105,6 +107,7 @@ function AppRoutes() {
             <Route path="/app/customers/:id" element={<CustomerDetail />} /> 
             <Route path="/app/profile" element={<Profile />} />
             <Route path="/app/workspace" element={<Workspace />} />
+            <Route path="/app/analytics" element={<Analytics/>} />
             <Route path="/app/archives" element={<Archives />} />
             <Route path="/app/settings" element={<Settings />} />
             <Route path="/app/communication/:id" element={<CommunicationPage />} />

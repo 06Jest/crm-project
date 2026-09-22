@@ -1,86 +1,39 @@
-export interface DashboardState {
-  overview: DashboardOverview | null;
-  leadMetrics: LeadMetrics | null;
-  dealMetrics: DealMetrics | null;
-  customerMetrics: CustomerMetrics | null;
-  activityMetrics: ActivityMetrics | null;
-  trends: DashboardTrends | null;
-  recentActivities: ActivityItem[];
-  userPerformance: UserPerformanceMetrics | null;
+export type DashboardScope = "organization" | "user";
 
-  loading: {
-    overview: boolean;
-    leads: boolean;
-    deals: boolean;
-    customers: boolean;
-    activity: boolean;
-    trends: boolean;
-    recentActivities: boolean;
-    performance: boolean;
-  };
-  loaded: boolean;
-  error: string | null;
-}
+export type DashboardRole = "owner" | "manager" | "agent";
 
-export interface DashboardParams {
-  orgId: string;
-  accessToken: string;
-}
-
-export type TrendInterval =
-  | 'day'
-  | 'week'
-  | 'month';
-
-export interface TrendParams extends DashboardParams {
-  interval?: TrendInterval;
-  daysBack?: number;
-}
-
-export interface RecentActivityParams
-  extends DashboardParams {
-  limit?: number;
-}
-
-export interface DashboardOverview {
+export interface DashboardKpis {
+  totalLeads: number;
   totalContacts: number;
-  totalLeads: number;
-  totalDeals: number;
   totalCustomers: number;
-  totalEmails: number;
-  totalSms: number;
-  totalCalls: number;
-  totalTasks: number;
-}
-
-export interface LeadMetrics {
-  totalLeads: number;
-  leadsBySource: Record<string, number>;
-  leadsByPriority: Record<string, number>;
-  leadsByStatus: Record<string, number>;
-  conversionRate: number;
-}
-
-export interface DealMetrics {
   totalDeals: number;
-  dealsByStage: Record<string, number>;
-  wonDeals: number;
-  lostDeals: number;
   openDeals: number;
-  totalRevenue: number;
-  averageDealSize: number;
-  winRate: number;
+  pipelineValue: number;
+  wonRevenue: number;
+  openTasks: number;
+  overdueTasks: number;
+  scheduledCalls: number;
 }
 
-export interface CustomerMetrics {
-  totalCustomers: number;
-  customersByStatus: Record<string, number>;
-  activeCustomers: number;
-  churnedCustomers: number;
-  customerGrowth: Record<string, number>;
+export interface PipelineStageMetric {
+  stage: string;
+  count: number;
+  value: number;
 }
 
-export interface ActivityMetrics {
+export interface LeadOverview {
+  total: number;
+  byStatus: Record<string, number>;
+  byPriority: Record<string, number>;
+  bySource: Record<string, number>;
+}
+
+export interface CustomerOverview {
+  total: number;
+  byStatus: Record<string, number>;
+}
+
+export interface ActivityOverview {
   emailsSent: number;
   smsSent: number;
   callsCompleted: number;
@@ -89,35 +42,96 @@ export interface ActivityMetrics {
   tasksOverdue: number;
 }
 
-export interface DashboardTrends {
-  interval: TrendInterval;
-  startDate: string;
-  leadsCreated: Record<string, number>;
-  dealsCreated: Record<string, number>;
-  revenueOverTime: Record<string, number>;
-  customerGrowth: Record<string, number>;
+export interface DashboardMember {
+  memberId: string;
+  profileId: string;
+  displayId: string;
+  name: string;
+  avatarUrl: string | null;
+  jobTitle: string | null;
+  role: DashboardRole;
 }
 
-export type ActivityType =
-  | 'lead'
-  | 'deal'
-  | 'customer'
-  | 'email'
-  | 'sms'
-  | 'call'
-  | 'task';
+export interface MemberDashboardStats extends DashboardMember {
+  leads: number;
+  contacts: number;
+  customers: number;
+  openDeals: number;
+  pipelineValue: number;
+  openTasks: number;
+  overdueTasks: number;
+  scheduledCalls: number;
+  completedCalls: number;
+  emailsSent: number;
+  smsSent: number;
+}
 
-export interface ActivityItem {
+export interface DashboardActivity {
   id: string;
-  type: ActivityType;
+  type: string;
+  action: string;
   title: string;
   description: string | null;
+  targetName: string | null;
   createdAt: string;
+  createdBy: {
+    memberId: string;
+    name: string;
+    avatarUrl: string | null;
+  } | null;
 }
 
-export interface UserPerformanceMetrics {
-  leadsPerUser: Record<string, number>;
-  dealsClosedPerUser: Record<string, number>;
-  tasksCompletedPerUser: Record<string, number>;
-  callsCompletedPerUser: Record<string, number>;
+export interface PriorityItem {
+  id: string;
+  displayId: string;
+  name: string;
+  priority: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface OpenDealItem {
+  id: string;
+  displayId: string;
+  title: string;
+  stage: string;
+  value: number;
+  closeDate: string | null;
+  updatedAt: string;
+}
+
+export interface InactiveContactItem {
+  id: string;
+  displayId: string;
+  name: string;
+  priority: string;
+  lastActivityAt: string | null;
+  inactiveDays: number;
+}
+
+export interface DashboardAttention {
+  priorityLeads: PriorityItem[];
+  priorityContacts: PriorityItem[];
+  openDeals: OpenDealItem[];
+  inactiveContacts: InactiveContactItem[];
+}
+
+export interface DashboardData {
+  scope: DashboardScope;
+  role: DashboardRole;
+  kpis: DashboardKpis;
+
+  pipeline: {
+    stages: PipelineStageMetric[];
+  };
+
+  leads: LeadOverview;
+  customers: CustomerOverview;
+  activity: ActivityOverview;
+
+  attention: DashboardAttention;
+
+  recentActivity: DashboardActivity[];
+
+  members: MemberDashboardStats[];
 }

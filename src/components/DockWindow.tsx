@@ -1,4 +1,13 @@
-import { Box, Grow, IconButton, Paper, Tooltip, Typography } from '@mui/material';
+import {
+  Box,
+  Grow,
+  IconButton,
+  Paper,
+  Tooltip,
+  Typography,
+  useMediaQuery,
+  useTheme,
+} from "@mui/material";
 import CloseIcon from '@mui/icons-material/Close';
 import RemoveIcon from '@mui/icons-material/Remove';
 import FullscreenIcon from '@mui/icons-material/Fullscreen';
@@ -49,7 +58,8 @@ export default function DockWindow({
   onUpdate,
   children,
 }: DockWindowProps) {
-
+  const theme = useTheme();
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down("md"));
   if (minimized) {
     return (
       <Grow timeout={250} in={minimized}>
@@ -87,17 +97,22 @@ export default function DockWindow({
   return (
     <Rnd
       position={{
-        x: x ?? window.innerWidth - width - 90 - minimizedIndex * (width + 12),
-        y: y ?? window.innerHeight - height,
+        x: isSmallScreen
+          ? (window.innerWidth - window.innerWidth * 0.8) / 2
+          : x ?? window.innerWidth - width - 90 - minimizedIndex * (width + 12),
+        y: isSmallScreen
+          ? (window.innerHeight - window.innerHeight * 0.8) / 2
+          : y ?? window.innerHeight - height,
       }}
       size={{
-        width,
-        height,
+        width: isSmallScreen ? "80vw" : width,
+        height: isSmallScreen ? "80vh" : height,
       }}
+      disableDragging={isSmallScreen}
+      enableResizing={!isSmallScreen}
       onMouseDown={onFocus}
       bounds="window"
-      enableResizing={true}
-      dragHandleClassName="dock-window-header"
+      dragHandleClassName={!isSmallScreen ? "dock-window-header" : undefined}
       onDragStop={(_e, data) => {
         onUpdate({
           x: data.x,
@@ -116,7 +131,7 @@ export default function DockWindow({
         zIndex,
         pointerEvents: "auto",
       }}
->
+    >
       <Box
         sx={{
           width: "100%",
@@ -180,6 +195,12 @@ export default function DockWindow({
                 size="small"
                 onClick={(e) => {
                   e.stopPropagation();
+
+                  if (isSmallScreen) {
+                    window.location.href = `/app/communication/${id}`;
+                    return;
+                  }
+
                   window.open(`/app/communication/${id}`, "_blank");
                 }}
                 sx={{ color: "inherit" }}

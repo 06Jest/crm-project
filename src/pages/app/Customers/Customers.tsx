@@ -339,11 +339,8 @@ const hasSelection =
             <GroupsIcon />
           </Box>
           <Box>
-            <Typography sx={{ lineHeight: 1.2, fontSize: {md: 20, sm: 18, xs: 16}}} fontWeight={800} letterSpacing={-0.3}>
+            <Typography variant="h5" fontWeight={800} sx={{ lineHeight: 1.2, fontSize: {xs: 15, sm: 17, md: 20}}}>
               Customers
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              {rows.length}
             </Typography>
           </Box>
         </Box>

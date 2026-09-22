@@ -1,5 +1,5 @@
 import { Outlet } from "react-router-dom";
-import { Box } from "@mui/material";
+import { Box, useMediaQuery, useTheme } from "@mui/material";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import AIWorkspace from "../components/AIWorkspace";
@@ -9,14 +9,18 @@ import { openAIWorkspace } from "../store/uiSlice";
 import type { AppDispatch } from "../store/store";
 import { setMode } from "../store/aiSlice";
 
-
- function PublicLayout() {
+function PublicLayout() {
   const dispatch = useDispatch<AppDispatch>();
+  const theme = useTheme();
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down("md"));
 
   useEffect(() => {
     dispatch(setMode("public"));
-    dispatch(openAIWorkspace());
-  }, [dispatch]);
+
+    if (!isSmallScreen) {
+      dispatch(openAIWorkspace());
+    }
+  }, [dispatch, isSmallScreen]);
 
   return (
     <Box
