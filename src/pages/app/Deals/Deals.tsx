@@ -842,8 +842,6 @@ export default function Deals() {
                   <Skeleton variant="rounded" height={92} sx={{ mb: 1, borderRadius: 2.5 }} />
                   <Skeleton variant="rounded" height={92} sx={{ mb: 1, borderRadius: 2.5 }} />
                   <Skeleton variant="rounded" height={92} sx={{ mb: 1, borderRadius: 2.5 }} />
-                  <Skeleton variant="rounded" height={92} sx={{ mb: 1, borderRadius: 2.5 }} />
-                  <Skeleton variant="rounded" height={92} sx={{ mb: 1, borderRadius: 2.5 }} />
                   <Skeleton variant="rounded" height={92} sx={{ borderRadius: 2.5 }} />
                 </Box>
               </Box>
