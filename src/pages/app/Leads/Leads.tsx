@@ -34,7 +34,6 @@ import {
   Box,
   Typography,
   Button,
-  Snackbar,
   Card,
   CardContent,
   Dialog,
@@ -375,7 +374,6 @@ export default function Leads() {
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState<HTMLDivElement | null>(null);
   const [hoveredLead, setHoveredLead] = useState<Lead | null>(null);
-  const [openSnackbar, setOpenSnackbar] = useState(false);
   const [view, setView] = useState<'kanban' | 'table'>('kanban');
   const [selectedLeadIds, setSelectedLeadIds] =
     useState<GridRowSelectionModel>({
@@ -1140,6 +1138,17 @@ const handleConfirmCloseLead = async () => {
     preferred_contact_time: lead.preferred_contact_time,
   }));
 
+  const handleLeadCommunication = (
+    e: React.MouseEvent,
+    lead: Lead,
+    type: 'emails' | 'calls' | 'sms'
+  ) => {
+    e.stopPropagation();
+    navigate(`/app/communication/${type}`, {
+      state: { leadId: lead.id },
+    });
+  };
+
   return (
     <Box sx={{ pb: 2 }}>
       {(error || invalid) && (
@@ -1655,25 +1664,38 @@ const handleConfirmCloseLead = async () => {
                                 }}>
                                   <Stack direction="row" spacing={0.25}>
                                     <Tooltip title="Email lead">
-                                      <IconButton size="small" 
-                                        onClick={(e) => {
-                                          e.stopPropagation()
-                                          setOpenSnackbar(true)}}>
-                                        <EmailIcon fontSize="small" sx={{ color: 'primary.main' }} />
+                                      <IconButton
+                                        size="small"
+                                        onClick={(e) => handleLeadCommunication(e, lead, 'emails')}
+                                      >
+                                        <EmailIcon
+                                          fontSize="small"
+                                          sx={{ color: 'primary.main' }}
+                                        />
                                       </IconButton>
                                     </Tooltip>
+
                                     <Tooltip title="Call lead">
-                                      <IconButton size="small" onClick={(e) => {
-                                          e.stopPropagation()
-                                          setOpenSnackbar(true)}}>
-                                        <CallIcon fontSize="small" sx={{ color: 'primary.main' }} />
+                                      <IconButton
+                                        size="small"
+                                        onClick={(e) => handleLeadCommunication(e, lead, 'calls')}
+                                      >
+                                        <CallIcon
+                                          fontSize="small"
+                                          sx={{ color: 'primary.main' }}
+                                        />
                                       </IconButton>
                                     </Tooltip>
+
                                     <Tooltip title="Message lead">
-                                      <IconButton size="small" onClick={(e) => {
-                                          e.stopPropagation()
-                                          setOpenSnackbar(true)}}>
-                                        <SmsIcon fontSize="small" sx={{ color: 'primary.main' }} />
+                                      <IconButton
+                                        size="small"
+                                        onClick={(e) => handleLeadCommunication(e, lead, 'sms')}
+                                      >
+                                        <SmsIcon
+                                          fontSize="small"
+                                          sx={{ color: 'primary.main' }}
+                                        />
                                       </IconButton>
                                     </Tooltip>
                                   </Stack>
@@ -2282,13 +2304,6 @@ const handleConfirmCloseLead = async () => {
           </Button>
         </DialogActions>
       </Dialog>
-      <Snackbar
-        open={openSnackbar}
-        autoHideDuration={3000}
-        onClose={() => setOpenSnackbar(false)}
-        message="This feature is coming soon!"
-        ContentProps={{ sx: { borderRadius: 2 } }}
-      />
     </Box>
   );
 }

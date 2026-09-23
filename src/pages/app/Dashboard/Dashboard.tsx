@@ -517,7 +517,7 @@ const PipelineChart: React.FC<{ stages: PipelineStageDatum[] }> = ({
           dataKey="count"
           radius={[0, 4, 4, 0]}
           fill={theme.palette.primary.main}
-          barSize={16}
+          barSize={32}
         />
       </BarChart>
     </ResponsiveContainer>
