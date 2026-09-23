@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import {
   Box,
   IconButton,
@@ -134,6 +135,13 @@ const sendButtonSx = {
 
 export default function SmsPanel() {
   const dispatch = useDispatch<AppDispatch>();
+  const location = useLocation();
+
+  const { leadId = '', contactId = '' } =
+    (location.state as {
+      leadId?: string;
+      contactId?: string;
+    } | null) ?? {};
 
   const { items: contacts, loaded: cLd } = useSelector(
     (s: RootState) => s.contacts
@@ -171,6 +179,61 @@ export default function SmsPanel() {
 
     loadData();
   }, [smsLd, cLd, lLd, dispatch]);
+
+  useEffect(() => {
+    if (leadId) {
+      if (!lLd) return;
+
+      const lead = leads.find((l) => l.id === leadId);
+      if (!lead) return;
+
+      const recipient: RecipientOption = {
+        id: lead.id,
+        type: 'lead',
+        label: formatName(lead.first_name, lead.last_name),
+        phone: lead.phone,
+      };
+
+      const timeoutId = window.setTimeout(() => {
+        setActiveKey(null);
+        setSelectedRecipient(recipient);
+        setDraft('');
+        setView('newThread');
+      }, 0);
+
+      return () => window.clearTimeout(timeoutId);
+    }
+
+    if (contactId) {
+      if (!cLd) return;
+
+      const contact = contacts.find((c) => c.id === contactId);
+      if (!contact) return;
+
+      const recipient: RecipientOption = {
+        id: contact.id,
+        type: 'contact',
+        label: formatName(contact.first_name, contact.last_name),
+        phone: contact.phone,
+      };
+
+      const timeoutId = window.setTimeout(() => {
+        setActiveKey(null);
+        setSelectedRecipient(recipient);
+        setDraft('');
+        setView('newThread');
+      }, 0);
+
+      return () => window.clearTimeout(timeoutId);
+    }
+  }, [
+    leadId,
+    contactId,
+    leads,
+    contacts,
+    lLd,
+    cLd,
+  ]);
 
   const recipientOptions: RecipientOption[] = useMemo(
     () => [

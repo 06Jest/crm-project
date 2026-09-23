@@ -32,7 +32,6 @@ import {
   DialogContent,
   DialogActions,
   TextField,
-  Snackbar,
   Chip,
   Popover,
   IconButton,
@@ -155,7 +154,11 @@ interface LazyColumnBodyProps {
   onEdit: (deal: Deal) => void;
   onDelete: (deal: Deal) => void;
   onArchive: (deal: Deal) => void;
-  onQuickAction: () => void;
+  onQuickAction: (
+    event: React.MouseEvent,
+    deal: Deal,
+    type: 'emails' | 'calls' | 'sms'
+  ) => void;
 }
 
 function LazyColumnBody({
@@ -419,29 +422,59 @@ function LazyColumnBody({
                                     gap: 0.25,
                                   }}>
                                     <Tooltip title="Email lead" arrow>
-                                      <IconButton sx={{p: '4px', transition: reduceMotion ? 'none' : 'background-color 0.15s ease', '&:hover': { bgcolor: `${stageColor}1f` }}}>
+                                      <IconButton
+                                        sx={{
+                                          p: '4px',
+                                          transition: reduceMotion
+                                            ? 'none'
+                                            : 'background-color 0.15s ease',
+                                          '&:hover': { bgcolor: `${stageColor}1f` },
+                                        }}
+                                        onClick={(e) => onQuickAction(e, deal, 'emails')}
+                                      >
                                         <EmailIcon
-                                          
-                                          onClick={onQuickAction}
-                                          sx={{cursor: 'pointer', color: 'primary.main', fontSize: 17}}
+                                          sx={{
+                                            color: 'primary.main',
+                                            fontSize: 17,
+                                          }}
                                         />
                                       </IconButton>
                                     </Tooltip>
                                     <Tooltip title="Call lead" arrow>
-                                      <IconButton sx={{p: '4px', transition: reduceMotion ? 'none' : 'background-color 0.15s ease', '&:hover': { bgcolor: `${stageColor}1f` }}}>
+                                      <IconButton
+                                        sx={{
+                                          p: '4px',
+                                          transition: reduceMotion
+                                            ? 'none'
+                                            : 'background-color 0.15s ease',
+                                          '&:hover': { bgcolor: `${stageColor}1f` },
+                                        }}
+                                        onClick={(e) => onQuickAction(e, deal, 'calls')}
+                                      >
                                         <CallIcon
-                                          onClick={onQuickAction}
-                                          
-                                          sx={{cursor: 'pointer', color: 'primary.main', fontSize: 17}}
+                                          sx={{
+                                            color: 'primary.main',
+                                            fontSize: 17,
+                                          }}
                                         />
                                       </IconButton>
                                     </Tooltip>
                                     <Tooltip title="Message lead" arrow>
-                                      <IconButton sx={{p: '4px', transition: reduceMotion ? 'none' : 'background-color 0.15s ease', '&:hover': { bgcolor: `${stageColor}1f` }}}>
+                                     <IconButton
+                                        sx={{
+                                          p: '4px',
+                                          transition: reduceMotion
+                                            ? 'none'
+                                            : 'background-color 0.15s ease',
+                                          '&:hover': { bgcolor: `${stageColor}1f` },
+                                        }}
+                                        onClick={(e) => onQuickAction(e, deal, 'sms')}
+                                      >
                                         <SmsIcon
-                                          onClick={onQuickAction}
-                                          
-                                          sx={{cursor: 'pointer', color: 'primary.main', fontSize: 17}}
+                                          sx={{
+                                            color: 'primary.main',
+                                            fontSize: 17,
+                                          }}
                                         />
                                       </IconButton>
                                     </Tooltip>
@@ -510,6 +543,19 @@ export default function Deals() {
 
   const dispatch = useDispatch<AppDispatch>();;
   const navigate = useNavigate();
+  const handleDealCommunication = (
+    e: React.MouseEvent,
+    deal: Deal,
+    type: 'emails' | 'calls' | 'sms'
+  ) => {
+    e.stopPropagation();
+
+    if (!deal.contact_id) return;
+
+    navigate(`/app/communication/${type}`, {
+      state: { contactId: deal.contact_id },
+    });
+  };
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [archiveOpen, setArchiveOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -518,7 +564,6 @@ export default function Deals() {
   const [dragResult, setDragResult] = useState<DropResult>()
   const [editingDeal, setEditingDeal] = useState<Deal | null>();
   const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
-  const [openSnackbar, setOpenSnackbar] = useState(false);
   const [anchorEl, setAnchorEl] = useState<HTMLDivElement | null>(null);
   const [hoveredDeal, setHoveredDeal] = useState<Deal | null>(null);
   const [showDetails, setShowDetails] = useState<Contact | null>(null);
@@ -1065,7 +1110,7 @@ export default function Deals() {
                       onEdit={handleOpenEdit}
                       onDelete={handleOpenDelete}
                       onArchive={handleOpenArchive}
-                      onQuickAction={() => setOpenSnackbar(true)}
+                      onQuickAction={handleDealCommunication}
                     />
                   </Box>
                 </Grow>
@@ -1519,12 +1564,6 @@ export default function Deals() {
           </Typography>
         </Card>
       </Popover>
-      <Snackbar
-        open={openSnackbar}
-        autoHideDuration={3000}
-        onClose={() => setOpenSnackbar(false)}
-        message="This feature is coming soon!"
-      />
     </Box>
   );
 }

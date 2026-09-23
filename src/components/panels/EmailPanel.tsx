@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, type ReactNode, useRef, useCallback } from "react";
+import { useLocation } from "react-router-dom";
 import {
   Box,
   TextField,
@@ -548,6 +549,10 @@ export default function EmailPanel() {
   const [deleting, setDeleting] = useState(false);
   const activeEmail = emails.find((e) => e.id === activeId) ?? null;
   const isDraft = !activeEmail || activeEmail.status === "draft";
+  const location = useLocation();
+
+  const { leadId = "", contactId = "" } =
+  (location.state as { leadId?: string; contactId?: string } | null) ?? {};
 
   const editor = useEditor({
     extensions: [
@@ -572,6 +577,56 @@ export default function EmailPanel() {
     },
   });
   const loadedEmail = useRef(false);
+
+  useEffect(() => {
+    if (leadId) {
+      if (!lLd) return;
+
+      const lead = leads.find((l) => l.id === leadId);
+      if (!lead) return;
+
+      setActiveId(null);
+      setEditRecipient(lead.email ?? "");
+      setEditSubject("");
+      setEditBodyHtml("");
+      setEditBodyText("");
+      setOwnerType("lead");
+      setOwnerId(lead.id);
+      setRecipientAutoFilled(Boolean(lead.email));
+
+      editor?.commands.setContent("");
+      setView("editor");
+
+      return;
+    }
+
+    if (contactId) {
+      if (!cLd) return;
+
+      const contact = contacts.find((c) => c.id === contactId);
+      if (!contact) return;
+
+      setActiveId(null);
+      setEditRecipient(contact.email ?? "");
+      setEditSubject("");
+      setEditBodyHtml("");
+      setEditBodyText("");
+      setOwnerType("contact");
+      setOwnerId(contact.id);
+      setRecipientAutoFilled(Boolean(contact.email));
+
+      editor?.commands.setContent("");
+      setView("editor");
+    }
+  }, [
+    leadId,
+    contactId,
+    leads,
+    contacts,
+    lLd,
+    cLd,
+    editor,
+  ]);
 
   useEffect(() => {
     if (!editor || view !== "editor") return;

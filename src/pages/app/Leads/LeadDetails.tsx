@@ -36,6 +36,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import PersonIcon from '@mui/icons-material/Person';
 import EmailIcon from '@mui/icons-material/Email';
 import PhoneIcon from '@mui/icons-material/Phone';
+import MessageIcon from '@mui/icons-material/Message';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import FemaleIcon from '@mui/icons-material/Female';
 import MaleIcon from '@mui/icons-material/Male';
@@ -344,7 +345,13 @@ export default function LeadDetails() {
     );
   }
 
-  
+  const handleLeadCommunication = (
+    type: 'emails' | 'calls' | 'sms'
+  ) => {
+    navigate(`/app/communication/${type}`, {
+      state: { leadId: lead.id },
+    });
+  };
 
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -742,8 +749,115 @@ export default function LeadDetails() {
               {priorityIcon(lead.priority)}
             </Box>
             </Typography>
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1.25, justifyContent: { xs: 'center', sm: 'flex-start' } }}>
-              <Paper
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1.25, flexDirection: 'column', justifyContent: { xs: 'center', sm: 'flex-start' } }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  
+                  alignItems: 'center',
+                  gap: 1,
+                  mt: 0.5,
+                  justifyContent: { xs: 'center', sm: 'flex-start' },
+                }}
+              >
+                {lead.email && (
+                  <Tooltip title="Send email">
+                    <Box
+                      component="button"
+                      onClick={() => handleLeadCommunication('emails')}
+                      sx={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 0.5,
+                        border: 0,
+                        p: 0,
+                        m: 0,
+                        bgcolor: 'transparent',
+                        color: 'text.secondary',
+                        font: 'inherit',
+                        fontSize: 12,
+                        cursor: 'pointer',
+                        minWidth: 0,
+                        '&:hover': {
+                          color: 'primary.main',
+                          textDecoration: 'underline',
+                        },
+                      }}
+                    >
+                      <EmailIcon sx={{ fontSize: 14, flexShrink: 0 }} />
+                      <Box
+                        component="span"
+                        sx={{
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                          maxWidth: { xs: 220, sm: 300 },
+                        }}
+                      >
+                        {lead.email}
+                      </Box>
+                    </Box>
+                  </Tooltip>
+                )}
+
+                {lead.phone && (
+                  <Box
+                    sx={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 0.5,
+                      color: 'text.secondary',
+                      fontSize: 12,
+                    }}
+                  >
+                    <PhoneIcon sx={{ fontSize: 14 }} />
+                    {lead.phone}
+                  </Box>
+                )}
+
+                {lead.phone && (
+                    <Box sx={{ display: 'flex', gap: 0.3 }}>
+                      <Tooltip title="Schedule a call">
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          onClick={() => handleLeadCommunication('calls')}
+                          sx={{
+                            minWidth: 0,
+                            px: 0.5,
+                            py: 0.5,
+                            fontSize: 11,
+                            textTransform: 'none',
+                            borderRadius: 20,
+                          }}
+                        >
+                          <PhoneIcon sx={{ fontSize: '12px !important' }} />
+                        </Button>
+                      </Tooltip>
+
+                      <Tooltip title="Add message">
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          onClick={() => handleLeadCommunication('sms')}
+                          sx={{
+                            minWidth: 0,
+                            px: 0.5,
+                            py: 0.5,
+                            fontSize: 11,
+                            textTransform: 'none',
+                            borderRadius: 20,
+                          }}
+                        >
+                          <MessageIcon sx={{ fontSize: '12px !important' }} />
+                        </Button>
+                      </Tooltip>
+                    </Box>
+                  )}
+              </Box>
+              <Box sx={{display: 'flex', gap: 0.5, alignItems: 'center'}}>
+                <Paper
                 title="Status"
                 elevation={2}
                 sx={{
@@ -988,6 +1102,8 @@ export default function LeadDetails() {
                   </Box>
                 </Box>
                 )}
+            </Box>
+              
           </Box>
           <Box sx={{ display: 'flex', flexShrink: 0, width: { xs: '100%', sm: 'auto' },
           flexDirection: 'column', justifyContent: { xs: 'center', sm: 'flex-end' } }}>

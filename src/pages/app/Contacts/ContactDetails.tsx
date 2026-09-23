@@ -54,6 +54,7 @@ import PhoneIcon from '@mui/icons-material/Phone';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import FemaleIcon from '@mui/icons-material/Female';
 import MaleIcon from '@mui/icons-material/Male';
+import MessageIcon from '@mui/icons-material/Message';
 import CakeIcon from '@mui/icons-material/Cake';
 import BusinessIcon from '@mui/icons-material/Business';
 import WorkIcon from '@mui/icons-material/Work';
@@ -605,6 +606,14 @@ export default function ContactDetail() {
 
   const fullName = formatName(contact.first_name, contact.last_name);
 
+  const handleContactCommunication = (
+    type: 'emails' | 'calls' | 'sms'
+  ) => {
+    navigate(`/app/communication/${type}`, {
+      state: { contactId: contact.id },
+    });
+  };
+
   const cancelBtnSx = {
     textTransform: 'none',
     fontWeight: 600,
@@ -777,8 +786,115 @@ export default function ContactDetail() {
               {priorityIcon(contact.priority)}
             </Box>
             </Typography>
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1.25, justifyContent: { xs: 'center', sm: 'flex-start' } }}>
-              <Paper
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1.25, flexDirection: 'column', justifyContent: { xs: 'center', sm: 'flex-start' } }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  
+                  alignItems: 'center',
+                  gap: 1,
+                  mt: 0.5,
+                  justifyContent: { xs: 'center', sm: 'flex-start' },
+                }}
+              >
+                {contact.email && (
+                  <Tooltip title="Send email">
+                    <Box
+                      component="button"
+                      onClick={() => handleContactCommunication('emails')}
+                      sx={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 0.5,
+                        border: 0,
+                        p: 0,
+                        m: 0,
+                        bgcolor: 'transparent',
+                        color: 'text.secondary',
+                        font: 'inherit',
+                        fontSize: 12,
+                        cursor: 'pointer',
+                        minWidth: 0,
+                        '&:hover': {
+                          color: 'primary.main',
+                          textDecoration: 'underline',
+                        },
+                      }}
+                    >
+                      <EmailIcon sx={{ fontSize: 14, flexShrink: 0 }} />
+                      <Box
+                        component="span"
+                        sx={{
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                          maxWidth: { xs: 220, sm: 300 },
+                        }}
+                      >
+                        {contact.email}
+                      </Box>
+                    </Box>
+                  </Tooltip>
+                )}
+
+                {contact.phone && (
+                  <Box
+                    sx={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 0.5,
+                      color: 'text.secondary',
+                      fontSize: 12,
+                    }}
+                  >
+                    <PhoneIcon sx={{ fontSize: 14 }} />
+                    {contact.phone}
+                  </Box>
+                )}
+
+                {contact.phone && (
+                    <Box sx={{ display: 'flex', gap: 0.3 }}>
+                      <Tooltip title="Schedule a call">
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          onClick={() => handleContactCommunication('calls')}
+                          sx={{
+                            minWidth: 0,
+                            px: 0.5,
+                            py: 0.5,
+                            fontSize: 11,
+                            textTransform: 'none',
+                            borderRadius: 20,
+                          }}
+                        >
+                          <PhoneIcon sx={{ fontSize: '12px !important' }} />
+                        </Button>
+                      </Tooltip>
+
+                      <Tooltip title="Add message">
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          onClick={() => handleContactCommunication('sms')}
+                          sx={{
+                            minWidth: 0,
+                            px: 0.5,
+                            py: 0.5,
+                            fontSize: 11,
+                            textTransform: 'none',
+                            borderRadius: 20,
+                          }}
+                        >
+                          <MessageIcon sx={{ fontSize: '12px !important' }} />
+                        </Button>
+                      </Tooltip>
+                    </Box>
+                  )}
+              </Box>
+              <Box sx={{display: 'flex', gap: 0.5, alignItems: 'center'}}>
+                <Paper
                 title="Status"
                 elevation={2}
                 sx={{
@@ -787,8 +903,9 @@ export default function ContactDetail() {
                   justifyContent: 'center',
                   px: 1,
                   py: 0.5,
-                  fontWeight: 700,
                   fontSize: '11px',
+                  fontWeight: 700,
+                  letterSpacing: '0.6px',
                   cursor: 'pointer',
                   transition: 'opacity 0.15s ease',
                   border:
@@ -950,7 +1067,7 @@ export default function ContactDetail() {
                         )
                       : "Unassigned"
                 }
-                title="Assigned to"
+                title={contact.assigned ? "Assigned to" : "Lead owner"}
                 size='small'
                 sx={{
                   px: 1,
@@ -1022,6 +1139,7 @@ export default function ContactDetail() {
                   </Box>
                 </Box>
                 )}
+            </Box>
           </Box>
           <Box sx={{ display: 'flex', flexShrink: 0, width: { xs: '100%', sm: 'auto' }, flexDirection: 'column', justifyContent: { xs: 'center', sm: 'flex-end' } }}>
             <Typography

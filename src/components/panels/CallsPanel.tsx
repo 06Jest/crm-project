@@ -1,5 +1,7 @@
 
-import  { useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import  { useState, useMemo, useRef, useEffect} from 'react';
+// import { useSearchParams } from 'react-router-dom';
+import { useLocation } from "react-router-dom";
 import {
   Box,
   Card,
@@ -37,7 +39,7 @@ import {
   Search as SearchIcon,
   CheckCircle as CheckCircleIcon,
   Schedule as ScheduleIcon,
-  Timer as TimerIcon,
+  // Timer as TimerIcon,
   Close as CloseIcon,
   Flag as FlagIcon,
   Notes as NotesIcon,
@@ -121,13 +123,14 @@ const getPriorityColor = (priority: CallPriority): 'error' | 'warning' | 'defaul
 
 export default function CallsPanel() {
   const dispatch = useDispatch<AppDispatch>();
+  const location = useLocation();
   const [activeCall, setActiveCall] = useState<CallListItem | null>(null);
   const [callStatus, setCallStatus] = useState<CallStatus | null>(null);
   const [elapsed, setElapsed] = useState(0);
   const [muted, setMuted] = useState(false);
   const [speaker, setSpeaker] = useState(true);
-  const [openCreateDialog, setOpenCreateDialog] = useState(false);
-  const [openDetailDialog, setOpenDetailDialog] = useState(false);
+  const { leadId = "", contactId = "" } =
+  (location.state as { leadId?: string; contactId?: string } | null) ?? {};
   const [selectedCall, setSelectedCall] = useState<CallListItem | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState<CallFilters>({});
@@ -135,17 +138,21 @@ export default function CallsPanel() {
   const [callNotes, setCallNotes] = useState('');
   const [recipientType, setRecipientType] = useState<"lead" | "contact">("lead");
   const [view, setView] = useState<"list" | "editor">("list");
+  const [openCreateDialog, setOpenCreateDialog] = useState(() =>
+    Boolean(leadId || contactId)
+  );
   
-  const [formData, setFormData] = useState<CreateCallInput>({
-    subject: '',
-    type: 'other',
-    priority: 'medium',
-    notes: '',
-    assigned_to: '',
-    lead_id: '',
-    contact_id: '',
-    scheduled_for: '',
-  });
+  
+  const [formData, setFormData] = useState<CreateCallInput>(() => ({
+    subject: "",
+    type: "other",
+    priority: "medium",
+    notes: "",
+    assigned_to: "",
+    lead_id: leadId,
+    contact_id: "",
+    scheduled_for: "",
+  }));
 
   const { items: contacts, loaded: cLd } = useSelector((s: RootState) => s.contacts);
   const { items: leads,  loaded:lLd } = useSelector((s: RootState) => s.leads);
@@ -163,18 +170,64 @@ export default function CallsPanel() {
   const dialTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-      const loadData = async () => {
-        try {
-          if (!caLd) await dispatch(fetchCalls()).unwrap();
-          if (!cLd) await dispatch(fetchContactsLists()).unwrap();
-          if (!lLd) await dispatch(fetchLeadsLists()).unwrap();
-          if (!mLd) await dispatch(fetchOrgMembers()).unwrap();
-        } catch {
-          // Error handled by Redux state
-        } 
-      };
-      loadData();
-    }, [caLd, cLd, lLd, mLd,  dispatch]);
+    const loadData = async () => {
+      try {
+        if (!caLd) await dispatch(fetchCalls()).unwrap();
+        if (!cLd) await dispatch(fetchContactsLists()).unwrap();
+        if (!lLd) await dispatch(fetchLeadsLists()).unwrap();
+        if (!mLd) await dispatch(fetchOrgMembers()).unwrap();
+      } catch {
+        // Error handled by Redux state
+      } 
+    };
+    loadData();
+  }, [caLd, cLd, lLd, mLd,  dispatch]);
+
+  useEffect(() => {
+    if (leadId) {
+      if (!lLd) return;
+
+      const lead = leads.find((l) => l.id === leadId);
+      if (!lead) return;
+
+      const timeoutId = window.setTimeout(() => {
+        setRecipientType("lead");
+        setFormData((prev) => ({
+          ...prev,
+          lead_id: lead.id,
+          contact_id: "",
+        }));
+      }, 0);
+
+      return () => window.clearTimeout(timeoutId);
+    }
+
+    if (contactId) {
+      if (!cLd) return;
+
+      const contact = contacts.find((c) => c.id === contactId);
+      if (!contact) return;
+
+      const timeoutId = window.setTimeout(() => {
+        setRecipientType("contact");
+        setFormData((prev) => ({
+          ...prev,
+          lead_id: "",
+          contact_id: contact.id,
+        }));
+      }, 0);
+
+      return () => window.clearTimeout(timeoutId);
+    }
+  }, [
+    leadId,
+    contactId,
+    leads,
+    contacts,
+    lLd,
+    cLd,
+  ]);
+
 
   useEffect(() => {
     return () => {
@@ -223,7 +276,6 @@ export default function CallsPanel() {
   );
 
   const selectedPhone = selectedRecipient?.phone ?? "";
-  console.log(activeCall)
 
   const filteredCalls = useMemo(() => {
     return calls.filter((call) => {
@@ -335,7 +387,7 @@ export default function CallsPanel() {
 };
 
 
-  const handleStartCall = useCallback(
+  const handleStartCall = 
     async (call: CallListItem) => {
       try {
         setActiveCall(call);
@@ -359,11 +411,9 @@ export default function CallsPanel() {
         setActiveCall(null);
         setCallStatus(null);
       }
-    },
-    [dispatch]
-  );
+    };
 
-  const handleEndCall = useCallback(
+  const handleEndCall = 
     async (call: CallListItem) => {
       if (timerRef.current) clearInterval(timerRef.current);
       if (dialTimeoutRef.current) clearTimeout(dialTimeoutRef.current);
@@ -385,9 +435,7 @@ export default function CallsPanel() {
         setCallOutcome("other");
         setCallNotes("");
       }
-    },
-    [dispatch, activeCall, callOutcome, callNotes]
-  );
+    };
 
   const handleCreateCall = async () => {
     if (!formData.subject.trim()) return;
@@ -1817,6 +1865,7 @@ export default function CallsPanel() {
                   <Autocomplete
                     size="small"
                     options={recipientOptions}
+                    value={selectedRecipient ?? null}
                     getOptionLabel={(option) => option.label}
                     renderOption={(props, option) => (
                       <li {...props}>
@@ -2092,7 +2141,7 @@ export default function CallsPanel() {
         </DialogActions>
       </Dialog>
 
-      <Dialog
+      {/* <Dialog
         open={openDetailDialog}
         onClose={() => setOpenDetailDialog(false)}
         fullScreen={isMobile}
@@ -2467,7 +2516,7 @@ export default function CallsPanel() {
             Close
           </Button>
         </DialogActions>
-      </Dialog>
+      </Dialog> */}
     </Box>
   );
 }
