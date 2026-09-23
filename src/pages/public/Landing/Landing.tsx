@@ -608,13 +608,14 @@ function ProductTour() {
 
 function Hero() {
   const navigate = useNavigate();
-
+  const [demoLoading, setDemoLoading] = useState(false);
     const {
-      loading,
       currentUser,
     } = useAuth();
 
     const handleDemoLogin = async () => {
+      setDemoLoading(true);
+
       try {
         await demoLoginAPI();
         await currentUser().unwrap();
@@ -622,6 +623,8 @@ function Hero() {
         navigate("/app/dashboard", { replace: true });
       } catch (error) {
         console.error("Demo login failed:", error);
+      } finally {
+        setDemoLoading(false);
       }
     };
   return (
@@ -662,7 +665,7 @@ function Hero() {
                     onClick={handleDemoLogin}
                     variant="outlined"
                     size="large"
-                    disabled={loading}
+                    disabled={demoLoading}
                     sx={{
                       textTransform: "none",
                       fontWeight: 700,
@@ -670,7 +673,7 @@ function Hero() {
                       px: 3.5,
                     }}
                   >
-                    {loading ? "Loading demo..." : "Try Demo"}
+                    {demoLoading ? "Loading demo..." : "Try Demo"}
                   </Button>
                 </span>
               </Tooltip>
