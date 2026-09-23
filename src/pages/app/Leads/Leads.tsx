@@ -1006,7 +1006,7 @@ const handleConfirmCloseLead = async () => {
 
   if (loading) {
     return (
-      <Box sx={{height: 800}}>
+      <Box sx={{height: 600}}>
         <Box sx={{
           display: 'flex',
           flexDirection: 'column',

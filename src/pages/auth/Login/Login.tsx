@@ -187,7 +187,6 @@ export default function Login() {
     loading,
     error,
     login,
-    currentUser,
   } = useAuth();
 
   useEffect(() => {
@@ -216,10 +215,9 @@ export default function Login() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+
     try {
       const result = await login(form).unwrap();
-
-      await currentUser().unwrap();
 
       navigate(
         result.needsOnboarding
