@@ -14,7 +14,7 @@ import {
   Select,
   Skeleton,
   Stack,
-  // TextField,
+  TextField,
   Tooltip,
   Typography,
 } from "@mui/material";
@@ -66,7 +66,6 @@ import type {
   AnalyticsMetricWithComparison,
   // AnalyticsData,
 } from "../../../types/analytics";
-import { fetchOrgMembers } from "../../../store/organizationMemberSlice";
 
 /* ------------------------------------------------------------------ */
 /* Formatting helpers                                                  */
@@ -536,7 +535,7 @@ const SalesStageChart: React.FC<{
           dataKey="count"
           radius={[0, 4, 4, 0]}
           fill={theme.palette.primary.main}
-          barSize={17}
+          barSize={35}
         />
       </BarChart>
     </ResponsiveContainer>
@@ -611,7 +610,7 @@ const RevenueStageChart: React.FC<{
           dataKey="value"
           radius={[0, 4, 4, 0]}
           fill={theme.palette.success.main}
-          barSize={17}
+          barSize={35}
         />
       </BarChart>
     </ResponsiveContainer>
@@ -692,7 +691,7 @@ const DistributionChart: React.FC<{
         <Bar
           dataKey="count"
           radius={[0, 4, 4, 0]}
-          barSize={17}
+          barSize={35}
         >
           {data.map((entry, index) => (
             <Cell
@@ -821,52 +820,153 @@ const HealthMetric: React.FC<{
 );
 
 /* ------------------------------------------------------------------ */
-/* Unavailable analytics                                               */
+/* Advanced analytics primitives                                       */
 /* ------------------------------------------------------------------ */
 
-const UnavailableCard: React.FC<{
+const formatDays = (value: number): string => {
+  if (!Number.isFinite(value)) return "0 days";
+  if (value < 1) return `${Math.round(value * 24)}h`;
+  return `${value.toFixed(1)}d`;
+};
+
+const formatPercent = (value: number): string => {
+  if (!Number.isFinite(value)) return "0%";
+  return `${value.toFixed(1)}%`;
+};
+
+const AdvancedMetric: React.FC<{
+  label: string;
+  value: string;
+  caption?: string;
+}> = ({ label, value, caption }) => (
+  <Stack spacing={0.25} sx={{ minWidth: 105 }}>
+    <Typography variant="caption" color="text.secondary">
+      {label}
+    </Typography>
+    <Typography variant="h6" fontWeight={700}>
+      {value}
+    </Typography>
+    {caption && (
+      <Typography variant="caption" color="text.secondary">
+        {caption}
+      </Typography>
+    )}
+  </Stack>
+);
+
+const AdvancedCard: React.FC<{
   title: string;
-  reason?: string;
-}> = ({ title, reason }) => (
+  subtitle?: string;
+  icon?: React.ElementType;
+  children: React.ReactNode;
+}> = ({ title, subtitle, icon: Icon = QueryStatsOutlinedIcon, children }) => (
   <SectionCard>
     <Box sx={{ p: { xs: 1.5, sm: 2 } }}>
-      <Stack direction="row" spacing={1} alignItems="center">
-        <QueryStatsOutlinedIcon
+      <Stack direction="row" alignItems="flex-start" spacing={1} sx={{ mb: 1.5 }}>
+        <Box
           sx={{
-            fontSize: 19,
-            color: "text.disabled",
+            width: 30,
+            height: 30,
+            borderRadius: 1.25,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            bgcolor: "action.hover",
+            color: "primary.main",
+            flexShrink: 0,
           }}
-        />
-
-        <Typography variant="subtitle2" fontWeight={600}>
-          {title}
-        </Typography>
+        >
+          <Icon sx={{ fontSize: 18 }} />
+        </Box>
+        <Box sx={{ minWidth: 0 }}>
+          <Typography variant="subtitle2" fontWeight={600}>
+            {title}
+          </Typography>
+          {subtitle && (
+            <Typography variant="caption" color="text.secondary">
+              {subtitle}
+            </Typography>
+          )}
+        </Box>
       </Stack>
-
-      <Typography
-        variant="caption"
-        color="text.secondary"
-        sx={{
-          display: "block",
-          mt: 1,
-          lineHeight: 1.5,
-        }}
-      >
-        {reason ?? "Insufficient data is currently available."}
-      </Typography>
-
-      <Chip
-        label="Unavailable"
-        size="small"
-        variant="outlined"
-        sx={{
-          mt: 1.25,
-          color: "text.secondary",
-        }}
-      />
+      {children}
     </Box>
   </SectionCard>
 );
+
+const AnomalyRow: React.FC<{
+  metric: string;
+  currentValue: number;
+  baselineValue: number;
+  deviationPercent: number;
+  direction: "increase" | "decrease";
+  severity: "low" | "medium" | "high";
+}> = ({
+  metric,
+  currentValue,
+  baselineValue,
+  deviationPercent,
+  direction,
+  severity,
+}) => {
+  const severityColor =
+    severity === "high"
+      ? "error.main"
+      : severity === "medium"
+        ? "warning.main"
+        : "info.main";
+
+  const isRevenue = metric.toLowerCase().includes("revenue");
+  const formatValue = (value: number) =>
+    isRevenue ? formatCurrency(value) : formatCompactNumber(value);
+
+  return (
+    <Stack
+      direction={{ xs: "column", sm: "row" }}
+      spacing={1.5}
+      alignItems={{ xs: "flex-start", sm: "center" }}
+      justifyContent="space-between"
+      sx={{ py: 1.1 }}
+    >
+      <Box sx={{ minWidth: 0, flex: 1 }}>
+        <Stack direction="row" alignItems="center" spacing={0.75}>
+          <Typography variant="body2" fontWeight={600}>
+            {metric}
+          </Typography>
+          <Chip
+            label={severity}
+            size="small"
+            variant="outlined"
+            sx={{
+              height: 21,
+              color: severityColor,
+              borderColor: severityColor,
+              textTransform: "capitalize",
+              fontSize: 11,
+            }}
+          />
+        </Stack>
+        <Typography variant="caption" color="text.secondary">
+          {formatValue(currentValue)} now · {formatValue(baselineValue)} baseline
+        </Typography>
+      </Box>
+
+      <Stack alignItems={{ xs: "flex-start", sm: "flex-end" }}>
+        <Typography
+          variant="body2"
+          fontWeight={700}
+          color={direction === "increase" ? "success.main" : "error.main"}
+        >
+          {direction === "increase" ? "+" : "-"}
+          {formatPercent(deviationPercent)}
+        </Typography>
+        <Typography variant="caption" color="text.secondary">
+          {direction === "increase" ? "increase" : "decrease"}
+        </Typography>
+      </Stack>
+    </Stack>
+  );
+};
 
 /* ------------------------------------------------------------------ */
 /* Analytics                                                           */
@@ -877,9 +977,6 @@ const Analytics = () => {
   const { data: analytics, loading, error } = useSelector(
     (state: RootState) => state.analytics,
   );
-  const {items: members} = useSelector(
-    (state: RootState) => state.orgmembers,
-  );
 
   const [range, setRange] =
     useState<AnalyticsDateRange>("30d");
@@ -887,8 +984,11 @@ const Analytics = () => {
   const [comparison, setComparison] =
     useState<AnalyticsComparison>("previous_period");
 
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+
   const [memberId, setMemberId] = useState("");
-  // const [source, setSource] = useState("");
+  const [source, setSource] = useState("");
   const [breakdownDimension, setBreakdownDimension] =
     useState<AnalyticsBreakdownDimension>("industry");
 
@@ -896,16 +996,17 @@ const Analytics = () => {
     () => ({
       range,
       comparison,
+      startDate: range === "custom" && startDate ? startDate : undefined,
+      endDate: range === "custom" && endDate ? endDate : undefined,
       memberId: memberId || undefined,
-      // source: source.trim() || undefined,
+      source: source.trim() || undefined,
       dimension: breakdownDimension,
     }),
-    [range, comparison, memberId, breakdownDimension],
+    [range, comparison, startDate, endDate, memberId, source, breakdownDimension],
   );
 
   useEffect(() => {
     dispatch(fetchAnalytics(filters));
-    dispatch(fetchOrgMembers());
   }, [dispatch, filters]);
 
   const handleRefresh = () => {
@@ -914,14 +1015,6 @@ const Analytics = () => {
 
   const handleClearError = () => {
     dispatch(clearError());
-  };
-
-  const getMember = (id: string) => {
-    const member = members.find((m) => m.id === id);
-
-    return member
-      ? `${member.display_id} ${member.profile.first_name} ${member.profile.last_name}`
-      : "unknown";
   };
 
   const salesChartData = useMemo<StageDatum[]>(
@@ -1134,6 +1227,30 @@ const Analytics = () => {
               </Select>
             </FormControl>
 
+            {range === "custom" && (
+              <>
+                <TextField
+                  size="small"
+                  type="date"
+                  label="Start date"
+                  value={startDate}
+                  onChange={(event) => setStartDate(event.target.value)}
+                  InputLabelProps={{ shrink: true }}
+                  sx={{ minWidth: { xs: "100%", sm: 155 } }}
+                />
+
+                <TextField
+                  size="small"
+                  type="date"
+                  label="End date"
+                  value={endDate}
+                  onChange={(event) => setEndDate(event.target.value)}
+                  InputLabelProps={{ shrink: true }}
+                  sx={{ minWidth: { xs: "100%", sm: 155 } }}
+                />
+              </>
+            )}
+
             <FormControl
               size="small"
               sx={{
@@ -1182,7 +1299,9 @@ const Analytics = () => {
               <Select
                 value={memberId}
                 label="Member"
-                onChange={(event) => setMemberId(event.target.value)}
+                onChange={(event) =>
+                  setMemberId(event.target.value)
+                }
               >
                 <MenuItem value="">
                   All members
@@ -1193,13 +1312,13 @@ const Analytics = () => {
                     key={member.memberId}
                     value={member.memberId}
                   >
-                    {getMember(member.memberId)}
+                    {member.name}
                   </MenuItem>
                 ))}
               </Select>
             </FormControl>
 
-            {/* <TextField
+            <TextField
               size="small"
               label="Source"
               value={source}
@@ -1213,7 +1332,7 @@ const Analytics = () => {
                   sm: 170,
                 },
               }}
-            /> */}
+            />
 
             <FormControl
               size="small"
@@ -1246,6 +1365,7 @@ const Analytics = () => {
                   Preferred contact time
                 </MenuItem>
                 <MenuItem value="gender">Gender</MenuItem>
+                <MenuItem value="social_channel">Social channel</MenuItem>
               </Select>
             </FormControl>
           </Stack>
@@ -1439,8 +1559,8 @@ const Analytics = () => {
             nameKey="label"
             cx="50%"
             cy="50%"
-            innerRadius={55}
-            outerRadius={85}
+            innerRadius={30}
+            outerRadius={120}
             paddingAngle={2}
           >
             {leadStatusData.map((entry, index) => (
@@ -1750,19 +1870,14 @@ const Analytics = () => {
                   </thead>
 
                   <tbody>
-                    {analytics.breakdown.rows.map((row) => {
-                      console.log("BREAKDOWN ROW:", row);
-                      console.log(row.dimension)
-                      return(
+                    {analytics.breakdown.rows.map((row) => (
                       <tr key={row.dimension}>
                         <td>
                           <Typography
                             variant="body2"
                             fontWeight={600}
                           >
-                            {breakdownDimension === "assigned_member"
-                              ? getMember(row.dimension)
-                              : row.dimension}
+                            {row.dimension}
                           </Typography>
                         </td>
                         <td>{formatCompactNumber(row.leads)}</td>
@@ -1779,8 +1894,7 @@ const Analytics = () => {
                           </Typography>
                         </td>
                       </tr>
-                    )
-})}
+                    ))}
                   </tbody>
                 </Box>
               </Box>
@@ -1874,7 +1988,7 @@ const Analytics = () => {
                           variant="body2"
                           fontWeight={600}
                         >
-                          {getMember(member.memberId)}
+                          {member.name}
                         </Typography>
                       </td>
 
@@ -2013,47 +2127,264 @@ const Analytics = () => {
       </Box>
 
       {/* ------------------------------------------------------------ */}
-      {/* Advanced / unavailable analytics                              */}
+      {/* Advanced Analytics                                            */}
       {/* ------------------------------------------------------------ */}
 
       <Box sx={{ mt: 3 }}>
         <SectionHeading
           title="Advanced Analytics"
-          subtitle="Analytics that require additional historical or attribution data"
+          subtitle="Lifecycle, revenue projection, source attribution, and anomaly signals"
         />
 
         <Grid container spacing={1.5}>
-          <Grid size={{ xs: 12, md: 4 }}>
-            <UnavailableCard
+          <Grid size={{ xs: 12, md: 6 }}>
+            <AdvancedCard
               title="Conversion Time"
-              reason={analytics?.conversionTime.reason}
-            />
+              subtitle="Completed conversions in the selected period"
+              icon={QueryStatsOutlinedIcon}
+            >
+              {loading ? (
+                <Stack spacing={1}>
+                  <Skeleton variant="rounded" height={48} />
+                  <Skeleton variant="rounded" height={48} />
+                </Stack>
+              ) : analytics?.conversionTime.available ? (
+                <Stack spacing={1.5}>
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">
+                      Lead conversion
+                    </Typography>
+                    <Stack
+                      direction="row"
+                      flexWrap="wrap"
+                      spacing={3}
+                      rowGap={1.5}
+                      sx={{ mt: 0.75 }}
+                    >
+                      <AdvancedMetric
+                        label="Average"
+                        value={formatDays(analytics.conversionTime.leads.averageDays)}
+                      />
+                      <AdvancedMetric
+                        label="Median"
+                        value={formatDays(analytics.conversionTime.leads.medianDays)}
+                      />
+                      <AdvancedMetric
+                        label="Fastest"
+                        value={formatDays(analytics.conversionTime.leads.fastestDays)}
+                      />
+                      <AdvancedMetric
+                        label="Sample"
+                        value={formatCompactNumber(analytics.conversionTime.leads.sampleSize)}
+                      />
+                    </Stack>
+                  </Box>
+
+                  <Divider />
+
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">
+                      Deal conversion to won
+                    </Typography>
+                    <Stack
+                      direction="row"
+                      flexWrap="wrap"
+                      spacing={3}
+                      rowGap={1.5}
+                      sx={{ mt: 0.75 }}
+                    >
+                      <AdvancedMetric
+                        label="Average"
+                        value={formatDays(analytics.conversionTime.deals.averageDays)}
+                      />
+                      <AdvancedMetric
+                        label="Median"
+                        value={formatDays(analytics.conversionTime.deals.medianDays)}
+                      />
+                      <AdvancedMetric
+                        label="Slowest"
+                        value={formatDays(analytics.conversionTime.deals.slowestDays)}
+                      />
+                      <AdvancedMetric
+                        label="Sample"
+                        value={formatCompactNumber(analytics.conversionTime.deals.sampleSize)}
+                      />
+                    </Stack>
+                  </Box>
+                </Stack>
+              ) : (
+                <EmptyState
+                  message={
+                    analytics?.conversionTime.reason ??
+                    "No completed conversion data is available."
+                  }
+                />
+              )}
+            </AdvancedCard>
           </Grid>
 
-          <Grid size={{ xs: 12, md: 4 }}>
-            <UnavailableCard
+          <Grid size={{ xs: 12, md: 6 }}>
+            <AdvancedCard
               title="Forecasting"
-              reason={analytics?.forecasting.reason}
-            />
+              subtitle="Actual revenue plus weighted open pipeline"
+              icon={TrendingUpRoundedIcon}
+            >
+              {loading ? (
+                <Stack spacing={1}>
+                  <Skeleton variant="rounded" height={48} />
+                  <Skeleton variant="rounded" height={48} />
+                </Stack>
+              ) : analytics?.forecasting.available ? (
+                <Stack spacing={1.5}>
+                  <Stack
+                    direction="row"
+                    flexWrap="wrap"
+                    spacing={3}
+                    rowGap={1.5}
+                  >
+                    <AdvancedMetric
+                      label="Historical"
+                      value={formatCurrency(analytics.forecasting.revenue.historical)}
+                    />
+                    <AdvancedMetric
+                      label="Projected"
+                      value={formatCurrency(analytics.forecasting.revenue.projected)}
+                    />
+                    <AdvancedMetric
+                      label="Growth"
+                      value={formatPercent(analytics.forecasting.revenue.growthRate * 100)}
+                    />
+                  </Stack>
+
+                  <Divider />
+
+                  <Stack
+                    direction="row"
+                    flexWrap="wrap"
+                    spacing={3}
+                    rowGap={1.5}
+                  >
+                    <AdvancedMetric
+                      label="Open pipeline"
+                      value={formatCurrency(analytics.forecasting.pipeline.openValue)}
+                    />
+                    <AdvancedMetric
+                      label="Weighted pipeline"
+                      value={formatCurrency(analytics.forecasting.pipeline.weightedValue)}
+                    />
+                  </Stack>
+
+                  <Typography variant="caption" color="text.secondary">
+                    Projection uses the selected-period revenue trend. Pipeline weighting is based on the current deal stage.
+                  </Typography>
+                </Stack>
+              ) : (
+                <EmptyState
+                  message={
+                    analytics?.forecasting.reason ??
+                    "No forecast data is available."
+                  }
+                />
+              )}
+            </AdvancedCard>
           </Grid>
 
-          <Grid size={{ xs: 12, md: 4 }}>
-            <UnavailableCard
+          <Grid size={{ xs: 12 }}>
+            <AdvancedCard
               title="Attribution"
-              reason={analytics?.attribution.reason}
-            />
+              subtitle="Lead source through conversion and closed-won revenue"
+              icon={AssessmentOutlinedIcon}
+            >
+              {loading ? (
+                <Stack spacing={1}>
+                  {[0, 1, 2, 3].map((item) => (
+                    <Skeleton key={item} variant="rounded" height={38} />
+                  ))}
+                </Stack>
+              ) : analytics?.attribution.available && analytics.attribution.sources.length ? (
+                <Box sx={{ overflowX: "auto" }}>
+                  <Box
+                    component="table"
+                    sx={{
+                      width: "100%",
+                      minWidth: 720,
+                      borderCollapse: "collapse",
+                      "& th": {
+                        textAlign: "left",
+                        fontSize: 12,
+                        fontWeight: 600,
+                        color: "text.secondary",
+                        borderBottom: "1px solid",
+                        borderColor: "divider",
+                        px: 1.25,
+                        py: 1,
+                        whiteSpace: "nowrap",
+                      },
+                      "& td": {
+                        fontSize: 13,
+                        borderBottom: "1px solid",
+                        borderColor: "divider",
+                        px: 1.25,
+                        py: 1,
+                        whiteSpace: "nowrap",
+                      },
+                      "& tbody tr:last-child td": { borderBottom: 0 },
+                      "& tbody tr:hover": { bgcolor: "action.hover" },
+                    }}
+                  >
+                    <thead>
+                      <tr>
+                        <th>Source</th>
+                        <th>Leads</th>
+                        <th>Converted</th>
+                        <th>Conversion rate</th>
+                        <th>Won deals</th>
+                        <th>Won revenue</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {analytics.attribution.sources.map((item) => (
+                        <tr key={item.source}>
+                          <td>
+                            <Typography variant="body2" fontWeight={600}>
+                              {item.source}
+                            </Typography>
+                          </td>
+                          <td>{formatCompactNumber(item.leads)}</td>
+                          <td>{formatCompactNumber(item.convertedLeads)}</td>
+                          <td>{formatPercent(item.conversionRate)}</td>
+                          <td>{formatCompactNumber(item.wonDeals)}</td>
+                          <td>
+                            <Typography variant="body2" fontWeight={600}>
+                              {formatCurrency(item.wonRevenue)}
+                            </Typography>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </Box>
+                </Box>
+              ) : (
+                <EmptyState
+                  message={
+                    analytics?.attribution.reason ??
+                    "No attributable source data is available."
+                  }
+                />
+              )}
+            </AdvancedCard>
           </Grid>
         </Grid>
       </Box>
 
       {/* ------------------------------------------------------------ */}
-      {/* Engagement / Anomalies                                        */}
+      {/* Engagement & Anomalies                                        */}
       {/* ------------------------------------------------------------ */}
 
       <Box sx={{ mt: 3, pb: 3 }}>
         <SectionHeading
           title="Engagement & Anomalies"
-          subtitle="Additional analytical signals"
+          subtitle="Activity signals and meaningful period-over-period deviations"
         />
 
         <Grid container spacing={1.5}>
@@ -2065,22 +2396,11 @@ const Analytics = () => {
                   alignItems="center"
                   justifyContent="space-between"
                 >
-                  <Stack
-                    direction="row"
-                    alignItems="center"
-                    spacing={1}
-                  >
+                  <Stack direction="row" alignItems="center" spacing={1}>
                     <AssessmentOutlinedIcon
-                      sx={{
-                        fontSize: 19,
-                        color: "primary.main",
-                      }}
+                      sx={{ fontSize: 19, color: "primary.main" }}
                     />
-
-                    <Typography
-                      variant="subtitle2"
-                      fontWeight={600}
-                    >
+                    <Typography variant="subtitle2" fontWeight={600}>
                       Engagement
                     </Typography>
                   </Stack>
@@ -2101,39 +2421,26 @@ const Analytics = () => {
                 {loading ? (
                   <Stack spacing={1}>
                     {[0, 1, 2].map((item) => (
-                      <Skeleton
-                        key={item}
-                        variant="rounded"
-                        height={32}
-                      />
+                      <Skeleton key={item} variant="rounded" height={32} />
                     ))}
                   </Stack>
                 ) : analytics?.engagement.byType.length ? (
                   <Stack spacing={1}>
-                    {analytics.engagement.byType
-                      .slice(0, 6)
-                      .map((item) => (
-                        <Stack
-                          key={item.type}
-                          direction="row"
-                          alignItems="center"
-                          justifyContent="space-between"
-                        >
-                          <Typography
-                            variant="body2"
-                            color="text.secondary"
-                          >
-                            {getStageLabel(item.type)}
-                          </Typography>
-
-                          <Typography
-                            variant="body2"
-                            fontWeight={600}
-                          >
-                            {item.count}
-                          </Typography>
-                        </Stack>
-                      ))}
+                    {analytics.engagement.byType.slice(0, 6).map((item) => (
+                      <Stack
+                        key={item.type}
+                        direction="row"
+                        alignItems="center"
+                        justifyContent="space-between"
+                      >
+                        <Typography variant="body2" color="text.secondary">
+                          {getStageLabel(item.type)}
+                        </Typography>
+                        <Typography variant="body2" fontWeight={600}>
+                          {item.count}
+                        </Typography>
+                      </Stack>
+                    ))}
                   </Stack>
                 ) : (
                   <EmptyState message="No engagement data available." />
@@ -2143,10 +2450,71 @@ const Analytics = () => {
           </Grid>
 
           <Grid size={{ xs: 12, md: 6 }}>
-            <UnavailableCard
-              title="Anomaly Detection"
-              reason={analytics?.anomalies.reason}
-            />
+            <SectionCard>
+              <Box sx={{ p: { xs: 1.5, sm: 2 } }}>
+                <Stack
+                  direction="row"
+                  alignItems="center"
+                  justifyContent="space-between"
+                  sx={{ mb: 0.5 }}
+                >
+                  <Stack direction="row" alignItems="center" spacing={1}>
+                    <QueryStatsOutlinedIcon
+                      sx={{ fontSize: 19, color: "primary.main" }}
+                    />
+                    <Typography variant="subtitle2" fontWeight={600}>
+                      Anomaly Detection
+                    </Typography>
+                  </Stack>
+
+                  <Chip
+                    label={
+                      loading
+                        ? "—"
+                        : `${analytics?.anomalies.anomalies.length ?? 0} detected`
+                    }
+                    size="small"
+                    variant="outlined"
+                  />
+                </Stack>
+
+                <Typography variant="caption" color="text.secondary">
+                  Changes of at least 25% against the comparison baseline.
+                </Typography>
+
+                <Divider sx={{ my: 1.25 }} />
+
+                {loading ? (
+                  <Stack spacing={1}>
+                    {[0, 1, 2].map((item) => (
+                      <Skeleton key={item} variant="rounded" height={52} />
+                    ))}
+                  </Stack>
+                ) : analytics?.anomalies.available ? (
+                  analytics.anomalies.anomalies.length ? (
+                    <Stack divider={<Divider />}>
+                      {analytics.anomalies.anomalies.map((item) => (
+                        <AnomalyRow key={item.metric} {...item} />
+                      ))}
+                    </Stack>
+                  ) : (
+                    <EmptyState
+                      message={
+                        analytics.anomalies.reason ??
+                        "No significant anomalies detected."
+                      }
+                    />
+                  )
+                ) : (
+                  <EmptyState
+                    message={
+                      analytics?.anomalies.reason ??
+                      "Anomaly analytics are unavailable."
+                    }
+                  />
+                )}
+              </Box>
+            </SectionCard>
           </Grid>
         </Grid>
       </Box>

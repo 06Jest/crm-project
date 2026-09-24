@@ -23,6 +23,9 @@ export interface Sms {
   sender_id: string;
   content: string;
   status: SmsStatus;
+  sent_at: string | null;
+  delivered_at: string | null;
+  failed_at: string | null;
   created_at: string;
   updated_at: string;
 }
