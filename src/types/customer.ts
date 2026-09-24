@@ -24,7 +24,8 @@ export interface Customer {
   notes?: string;
   status: CustomerStatus;
   owner_id: string;
-  org_id?: string;          
+  org_id?: string;     
+  churned_at: string | null;     
   created_at: string;
   deleted_at: string | null;
   deleted_by: string | null;
