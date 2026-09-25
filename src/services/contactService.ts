@@ -37,8 +37,13 @@ export const fetchContactListByIDAPI = async (
 export const addContactAPI = async (
   contact: AddContact
 ): Promise<ContactListItem> => {
+  const idempotencyKey = crypto.randomUUID();
+
   const result = await apiClient("/api/contacts/add", {
     method: "POST",
+    headers: {
+      "Idempotency-Key": idempotencyKey,
+    },
     body: JSON.stringify(contact),
   });
 
@@ -48,8 +53,13 @@ export const addContactAPI = async (
 export const addContactFromLeadsAPI = async (
   contact: AddContact
 ): Promise<ContactListItem> => {
+  const idempotencyKey = crypto.randomUUID();
+
   const result = await apiClient("/api/contacts/move", {
     method: "POST",
+    headers: {
+      "Idempotency-Key": idempotencyKey,
+    },
     body: JSON.stringify(contact),
   });
 

@@ -29,8 +29,13 @@ export const fetchTaskByIDAPI = async (
 export const addTaskAPI = async (
   task: AddTask
 ): Promise<TaskListItem> => {
+  const idempotencyKey = crypto.randomUUID();
+
   const result = await apiClient("/api/tasks/add-task", {
     method: "POST",
+    headers: {
+      "Idempotency-Key": idempotencyKey,
+    },
     body: JSON.stringify(task),
   });
 

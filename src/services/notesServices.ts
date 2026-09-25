@@ -40,8 +40,13 @@ export const fetchNoteByIDAPI = async (
 export const addNoteAPI = async (
   note: AddNote
 ): Promise<NoteListItem> => {
+  const idempotencyKey = crypto.randomUUID();
+
   const result = await apiClient("/api/notes/add-note", {
     method: "POST",
+    headers: {
+      "Idempotency-Key": idempotencyKey,
+    },
     body: JSON.stringify(note),
   });
 
