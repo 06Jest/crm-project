@@ -24,13 +24,20 @@ export const fetchLeadListByIDAPI = async (
 export const addLeadAPI = async (
   lead: AddLead
 ): Promise<LeadListItem> => {
+  const idempotencyKey = crypto.randomUUID();
+
   const result = await apiClient("/api/leads/add", {
     method: "POST",
+    headers: {
+      "Idempotency-Key": idempotencyKey,
+    },
     body: JSON.stringify(lead),
   });
 
   return result.data as LeadListItem;
 };
+
+
 
 export const updateLeadPersonalAPI = async (
   id: string,

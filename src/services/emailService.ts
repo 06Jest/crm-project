@@ -6,7 +6,6 @@ import type {
 
 import { apiClient } from "./apiClient";
 
-
 export const fetchEmailsAPI = async (): Promise<EmailListItem[]> => {
   const result = await apiClient("/api/emails/show-emails", {
     method: "GET",
@@ -14,7 +13,6 @@ export const fetchEmailsAPI = async (): Promise<EmailListItem[]> => {
 
   return result.data as EmailListItem[];
 };
-
 
 export const fetchEmailByIDAPI = async (
   id: string
@@ -26,18 +24,21 @@ export const fetchEmailByIDAPI = async (
   return result.data as EmailListItem;
 };
 
-
 export const addEmailDraftAPI = async (
   email: ComposeEmail
 ): Promise<EmailListItem> => {
+  const idempotencyKey = crypto.randomUUID();
+
   const result = await apiClient("/api/emails/add-email-draft", {
     method: "POST",
+    headers: {
+      "Idempotency-Key": idempotencyKey,
+    },
     body: JSON.stringify(email),
   });
 
   return result.data as EmailListItem;
 };
-
 
 export const updateEmailDraftAPI = async (
   id: string,
@@ -51,17 +52,20 @@ export const updateEmailDraftAPI = async (
   return result.data as EmailListItem;
 };
 
-
 export const sendEmailAPI = async (
   id: string
 ): Promise<EmailListItem> => {
+  const idempotencyKey = crypto.randomUUID();
+
   const result = await apiClient(`/api/emails/send-email/${id}`, {
     method: "POST",
+    headers: {
+      "Idempotency-Key": idempotencyKey,
+    },
   });
 
   return result.data as EmailListItem;
 };
-
 
 export const fetchLeadEmailsAPI = async (
   leadId: string
@@ -73,7 +77,6 @@ export const fetchLeadEmailsAPI = async (
   return result.data as EmailListItem[];
 };
 
-
 export const fetchContactEmailsAPI = async (
   contactId: string
 ): Promise<EmailListItem[]> => {
@@ -84,7 +87,6 @@ export const fetchContactEmailsAPI = async (
   return result.data as EmailListItem[];
 };
 
-
 export const fetchCustomerEmailsAPI = async (
   customerId: string
 ): Promise<EmailListItem[]> => {
@@ -94,7 +96,6 @@ export const fetchCustomerEmailsAPI = async (
 
   return result.data as EmailListItem[];
 };
-
 
 export const deleteEmailAPI = async (
   id: string

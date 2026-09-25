@@ -68,17 +68,18 @@ export const fetchContactCallsAPI = async (
 export const addCallAPI = async (
   call: CreateCall
 ): Promise<CallListItem> => {
+  const idempotencyKey = crypto.randomUUID();
 
   const result = await apiClient("/api/calls/add-call", {
     method: "POST",
+    headers: {
+      "Idempotency-Key": idempotencyKey,
+    },
     body: JSON.stringify(call),
   });
 
-
   return result.data as CallListItem;
-
 };
-
 
 
 export const updateCallAPI = async (

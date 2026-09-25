@@ -47,8 +47,13 @@ export const fetchDealListByIDAPI = async (
 export const addDealAPI = async (
   deal: AddDeal
 ): Promise<DealListItem> => {
+  const idempotencyKey = crypto.randomUUID();
+
   const result = await apiClient("/api/deals/add", {
     method: "POST",
+    headers: {
+      "Idempotency-Key": idempotencyKey,
+    },
     body: JSON.stringify(deal),
   });
 
@@ -71,12 +76,16 @@ export const updateDealStageAPI = async (
   id: string,
   stage: DealStage
 ): Promise<DealListItem> => {
-  
+  const idempotencyKey = crypto.randomUUID();
+
   const result = await apiClient(`/api/deals/update/stage/${id}`, {
     method: "PATCH",
-    body: JSON.stringify({stage}),
+    headers: {
+      "Idempotency-Key": idempotencyKey,
+    },
+    body: JSON.stringify({ stage }),
   });
-  
+
   return result.data as DealListItem;
 };
 
