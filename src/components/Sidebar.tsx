@@ -14,6 +14,8 @@ import {
   BottomNavigation,
   BottomNavigationAction,
   Divider,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 
 import { navigationTabs } from "../constants/navigation";
@@ -83,10 +85,13 @@ export default function Sidebar() {
 
   const navigate = useNavigate();
   const location = useLocation();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
   const themeMode = useSelector(
     (state: RootState) => state.ui.themeMode
   );
+
 
   const handleCommunicationSelect = (index: number) => {
     setTab(index);
@@ -97,6 +102,20 @@ export default function Sidebar() {
       width,
       height,
     } = communicationTabs[index];
+
+    if (isMobile) {
+      const routes: Record<string, string> = {
+        Notes: "/app/communication/notes",
+        Tasks: "/app/communication/tasks",
+        Chats: "/app/communication/chats",
+        Emails: "/app/communication/emails",
+        Calls: "/app/communication/calls",
+        SMS: "/app/communication/sms",
+      };
+
+      navigate(routes[label]);
+      return;
+    }
 
     openWindow({
       id: label.toLowerCase(),

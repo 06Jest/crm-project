@@ -12,7 +12,6 @@ import type { ChangePasswordDTO, SignInDTO, SignUpDTO } from "../types/auth";
 
 export const useAuth = () => {
   const dispatch = useDispatch<AppDispatch>();
-
   const auth = useSelector((state: RootState) => state.user);
 
   return {
