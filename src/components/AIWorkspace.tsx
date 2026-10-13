@@ -55,14 +55,14 @@ const AGENTS: {
 
 const SUGGESTED_PROMPTS: Record<AIAgentId, string[]> = {
   "personal-assistant": [
-    "What tasks do I have?",
+    "Create a task",
     "Create a note for me",
-    "Help me organize my priorities",
+    "How should I generate more leads",
   ],
   "organization-assistant": [
-    "Show me our recent leads",
-    "What contacts do we have?",
-    "Give me an overview of our CRM",
+    "Find a lead named [name]",
+    "Search for [name] in contacts",
+    "How do I manage my team?",
   ],
   "crm-assistant": [
     "What is uniThread CRM?",
@@ -219,14 +219,18 @@ export default function AIWorkspace() {
     width: 420,
     height: 600,
   });
-
+  
   const SIDEBAR_BREAKPOINT = 700;
   const isSidebarAllowed =
-  isMobile || size.width >= SIDEBAR_BREAKPOINT;
-
+    !isMobile && size.width >= SIDEBAR_BREAKPOINT;
   const [isSidebarOpen, setIsSidebarOpen] = useState(
-    mode === "authenticated"
+    mode === "authenticated" && !isMobile
   );
+
+  const showSidebar =
+    mode === "authenticated" &&
+    isSidebarAllowed &&
+    isSidebarOpen;
 
   const dragStart = useRef({
     mouseX: 0,
@@ -559,10 +563,10 @@ const handleConfirm = () => {
       "Helps with your daily work and can access your personal data such as creating personal notes and creating personal tasks (more tools to be added soon).",
 
    "organization-assistant":
-  "Helps with daily work, career growth, and teamwork, with access to organization CRM data such as leads, contacts, customers, notes, and other organization records as tools become available(to be updated).",
+  "Helps with daily work, career growth, and teamwork. Currently, available tools are limited to searching organization CRM records, such as leads, contacts, and customers. More tools will be added in future updates.",
 
     "crm-assistant":
-      "Answers general questions about uniThread CRM, including features, pricing, policies, terms, and how the CRM works.",
+  "Answers questions about uniThread CRM using RAG to retrieve relevant knowledge and provide source-backed responses.",
   };
 
   return descriptions[agentId];
@@ -582,7 +586,7 @@ const handleConfirm = () => {
             left: isMobile ? "10%" : position.x,
             top: isMobile ? "18%" : position.y,
             width: isMobile ? "60%" : size.width,
-            height: isMobile ? "80%" : size.height,
+            height: isMobile ? "70%" : size.height,
             minWidth: isMobile ? 0 : 320,
             minHeight: isMobile ? 0 : 460,
             display: "flex",
@@ -607,9 +611,7 @@ const handleConfirm = () => {
                 `,
           }}
         >
-          {mode === "authenticated" &&
-              isSidebarOpen &&
-              isSidebarAllowed && (
+          {showSidebar && (
             <aside
               className="ai-conversation-sidebar ai-conversation-scroll"
               style={{
@@ -1114,7 +1116,40 @@ const handleConfirm = () => {
                         overflowWrap: "anywhere",
                       }}
                     >
-                      {message.content}
+                      <div>{message.content}</div>
+
+                      {!isUser &&
+                        message.id === messages.filter((item) => item.role !== "user").at(-1)?.id &&
+                        uniqueSources.length > 0 && (
+                          <div
+                            style={{
+                              marginTop: 12,
+                              paddingTop: 10,
+                              borderTop: `1px solid ${glassBorder}`,
+                              fontSize: 12,
+                            }}
+                          >
+                            <details>
+                              <summary
+                                style={{
+                                  cursor: "pointer",
+                                  fontWeight: 600,
+                                  opacity: 0.8,
+                                }}
+                              >
+                                Sources ({uniqueSources.length})
+                              </summary>
+
+                              <ul style={{ margin: "8px 0 0", paddingLeft: 18 }}>
+                                {uniqueSources.map((source) => (
+                                  <li key={source.sourceId} style={{ marginBottom: 4 }}>
+                                    {source.title ?? source.sourceId}
+                                  </li>
+                                ))}
+                              </ul>
+                            </details>
+                          </div>
+                        )}
                     </div>
                   </div>
                 );
@@ -1294,22 +1329,6 @@ const handleConfirm = () => {
               </div>
             </div>
           )}
-
-              {uniqueSources.length > 0 && (
-                <details style={{ fontSize: 12, opacity: 0.72 }}>
-                  <summary style={{ cursor: "pointer" }}>
-                    Sources ({uniqueSources.length})
-                  </summary>
-
-                  <ul style={{ marginTop: 8, paddingLeft: 18 }}>
-                    {uniqueSources.map((source) => (
-                      <li key={source.sourceId}>
-                        {source.title ?? source.sourceId}
-                      </li>
-                    ))}
-                  </ul>
-                </details>
-              )}
 
               {error && (
                 <div
@@ -1517,25 +1536,25 @@ const handleConfirm = () => {
          @media (max-width: 768px) {
           section[aria-label="uniThread AI workspace"] {
             left: 10% !important;
-            top: 18% !important;
+            top: 28% !important;
             width: 80% !important;
-            height: 80% !important;
+            height: 62dvh !important;
             min-width: 0 !important;
             min-height: 0 !important;
             border-radius: 30px !important;
             resize: none !important;
           }
+
+          section[aria-label="uniThread AI workspace"] aside.ai-conversation-sidebar {
+            position: absolute;
+            z-index: 2;
+            inset: 0 auto 0 0;
+            height: 100%;
+          }
         }
 
-            section[aria-label="uniThread AI workspace"] aside.ai-conversation-sidebar {
-              position: absolute;
-              z-index: 2;
-              inset: 0 auto 0 0;
-              height: 100%;
-            }
-          }
-          .ai-conversation-scroll {
-            scrollbar-width: thin;
+        .ai-conversation-scroll {
+          scrollbar-width: thin;
             scrollbar-color: ${
               isDarkMode
                 ? "rgba(255, 255, 255, 0.22) transparent"
